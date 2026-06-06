@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "scheme": "stayzim",
+    "userInterfaceStyle": "automatic",
+    "orientation": "default",
+    "web": {
+      "bundler": "metro"
+    },
+    "name": "stayzim",
+    "slug": "stayzim",
+    "plugins": ["expo-font"],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}
