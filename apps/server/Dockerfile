@@ -4,6 +4,9 @@ WORKDIR /app
 
 COPY . .
 
+ARG DATABASE_URL=postgresql://build:build@localhost:5432/build
+ENV DATABASE_URL=${DATABASE_URL}
+
 RUN bun install
 
 # Generate Prisma client if your project uses Prisma
