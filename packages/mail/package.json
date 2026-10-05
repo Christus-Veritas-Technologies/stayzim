@@ -1,0 +1,23 @@
+{
+  "name": "@stayzim/mail",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./templates": "./src/templates.ts"
+  },
+  "scripts": {
+    "check-types": "tsc -b"
+  },
+  "dependencies": {
+    "@stayzim/env": "workspace:*",
+    "nodemailer": "^10.0.10"
+  },
+  "devDependencies": {
+    "@stayzim/config": "workspace:*",
+    "@types/bun": "catalog:",
+    "@types/nodemailer": "^8.0.2",
+    "typescript": "catalog:"
+  }
+}
