@@ -12,6 +12,7 @@
     "@stayzim/ui": "workspace:*",
     "babel-plugin-react-compiler": "^1.0.0",
     "dotenv": "^17.2.2",
+    "framer-motion": "^13.5.0",
     "lucide-react": "^0.546.0",
     "next": "^16.2.0",
     "next-themes": "^0.4.6",
