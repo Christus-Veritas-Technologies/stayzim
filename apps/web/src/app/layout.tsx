@@ -1,23 +1,42 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Familjen_Grotesk, Instrument_Sans, Newsreader } from "next/font/google";
 
 import "../index.css";
-import Header from "@/components/header";
 import Providers from "@/components/providers";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const familjenGrotesk = Familjen_Grotesk({
+  variable: "--font-familjen-grotesk",
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+});
+
+const instrumentSans = Instrument_Sans({
+  variable: "--font-instrument-sans",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+// Lodge names on the sample lodge sites
+const newsreader = Newsreader({
+  variable: "--font-newsreader",
   subsets: ["latin"],
+  weight: ["600"],
 });
 
 export const metadata: Metadata = {
-  title: "stayzim",
-  description: "stayzim",
+  title: "StayZim: your own lodge website, booked on WhatsApp",
+  description:
+    "Stop paying 20% to Booking.com. StayZim builds your lodge its own website where guests book you directly on WhatsApp. Made in Mutare for Zimbabwean lodges. 14 days free.",
+  openGraph: {
+    title: "StayZim: your own lodge website",
+    description: "Your own lodge website. Guests book on WhatsApp. 0% commission.",
+    siteName: "StayZim",
+    locale: "en_ZW",
+    type: "website",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#007DA2",
 };
 
 export default function RootLayout({
@@ -27,13 +46,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <Providers>
-          <div className="grid grid-rows-[auto_1fr] h-svh">
-            <Header />
-            {children}
-          </div>
-        </Providers>
+      <body
+        className={`${familjenGrotesk.variable} ${instrumentSans.variable} ${newsreader.variable} bg-white font-sans text-ink antialiased`}
+      >
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
