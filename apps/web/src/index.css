@@ -1,1 +1,65 @@
 @import "@stayzim/ui/globals.css";
+
+/* StayZim landing tokens (designs/StayZim Landing Page.html) */
+@theme inline {
+  --font-sans: var(--font-instrument-sans), system-ui, sans-serif;
+  --font-display: var(--font-familjen-grotesk), system-ui, sans-serif;
+  --font-serif: var(--font-newsreader), Georgia, serif;
+}
+
+@theme {
+  --color-brand: #007da2;
+  --color-brand-light: #0096be;
+  --color-brand-dark: #006483;
+  --color-brand-sky: #78cbe7;
+  --color-brand-tint: #d6f0fa;
+  --color-ink: #0c181f;
+  --color-ink-2: #253037;
+  --color-slate: #374148;
+  --color-muted: #4f5a60;
+  --color-muted-2: #6c767d;
+  --color-soft: #a3adb2;
+  --color-dim: #8a949a;
+  --color-line: #e4e9ec;
+  --color-line-2: #dce3e7;
+  --color-line-3: #eef1f3;
+  --color-surface: #f4f7f9;
+  --color-surface-2: #f2f5f7;
+  --color-whatsapp: #25d366;
+  --color-purple: #755eaf;
+  --color-purple-dark: #5b4691;
+  --color-purple-tint: #f7f5fe;
+  --color-peach: #f9cdb5;
+  --color-rust: #a7551f;
+
+  --breakpoint-wide: 90rem;
+
+  --animate-wa-ping: wa-ping 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+
+  @keyframes wa-ping {
+    0% {
+      transform: scale(1);
+      opacity: 0.55;
+    }
+    80%,
+    100% {
+      transform: scale(1.6);
+      opacity: 0;
+    }
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Anchored sections clear the fixed nav */
+section[id] {
+  scroll-margin-top: 88px;
+}
