@@ -1,0 +1,99 @@
+// Outreach (apps/outreach): WhatsApp numbers, leads and the messages sent to them.
+
+/// WhatsApp Web sessions (whatsapp-web.js RemoteAuth). One row per linked
+/// number, keyed "RemoteAuth-<account id>"; `data` is the zipped Chromium
+/// profile, so a redeploy restores the pairing without a QR scan.
+model WhatsappSession {
+  session   String   @id
+  data      Bytes
+  sizeBytes Int      @map("size_bytes")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("whatsapp_session")
+}
+
+enum OutreachStatus {
+  /// Not messaged yet
+  PENDING
+  /// Messaged from at least one of our numbers
+  REACHED
+  /// Wrote back to one of our numbers after being reached
+  REPLIED
+  /// The number isn't registered on WhatsApp
+  NOT_ON_WHATSAPP
+  /// The last send attempt errored; eligible to be retried
+  FAILED
+  /// Never message this contact (opted out, asked to stop, ...)
+  DO_NOT_CONTACT
+}
+
+/// A lead, e.g. someone who opted in or replied to a Facebook ad.
+model Contact {
+  id              String            @id @default(cuid())
+  name            String
+  /// Digits only, with country code (e.g. "263771234567")
+  phone           String            @unique
+  city            String
+  status          OutreachStatus    @default(PENDING)
+  /// The outreach account (WhatsApp number id) that first reached this contact
+  reachedVia      String?           @map("reached_via")
+  lastContactedAt DateTime?         @map("last_contacted_at")
+  lastRepliedAt   DateTime?         @map("last_replied_at")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+  messages        OutreachMessage[]
+  replies         InboundMessage[]
+
+  @@index([status])
+  @@index([city])
+  @@map("contact")
+}
+
+enum OutreachMessageStatus {
+  SENT
+  NOT_ON_WHATSAPP
+  FAILED
+}
+
+/// Every send attempt, successful or not.
+model OutreachMessage {
+  id                String                @id @default(cuid())
+  contactId         String?               @map("contact_id")
+  contact           Contact?              @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  /// Digits only, recorded even when the number isn't a saved contact
+  phone             String
+  /// The outreach account (WhatsApp number id) it was sent from
+  account           String
+  body              String
+  status            OutreachMessageStatus
+  whatsappMessageId String?               @map("whatsapp_message_id")
+  error             String?
+  createdAt         DateTime              @default(now()) @map("created_at")
+
+  @@index([contactId])
+  @@index([phone])
+  /// Daily send limits count SENT rows per account over the last 24h
+  @@index([account, status, createdAt])
+  @@map("outreach_message")
+}
+
+/// A message someone sent to one of our numbers (direct chats only, no groups).
+model InboundMessage {
+  id                String   @id @default(cuid())
+  contactId         String?  @map("contact_id")
+  contact           Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  /// Digits only; null when WhatsApp hid the number behind a LID we couldn't resolve
+  phone             String?
+  /// The sender's WhatsApp chat id (…@c.us or …@lid)
+  chatId            String   @map("chat_id")
+  /// The outreach account (WhatsApp number id) that received it
+  account           String
+  body              String
+  type              String
+  whatsappMessageId String   @unique @map("whatsapp_message_id")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@index([contactId])
+  @@index([createdAt])
+  @@map("inbound_message")
+}
