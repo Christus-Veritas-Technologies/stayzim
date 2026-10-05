@@ -11,8 +11,10 @@
   },
   "dependencies": {
     "@hono/zod-validator": "^0.9.1",
+    "@stayzim/auth": "workspace:*",
     "@stayzim/db": "workspace:*",
     "@stayzim/env": "workspace:*",
+    "@stayzim/mail": "workspace:*",
     "dotenv": "^17.2.2",
     "hono": "^4.8.2",
     "hono-rate-limiter": "^0.5.4",
