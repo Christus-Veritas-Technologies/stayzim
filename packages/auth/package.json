@@ -1,0 +1,26 @@
+{
+  "name": "@stayzim/auth",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "check-types": "tsc -b",
+    "create-owner": "bun --env-file=../../apps/server/.env scripts/create-owner.ts"
+  },
+  "dependencies": {
+    "@stayzim/db": "workspace:*",
+    "@stayzim/env": "workspace:*",
+    "@stayzim/mail": "workspace:*",
+    "better-auth": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@stayzim/config": "workspace:*",
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
+  }
+}
