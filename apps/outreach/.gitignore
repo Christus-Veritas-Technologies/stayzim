@@ -1,0 +1,19 @@
+# prod
+dist/
+
+# deps
+node_modules/
+
+# env
+.env*
+!.env.example
+
+# whatsapp-web.js session + cached WhatsApp Web build
+.wwebjs_auth/
+.wwebjs_cache/
+
+# logs
+*.log
+
+# typescript
+*.tsbuildinfo

@@ -13,6 +13,7 @@
     "dev:native": "turbo -F native dev",
     "dev:web": "turbo -F web dev",
     "dev:server": "turbo -F server dev",
+    "dev:outreach": "turbo -F outreach dev",
     "db:push": "turbo -F @stayzim/db db:push",
     "db:studio": "turbo -F @stayzim/db db:studio",
     "db:generate": "turbo -F @stayzim/db db:generate",
