@@ -1,26 +1,49 @@
-# Build from the monorepo root: docker build -f apps/web/Dockerfile .
-FROM node:22-slim AS builder
+# StayZim web (Next.js): landing page and owner login/dashboard
+#
+# Build from the monorepo root:
+#   docker build -f apps/web/Dockerfile \
+#     --build-arg NEXT_PUBLIC_SERVER_URL=https://api.stayzim.co.zw \
+#     --build-arg NEXT_PUBLIC_WHATSAPP_NUMBER=263771234567 \
+#     -t stayzim-web .
+#
+# NEXT_PUBLIC_* values are baked into the bundle at build time; changing them
+# needs a rebuild, not just a restart.
 
+FROM node:22-slim AS base
+RUN corepack enable && corepack prepare pnpm@11.4.0 --activate
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@11.4.0 --activate
+# ---- Install ----
+FROM base AS deps
 
-# Copy workspace manifests for layer caching.
-# packages/db is intentionally excluded — the web app has no database dependency.
-COPY pnpm-workspace.yaml .npmrc package.json ./
-COPY packages/config/package.json packages/config/
-COPY packages/env/package.json packages/env/
-COPY packages/ui/package.json packages/ui/
+# Every workspace manifest, so the lockfile matches and --frozen-lockfile works.
+# Only web and its workspace packages are installed (--filter); the web app has
+# no database dependency.
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc ./
+COPY apps/server/package.json apps/server/
 COPY apps/web/package.json apps/web/
+COPY apps/outreach/package.json apps/outreach/
+COPY apps/native/package.json apps/native/
+COPY packages/auth/package.json packages/auth/
+COPY packages/config/package.json packages/config/
+COPY packages/db/package.json packages/db/
+COPY packages/env/package.json packages/env/
+COPY packages/mail/package.json packages/mail/
+COPY packages/ui/package.json packages/ui/
 
-# NEXT_PUBLIC_SERVER_URL is baked into the Next.js bundle at build time.
-# Override via --build-arg NEXT_PUBLIC_SERVER_URL=https://your-api.example.com
+RUN pnpm install --frozen-lockfile --filter "web..."
+
+# ---- Build ----
+FROM deps AS builder
+
 ARG NEXT_PUBLIC_SERVER_URL=http://localhost:9998
 ENV NEXT_PUBLIC_SERVER_URL=${NEXT_PUBLIC_SERVER_URL}
+# StayZim's sales WhatsApp number, digits only with country code. Without it
+# the landing page buttons open WhatsApp with no chat chosen.
+ARG NEXT_PUBLIC_WHATSAPP_NUMBER=
+ENV NEXT_PUBLIC_WHATSAPP_NUMBER=${NEXT_PUBLIC_WHATSAPP_NUMBER}
+ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN pnpm install
-
-# Copy source after install for better layer caching
 COPY packages/config/ packages/config/
 COPY packages/env/ packages/env/
 COPY packages/ui/ packages/ui/
@@ -28,26 +51,27 @@ COPY apps/web/ apps/web/
 
 RUN pnpm --filter web build
 
-# ---- Runner ----
-FROM node:22-slim AS runner
+# ---- Runtime ----
+FROM base AS runtime
 
-WORKDIR /app
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1 \
+    PORT=9999 \
+    HOSTNAME=0.0.0.0
 
-RUN corepack enable && corepack prepare pnpm@11.4.0 --activate
-
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/pnpm-workspace.yaml ./
-COPY --from=builder /app/.npmrc ./
+COPY --from=builder /app/package.json /app/pnpm-workspace.yaml /app/.npmrc ./
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/apps/web ./apps/web
 COPY --from=builder /app/packages ./packages
+# Owned by node so Next can write its cache under .next/
+COPY --from=builder --chown=node:node /app/apps/web ./apps/web
 
-ENV NODE_ENV=production
-ENV PORT=9999
-ENV HOSTNAME=0.0.0.0
-
+USER node
 WORKDIR /app/apps/web
-
 EXPOSE 9999
 
-CMD ["pnpm", "start"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD node -e "fetch('http://localhost:' + (process.env.PORT || 9999) + '/').then(r => process.exit(r.status < 500 ? 0 : 1)).catch(() => process.exit(1))"
+
+# Next's own binary rather than `pnpm start`: no pnpm/corepack download at
+# start-up as the node user, and Next receives SIGTERM directly
+CMD ["sh", "-c", "exec ./node_modules/.bin/next start --port ${PORT}"]
