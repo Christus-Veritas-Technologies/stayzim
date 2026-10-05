@@ -1,100 +1,107 @@
-# stayzim
+# StayZim
 
-This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines Next.js, Hono, and more.
+Websites for Zimbabwean lodges, guesthouses and Airbnbs, where guests book directly on WhatsApp instead of through Booking.com. Made in Mutare.
 
-## Features
+- **What the project is and where it's going:** [docs/project.md](docs/project.md)
+- **What's built and what's next:** [docs/progress.md](docs/progress.md)
+- **How the code fits together:** [docs/architecture.md](docs/architecture.md)
+- **Sign-in and email:** [docs/auth.md](docs/auth.md)
+- **Outreach tool API:** [apps/outreach/API.md](apps/outreach/API.md)
 
-- **TypeScript** - For type safety and improved developer experience
-- **Next.js** - Full-stack React framework
-- **React Native** - Build mobile apps using React
-- **Expo** - Tools for React Native development
-- **TailwindCSS** - Utility-first CSS for rapid UI development
-- **Shared UI package** - shadcn/ui primitives live in `packages/ui`
-- **Hono** - Lightweight, performant server framework
-- **Bun** - Runtime environment
-- **Prisma** - TypeScript-first ORM
-- **PostgreSQL** - Database engine
-- **Turborepo** - Optimized monorepo build system
-
-## Getting Started
-
-First, install the dependencies:
-
-```bash
-pnpm install
-```
-
-## Database Setup
-
-This project uses PostgreSQL with Prisma.
-
-1. Make sure you have a PostgreSQL database set up.
-2. Update your `apps/server/.env` file with your PostgreSQL connection details.
-
-3. Apply the schema to your database:
-
-```bash
-pnpm run db:push
-```
-
-Then, run the development server:
-
-```bash
-pnpm run dev
-```
-
-Open [http://localhost:3001](http://localhost:3001) in your browser to see the web application.
-Use the Expo Go app to run the mobile application.
-The API is running at [http://localhost:3000](http://localhost:3000).
-
-## UI Customization
-
-React web apps in this stack share shadcn/ui primitives through `packages/ui`.
-
-- Change design tokens and global styles in `packages/ui/src/styles/globals.css`
-- Update shared primitives in `packages/ui/src/components/*`
-- Adjust shadcn aliases or style config in `packages/ui/components.json` and `apps/web/components.json`
-
-### Add more shared components
-
-Run this from the project root to add more primitives to the shared UI package:
-
-```bash
-npx shadcn@latest add accordion dialog popover sheet table -c packages/ui
-```
-
-Import shared components like this:
-
-```tsx
-import { Button } from "@stayzim/ui/components/button";
-```
-
-### Add app-specific blocks
-
-If you want to add app-specific blocks instead of shared primitives, run the shadcn CLI from `apps/web`.
-
-## Project Structure
+## What's in the repo
 
 ```
 stayzim/
 ├── apps/
-│   ├── web/         # Frontend application (Next.js)
-│   ├── native/      # Mobile application (React Native, Expo)
-│   └── server/      # Backend API (Hono)
+│   ├── web/        Next.js: marketing site (stayzim.co.zw) and owner login + dashboard
+│   ├── server/     Hono on Bun: API, auth, landing page analytics
+│   ├── outreach/   Hono on Bun: WhatsApp outreach to leads from 3 numbers (internal tool)
+│   └── native/     Expo app (scaffold only, not started)
 ├── packages/
-│   ├── ui/          # Shared shadcn/ui components and styles
-│   └── db/          # Database schema & queries
+│   ├── db/         Prisma schema (one file per area) and client
+│   ├── auth/       better-auth setup and the create-owner script
+│   ├── mail/       Nodemailer SMTP sending and email templates
+│   ├── env/        Validated environment variables per app
+│   ├── ui/         Shared shadcn/ui primitives and Tailwind base styles
+│   └── config/     Shared TypeScript config
+└── designs/        Design exports (landing page, app screens, logo)
 ```
 
-## Available Scripts
+| App | Local URL | Database |
+| --- | --- | --- |
+| web | http://localhost:9999 | (uses server) |
+| server | http://localhost:9998 | `stayzim` |
+| outreach | http://localhost:9997 | `stayzim-outreach` |
 
-- `pnpm run dev`: Start all applications in development mode
-- `pnpm run build`: Build all applications
-- `pnpm run dev:web`: Start only the web application
-- `pnpm run dev:server`: Start only the server
-- `pnpm run check-types`: Check TypeScript types across all apps
-- `pnpm run dev:native`: Start the React Native/Expo development server
-- `pnpm run db:push`: Push schema changes to database
-- `pnpm run db:generate`: Generate database client/types
-- `pnpm run db:migrate`: Run database migrations
-- `pnpm run db:studio`: Open database studio UI
+## Getting started
+
+You need Node 22+, [Bun](https://bun.sh), pnpm 11 and PostgreSQL.
+
+1. Install dependencies:
+
+   ```bash
+   pnpm install
+   ```
+
+2. Create the env files from the examples and fill them in:
+   - `apps/server/.env` from [apps/server/.env.example](apps/server/.env.example)
+   - `apps/web/.env` with `NEXT_PUBLIC_SERVER_URL=http://localhost:9998` and, optionally, `NEXT_PUBLIC_WHATSAPP_NUMBER`
+   - `apps/outreach/.env` from [apps/outreach/.env.example](apps/outreach/.env.example) (only if you run outreach)
+
+3. Create the database tables. `db:push` uses `DATABASE_URL` from `apps/server/.env`:
+
+   ```bash
+   pnpm db:push
+   ```
+
+   The outreach app has its own database. Push the same schema to it by overriding the URL:
+
+   ```bash
+   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/stayzim-outreach pnpm db:push
+   ```
+
+4. Create your first login (there is no public sign-up):
+
+   ```bash
+   pnpm --filter @stayzim/auth create-owner --email you@example.com --name "Your Name" --admin
+   ```
+
+5. Run everything, or one app at a time:
+
+   ```bash
+   pnpm dev
+   ```
+
+   ```bash
+   pnpm dev:web
+   ```
+
+   ```bash
+   pnpm dev:server
+   ```
+
+   ```bash
+   pnpm dev:outreach
+   ```
+
+Without SMTP settings, emails (password resets) are printed in the server's console, so you can still use the links locally.
+
+## Scripts
+
+| Command | What it does |
+| --- | --- |
+| `pnpm dev` | Start every app |
+| `pnpm dev:web` / `dev:server` / `dev:outreach` / `dev:native` | Start one app |
+| `pnpm build` | Build every app |
+| `pnpm check-types` | Type-check every package |
+| `pnpm db:push` | Apply the Prisma schema to the database in `apps/server/.env` |
+| `pnpm db:generate` | Regenerate the Prisma client |
+| `pnpm db:studio` | Browse the database |
+| `pnpm --filter @stayzim/auth create-owner …` | Create an owner login or give one a new temporary password ([docs/auth.md](docs/auth.md)) |
+
+## Working on the code
+
+- Work happens on `main`, with one commit per task.
+- The Prisma schema is split by area in `packages/db/prisma/schema/` (`auth.prisma`, `landing.prisma`, `outreach.prisma`).
+- Shared UI primitives live in `packages/ui`. Landing page styles and tokens live in `apps/web/src/index.css`.
+- Built with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack).
