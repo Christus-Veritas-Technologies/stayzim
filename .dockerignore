@@ -1,7 +1,22 @@
 .git
+.claude
+.turbo
+**/.turbo
 **/.env
 **/.env.*
 **/node_modules
+**/dist
+**/*.tsbuildinfo
 apps/web/.next
-apps/server/dist
 packages/db/prisma/generated
+
+# Not needed in any image
+designs
+docs
+# The Expo app isn't built in any image, but its manifest must exist for the lockfile
+apps/native/*
+!apps/native/package.json
+
+# WhatsApp Web scratch data (sessions live in Postgres)
+**/.wwebjs_auth
+**/.wwebjs_cache
