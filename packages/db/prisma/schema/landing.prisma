@@ -1,0 +1,33 @@
+// Landing page (apps/web): what visitors do before they reach us on WhatsApp.
+
+enum LandingEventType {
+  PAGE_VIEW
+  CTA_CLICK
+}
+
+/// One landing page interaction. Every CTA on the page opens WhatsApp, so a
+/// CTA_CLICK is the last thing we see of a lead before their message arrives.
+model LandingEvent {
+  id          String           @id @default(cuid())
+  type        LandingEventType
+  /// Which button, e.g. "hero_whatsapp", "pricing_starter", "demo_lodge"
+  cta         String?
+  /// Page section the click came from, e.g. "hero", "pricing"
+  section     String?
+  /// Plan the visitor asked about ("starter" | "growth" | "pro")
+  plan        String?
+  /// Random id kept in the visitor's browser, to group one visitor's events
+  visitorId   String           @map("visitor_id")
+  path        String
+  referrer    String?
+  utmSource   String?          @map("utm_source")
+  utmMedium   String?          @map("utm_medium")
+  utmCampaign String?          @map("utm_campaign")
+  userAgent   String?          @map("user_agent")
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  @@index([type, createdAt])
+  @@index([cta])
+  @@index([visitorId])
+  @@map("landing_event")
+}
