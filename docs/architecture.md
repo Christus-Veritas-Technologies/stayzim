@@ -90,6 +90,26 @@ Both databases get the whole schema; each app only uses its own tables. There ar
 
 Every `.env` file is gitignored; only the `.env.example` files are committed.
 
+## Docker
+
+| Image | Dockerfile | Base | Runs | Notes |
+| --- | --- | --- | --- | --- |
+| server | `apps/server/Dockerfile` | `node:22-slim` + Bun | `docker/start.sh` → `bun src/index.ts` | Applies the schema to `DATABASE_URL` on start |
+| web | `apps/web/Dockerfile` | `node:22-slim` | `next start` | `NEXT_PUBLIC_SERVER_URL` and `NEXT_PUBLIC_WHATSAPP_NUMBER` are build args, baked in at build time |
+| outreach | `apps/outreach/Dockerfile` | `node:22-slim` + Bun + Chromium | `docker/start.sh` → `bun src/index.ts` | Applies the schema to its own database on start |
+
+How they're built:
+
+- **Build context:** the repo root. `.dockerignore` keeps out `node_modules`, `.env` files, designs, docs and WhatsApp scratch folders.
+- **Install:** every workspace `package.json` is copied so the lockfile matches, then `pnpm install --frozen-lockfile --filter "<app>..."` installs only that app and its workspace packages. For server and outreach, `packages/db`'s postinstall runs `prisma generate` against a placeholder `DATABASE_URL`; nothing connects at build time.
+- **Runtime:** Node is the base because pnpm and the Prisma CLI need it; Bun is copied in from `oven/bun:1` and runs the TypeScript entry directly, as in development, so there's no separate bundling step. OpenSSL is installed for Prisma's schema engine.
+- **Start:** `docker/start.sh` runs `prisma db push` without `--accept-data-loss`. A schema change that would drop data stops the container instead of deleting rows. Set `SKIP_DB_PUSH=1` to skip it. Move to `prisma migrate deploy` once migrations exist.
+- **Users and health:** every container runs as the unprivileged `node` user and has a `HEALTHCHECK` (server `/`, web `/`, outreach `/health`).
+- **Outreach:**
+  - Puppeteer's Chromium download is skipped; Debian's `chromium` is used via `PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium`.
+  - Give it `--shm-size=1g` and about 300 MB of memory per number.
+  - Sessions are backed up to Postgres, so no volume is required. A volume on `/app/apps/outreach/.wwebjs_auth` only saves restoring them on restart.
+
 ## Production shape (planned)
 
 - `stayzim.co.zw` and `app.stayzim.co.zw`: apps/web

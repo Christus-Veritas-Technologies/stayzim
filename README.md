@@ -99,6 +99,28 @@ Without SMTP settings, emails (password resets) are printed in the server's cons
 | `pnpm db:studio` | Browse the database |
 | `pnpm --filter @stayzim/auth create-owner …` | Create an owner login or give one a new temporary password ([docs/auth.md](docs/auth.md)) |
 
+## Docker
+
+Each deployable app has a Dockerfile. Build from the repo root:
+
+```bash
+docker build -f apps/server/Dockerfile -t stayzim-server .
+```
+
+```bash
+docker build -f apps/web/Dockerfile --build-arg NEXT_PUBLIC_SERVER_URL=https://api.stayzim.co.zw --build-arg NEXT_PUBLIC_WHATSAPP_NUMBER=263771234567 -t stayzim-web .
+```
+
+```bash
+docker build -f apps/outreach/Dockerfile -t stayzim-outreach .
+```
+
+- Images install from the committed `pnpm-lock.yaml` (`--frozen-lockfile`), so keep it committed and up to date.
+- `server` and `outreach` apply the Prisma schema on start (`docker/start.sh`), then run with Bun. Set `SKIP_DB_PUSH=1` to skip that.
+- `outreach` includes Chromium. Run it with `--shm-size=1g` and about 300 MB of memory per WhatsApp number.
+
+Details: [docs/architecture.md](docs/architecture.md#docker).
+
 ## Working on the code
 
 - Work happens on `main`, with one commit per task.
