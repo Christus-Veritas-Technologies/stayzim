@@ -19,6 +19,7 @@ _What's built, what's next, and what's blocking. Update this file whenever a pie
 | Billing screen | ⬜ Not started |
 | Shared states (suspended, 404, locked features) | ⬜ Not started |
 | Mobile app (apps/native) | ⬜ Scaffold only |
+| Docker images (server, web, outreach) | ✅ Written, not yet built in Docker |
 | Deployment | ⬜ Not started |
 
 ## MVP checklist
@@ -82,6 +83,7 @@ Story IDs refer to the designer brief.
 4. **Visit tracking and owner analytics** (S8, N1–N5).
 5. **Billing screen** and plan/status rules (B1–B6, X1).
 6. **Deployment:**
+   - Build and run the three Docker images on a machine with Docker; none have been built yet.
    - VPS, wildcard subdomains, HTTPS, `COOKIE_DOMAIN=.stayzim.co.zw`.
    - Let `CORS_ORIGIN` accept both `stayzim.co.zw` and `app.stayzim.co.zw`.
    - Switch from `db push` to migrations.
@@ -99,6 +101,14 @@ Newest first. One line per piece of work that landed on `main`.
 
 ### 5 October 2026
 
+- **Docker:**
+  - Rewrote the server and web Dockerfiles and added one for outreach (with Chromium).
+  - All three install from the now-committed `pnpm-lock.yaml`. Server and outreach apply the schema on start.
+  - Checked without Docker:
+    - each image's frozen, filtered install;
+    - the server's start path from an isolated install;
+    - a production `next build`.
+  - The images themselves haven't been built yet; there's no Docker on the dev machine.
 - **Auth base:**
   - better-auth on the server with Prisma.
   - Login, forgot-password, reset-password and set-password pages.
