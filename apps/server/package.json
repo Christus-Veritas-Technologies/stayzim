@@ -10,10 +10,12 @@
     "start": "bun run dist/index.mjs"
   },
   "dependencies": {
+    "@hono/zod-validator": "^0.9.1",
     "@stayzim/db": "workspace:*",
     "@stayzim/env": "workspace:*",
     "dotenv": "^17.2.2",
     "hono": "^4.8.2",
+    "hono-rate-limiter": "^0.5.4",
     "zod": "^4.1.13"
   },
   "devDependencies": {
