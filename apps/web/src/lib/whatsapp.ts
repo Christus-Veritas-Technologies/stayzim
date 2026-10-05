@@ -8,7 +8,6 @@ export const WHATSAPP_MESSAGES = {
   starter: "Hi StayZim, I'd like to ask about the Starter plan ($20/month).",
   growth: "Hi StayZim, I'd like to start the 14-day free trial on Growth. My lodge is called: ",
   pro: "Hi StayZim, I'd like to ask about the Pro plan ($75/month).",
-  login: "Hi StayZim, I need help logging in to my lodge site.",
 } as const;
 
 export type WhatsAppMessage = keyof typeof WHATSAPP_MESSAGES;

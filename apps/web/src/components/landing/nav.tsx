@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 
 import { Wordmark, WhatsAppIcon } from "./brand";
 import { NAV_LINKS } from "./content";
-import { WhatsAppLink } from "./cta";
+import { TrackedLink, WhatsAppLink } from "./cta";
 import { EASE_OUT } from "./motion";
 
 /** Which section is under the nav, for the highlight. */
@@ -106,13 +106,13 @@ export function Nav() {
         </ul>
 
         <div className="flex items-center justify-end gap-1.5 lg:gap-2">
-          <WhatsAppLink
-            message="login"
+          <TrackedLink
+            href="/login"
             track={{ cta: "nav_login", section: "nav" }}
             className="hidden h-11 items-center rounded-lg bg-[#F0F4F7] px-4 text-[15px] font-semibold whitespace-nowrap text-ink no-underline hover:text-ink lg:inline-flex"
           >
             Log in
-          </WhatsAppLink>
+          </TrackedLink>
           <WhatsAppLink
             message="general"
             track={{ cta: "nav_whatsapp", section: "nav" }}
@@ -176,13 +176,13 @@ export function Nav() {
                   </motion.li>
                 ))}
                 <motion.li variants={{ hidden: { opacity: 0, x: -8 }, show: { opacity: 1, x: 0 } }}>
-                  <WhatsAppLink
-                    message="login"
+                  <TrackedLink
+                    href="/login"
                     track={{ cta: "nav_login", section: "nav" }}
                     className="mt-1 flex h-12 items-center rounded-lg bg-[#F0F4F7] px-3 text-base font-semibold text-ink no-underline hover:text-ink"
                   >
                     Log in
-                  </WhatsAppLink>
+                  </TrackedLink>
                 </motion.li>
               </motion.ul>
             </motion.div>

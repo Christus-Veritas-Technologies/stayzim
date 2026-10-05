@@ -153,7 +153,7 @@ export const FOOTER_COLUMNS = [
   {
     title: "For owners",
     links: [
-      { label: "Log in", whatsapp: "login" },
+      { label: "Log in", href: "/login" },
       { label: "Start a free trial", whatsapp: "growth" },
       { label: "Message us", whatsapp: "general" },
     ],
