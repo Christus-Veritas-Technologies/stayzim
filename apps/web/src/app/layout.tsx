@@ -23,7 +23,10 @@ const newsreader = Newsreader({
 });
 
 export const metadata: Metadata = {
-  title: "StayZim: your own lodge website, booked on WhatsApp",
+  title: {
+    default: "StayZim: your own lodge website, booked on WhatsApp",
+    template: "%s · StayZim",
+  },
   description:
     "Stop paying 20% to Booking.com. StayZim builds your lodge its own website where guests book you directly on WhatsApp. Made in Mutare for Zimbabwean lodges. 14 days free.",
   openGraph: {
