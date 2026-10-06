@@ -1,12 +1,33 @@
 "use client";
 
-import { CircleCheck } from "lucide-react";
+import { Button, buttonVariants } from "@stayzim/ui/components/button";
+import { FormMessage } from "@stayzim/ui/components/field";
+import { motion } from "framer-motion";
+import { CircleCheck, Clock } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useState, type FormEvent } from "react";
 
-import { Field, FormError, SubmitButton } from "@/components/auth/form";
-import { authClient, authErrorMessage, MIN_PASSWORD_LENGTH } from "@/lib/auth-client";
+import { NewPasswordFields, newPasswordProblem } from "@/components/auth/new-password-fields";
+import { AuthHeading, AuthSection, AuthShell } from "@/components/auth/shell";
+import { authClient, authErrorMessage } from "@/lib/auth-client";
+
+function StatusIcon({ tone, children }: { tone: "success" | "warning"; children: React.ReactNode }) {
+  return (
+    <motion.span
+      className={
+        tone === "success"
+          ? "flex size-12 items-center justify-center rounded-[14px] border border-success-line bg-success-tint text-success"
+          : "flex size-12 items-center justify-center rounded-[14px] border border-warning-line bg-warning-tint text-warning"
+      }
+      initial={{ scale: 0.6, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ type: "spring", stiffness: 320, damping: 18 }}
+    >
+      {children}
+    </motion.span>
+  );
+}
 
 /**
  * Opened from the reset email. better-auth checks the link first, then
@@ -19,27 +40,19 @@ function ResetPasswordForm() {
 
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [fieldError, setFieldError] = useState<string | null>(null);
+  const [fieldError, setFieldError] = useState<ReturnType<typeof newPasswordProblem>>(null);
   const [done, setDone] = useState(false);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const password = String(form.get("password"));
-    const confirm = String(form.get("confirm"));
-
-    if (password.length < MIN_PASSWORD_LENGTH) {
-      setFieldError(`Use at least ${MIN_PASSWORD_LENGTH} characters.`);
-      return;
-    }
-    if (password !== confirm) {
-      setFieldError("The two passwords don't match.");
-      return;
-    }
+    const problem = newPasswordProblem(password, String(form.get("confirm")));
+    setFieldError(problem);
+    if (problem) return;
 
     setPending(true);
     setError(null);
-    setFieldError(null);
     const { error: resetError } = await authClient.resetPassword({ newPassword: password, token: token ?? "" });
     setPending(false);
 
@@ -52,59 +65,61 @@ function ResetPasswordForm() {
 
   if (!token || linkError) {
     return (
-      <>
-        <h1 className="font-display text-2xl leading-[30px] font-semibold tracking-[-0.02em]">This link has expired</h1>
-        <p className="mt-2 text-muted">
-          Reset links work for 1 hour and only once. Ask for a new one and use the newest email.
-        </p>
-        <Link
-          href="/forgot-password"
-          className="mt-6 inline-flex h-12 w-full items-center justify-center rounded-md bg-brand font-semibold text-white hover:bg-brand-dark"
+      <AuthShell>
+        <AuthHeading
+          title="This link has expired"
+          icon={
+            <StatusIcon tone="warning">
+              <Clock className="size-[22px]" strokeWidth={1.75} />
+            </StatusIcon>
+          }
         >
-          Send a new link
-        </Link>
-      </>
+          Reset links work for 1 hour and only once. Ask for a new one and use the newest email.
+        </AuthHeading>
+        <AuthSection>
+          <Link href="/forgot-password" className={buttonVariants({ size: "lg", className: "w-full" })}>
+            Send a new link
+          </Link>
+        </AuthSection>
+      </AuthShell>
     );
   }
 
   if (done) {
     return (
-      <>
-        <span className="flex size-12 items-center justify-center rounded-full bg-[#E3F2EA] text-[#1F7A4D]">
-          <CircleCheck size={24} strokeWidth={1.5} />
-        </span>
-        <h1 className="mt-4 font-display text-2xl leading-[30px] font-semibold tracking-[-0.02em]">Password changed</h1>
-        <p className="mt-2 text-muted">You were signed out on every device. Log in with your new password.</p>
-        <Link
-          href="/login"
-          className="mt-6 inline-flex h-12 w-full items-center justify-center rounded-md bg-brand font-semibold text-white hover:bg-brand-dark"
+      <AuthShell>
+        <AuthHeading
+          title="Password changed"
+          icon={
+            <StatusIcon tone="success">
+              <CircleCheck className="size-[22px]" strokeWidth={1.75} />
+            </StatusIcon>
+          }
         >
-          Log in
-        </Link>
-      </>
+          You were logged out on every device. Log in with your new password.
+        </AuthHeading>
+        <AuthSection>
+          <Link href="/login" className={buttonVariants({ size: "lg", className: "w-full" })}>
+            Log in
+          </Link>
+        </AuthSection>
+      </AuthShell>
     );
   }
 
   return (
-    <>
-      <h1 className="font-display text-2xl leading-[30px] font-semibold tracking-[-0.02em]">Choose a new password</h1>
-      <p className="mt-1.5 text-muted">You&apos;ll use it to log in from now on.</p>
-
-      <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4" noValidate>
-        <FormError message={error} />
-        <Field
-          label="New password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          hint={`At least ${MIN_PASSWORD_LENGTH} characters.`}
-          error={fieldError ?? undefined}
-          required
-        />
-        <Field label="Type it again" name="confirm" type="password" autoComplete="new-password" required />
-        <SubmitButton pending={pending}>{pending ? "Saving" : "Save new password"}</SubmitButton>
-      </form>
-    </>
+    <AuthShell>
+      <AuthHeading title="Set a new password">You will use it to log in from now on.</AuthHeading>
+      <AuthSection>
+        <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
+          <FormMessage>{error}</FormMessage>
+          <NewPasswordFields error={fieldError} />
+          <Button type="submit" size="lg" className="mt-2 w-full" loading={pending}>
+            {pending ? "Saving" : "Save new password"}
+          </Button>
+        </form>
+      </AuthSection>
+    </AuthShell>
   );
 }
 
