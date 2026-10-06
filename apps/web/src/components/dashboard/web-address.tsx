@@ -3,6 +3,7 @@
 import { Badge } from "@stayzim/ui/components/badge";
 import { buttonVariants } from "@stayzim/ui/components/button";
 import { CopyButton } from "@stayzim/ui/components/copy-button";
+import { includesFreeDomain } from "@stayzim/sites";
 import { ArrowUpRight, Globe } from "lucide-react";
 import Link from "next/link";
 
@@ -10,12 +11,15 @@ import type { Lodge } from "@/lib/lodge";
 import { Reveal } from "@/components/motion";
 import { siteHost, siteUrl, subdomainHost } from "@/lib/site-host";
 
-/** The change request an owner sends to ask for their own domain. */
-export const OWN_DOMAIN_REQUEST = "I'd like my own web address for my lodge site, like mylodge.co.zw. ";
+/** The change requests an owner sends to ask for their own domain: the free .co.zw (Growth, Pro), or one they have. */
+export const FREE_DOMAIN_REQUEST = "I'd like the free .co.zw web address that comes with my plan. The address I'd like: ";
+export const OWN_DOMAIN_REQUEST = "I have my own domain and I'd like my lodge site on it. The domain is: ";
 
 /**
  * Where guests find the site. A lodge's own domain shows as connected, with the
- * stayzim.co.zw address that keeps working underneath; without one, a way to ask.
+ * stayzim.co.zw address that keeps working underneath. Without one: Growth and
+ * Pro ask for their free .co.zw, Starter can connect a domain it has, and a demo
+ * learns that own domains come once it's paid for.
  */
 export function WebAddress({ lodge }: { lodge: Lodge }) {
   const own = Boolean(lodge.customDomain);
@@ -40,15 +44,33 @@ export function WebAddress({ lodge }: { lodge: Lodge }) {
           <span className="text-[13px] text-muted">
             {subdomainHost(lodge)} still works, and opens the same site.
           </span>
+        ) : lodge.status === "DEMO" ? (
+          <span className="text-[13px] text-muted">
+            Your own domain, like {lodge.slug}.co.zw, comes with any plan once you&apos;ve paid.{" "}
+            <Link href="/dashboard/billing" className="-my-2.5 py-2.5 font-semibold text-brand hover:text-brand-dark">
+              Billing
+            </Link>
+          </span>
+        ) : includesFreeDomain(lodge.plan) ? (
+          <span className="text-[13px] text-muted">
+            Your plan includes a free .co.zw address, like {lodge.slug}.co.zw.{" "}
+            <Link
+              href={{ pathname: "/dashboard/requests", query: { topic: "OTHER", message: FREE_DOMAIN_REQUEST } }}
+              className="-my-2.5 py-2.5 font-semibold text-brand hover:text-brand-dark"
+            >
+              Ask for it
+            </Link>
+          </span>
         ) : (
           <span className="text-[13px] text-muted">
-            Want your own, like {lodge.slug}.co.zw?{" "}
+            Have your own domain? We&apos;ll connect it.{" "}
             <Link
               href={{ pathname: "/dashboard/requests", query: { topic: "OTHER", message: OWN_DOMAIN_REQUEST } }}
               className="-my-2.5 py-2.5 font-semibold text-brand hover:text-brand-dark"
             >
               Ask us
-            </Link>
+            </Link>{" "}
+            <span className="text-muted-2">(Growth and Pro include a free .co.zw)</span>
           </span>
         )}
       </div>

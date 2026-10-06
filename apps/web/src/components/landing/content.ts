@@ -97,6 +97,7 @@ export const PLANS: Plan[] = [
       "Rooms, gallery and map on one page",
       "Book on WhatsApp button",
       "Google Business setup",
+      "Connect a domain you already have",
     ],
   },
   {
@@ -106,7 +107,7 @@ export const PLANS: Plan[] = [
     description: "For most lodges. Know who visits and book them direct.",
     price: "$40",
     cta: "Try Growth free for 2 days",
-    features: ["Everything in Starter", "Visitor analytics"],
+    features: ["Everything in Starter", "Visitor analytics", "A free .co.zw domain, like yourlodge.co.zw"],
     featured: true,
   },
   {

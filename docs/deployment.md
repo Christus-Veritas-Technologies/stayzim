@@ -178,17 +178,25 @@ Try a restore now and then. One was tested here on the dev database, and the row
 
 ## Custom domains
 
-A lodge can have its own domain, like `mistvalleylodge.co.zw`, on any plan (pricing is up to you). Its site then answers there and on `{slug}.stayzim.co.zw`, and its pages tell search engines the custom domain is the main address. The dashboard shows the custom domain as the lodge's address, and owners without one can ask from the Lodge info screen (it opens a change request).
+**Who gets one:**
 
-1. **The domain:** the owner registers it (for `.co.zw`, through a ZISPA-accredited registrar), or StayZim does it for them.
-2. **Point it at us:**
-   - Recommended, **Cloudflare for SaaS** (Custom Hostnames, on the `stayzim.co.zw` zone; the first 100 are free):
-     - one-off setup: SSL/TLS → Custom Hostnames, fallback origin `sites.stayzim.co.zw` (covered by the `*` record);
-     - per lodge: add the domain as a Custom Hostname;
-     - the owner adds at their DNS host: `CNAME @ → sites.stayzim.co.zw` (or ALIAS/flattening for the apex) and `CNAME www → sites.stayzim.co.zw`, plus the TXT record Cloudflare shows to prove ownership.
+- A lodge can have its own domain, like `mistvalleylodge.co.zw`, on any plan, once it has paid. Demos can't: `set-domain` refuses them, and a demo's domain is never served.
+- Growth and Pro include a free `.co.zw`. On Starter, the owner brings a domain they already have.
+- Owners ask from the Lodge info screen ("Ask for it" or "Ask us"), which opens a change request.
 
-     Cloudflare issues and renews the certificate, and visitors' countries and real IPs keep working.
-   - Alternative, **Coolify**: the owner points `A @` and `A www` at the VPS IP, and you add `https://mistvalleylodge.co.zw,https://www.mistvalleylodge.co.zw` to the `web` service's domains, so Traefik gets a Let's Encrypt certificate. With no Cloudflare in front, there are no countries for that domain.
+**What it changes:** the site answers on the domain and on `{slug}.stayzim.co.zw`. Its pages tell search engines the domain is the main address, and the dashboard shows the domain as the lodge's address.
+
+1. **The domain:** StayZim registers it by hand, for `.co.zw` through a ZISPA-accredited registrar, and adds the DNS records. An owner who has a domain already adds the records themselves.
+2. **Point it at us.** Use Cloudflare for SaaS while it's free; Coolify is the fallback.
+   - **Cloudflare for SaaS** (Custom Hostnames, on the `stayzim.co.zw` zone). The first 100 hostnames are free; check Cloudflare's current pricing before you pass 100.
+     - **One-off setup:** SSL/TLS → Custom Hostnames, with the fallback origin `sites.stayzim.co.zw` (covered by the `*` record).
+     - **Per lodge:** add the domain as a Custom Hostname.
+     - **At the domain's DNS:** `CNAME @ → sites.stayzim.co.zw` (or ALIAS or flattening for the apex) and `CNAME www → sites.stayzim.co.zw`, plus the TXT record Cloudflare shows to prove ownership.
+
+     Cloudflare issues and renews the certificate. Visitors' countries and real IPs keep working. Traefik sends these hosts to `web` through the catch-all route in `deploy/compose.yaml` (`stayzim-custom-domains`).
+
+     **Check on the first one:** Cloudflare connects to the server with the lodge's domain as the hostname, and the origin certificate only covers `stayzim.co.zw`. If the site shows a 526 error, set that Custom Hostname's SSL to Full (not strict), or issue an origin certificate that covers the domain.
+   - **Coolify (fallback):** point `A @` and `A www` at the VPS IP, then add `https://mistvalleylodge.co.zw,https://www.mistvalleylodge.co.zw` to the `web` service's domains, so Traefik gets a Let's Encrypt certificate. With no Cloudflare in front, that domain shows no visitor countries.
 3. **Tell StayZim which lodge it is** (in the server container, or locally with the production `DATABASE_URL`):
 
    ```bash
@@ -197,7 +205,7 @@ A lodge can have its own domain, like `mistvalleylodge.co.zw`, on any plan (pric
    bun scripts/set-domain.ts --slug mistvalley --remove
    ```
 
-   It stores the bare domain (lowercase, no `www.`); `www.` works too. Within about a minute (the lookup is cached), the domain shows the lodge's site.
+   It stores the bare domain (lowercase, no `www.`); `www.` works too. Within about a minute (the lookup is cached), the domain shows the lodge's site. It also says whether the plan includes the free `.co.zw`.
 
 How it works:
 

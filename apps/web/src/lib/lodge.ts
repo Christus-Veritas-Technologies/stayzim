@@ -133,15 +133,15 @@ export const PLANS: Record<
     tagline: "Get found",
     price: PLAN_PRICES.STARTER,
     pitch: "For guesthouses that just need to be online.",
-    features: ["Lodge site on stayzim.co.zw", "Rooms, gallery and map", "Book on WhatsApp button", "Google Business setup"],
+    features: ["Lodge site on stayzim.co.zw", "Rooms, gallery and map", "Book on WhatsApp button", "Google Business setup", "Connect a domain you have"],
   },
   GROWTH: {
     name: "Growth",
     tagline: "Get booked",
     price: PLAN_PRICES.GROWTH,
     pitch: "For most lodges. See who visits.",
-    features: ["Everything in Starter", "Visitor analytics"],
-    later: "Custom domain and booking calendar, coming later",
+    features: ["Everything in Starter", "Visitor analytics", "A free .co.zw domain"],
+    later: "Booking calendar, coming later",
   },
   PRO: {
     name: "Pro",

@@ -4,12 +4,15 @@
  * lodge's address. DNS and the certificate are set up separately (docs/deployment.md).
  *
  *   pnpm --filter @stayzim/db set-domain --slug mistvalley --domain mistvalleylodge.co.zw
+ *
+ * Own domains are for paying lodges (any plan). Growth and Pro include a
+ * .co.zw that StayZim registers; on Starter the owner brings their own.
  *   pnpm --filter @stayzim/db set-domain --slug mistvalley --remove
  *   pnpm --filter @stayzim/db set-domain --list
  */
 import { parseArgs } from "node:util";
 
-import { normalizeDomain } from "@stayzim/sites";
+import { includesFreeDomain, normalizeDomain, PLANS_LABEL } from "@stayzim/sites";
 
 import prisma from "../src/index";
 
@@ -18,6 +21,8 @@ const { values } = parseArgs({
     slug: { type: "string" },
     domain: { type: "string" },
     remove: { type: "boolean", default: false },
+    // Set it on a lodge that hasn't paid yet anyway
+    force: { type: "boolean", default: false },
     list: { type: "boolean", default: false },
   },
 });
@@ -38,7 +43,7 @@ if (values.list) {
 
 const slug = values.slug?.trim().toLowerCase();
 if (!slug) fail("Pass --slug, e.g. --slug mistvalley (or --list).");
-const lodge = await prisma.lodge.findUnique({ where: { slug }, select: { id: true, name: true, customDomain: true } });
+const lodge = await prisma.lodge.findUnique({ where: { slug }, select: { id: true, name: true, customDomain: true, status: true, plan: true } });
 if (!lodge) fail(`No lodge with the slug "${slug}".`);
 
 if (values.remove) {
@@ -56,7 +61,16 @@ if (domain === sitesDomain || domain.endsWith(`.${sitesDomain}`)) fail(`${domain
 const taken = await prisma.lodge.findUnique({ where: { customDomain: domain }, select: { slug: true } });
 if (taken && taken.slug !== slug) fail(`${domain} already belongs to ${taken.slug}.`);
 
+if (lodge.status === "DEMO" && !values.force) {
+  fail(`${lodge.name} is still a demo. Own domains come once a plan is paid for (add --force to set it anyway).`);
+}
+
 await prisma.lodge.update({ where: { id: lodge.id }, data: { customDomain: domain } });
+console.log(
+  includesFreeDomain(lodge.plan)
+    ? `\n${lodge.name} is on ${PLANS_LABEL[lodge.plan]}, which includes a free .co.zw domain.`
+    : `\n${lodge.name} is on Starter: the domain is theirs to pay for (Growth and Pro include a .co.zw).`,
+);
 console.log(`\n${lodge.name} now answers on ${domain} (and www.${domain}), as well as ${slug}.${sitesDomain}.`);
 console.log(`
 Next, so guests can reach it (details in docs/deployment.md, "Custom domains"):

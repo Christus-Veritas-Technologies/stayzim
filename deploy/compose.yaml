@@ -29,16 +29,24 @@ services:
         condition: service_healthy
     labels:
       # Lodge sites: every {slug}.stayzim.co.zw goes to web. Coolify routes the
-      # domains you give the service (stayzim.co.zw, app.stayzim.co.zw); this
-      # catch-all comes last (priority 1), so api. and app. keep their own routes.
+      # domains you give the service (stayzim.co.zw, app.stayzim.co.zw); these
+      # catch-alls come last (priorities 2 and 1), so api. and app. keep their own routes.
       # Change the domain in the rule if SITES_DOMAIN differs.
       - traefik.enable=true
       - traefik.http.routers.stayzim-sites.rule=HostRegexp(`^[a-z0-9-]+\.stayzim\.co\.zw$`)
-      - traefik.http.routers.stayzim-sites.priority=1
+      - traefik.http.routers.stayzim-sites.priority=2
       - traefik.http.routers.stayzim-sites.entrypoints=https
       - traefik.http.routers.stayzim-sites.tls=true
       - traefik.http.routers.stayzim-sites.service=stayzim-sites
       - traefik.http.services.stayzim-sites.loadbalancer.server.port=9999
+      # Lodges' own domains (mistvalleylodge.co.zw) through Cloudflare for SaaS: any
+      # other host goes to web, last of all (priority 1), and the app works out which
+      # lodge it is. Unknown hosts get the "lodge not found" page.
+      - traefik.http.routers.stayzim-custom-domains.rule=HostRegexp(`.+`)
+      - traefik.http.routers.stayzim-custom-domains.priority=1
+      - traefik.http.routers.stayzim-custom-domains.entrypoints=https
+      - traefik.http.routers.stayzim-custom-domains.tls=true
+      - traefik.http.routers.stayzim-custom-domains.service=stayzim-sites
 
   server:
     build:
