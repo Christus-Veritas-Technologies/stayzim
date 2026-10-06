@@ -1,11 +1,33 @@
 "use client";
 
-import { MailCheck } from "lucide-react";
+import { Button, buttonVariants } from "@stayzim/ui/components/button";
+import { Field, FormMessage } from "@stayzim/ui/components/field";
+import { Input } from "@stayzim/ui/components/input";
+import { motion } from "framer-motion";
+import { Check, Info, Mail } from "lucide-react";
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 
-import { Field, FormError, SubmitButton } from "@/components/auth/form";
+import { AuthHeading, AuthSection, AuthShell, BackToLogin } from "@/components/auth/shell";
 import { authClient, authErrorMessage } from "@/lib/auth-client";
+import { whatsappUrl } from "@/lib/whatsapp";
+
+/** Envelope tile with a green tick that pops in. */
+function SentIcon() {
+  return (
+    <span className="relative flex size-12 items-center justify-center rounded-[14px] border border-[#cbe9f5] bg-brand-wash text-brand">
+      <Mail className="size-[22px]" strokeWidth={1.75} />
+      <motion.span
+        className="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full border-2 border-white bg-success text-white"
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ type: "spring", stiffness: 420, damping: 18, delay: 0.35 }}
+      >
+        <Check className="size-3" strokeWidth={3} />
+      </motion.span>
+    </span>
+  );
+}
 
 export default function ForgotPasswordPage() {
   const [pending, setPending] = useState(false);
@@ -38,44 +60,51 @@ export default function ForgotPasswordPage() {
 
   if (sentTo) {
     return (
-      <>
-        <span className="flex size-12 items-center justify-center rounded-full bg-brand-tint text-brand">
-          <MailCheck size={24} strokeWidth={1.5} />
-        </span>
-        <h1 className="mt-4 font-display text-2xl leading-[30px] font-semibold tracking-[-0.02em]">Check your email</h1>
-        <p className="mt-2 text-muted">
-          If <strong className="font-semibold text-ink">{sentTo}</strong> has a StayZim account, we sent it a link to choose
-          a new password. The link works for 1 hour.
-        </p>
-        <p className="mt-4 text-sm text-muted-2">
-          Nothing after a few minutes? Check your spam folder, or message us on WhatsApp and we&apos;ll help.
-        </p>
-        <Link
-          href="/login"
-          className="mt-6 inline-flex h-12 w-full items-center justify-center rounded-md border border-line-2 bg-white font-semibold text-ink hover:border-muted-2"
-        >
-          Back to log in
-        </Link>
-      </>
+      <AuthShell>
+        <AuthHeading title="Check your email" icon={<SentIcon />}>
+          If <strong className="font-semibold text-ink">{sentTo}</strong> has a StayZim account, a reset link is on its
+          way. It works for 1 hour.
+        </AuthHeading>
+        <AuthSection className="flex flex-col gap-4">
+          <Link href="/login" className={buttonVariants({ variant: "outline", size: "lg", className: "w-full" })}>
+            Back to log in
+          </Link>
+          <FormMessage tone="info">
+            <Info className="mt-0.5 size-4 shrink-0 text-brand" />
+            <span>
+              No email after 5 minutes? Check your spam folder, or{" "}
+              <a href={whatsappUrl("login")} target="_blank" rel="noreferrer" className="font-semibold text-brand hover:text-brand-dark">
+                message us on WhatsApp
+              </a>
+              .
+            </span>
+          </FormMessage>
+        </AuthSection>
+      </AuthShell>
     );
   }
 
   return (
-    <>
-      <h1 className="font-display text-2xl leading-[30px] font-semibold tracking-[-0.02em]">Forgot your password?</h1>
-      <p className="mt-1.5 text-muted">Enter the email you log in with. We&apos;ll send you a link to choose a new one.</p>
+    <AuthShell>
+      <BackToLogin />
+      <AuthHeading title="Reset your password">
+        Enter the email you log in with. We will send you a link to set a new one.
+      </AuthHeading>
 
-      <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4" noValidate>
-        <FormError message={error} />
-        <Field label="Email" name="email" type="email" autoComplete="email" inputMode="email" required />
-        <SubmitButton pending={pending}>{pending ? "Sending link" : "Send reset link"}</SubmitButton>
-      </form>
-
-      <p className="mt-6 text-center text-sm">
-        <Link href="/login" className="font-semibold text-brand hover:text-brand-dark">
-          Back to log in
-        </Link>
-      </p>
-    </>
+      <AuthSection>
+        <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
+          <FormMessage>{error}</FormMessage>
+          <Field label="Email">
+            <Input name="email" type="email" autoComplete="email" inputMode="email" className="sm:h-11" required />
+          </Field>
+          <div className="mt-2 flex flex-col gap-3">
+            <Button type="submit" size="lg" className="w-full" loading={pending}>
+              {pending ? "Sending link" : "Send reset link"}
+            </Button>
+            <p className="text-center text-[12.5px] text-muted-2">The link works for 1 hour.</p>
+          </div>
+        </form>
+      </AuthSection>
+    </AuthShell>
   );
 }
