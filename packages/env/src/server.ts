@@ -20,6 +20,11 @@ export const env = createEnv({
     // Leave unset on localhost.
     COOKIE_DOMAIN: z.string().min(1).optional(),
 
+    // Sign in with Google (packages/auth). Leave unset to hide the button. Only links to
+    // existing owner accounts: Google never creates one.
+    GOOGLE_CLIENT_ID: z.string().min(1).optional(),
+    GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
+
     // Lodge photos and logos go to a Cloudflare R2 bucket (apps/server/src/lib/uploads.ts).
     // Leave these unset in development to save them in UPLOAD_DIR instead; production refuses to start without R2.
     R2_ACCOUNT_ID: z.string().min(1).optional(),
