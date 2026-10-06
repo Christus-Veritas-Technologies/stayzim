@@ -9,6 +9,7 @@ import { coordinatesFromMapsUrl } from "../lib/maps";
 import { requireAuth, withSession } from "../lib/session";
 import { MAX_UPLOAD_BYTES, removeUploads, saveImage } from "../lib/uploads";
 import { validJson } from "../lib/validate";
+import { photos } from "./photos";
 import { rooms } from "./rooms";
 
 /** Empty text means "remove it". */
@@ -109,4 +110,5 @@ export const lodge = new Hono<{ Variables: LodgeVariables }>()
     return c.json(await lodgeJson(lodgeId));
   })
 
-  .route("/rooms", rooms);
+  .route("/rooms", rooms)
+  .route("/photos", photos);
