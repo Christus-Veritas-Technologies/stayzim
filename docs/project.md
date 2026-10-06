@@ -1,6 +1,6 @@
 # StayZim: the project
 
-_Last updated 5 October 2026. Based on the designer brief of the same date, corrected where the build has moved on (see [What changed from the brief](#what-changed-from-the-brief))._
+_Last updated 6 October 2026. Based on the designer brief of the same date, corrected where the build has moved on (see [What changed from the brief](#what-changed-from-the-brief))._
 
 **Owner:** Kin, Where They Are (Mutare) · **Domain:** stayzim.co.zw
 
@@ -92,7 +92,8 @@ The brief is a few weeks old. Where it disagrees with what's built, the build wi
 | --- | --- |
 | Highland green (`#1E4A3B`) as the brand colour, Hanken Grotesk headings | StayZim blue (`#007DA2`) brand with Familjen Grotesk headings and Instrument Sans body, from the final landing page design. Highland, Msasa bronze and Kariba blue remain lodge theme colours. |
 | Hono and Prisma on Cloudflare Workers | Hono on Bun with Prisma and PostgreSQL, intended for a small VPS. |
-| Very little motion, no scroll animations | The landing page has subtle scroll and entrance animations (framer-motion), all switched off by the OS "reduce motion" setting. The owner app keeps motion minimal, as the brief asks. |
+| Very little motion, no scroll animations | The landing page has subtle scroll and entrance animations, and the owner app has light ones (screens rising in, sliding tabs and nav, numbers counting up, charts drawing in). All use framer-motion and switch off with the OS "reduce motion" setting. |
+| Photos stored by the VPS | Lodge photos go to Cloudflare R2, resized on the owner's phone first. |
 | Landing "Log in" sends people to WhatsApp | The owner login exists now (`/login`). |
 
 ## Open questions
