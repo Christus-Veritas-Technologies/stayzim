@@ -7,6 +7,7 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 
+import { lodgeJson } from "../lib/lodge";
 import { requireAuth, type AuthVariables } from "../lib/session";
 
 const setPasswordSchema = z.object({
@@ -16,15 +17,32 @@ const setPasswordSchema = z.object({
 });
 
 export const account = new Hono<{ Variables: AuthVariables }>()
-  /** The signed-in user, or 401. */
-  .get("/me", requireAuth({ allowTemporaryPassword: true }), (c) => {
+  /**
+   * The signed-in user, or 401, with a short summary of their lodge. Open to
+   * owners still on a temporary password: first login shows them their live site.
+   */
+  .get("/me", requireAuth({ allowTemporaryPassword: true }), async (c) => {
     const user = c.get("user")!;
+    const lodge = await prisma.lodge.findUnique({
+      where: { ownerId: user.id },
+      select: { id: true, name: true, slug: true, town: true, region: true, _count: { select: { rooms: true } } },
+    });
+    const hero = lodge ? (await lodgeJson(lodge.id)).heroUrl : null;
     return c.json({
       id: user.id,
       name: user.name,
       email: user.email,
       role: user.role,
       mustChangePassword: user.mustChangePassword,
+      lodge: lodge
+        ? {
+            name: lodge.name,
+            slug: lodge.slug,
+            place: [lodge.town, lodge.region].filter(Boolean).join(", ") || null,
+            heroUrl: hero,
+            roomCount: lodge._count.rooms,
+          }
+        : null,
     });
   })
 
