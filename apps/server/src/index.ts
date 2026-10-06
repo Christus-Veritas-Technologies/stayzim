@@ -56,7 +56,7 @@ app.get("/health", async (c) => {
     await Promise.race([prisma.$queryRaw`SELECT 1`, timeout]);
     return c.json({ status: "ok" });
   } catch (error) {
-    console.error(`[health] database check failed: ${error instanceof Error ? error.message || error.name : String(error)}`);
+    console.error(`[health] database check failed: ${String(error).replace(/\s+/g, " ").trim()}`);
     return c.json({ status: "error", database: "unreachable" }, 503);
   } finally {
     clearTimeout(timer);
