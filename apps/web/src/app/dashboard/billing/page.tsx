@@ -1,19 +1,24 @@
 "use client";
 
 import { Badge } from "@stayzim/ui/components/badge";
-import { buttonVariants } from "@stayzim/ui/components/button";
 import { Card } from "@stayzim/ui/components/card";
 import { CopyButton } from "@stayzim/ui/components/copy-button";
 import { DEMO_DAYS } from "@stayzim/sites";
 import { cn } from "@stayzim/ui/lib/utils";
 import { motion } from "framer-motion";
-import { ArrowUpRight, CircleCheck, Clock, ReceiptText, TriangleAlert } from "lucide-react";
+import { Button, buttonVariants } from "@stayzim/ui/components/button";
+import { Skeleton } from "@stayzim/ui/components/skeleton";
+import { ChevronRight, CircleCheck, Clock, FileText, ReceiptText, TriangleAlert } from "lucide-react";
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useLodge } from "@/components/dashboard/lodge-provider";
 import { Page, PageHeader, PageSection } from "@/components/dashboard/page";
 import { WhatsAppIcon } from "@/components/landing/brand";
 import { EASE_OUT } from "@/components/motion";
-import { formatMoney, PAYMENT_METHODS } from "@/lib/billing";
+import { PayCard } from "@/components/dashboard/pay-card";
+import { api } from "@/lib/api";
+import { formatCents, formatMoney, PAYMENT_METHODS, type BillingOverview } from "@/lib/billing";
 import { formatClock, formatDate, formatLongDate } from "@/lib/format";
 import { demoTimeLeft, dueDate, formatTimeLeft, offlineDate, PLAN_ORDER, PLANS, type Lodge, type PlanKey } from "@/lib/lodge";
 import { useNow } from "@/lib/use-now";
@@ -119,19 +124,20 @@ function PlanCard({ lodge }: { lodge: Lodge }) {
   );
 }
 
-function HowToPay({ lodge }: { lodge: Lodge }) {
+/** Paying by merchant code, then "I have paid" on WhatsApp; StayZim records it. */
+function HowToPay({ lodge, online }: { lodge: Lodge; online: boolean }) {
   const amount = formatMoney(PLANS[lodge.plan].price);
   return (
     <section className="flex flex-col gap-3" aria-labelledby="how-to-pay">
       <div>
         <h2 id="how-to-pay" className="text-[15px] font-semibold">
-          How to pay
+          {online ? "Or pay by merchant code" : "How to pay"}
         </h2>
         <p className="text-[13px] text-muted">
-          Pay {amount} with reference <strong className="font-semibold text-ink">{lodge.slug}</strong>, then tell us.
+          Pay {amount} with reference <strong className="font-semibold text-ink">{lodge.slug}</strong>, then tell us. We&apos;ll send your receipt.
         </p>
       </div>
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         {PAYMENT_METHODS.map((method, index) => (
           <motion.div
             key={method.key}
@@ -147,14 +153,7 @@ function HowToPay({ lodge }: { lodge: Lodge }) {
                 <span className="text-[14px] font-semibold">{method.name}</span>
                 <span className="truncate text-xs text-muted">{method.detail}</span>
               </span>
-              {"href" in method ? (
-                <a href={method.href} target="_blank" rel="noreferrer" className={buttonVariants({ variant: "outline", size: "sm" })}>
-                  Open
-                  <ArrowUpRight />
-                </a>
-              ) : (
-                <CopyButton value={method.copy} size="icon-sm" copiedLabel="Code copied" />
-              )}
+              <CopyButton value={method.copy} size="icon-sm" copiedLabel="Code copied" />
             </Card>
           </motion.div>
         ))}
@@ -165,7 +164,7 @@ function HowToPay({ lodge }: { lodge: Lodge }) {
           <ReceiptText className="size-[18px]" strokeWidth={1.75} />
         </span>
         <span className="flex flex-1 flex-col">
-          <span className="text-[14px] font-semibold">Paid already?</span>
+          <span className="text-[14px] font-semibold">Paid by merchant code?</span>
           <span className="text-[13px] text-muted">Send us your proof of payment. Your lodge name and amount are filled in.</span>
         </span>
         <a
@@ -181,14 +180,73 @@ function HowToPay({ lodge }: { lodge: Lodge }) {
   );
 }
 
-function Plans({ lodge }: { lodge: Lodge }) {
+/** Invoices and receipts, newest first, each opening its printable page. */
+function Documents({ overview }: { overview: BillingOverview | null }) {
+  const rows = overview
+    ? [
+        ...overview.invoices
+          .filter((invoice) => invoice.status === "OPEN")
+          .map((invoice) => ({ key: invoice.id, number: invoice.number, date: invoice.dueAt, label: `Invoice · due ${formatDate(invoice.dueAt)}`, amount: invoice.amountCents, paid: false })),
+        ...overview.payments.map((payment) => ({
+          key: payment.id,
+          number: payment.receiptNumber ?? payment.reference,
+          date: payment.paidAt ?? payment.createdAt,
+          label: `Receipt · ${payment.channelName}, ${formatDate(payment.paidAt ?? payment.createdAt)}`,
+          amount: payment.amountCents,
+          paid: true,
+        })),
+      ]
+    : null;
+
+  return (
+    <section className="flex flex-col gap-3 rounded-[20px] bg-white p-5 shadow-card sm:p-6" aria-labelledby="documents">
+      <div>
+        <h2 id="documents" className="text-[15px] font-semibold">
+          Invoices and receipts
+        </h2>
+        <p className="text-[13px] text-muted">We email each one too. Open one to print it or save it as a PDF.</p>
+      </div>
+      {rows === null ? (
+        <div className="flex flex-col gap-2" aria-busy="true">
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+        </div>
+      ) : rows.length === 0 ? (
+        <p className="rounded-xl bg-surface-2 px-4 py-6 text-center text-[13.5px] text-muted">Nothing yet. Your first invoice shows here.</p>
+      ) : (
+        <ul className="-mx-2 flex flex-col">
+          {rows.map((row, index) => (
+            <motion.li key={row.key} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.04, ease: EASE_OUT }}>
+              <Link
+                href={`/dashboard/billing/${row.number}`}
+                className="flex items-center gap-3 rounded-xl px-2 py-2.5 text-ink no-underline hover:bg-surface-2"
+              >
+                <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg", row.paid ? "bg-success-wash text-success" : "bg-warning-tint text-warning")}>
+                  {row.paid ? <CircleCheck className="size-[18px]" /> : <FileText className="size-[18px]" />}
+                </span>
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="text-[14px] font-semibold">{row.number}</span>
+                  <span className="truncate text-[12.5px] text-muted">{row.label}</span>
+                </span>
+                <span className="text-[14px] font-semibold">{formatCents(row.amount)}</span>
+                <ChevronRight className="size-4 text-muted-2" />
+              </Link>
+            </motion.li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function Plans({ lodge, onPick, canPay }: { lodge: Lodge; onPick: (plan: PlanKey) => void; canPay: boolean }) {
   return (
     <section className="flex flex-col gap-3" aria-labelledby="plans">
       <div>
         <h2 id="plans" className="text-[15px] font-semibold">
           Plans
         </h2>
-        <p className="text-[13px] text-muted">Switching sends us a request on WhatsApp. Features change on your next page load.</p>
+        <p className="text-[13px] text-muted">A new plan starts when you pay for it.</p>
       </div>
       <div className="grid gap-3 lg:grid-cols-3">
         {PLAN_ORDER.map((key: PlanKey, index) => {
@@ -206,7 +264,7 @@ function Plans({ lodge }: { lodge: Lodge }) {
                 <span className="text-[13px] font-semibold text-slate">
                   {plan.name} · {plan.tagline}
                 </span>
-                {current ? <Badge className="border-ink bg-ink text-white">Current plan</Badge> : null}
+                {current ? <Badge className="border-ink bg-ink text-white">{lodge.status === "DEMO" ? "Your demo" : "Current plan"}</Badge> : null}
               </div>
               <div>
                 <p>
@@ -230,7 +288,11 @@ function Plans({ lodge }: { lodge: Lodge }) {
                 ) : null}
               </ul>
               <div className="mt-auto">
-                {current ? (
+                {canPay ? (
+                  <Button variant={current ? "default" : "outline"} className="w-full" onClick={() => onPick(key)}>
+                    {current ? (lodge.status === "ACTIVE" ? "Pay ahead" : "Pay for this plan") : `Pay for ${plan.name}`}
+                  </Button>
+                ) : current ? (
                   <span className="flex h-10 items-center justify-center rounded-[10px] bg-surface-2 text-sm font-semibold text-muted">Your plan</span>
                 ) : (
                   <a
@@ -254,21 +316,34 @@ function Plans({ lodge }: { lodge: Lodge }) {
 export default function BillingPage() {
   const { lodge } = useLodge();
   const offline = offlineDate(lodge);
+  const [plan, setPlan] = useState<PlanKey>(lodge.plan);
+  const [overview, setOverview] = useState<BillingOverview | null>(null);
+  const payRef = useRef<HTMLDivElement>(null);
+
+  const load = useCallback(async () => {
+    const { data } = await api<BillingOverview>("/api/lodge/billing");
+    if (data) setOverview(data);
+  }, []);
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const paynow = overview?.paynow ?? false;
+  const late = lodge.status === "OVERDUE" || lodge.status === "SUSPENDED" || lodge.demoEnded;
 
   return (
     <Page>
-      <PageHeader title="Billing" description="We update your status by hand after you pay." />
+      <PageHeader title="Billing" description="Pay online, find your invoices and receipts, or change your plan." />
 
-      {lodge.status === "OVERDUE" || lodge.status === "SUSPENDED" ? (
+      {late ? (
         <PageSection>
-          <div
-            role="alert"
-            className="flex items-start gap-3 rounded-[14px] border border-danger-line bg-danger-tint px-4 py-3 text-[13.5px] text-danger"
-          >
+          <div role="alert" className="flex items-start gap-3 rounded-[14px] border border-danger-line bg-danger-tint px-4 py-3 text-[13.5px] text-danger">
             <TriangleAlert className="mt-0.5 size-4 shrink-0" />
-            {lodge.status === "SUSPENDED"
-              ? "Your site is offline. Guests see “temporarily unavailable” until you pay."
-              : `Your payment is late. Pay by ${offline ? formatLongDate(offline) : "soon"} to keep your site live.`}
+            {lodge.demoEnded
+              ? "Your demo has ended, so your site is offline. Pay for a plan to put it back live, just as you left it."
+              : lodge.status === "SUSPENDED"
+                ? "Your site is offline. Guests see “temporarily unavailable” until you pay."
+                : `Your payment is late. Pay by ${offline ? formatLongDate(offline) : "soon"} to keep your site live.`}
           </div>
         </PageSection>
       ) : null}
@@ -276,13 +351,28 @@ export default function BillingPage() {
       <PageSection>
         <PlanCard lodge={lodge} />
       </PageSection>
-      {lodge.status === "ACTIVE" ? null : (
-        <PageSection>
-          <HowToPay lodge={lodge} />
-        </PageSection>
-      )}
+
+      <PageSection className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+        <div ref={payRef} className="flex scroll-mt-24 flex-col gap-5">
+          {overview === null ? (
+            <Skeleton className="h-[420px] w-full rounded-[20px]" />
+          ) : paynow ? (
+            <PayCard plan={plan} onPlanChange={setPlan} onPaid={load} />
+          ) : null}
+          {overview !== null && (!paynow || lodge.status !== "ACTIVE") ? <HowToPay lodge={lodge} online={paynow} /> : null}
+        </div>
+        <Documents overview={overview} />
+      </PageSection>
+
       <PageSection>
-        <Plans lodge={lodge} />
+        <Plans
+          lodge={lodge}
+          canPay={paynow}
+          onPick={(key) => {
+            setPlan(key);
+            payRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }}
+        />
       </PageSection>
     </Page>
   );
