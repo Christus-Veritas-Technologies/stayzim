@@ -8,6 +8,7 @@ import { RoomPhotos, SiteGallery } from "@/components/site/gallery";
 import { BookLink } from "@/components/site/tracking";
 import { AMENITIES, AMENITIES_ON_CARD, formatPhone, formatPrice, lodgePlace } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
+import { MAIN_URL } from "@/lib/site-host";
 
 const whatsappButton =
   "inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[#25D366] px-6 text-[15px] font-semibold text-[#0C181F] shadow-[0_8px_20px_-8px_rgba(37,211,102,0.7)] transition-transform hover:scale-[1.02] active:scale-[0.98] motion-reduce:transform-none";
@@ -271,9 +272,14 @@ export function ClassicTemplate({ site }: { site: LiveSite }) {
           <span>
             © {new Date().getFullYear()} {site.name}
           </span>
-          <a href="https://stayzim.co.zw" className="hover:text-[#0C181F]">
-            Made with <strong className="font-semibold">StayZim</strong>
-          </a>
+          <span className="flex items-center gap-4">
+            <a href={`${MAIN_URL}/privacy`} className="hover:text-[#0C181F]">
+              Privacy
+            </a>
+            <a href="https://stayzim.co.zw" className="hover:text-[#0C181F]">
+              Made with <strong className="font-semibold">StayZim</strong>
+            </a>
+          </span>
         </div>
       </footer>
 

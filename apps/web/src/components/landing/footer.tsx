@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 import { CONTACT_EMAIL } from "@/lib/whatsapp";
 
@@ -106,9 +107,12 @@ export function Footer() {
             Made in Mutare
           </span>
           <span className="flex gap-[18px] lg:gap-6">
-            {/* Pages not written yet; plain text until they exist */}
-            <span>Privacy</span>
-            <span>Terms</span>
+            <Link href="/privacy" className="transition-colors hover:text-white">
+              Privacy
+            </Link>
+            <Link href="/terms" className="transition-colors hover:text-white">
+              Terms
+            </Link>
           </span>
         </div>
       </div>

@@ -6,6 +6,7 @@ import { WhatsAppIcon } from "@/components/landing/brand";
 import { Item, Reveal, Stagger } from "@/components/motion";
 import { BookLink } from "@/components/site/tracking";
 import { formatPhone, formatPrice, lodgePlace } from "@/lib/lodge";
+import { MAIN_URL } from "@/lib/site-host";
 import { bookingUrl, type LiveSite } from "@/lib/site";
 
 /**
@@ -197,6 +198,10 @@ export function BasicTemplate({ site, config }: { site: LiveSite; config: BasicC
       </main>
       <footer className={cn("border-t py-6 text-center text-sm", config.tone === "dark" ? "border-white/10" : "border-black/10", muted)}>
         © {new Date().getFullYear()} {site.name} · {config.name} template ·{" "}
+        <a href={`${MAIN_URL}/privacy`} className="underline">
+          Privacy
+        </a>{" "}
+        ·{" "}
         <a href="https://stayzim.co.zw" className="underline">
           Made with StayZim
         </a>

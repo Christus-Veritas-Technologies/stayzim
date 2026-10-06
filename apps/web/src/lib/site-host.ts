@@ -12,6 +12,9 @@ export function siteHost(lodge: { slug: string }) {
   return `${lodge.slug}${SUFFIX}`;
 }
 
+/** StayZim's own site: https://stayzim.co.zw (http://localhost:9999 in development). */
+export const MAIN_URL = `${SITES_DOMAIN.startsWith("localhost") ? "http" : "https"}://${SITES_DOMAIN}`;
+
 export function siteUrl(lodge: { slug: string }) {
   return `${SITES_DOMAIN.startsWith("localhost") ? "http" : "https"}://${siteHost(lodge)}`;
 }
