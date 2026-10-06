@@ -1,6 +1,6 @@
 "use client";
 
-import { env } from "@stayzim/env/web";
+import { env } from "@/lib/public-env";
 import { cn } from "@stayzim/ui/lib/utils";
 import { createContext, useContext, useEffect, type ReactNode } from "react";
 

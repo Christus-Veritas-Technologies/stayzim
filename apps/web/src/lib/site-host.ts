@@ -1,4 +1,4 @@
-import { env } from "@stayzim/env/web";
+import { env } from "@/lib/public-env";
 
 /** Our own subdomains, never a lodge. Mirrored in apps/server/src/lib/sites.ts. */
 const RESERVED = new Set(["www", "app", "api", "admin", "mail", "media", "outreach", "help", "status", "demo"]);

@@ -1,4 +1,4 @@
-import { env } from "@stayzim/env/web";
+import { env } from "@/lib/public-env";
 
 const VISITOR_KEY = "stayzim.visitor";
 const UTM_KEY = "stayzim.utm";

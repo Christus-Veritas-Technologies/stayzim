@@ -1,4 +1,4 @@
-import { env } from "@stayzim/env/web";
+import { env } from "@/lib/public-env";
 
 export type ApiResult<T> = { data: T; error?: undefined; status: number } | { data?: undefined; error: string; status: number };
 
