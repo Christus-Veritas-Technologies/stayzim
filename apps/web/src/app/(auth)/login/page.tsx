@@ -1,10 +1,14 @@
 "use client";
 
+import { Button } from "@stayzim/ui/components/button";
+import { Field, FormMessage } from "@stayzim/ui/components/field";
+import { Input, PasswordInput } from "@stayzim/ui/components/input";
+import { Separator } from "@stayzim/ui/components/separator";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
-import { Field, FormError, SubmitButton } from "@/components/auth/form";
+import { AuthHeading, AuthSection, AuthShell, NewToStayZim } from "@/components/auth/shell";
 import { authClient, authErrorMessage } from "@/lib/auth-client";
 
 export default function LoginPage() {
@@ -15,12 +19,18 @@ export default function LoginPage() {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
+    const email = String(form.get("email")).trim();
+    const password = String(form.get("password"));
+    if (!email || !password) {
+      setError("Enter your email and password.");
+      return;
+    }
     setPending(true);
     setError(null);
 
     const { data, error: signInError } = await authClient.signIn.email({
-      email: String(form.get("email")).trim(),
-      password: String(form.get("password")),
+      email,
+      password,
       // Stay signed in on this phone (30 days)
       rememberMe: true,
     });
@@ -35,28 +45,46 @@ export default function LoginPage() {
   }
 
   return (
-    <>
-      <h1 className="font-display text-2xl leading-[30px] font-semibold tracking-[-0.02em]">Log in</h1>
-      <p className="mt-1.5 text-muted">Manage your lodge site.</p>
+    <AuthShell mobileFooter={<NewToStayZim />}>
+      <AuthHeading title="Welcome back">Log in to manage your lodge site.</AuthHeading>
 
-      <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4" noValidate>
-        <FormError message={error} />
-        <Field label="Email" name="email" type="email" autoComplete="email" inputMode="email" required />
-        <Field label="Password" name="password" type="password" autoComplete="current-password" required />
-        <div className="-mt-1 flex justify-end">
-          <Link href="/forgot-password" className="text-sm font-semibold text-brand hover:text-brand-dark">
-            Forgot password?
-          </Link>
-        </div>
-        <SubmitButton pending={pending}>{pending ? "Logging in" : "Log in"}</SubmitButton>
-      </form>
+      <AuthSection>
+        <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
+          <FormMessage>{error}</FormMessage>
+          <Field label="Email">
+            <Input
+              name="email"
+              type="email"
+              autoComplete="email"
+              inputMode="email"
+              placeholder="you@yourlodge.co.zw"
+              className="sm:h-11"
+              required
+            />
+          </Field>
+          <Field
+            label="Password"
+            action={
+              <Link href="/forgot-password" className="text-[13px] font-semibold text-brand hover:text-brand-dark">
+                Forgot password?
+              </Link>
+            }
+          >
+            <PasswordInput name="password" autoComplete="current-password" className="sm:h-11" required />
+          </Field>
+          <div className="mt-2 flex flex-col gap-3">
+            <Button type="submit" size="lg" className="w-full" loading={pending}>
+              {pending ? "Logging in" : "Log in"}
+            </Button>
+            <p className="text-center text-[12.5px] text-muted-2">You stay logged in for 30 days on this device.</p>
+          </div>
+        </form>
+      </AuthSection>
 
-      <p className="mt-6 text-center text-sm text-muted-2">
-        New to StayZim?{" "}
-        <Link href="/#pricing" className="font-semibold text-brand hover:text-brand-dark">
-          Start your free trial
-        </Link>
-      </p>
-    </>
+      <AuthSection className="hidden flex-col gap-5 text-center lg:flex">
+        <Separator />
+        <NewToStayZim />
+      </AuthSection>
+    </AuthShell>
   );
 }
