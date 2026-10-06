@@ -13,6 +13,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { useSignOut } from "@/components/dashboard/account-menu";
+import { NavIcon, NavTrailing } from "@/components/dashboard/link-pending";
 import { useLodge } from "@/components/dashboard/lodge-provider";
 import { isActive, isCurrent, lodgeStatus, navLinks, type NavLink } from "@/components/dashboard/nav";
 import { LogoMark, WhatsAppIcon, Wordmark } from "@/components/landing/brand";
@@ -43,7 +44,7 @@ function NavItem({ link, collapsed }: { link: NavLink; collapsed: boolean }) {
         <motion.span layoutId="sidebar-active" transition={SPRING} className="absolute inset-0 -z-10 rounded-[9px] bg-primary shadow-brand" />
       ) : null}
       <span className="relative">
-        <Icon className="size-[18px]" strokeWidth={1.75} />
+        <NavIcon icon={Icon} className="size-[18px]" />
         {collapsed && link.attention ? (
           <span className="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-purple ring-2 ring-surface-2" />
         ) : null}
@@ -100,7 +101,9 @@ function NavItem({ link, collapsed }: { link: NavLink; collapsed: boolean }) {
                 {child.attention ? (
                   <span className="size-1.5 rounded-full bg-purple" title={child.attention} aria-label={child.attention} />
                 ) : null}
-                {child.count !== undefined ? <span className="ml-auto text-xs font-semibold text-muted-2">{child.count}</span> : null}
+                <NavTrailing>
+                  {child.count !== undefined ? <span className="ml-auto text-xs font-semibold text-muted-2">{child.count}</span> : null}
+                </NavTrailing>
               </Link>
             );
           })}

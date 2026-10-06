@@ -10,6 +10,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { AccountMenu } from "@/components/dashboard/account-menu";
+import { NavIcon } from "@/components/dashboard/link-pending";
 import { useLodge } from "@/components/dashboard/lodge-provider";
 import { breadcrumb, isActive, lodgeStatus, navLinks } from "@/components/dashboard/nav";
 import { PLANS, siteHost, siteUrl, trialDaysLeft, type Lodge } from "@/lib/lodge";
@@ -170,7 +171,7 @@ export function BottomNav() {
                   className="absolute inset-0 rounded-full bg-brand-wash"
                 />
               ) : null}
-              <Icon className="relative size-5" strokeWidth={1.75} />
+              <NavIcon icon={Icon} className="relative size-5" />
               {link.attention || (link.badge && lodge.status !== "TRIAL") ? (
                 <span className="absolute top-0.5 right-2.5 size-1.5 rounded-full bg-purple ring-2 ring-white" />
               ) : null}
