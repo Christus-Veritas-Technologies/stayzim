@@ -1,7 +1,8 @@
 import { env } from "@stayzim/env/web";
+import { fillCopy, findTemplate, type Template } from "@stayzim/sites";
 import { cache } from "react";
 
-import type { AmenityKey } from "@/lib/lodge";
+import { lodgePlace, type AmenityKey } from "@/lib/lodge";
 
 /** GET /api/sites/:slug (mirrors PublicSite in apps/server/src/routes/sites.ts). */
 export type PublicSite =
@@ -49,6 +50,25 @@ export const getSite = cache(async (slug: string): Promise<PublicSite | null> =>
   if (!response.ok) throw new Error(`Site ${slug} didn't load (${response.status})`);
   return (await response.json()) as PublicSite;
 });
+
+/**
+ * The site as it would look in another template, for previews. Hero text the
+ * owner wrote stays; text that is the live template's default becomes the
+ * other template's default.
+ */
+export function withTemplate(site: LiveSite, template: Template): LiveSite {
+  const live = findTemplate(site.template);
+  const lodge = { name: site.name, place: lodgePlace(site) };
+  const isDefault = (field: "headline" | "subline") => !live || site.hero[field] === fillCopy(live.defaults[field], lodge);
+  return {
+    ...site,
+    template: template.key,
+    hero: {
+      headline: isDefault("headline") ? fillCopy(template.defaults.headline, lodge) : site.hero.headline,
+      subline: isDefault("subline") ? fillCopy(template.defaults.subline, lodge) : site.hero.subline,
+    },
+  };
+}
 
 /** wa.me link to the lodge, with the room (or a general stay) typed in. */
 export function bookingUrl(site: LiveSite, roomName?: string) {
