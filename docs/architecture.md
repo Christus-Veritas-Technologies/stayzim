@@ -56,7 +56,8 @@ How the dashboard works:
 
 - `DashboardShell` (`src/components/dashboard/shell.tsx`) checks the session, loads the lodge through `LodgeProvider`, and lays out the sidebar and white panel (desktop) or header and bottom bar (phones). The My site pages share one bottom tab on phones, with pills (`SitePagesNav`) and a "‹ My site" back link (`back-link.tsx`).
 - `LodgeProvider` loads `GET /api/lodge` once. Every lodge route answers with the whole lodge, so `save()` just swaps it in and every screen stays current.
-- Photos are resized on the device (`src/lib/images.ts`) and uploaded one at a time with progress (`use-photo-uploads.ts`).
+- Photos are resized on the device (`src/lib/images.ts`) and uploaded one at a time with progress (`use-photo-uploads.ts`). Each upload also carries a 1280px and a 640px copy (`smallerCopies`), made from the resized photo, so lodge sites can send phones only what they need.
+- Code that runs in the browser reads public settings from `src/lib/public-env.ts`, not `@stayzim/env/web`: the settings are still validated once at build and start (`next.config.ts` imports the env package), but guests' phones don't download zod. Server-only code (`src/lib/site.ts`) keeps using `@stayzim/env/web`.
 - Visit numbers come from `useVisitStats(period)` in `src/lib/stats.ts` (`/api/lodge/stats`). Chart buckets arrive as ISO start times and are labelled in Zimbabwe time; countries arrive as ISO codes and are named with `Intl.DisplayNames`. Starter gets a 403, and the overview shows an upgrade card instead.
 - Screens build on the shared components in `packages/ui` (`@stayzim/ui/components/*`). Colours, shadows and fonts are tokens in `packages/ui/src/styles/globals.css`. Fonts load with `next/font` from `src/lib/fonts.ts`: Familjen Grotesk, Instrument Sans, Newsreader.
 
@@ -98,6 +99,7 @@ Shared UX pieces, so every screen behaves the same:
 - **Lodge routes** need a signed-in owner with their own password and a lodge (`requireLodge` in `src/lib/lodge.ts`, 404 until StayZim creates it). Each answers with the whole lodge (`lodgeJson`).
 - **Team routes** (`src/routes/admin.ts`) need a signed-in user with `role` `ADMIN`.
 - **Photos** (`src/lib/uploads.ts`): JPG, PNG or WebP (checked by file signature), 5 MB at most, stored in Cloudflare R2 through Bun's built-in S3 client and served from the bucket's public URL. Without the `R2_*` settings (development), they go to `UPLOAD_DIR` and this server serves them at `/uploads`; production refuses to start without R2. The storage in use is logged at boot. `R2_ENDPOINT` overrides the endpoint, for buckets in R2's EU jurisdiction or any S3-compatible store (the upload, content type and delete paths were tested against an S3 test server).
+- **Photo copies:** each photo has up to three files: the full one (1600px at most), `-md` (1280px) and `-sm` (640px), stored as `key`, `mediumKey` and `smallKey`. Copies are skipped when the photo is already that small, and older uploads have none. `photoSrcSet` turns them into a `srcset` (`srcSet` on photos, `heroSrcSet` on the lodge and site), and the templates give each image a `sizes` that matches its layout. Deleting a photo or room removes every copy. With realistic photos, a lodge site's first load on a phone is about 1.36 MB (976 KB of images, 274 KB of scripts, 72 KB of fonts), under the 1.5 MB budget; room carousels load each photo only when the guest swipes to it.
 
 ### apps/outreach: Hono on Bun, port 9997
 
