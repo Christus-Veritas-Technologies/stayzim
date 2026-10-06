@@ -128,7 +128,7 @@ Scaffold from the starter template. Not part of the MVP yet.
 ## Lodge sites
 
 - **Addresses:** every lodge lives at `{slug}.SITES_DOMAIN`: `stayzim.co.zw` in production, `localhost:9999` locally (Chrome resolves `mistvalley.localhost:9999`). The server's `SITES_DOMAIN` and the web app's `NEXT_PUBLIC_SITES_DOMAIN` must match.
-- **Reserved subdomains** (`www`, `app`, `api`, `admin`, `media`, …) are listed in three places; keep them in sync: `apps/web/src/lib/site-host.ts`, `apps/server/src/lib/sites.ts` and `packages/db/scripts/create-lodge.ts`.
+- **Reserved subdomains** (`www`, `app`, `api`, `admin`, `media`, …) are listed once, in `RESERVED_SLUGS` (`packages/sites/src/slugs.ts`), and used by web, server and the scripts.
 - **Rendering:** `/sites/[slug]` fetches `GET /api/sites/:slug` on every request (owners' edits show straight away) and renders `<SiteTemplate>`. Suspended lodges get `SuspendedSite`; unknown ones `UnknownSite`.
 - **Tracking:** `components/site/tracking.tsx` posts page views and Book on WhatsApp taps, with a random visitor id kept in `localStorage`. The server adds device and browser (user agent), IP and country (Cloudflare's `CF-IPCountry`, so countries are empty until the sites sit behind Cloudflare). Owners see visits on Growth and Pro.
 - **Footer:** "Made with StayZim" and a Privacy link back to the main site (`MAIN_URL`).
@@ -140,11 +140,31 @@ Scaffold from the starter template. Not part of the MVP yet.
 - **Downgrades:** `LodgeJson.template` is the owner's pick; `siteTemplate` is what's live (`effectiveTemplate()`: the pick if the plan allows it, else the plan's `DEFAULT_TEMPLATE`). The Design screen says so and offers the upgrade.
 - **Hero text:** owners can set the headline (60 characters) and the line under it (140). Stored once on the lodge (`heroHeadline`, `heroSubline`), so switching templates keeps them; empty means the template's default copy, with `{name}` and `{place}` filled in (`heroText()`, `fillCopy()`).
 - **Web registry** (`components/site/templates/index.tsx`): `growth-classic` has its own design (`classic.tsx`); the other 8 are placeholders from one configurable component (`basic.tsx`, looks in `looks.ts`, which the Design screen's thumbnails also read). When real designs arrive, give each template its own file and remove its placeholder look.
+- **Every template reads the same data.** Templates differ only in rendering. The planned CMS makes this a written contract ([docs/cms/README.md](cms/README.md#the-template-contract)):
+  - the sections every template renders when they have content;
+  - `BookLink` for every Book button;
+  - optional fields as `null` or empty lists, never missing.
 - **Design screen** (`/dashboard/design`): hero text with a live phone preview; templates grouped by plan with thumbnails, a sliding "Live" ring, and locked cards with "Upgrade to {plan}"; a preview sheet with the real site in an iframe (`/preview/{slug}/{key}`, Phone and Desktop widths); "Use this template" applies it at once, with Undo in the toast.
+
+## Lodge CMS (planned)
+
+_Not built yet: the plan is in [docs/cms/](cms/README.md), and the build order in [progress.md](progress.md#cms-pending)._
+
+- **One content contract** in `packages/sites/src/content/`: limits, the amenity list, zod input schemas, the `publicSiteSchema` output schema, and the dashboard types. Server and web both use it, replacing today's hand-copied types in `apps/web/src/lib/lodge.ts` and `site.ts`.
+- **Additive only:** new fields arrive with defaults, so old rows, old clients and the placeholder templates keep working.
+- **Rooms** become room types with a count:
+  - `units`, how many the lodge has;
+  - `visible`;
+  - a description, beds and size.
+- **Guest info:** check-in and check-out times, house rules, cancellation policy, FAQ, and social and listing links. Lists are Json columns on `Lodge`.
+- **Bookings** (Growth and Pro):
+  - a `Booking` table holding stays and closed dates;
+  - guests send requests from the site, which hold no rooms;
+  - owners confirm, decline, cancel, add bookings and close dates, under a per-room lock that refuses overbooking.
 
 ## Change requests
 
-Anything owners can't change themselves goes through change requests.
+Anything owners can't change themselves goes through change requests. As the CMS lands, room details, guest info and bookings move out of requests.
 
 1. **Owner** (`/dashboard/requests`): picks a topic (Words, Photos, Rooms, Design, Something else), writes the message (10–1000 characters) and sends it. The request gets a reference like `R-7K2Q`, and the owner can pass it on to StayZim on WhatsApp in one tap.
 2. **Team** (`/admin/requests`): the Waiting list (open and in progress, oldest first). Set the status and write a reply; Message {owner} opens WhatsApp to the lodge's number.
@@ -221,7 +241,7 @@ The `resolve-request` script does the same from a terminal (`pnpm --filter @stay
 | --- | --- |
 | `@stayzim/db` | Prisma schema, split by area in `prisma/schema/`, the shared client (`import prisma from "@stayzim/db"`), and the `create-lodge` and `resolve-request` scripts |
 | `@stayzim/auth` | better-auth config (`auth`), `MIN_PASSWORD_LENGTH`, `googleSignInEnabled`, and `scripts/create-owner.ts` |
-| `@stayzim/sites` | The template catalog and its rules (`templateAllowed`, `effectiveTemplate`, `DEFAULT_TEMPLATE`, `HERO_LIMITS`, `heroText`), plan prices and inclusions (`plans.ts`), slug rules (`slugs.ts`), and billing dates in Zimbabwe time (`billing-dates.ts`). Shared by server, web and scripts |
+| `@stayzim/sites` | The template catalog and its rules (`templateAllowed`, `effectiveTemplate`, `DEFAULT_TEMPLATE`, `HERO_LIMITS`, `heroText`), plan prices and inclusions (`plans.ts`), slug rules (`slugs.ts`), and billing dates in Zimbabwe time (`billing-dates.ts`). Shared by server, web and scripts. The CMS content contract (`content/`) is planned to live here too ([docs/cms/](cms/README.md)) |
 | `@stayzim/mail` | `sendEmail()` over SMTP with Nodemailer, `verifyMailConnection()`, and templates: account emails in `templates.ts`; welcome, invoice, receipt, demo ended and site offline in `billing.ts` |
 | `@stayzim/env` | Validated env per app: `server`, `web`, `outreach`, `native` |
 | `@stayzim/ui` | StayZim design tokens and shadcn-style components on Base UI (buttons, fields, dialogs, sheets, tabs, menus, …) |
