@@ -22,6 +22,9 @@ model Lodge {
   id          String      @id @default(cuid())
   /// Subdomain, e.g. "mistvalley" for mistvalley.stayzim.co.zw. Also the payment reference.
   slug        String      @unique
+  /// The lodge's own domain, e.g. "mistvalleylodge.co.zw" (lowercase, no "www."). Its site answers
+  /// there as well as on the subdomain. Set by StayZim with scripts/set-domain.ts.
+  customDomain String?    @unique @map("custom_domain")
   name        String
   /// Short intro at the top of the site
   description String      @default("")

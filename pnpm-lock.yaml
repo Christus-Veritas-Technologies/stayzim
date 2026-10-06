@@ -367,6 +367,9 @@ importers:
       '@stayzim/env':
         specifier: workspace:*
         version: link:../env
+      '@stayzim/sites':
+        specifier: workspace:*
+        version: link:../sites
       dotenv:
         specifier: ^17.2.2
         version: 17.4.2

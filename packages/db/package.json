@@ -17,12 +17,14 @@
     "postinstall": "prisma generate",
     "db:studio": "prisma studio",
     "create-lodge": "bun --env-file=../../apps/server/.env scripts/create-lodge.ts",
-    "resolve-request": "bun --env-file=../../apps/server/.env scripts/resolve-request.ts"
+    "resolve-request": "bun --env-file=../../apps/server/.env scripts/resolve-request.ts",
+    "set-domain": "bun --env-file=../../apps/server/.env scripts/set-domain.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@stayzim/env": "workspace:*",
+    "@stayzim/sites": "workspace:*",
     "dotenv": "^17.2.2",
     "pg": "^8.17.1",
     "zod": "^4.1.13"
