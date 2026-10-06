@@ -9,6 +9,7 @@ import { coordinatesFromMapsUrl } from "../lib/maps";
 import { requireAuth, withSession } from "../lib/session";
 import { MAX_UPLOAD_BYTES, removeUploads, saveImage } from "../lib/uploads";
 import { validJson } from "../lib/validate";
+import { rooms } from "./rooms";
 
 /** Empty text means "remove it". */
 const optionalText = (max: number, label: string) =>
@@ -51,7 +52,7 @@ const lodgeUpdateSchema = z
   })
   .partial();
 
-/** /api/lodge: the signed-in owner's lodge. Rooms and photos are mounted under it in index.ts. */
+/** /api/lodge: the signed-in owner's lodge, with its rooms and photos under it. */
 export const lodge = new Hono<{ Variables: LodgeVariables }>()
   .use(withSession, requireAuth(), requireLodge)
 
@@ -106,4 +107,6 @@ export const lodge = new Hono<{ Variables: LodgeVariables }>()
     await prisma.lodge.update({ where: { id: lodgeId }, data: { logoKey: null } });
     if (previous.logoKey) await removeUploads([previous.logoKey]);
     return c.json(await lodgeJson(lodgeId));
-  });
+  })
+
+  .route("/rooms", rooms);
