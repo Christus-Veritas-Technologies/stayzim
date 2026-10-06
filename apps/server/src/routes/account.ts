@@ -1,5 +1,5 @@
 import { zValidator } from "@hono/zod-validator";
-import { auth, MIN_PASSWORD_LENGTH } from "@stayzim/auth";
+import { auth, googleSignInEnabled, MIN_PASSWORD_LENGTH } from "@stayzim/auth";
 import prisma from "@stayzim/db";
 import { sendEmail } from "@stayzim/mail";
 import { passwordChangedEmail } from "@stayzim/mail/templates";
@@ -17,6 +17,9 @@ const setPasswordSchema = z.object({
 });
 
 export const account = new Hono<{ Variables: AuthVariables }>()
+  /** Public: which sign-in buttons the login screen shows. */
+  .get("/sign-in-options", (c) => c.json({ google: googleSignInEnabled }))
+
   /**
    * The signed-in user, or 401, with a short summary of their lodge. Open to
    * owners still on a temporary password: first login shows them their live site.
