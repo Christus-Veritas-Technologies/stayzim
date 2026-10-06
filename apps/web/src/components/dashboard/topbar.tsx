@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { ArrowUpRight, ChevronRight, Clock, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useRef } from "react";
 
 import { AccountMenu } from "@/components/dashboard/account-menu";
 import { NavIcon } from "@/components/dashboard/link-pending";
@@ -184,13 +185,24 @@ export function BottomNav() {
   );
 }
 
-/** Lodge info, Rooms and Gallery as pills under the phone header (they share one bottom tab). */
+/** Lodge info, Rooms, Gallery and Design as pills under the phone header (they share one bottom tab). */
 export function SitePagesNav() {
   const pathname = usePathname();
   const { lodge } = useLodge();
   const pages = navLinks(lodge).find((link) => link.children)?.children ?? [];
+  const nav = useRef<HTMLElement>(null);
+
+  // On narrow phones the pills scroll sideways: keep the open page's pill in view
+  useEffect(() => {
+    const current = nav.current?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!current || !nav.current) return;
+    const { left, right } = current.getBoundingClientRect();
+    const box = nav.current.getBoundingClientRect();
+    if (left < box.left || right > box.right) nav.current.scrollLeft += right - box.right + 16;
+  }, [pathname]);
+
   return (
-    <nav aria-label="My site" className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] lg:hidden">
+    <nav ref={nav} aria-label="My site" className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] lg:hidden">
       {pages.map((page) => {
         const current = pathname.startsWith(page.href);
         return (
