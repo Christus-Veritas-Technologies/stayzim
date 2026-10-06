@@ -51,17 +51,19 @@ You need Node 22+, [Bun](https://bun.sh), pnpm 11 and PostgreSQL.
    - `apps/web/.env` from [apps/web/.env.example](apps/web/.env.example)
    - `apps/outreach/.env` from [apps/outreach/.env.example](apps/outreach/.env.example) (only if you run outreach)
 
-3. Create the database tables. `db:push` uses `DATABASE_URL` from `apps/server/.env`:
+3. Create the database tables by applying the migrations. `db:deploy` uses `DATABASE_URL` from `apps/server/.env`:
 
    ```bash
-   pnpm db:push
+   pnpm db:deploy
    ```
 
-   The outreach app has its own database. Push the same schema to it by overriding the URL:
+   The outreach app has its own database. Apply the same migrations to it by overriding the URL:
 
    ```bash
-   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/stayzim-outreach pnpm db:push
+   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/stayzim-outreach pnpm db:deploy
    ```
+
+   A database set up earlier with `db:push` needs baselining once (see [Database changes](#database-changes)).
 
 4. Create an owner login (there is no public sign-up) and a lodge for it, so the dashboard and a lodge site have something to show:
 
@@ -111,12 +113,32 @@ Lodge sites open at `http://{slug}.localhost:9999` (Chrome and Firefox resolve `
 | `pnpm dev:web` / `dev:server` / `dev:outreach` / `dev:native` | Start one app |
 | `pnpm build` | Build every app |
 | `pnpm check-types` | Type-check every package |
-| `pnpm db:push` | Apply the Prisma schema to the database in `apps/server/.env` |
+| `pnpm db:deploy` | Apply new migrations to the database in `apps/server/.env` |
+| `pnpm db:migrate` | After editing the schema: create a migration and apply it locally |
 | `pnpm db:generate` | Regenerate the Prisma client |
 | `pnpm db:studio` | Browse the database |
 | `pnpm --filter @stayzim/auth create-owner …` | Create an owner login or give one a new temporary password ([docs/auth.md](docs/auth.md)) |
 | `pnpm --filter @stayzim/db create-lodge …` | Create the lodge for an owner login, on a 14-day Growth trial |
 | `pnpm --filter @stayzim/db resolve-request …` | List open change requests (`--list`) or answer one (`--ref R-XXXX --status done --reply "…"`); the team screen does the same |
+
+## Database changes
+
+The schema lives in `packages/db/prisma/schema/*.prisma` and changes through migrations in `packages/db/prisma/migrations`:
+
+1. Edit the schema.
+2. `pnpm db:migrate --name what_changed` creates the migration from the difference, applies it to your local database and regenerates the client. Read the SQL before committing it.
+3. Commit the schema and the migration together. Containers apply it on their next start (`prisma migrate deploy`).
+
+A database created with `db:push` before migrations existed has the tables but no migration history, so `migrate deploy` stops with error P3005. Baseline it once: mark the migrations it already has as applied, then deploy the rest.
+
+```bash
+cd packages/db
+npx prisma migrate resolve --applied 0_init   # the tables db:push made
+npx prisma migrate deploy                     # anything newer
+npx prisma migrate diff --from-config-datasource --to-schema prisma/schema   # expect "No difference detected."
+```
+
+If the last command lists differences, the database was pushed from a schema newer than `0_init`: mark each migration whose changes it already has as applied too.
 
 ## Docker
 
@@ -135,7 +157,7 @@ docker build -f apps/outreach/Dockerfile -t stayzim-outreach .
 ```
 
 - Images install from the committed `pnpm-lock.yaml` (`--frozen-lockfile`), so keep it committed and up to date.
-- `server` and `outreach` apply the Prisma schema on start (`docker/start.sh`), then run with Bun. Set `SKIP_DB_PUSH=1` to skip that.
+- `server` and `outreach` apply new Prisma migrations on start (`docker/start.sh`), then run with Bun. Set `SKIP_DB_MIGRATE=1` to skip that.
 - `outreach` includes Chromium. Run it with `--shm-size=1g` and about 300 MB of memory per WhatsApp number.
 
 Details: [docs/architecture.md](docs/architecture.md#docker).

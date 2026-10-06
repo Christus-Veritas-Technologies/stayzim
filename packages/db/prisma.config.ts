@@ -13,6 +13,6 @@ export default defineConfig({
     path: path.join("prisma", "migrations"),
   },
   // Optional so `prisma generate` (run on every install) works without a database;
-  // commands that connect, like db push, still say when it's missing
+  // commands that connect, like migrate deploy, still say when it's missing
   datasource: process.env.DATABASE_URL ? { url: process.env.DATABASE_URL } : undefined,
 });

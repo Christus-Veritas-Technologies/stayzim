@@ -13,6 +13,7 @@
     "db:push": "prisma db push",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
     "postinstall": "prisma generate",
     "db:studio": "prisma studio",
     "create-lodge": "bun --env-file=../../apps/server/.env scripts/create-lodge.ts",
