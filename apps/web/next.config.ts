@@ -28,6 +28,9 @@ const nextConfig: NextConfig = {
   typedRoutes: true,
   reactCompiler: true,
   poweredByHeader: false,
+  // `next build` skips its own type check; types are checked by `pnpm check-types`
+  // (next typegen + tsc), which CI runs on every push
+  typescript: { ignoreBuildErrors: true },
   headers: async () => [{ source: "/:path*", headers: securityHeaders }],
 };
 
