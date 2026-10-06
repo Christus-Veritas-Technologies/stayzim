@@ -52,11 +52,18 @@ export function track(slug: string, type: "PAGE_VIEW" | "BOOKING_CHAT", roomId?:
   }
 }
 
+/** Page views already sent from this page load, so re-mounts (and React's dev double effects) count once. */
+const counted = new Set<string>();
+
 /** Records the page view once the page has loaded (not in previews). */
 export function PageViewTracker() {
   const { slug, enabled } = useContext(TrackingContext);
   useEffect(() => {
-    if (enabled && slug) track(slug, "PAGE_VIEW");
+    if (!enabled || !slug) return;
+    const key = `${slug}${window.location.pathname}`;
+    if (counted.has(key)) return;
+    counted.add(key);
+    track(slug, "PAGE_VIEW");
   }, [enabled, slug]);
   return null;
 }
