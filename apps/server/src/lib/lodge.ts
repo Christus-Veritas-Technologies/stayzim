@@ -1,4 +1,5 @@
 import prisma from "@stayzim/db";
+import { effectiveTemplate } from "@stayzim/sites";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 
@@ -72,6 +73,12 @@ export type LodgeJson = {
   latitude: number | null;
   longitude: number | null;
   themeColor: string;
+  /** The owner's pick (null: the plan's default) */
+  template: string | null;
+  /** What the site shows: the pick if the plan allows it, else the plan's default */
+  siteTemplate: string;
+  heroHeadline: string | null;
+  heroSubline: string | null;
   logoUrl: string | null;
   heroPhotoId: string | null;
   heroUrl: string | null;
@@ -118,6 +125,10 @@ export async function lodgeJson(lodgeId: string): Promise<LodgeJson> {
     latitude: lodge.latitude,
     longitude: lodge.longitude,
     themeColor: lodge.themeColor,
+    template: lodge.template,
+    siteTemplate: effectiveTemplate(lodge.template, lodge.plan).key,
+    heroHeadline: lodge.heroHeadline,
+    heroSubline: lodge.heroSubline,
     logoUrl: lodge.logoKey ? uploadUrl(lodge.logoKey) : null,
     heroPhotoId: hero?.id ?? null,
     heroUrl: hero?.url ?? null,

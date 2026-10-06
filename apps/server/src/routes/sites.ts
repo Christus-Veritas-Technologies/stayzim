@@ -1,5 +1,6 @@
 import { zValidator } from "@hono/zod-validator";
 import prisma from "@stayzim/db";
+import { findTemplate, heroText } from "@stayzim/sites";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { rateLimiter } from "hono-rate-limiter";
@@ -17,6 +18,9 @@ export type PublicSite =
       status: "LIVE";
       slug: string;
       name: string;
+      /** Template key from @stayzim/sites, already checked against the plan */
+      template: string;
+      hero: { headline: string; subline: string };
       description: string;
       town: string | null;
       region: string | null;
@@ -65,10 +69,13 @@ export const sites = new Hono<{ Variables: AuthVariables }>()
     if (lodge.status === "SUSPENDED") {
       return c.json({ status: "SUSPENDED", slug: full.slug, name: full.name } satisfies PublicSite);
     }
+    const place = [full.town, full.region].filter(Boolean).join(", ") || null;
     return c.json({
       status: "LIVE",
       slug: full.slug,
       name: full.name,
+      template: full.siteTemplate,
+      hero: heroText(findTemplate(full.siteTemplate)!, { ...full, place }),
       description: full.description,
       town: full.town,
       region: full.region,

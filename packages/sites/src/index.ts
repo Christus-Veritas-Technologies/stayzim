@@ -24,6 +24,8 @@ export type Template = {
 
 export const PLAN_RANK: Record<Plan, number> = { STARTER: 0, GROWTH: 1, PRO: 2 };
 
+export const PLANS_LABEL: Record<Plan, string> = { STARTER: "Starter", GROWTH: "Growth", PRO: "Pro" };
+
 export const TEMPLATES = [
   // Starter: clean and quick, nothing moves
   {

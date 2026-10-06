@@ -1,4 +1,5 @@
 import prisma from "@stayzim/db";
+import { findTemplate, HERO_LIMITS, PLANS_LABEL, templateAllowed } from "@stayzim/sites";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { HTTPException } from "hono/http-exception";
@@ -51,6 +52,9 @@ const lodgeUpdateSchema = z
     longitude: z.number().min(-180).max(180).nullable(),
     themeColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Pick a colour"),
     heroPhotoId: z.string().nullable(),
+    template: z.string().min(1).max(40),
+    heroHeadline: optionalText(HERO_LIMITS.headline, "The headline"),
+    heroSubline: optionalText(HERO_LIMITS.subline, "The line under the headline"),
   })
   .partial();
 
@@ -70,6 +74,14 @@ export const lodge = new Hono<{ Variables: LodgeVariables }>()
         select: { id: true },
       });
       if (!photo) throw new HTTPException(400, { message: "Pick a photo from your gallery" });
+    }
+    if (data.template) {
+      const template = findTemplate(data.template);
+      if (!template) throw new HTTPException(400, { message: "Pick one of the templates" });
+      const { plan } = await prisma.lodge.findUniqueOrThrow({ where: { id: c.var.lodgeId }, select: { plan: true } });
+      if (!templateAllowed(template, plan)) {
+        throw new HTTPException(403, { message: `${template.name} comes with the ${PLANS_LABEL[template.plan]} plan` });
+      }
     }
     await prisma.lodge.update({ where: { id: c.var.lodgeId }, data });
     return c.json(await lodgeJson(c.var.lodgeId));
