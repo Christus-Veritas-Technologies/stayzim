@@ -5,6 +5,7 @@ import { createMiddleware } from "hono/factory";
 import { z } from "zod";
 
 import type { LodgeVariables } from "../lib/lodge";
+import { visitAround } from "../lib/visits";
 
 /** Days and hours on owners' charts are Zimbabwe time (CAT, UTC+2, no daylight saving). */
 const OFFSET_MS = 2 * 60 * 60 * 1000;
@@ -43,9 +44,6 @@ const visitsQuery = z.object({
   path: z.string().max(200).optional(),
   sort: z.enum(["newest", "oldest"]).default("newest"),
 });
-
-/** A guest's visit: their events with gaps of at most this long. */
-const VISIT_GAP_MS = 30 * 60 * 1000;
 
 /** /api/lodge/stats, /visits, /activity. Mounted under the lodge router. */
 export const stats = new Hono<{ Variables: LodgeVariables }>()
@@ -195,13 +193,9 @@ export const stats = new Hono<{ Variables: LodgeVariables }>()
       }),
       prisma.room.findMany({ where: { lodgeId: c.var.lodgeId }, select: { id: true, name: true } }),
     ]);
-    // Walk out from the event while the gaps stay short
-    const index = nearby.findIndex((item) => item.id === event.id);
-    let first = index;
-    let last = index;
-    while (first > 0 && nearby[first]!.createdAt.getTime() - nearby[first - 1]!.createdAt.getTime() <= VISIT_GAP_MS) first--;
-    while (last < nearby.length - 1 && nearby[last + 1]!.createdAt.getTime() - nearby[last]!.createdAt.getTime() <= VISIT_GAP_MS) last++;
-    const visit = nearby.slice(first, last + 1);
+    // A very busy guest can push the event out of the 200 loaded; then show it alone
+    const around = visitAround(nearby, event.id);
+    const visit = around.length > 0 ? around : [event];
     const roomNames = new Map(rooms.map((room) => [room.id, room.name]));
     return c.json({
       startedAt: visit[0]!.createdAt,
