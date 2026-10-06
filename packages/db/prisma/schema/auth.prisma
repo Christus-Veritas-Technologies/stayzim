@@ -22,6 +22,8 @@ model User {
   updatedAt          DateTime  @updatedAt @map("updated_at")
   sessions           Session[]
   accounts           Account[]
+  /// The lodge this owner manages (one per owner for now)
+  lodge              Lodge?
 
   @@map("user")
 }

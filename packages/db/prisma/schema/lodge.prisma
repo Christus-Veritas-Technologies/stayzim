@@ -1,0 +1,116 @@
+// Lodges (the owner dashboard and, later, {slug}.stayzim.co.zw sites).
+
+enum LodgePlan {
+  /// $20/month: the site and the WhatsApp button
+  STARTER
+  /// $40/month: + visitor analytics. Every lodge starts on a Growth trial.
+  GROWTH
+  /// $75/month: + we manage Booking.com and Airbnb
+  PRO
+}
+
+/// Trial → Overdue (site stays up 3 more days) → Suspended → Active once paid.
+/// StayZim changes it by hand after a payment arrives on WhatsApp.
+enum LodgeStatus {
+  TRIAL
+  ACTIVE
+  OVERDUE
+  SUSPENDED
+}
+
+model Lodge {
+  id          String      @id @default(cuid())
+  /// Subdomain, e.g. "mistvalley" for mistvalley.stayzim.co.zw. Also the payment reference.
+  slug        String      @unique
+  name        String
+  /// Short intro at the top of the site
+  description String      @default("")
+  /// e.g. "Nyanga"
+  town        String?
+  /// e.g. "Manicaland"
+  region      String?
+
+  /// Digits only with country code, e.g. 263771234567. Every Book on WhatsApp button opens this chat.
+  whatsapp    String?
+  /// Digits only with country code, for guests who prefer to call
+  phone       String?
+  email       String?
+
+  /// The share link from Google Maps, as pasted
+  mapsUrl     String?     @map("maps_url")
+  latitude    Float?
+  longitude   Float?
+
+  /// Headings, prices and links on the site, e.g. Highland #1E4A3B. The WhatsApp button stays green.
+  themeColor  String      @default("#1E4A3B") @map("theme_color")
+  logoUrl     String?     @map("logo_url")
+  /// The big photo at the top of the site. Defaults to the first gallery photo.
+  heroPhotoId String?     @unique @map("hero_photo_id")
+  heroPhoto   Photo?      @relation("LodgeHero", fields: [heroPhotoId], references: [id], onDelete: SetNull)
+
+  plan        LodgePlan   @default(GROWTH)
+  status      LodgeStatus @default(TRIAL)
+  trialEndsAt DateTime?   @map("trial_ends_at")
+  /// End of the period the last payment covers
+  paidUntil   DateTime?   @map("paid_until")
+
+  /// Set the first time the owner copies or shares their link (setup checklist)
+  linkSharedAt DateTime?  @map("link_shared_at")
+
+  ownerId     String      @unique @map("owner_id")
+  owner       User        @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+
+  rooms       Room[]
+  photos      Photo[]     @relation("LodgePhotos")
+
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  @@map("lodge")
+}
+
+model Room {
+  id        String   @id @default(cuid())
+  lodgeId   String   @map("lodge_id")
+  lodge     Lodge    @relation(fields: [lodgeId], references: [id], onDelete: Cascade)
+  name      String
+  /// USD per night, whole dollars
+  price     Int
+  sleeps    Int      @default(2)
+  /// Keys from the amenity list in the web app, e.g. ["wifi", "braai"]
+  amenities String[] @default([])
+  /// Order on the site, from 0
+  position  Int      @default(0)
+  photos    Photo[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([lodgeId, position])
+  @@map("room")
+}
+
+/// A photo on the lodge site. In the gallery when `roomId` is null, on a room's card otherwise.
+model Photo {
+  id        String   @id @default(cuid())
+  lodgeId   String   @map("lodge_id")
+  lodge     Lodge    @relation("LodgePhotos", fields: [lodgeId], references: [id], onDelete: Cascade)
+  roomId    String?  @map("room_id")
+  room      Room?    @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  heroOf    Lodge?   @relation("LodgeHero")
+
+  /// Path under the upload directory, e.g. "lodges/<lodgeId>/<id>.jpg"
+  key       String   @unique
+  width     Int
+  height    Int
+  /// Bytes, after resizing on the owner's phone
+  size      Int
+  caption   String   @default("")
+  /// Order in the gallery or on the room, from 0
+  position  Int      @default(0)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([lodgeId, roomId, position])
+  @@map("photo")
+}
