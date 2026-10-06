@@ -39,7 +39,13 @@ const visitsQuery = z.object({
   where: z.enum(["all", "zw", "abroad"]).default("all"),
   device: z.enum(["PHONE", "TABLET", "COMPUTER"]).optional(),
   type: z.enum(["PAGE_VIEW", "BOOKING_CHAT"]).optional(),
+  /** One part of the site, e.g. "/" or "/#rooms" */
+  path: z.string().max(200).optional(),
+  sort: z.enum(["newest", "oldest"]).default("newest"),
 });
+
+/** A guest's visit: their events with gaps of at most this long. */
+const VISIT_GAP_MS = 30 * 60 * 1000;
 
 /** /api/lodge/stats, /visits, /activity. Mounted under the lodge router. */
 export const stats = new Hono<{ Variables: LodgeVariables }>()
@@ -120,27 +126,41 @@ export const stats = new Hono<{ Variables: LodgeVariables }>()
     });
   })
 
-  /** Recent visits, newest first, with filters. */
+  /** Visits and booking chats with filters, a page at a time, and the parts of the site visited (for the Page filter). */
   .get("/visits", async (c) => {
     const query = visitsQuery.safeParse(c.req.query());
     if (!query.success) throw new HTTPException(400, { message: "Check the filters" });
-    const { page, pageSize, where: region, device, type } = query.data;
+    const { page, pageSize, where: region, device, type, path, sort } = query.data;
     const where = {
       lodgeId: c.var.lodgeId,
       ...(device ? { device } : {}),
       ...(type ? { type } : {}),
+      ...(path ? { path } : {}),
       ...(region === "zw" ? { country: "ZW" } : region === "abroad" ? { country: { not: "ZW" }, NOT: { country: null } } : {}),
     };
-    const [total, items, rooms] = await Promise.all([
+    const [total, items, rooms, paths] = await Promise.all([
       prisma.siteEvent.count({ where }),
-      prisma.siteEvent.findMany({ where, orderBy: { createdAt: "desc" }, skip: (page - 1) * pageSize, take: pageSize }),
+      prisma.siteEvent.findMany({
+        where,
+        orderBy: { createdAt: sort === "newest" ? "desc" : "asc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
       prisma.room.findMany({ where: { lodgeId: c.var.lodgeId }, select: { id: true, name: true } }),
+      prisma.siteEvent.groupBy({
+        by: ["path"],
+        where: { lodgeId: c.var.lodgeId },
+        _count: { _all: true },
+        orderBy: { _count: { path: "desc" } },
+        take: 12,
+      }),
     ]);
     const roomNames = new Map(rooms.map((room) => [room.id, room.name]));
     return c.json({
       total,
       page,
       pageSize,
+      paths: paths.map((entry) => ({ path: entry.path, count: entry._count._all })),
       items: items.map((event) => ({
         id: event.id,
         type: event.type,
@@ -151,6 +171,47 @@ export const stats = new Hono<{ Variables: LodgeVariables }>()
         path: event.path,
         ip: event.ip,
         room: event.roomId ? (roomNames.get(event.roomId) ?? null) : null,
+      })),
+    });
+  })
+
+  /**
+   * One guest's visit around an event: the pages they opened, in order, and any
+   * booking chats, from their events with gaps of at most 30 minutes.
+   */
+  .get("/visits/:id/journey", async (c) => {
+    const event = await prisma.siteEvent.findFirst({ where: { id: c.req.param("id"), lodgeId: c.var.lodgeId } });
+    if (!event) throw new HTTPException(404, { message: "That visit is no longer here" });
+    const window = 6 * 60 * 60 * 1000;
+    const [nearby, rooms] = await Promise.all([
+      prisma.siteEvent.findMany({
+        where: {
+          lodgeId: c.var.lodgeId,
+          visitorId: event.visitorId,
+          createdAt: { gte: new Date(event.createdAt.getTime() - window), lte: new Date(event.createdAt.getTime() + window) },
+        },
+        orderBy: { createdAt: "asc" },
+        take: 200,
+      }),
+      prisma.room.findMany({ where: { lodgeId: c.var.lodgeId }, select: { id: true, name: true } }),
+    ]);
+    // Walk out from the event while the gaps stay short
+    const index = nearby.findIndex((item) => item.id === event.id);
+    let first = index;
+    let last = index;
+    while (first > 0 && nearby[first]!.createdAt.getTime() - nearby[first - 1]!.createdAt.getTime() <= VISIT_GAP_MS) first--;
+    while (last < nearby.length - 1 && nearby[last + 1]!.createdAt.getTime() - nearby[last]!.createdAt.getTime() <= VISIT_GAP_MS) last++;
+    const visit = nearby.slice(first, last + 1);
+    const roomNames = new Map(rooms.map((room) => [room.id, room.name]));
+    return c.json({
+      startedAt: visit[0]!.createdAt,
+      endedAt: visit[visit.length - 1]!.createdAt,
+      steps: visit.map((item) => ({
+        id: item.id,
+        type: item.type,
+        path: item.path,
+        createdAt: item.createdAt,
+        room: item.roomId ? (roomNames.get(item.roomId) ?? null) : null,
       })),
     });
   })
