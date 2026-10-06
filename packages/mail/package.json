@@ -8,7 +8,8 @@
     "./templates": "./src/templates.ts"
   },
   "scripts": {
-    "check-types": "tsc -b"
+    "check-types": "tsc -b",
+    "test": "bun test"
   },
   "dependencies": {
     "@stayzim/env": "workspace:*",
