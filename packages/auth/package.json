@@ -9,7 +9,8 @@
   },
   "scripts": {
     "check-types": "tsc -b",
-    "create-owner": "bun --env-file=../../apps/server/.env scripts/create-owner.ts"
+    "create-owner": "bun --env-file=../../apps/server/.env scripts/create-owner.ts",
+    "seed-demos": "bun --env-file=../../apps/server/.env scripts/seed-demos.ts"
   },
   "dependencies": {
     "@stayzim/db": "workspace:*",
