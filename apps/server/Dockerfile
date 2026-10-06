@@ -68,8 +68,9 @@ ENV NODE_ENV=production \
 USER node
 EXPOSE 9998
 
+# /health also checks the database
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD bun -e "fetch('http://localhost:' + (process.env.PORT || 9998) + '/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+  CMD bun -e "fetch('http://localhost:' + (process.env.PORT || 9998) + '/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
 
 # Applies new Prisma migrations, then runs the API with Bun (TypeScript source, as in dev)
 CMD ["stayzim-start"]

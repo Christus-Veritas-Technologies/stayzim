@@ -1,4 +1,5 @@
 import { auth } from "@stayzim/auth";
+import prisma from "@stayzim/db";
 import { env } from "@stayzim/env/server";
 import { isMailConfigured, verifyMailConnection } from "@stayzim/mail";
 import { Hono } from "hono";
@@ -43,6 +44,23 @@ app.use(
 
 app.get("/", (c) => {
   return c.text("OK");
+});
+
+// For Docker and Coolify health checks: the API is up and can reach the database
+app.get("/health", async (c) => {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error("timed out after 2s")), 2000);
+  });
+  try {
+    await Promise.race([prisma.$queryRaw`SELECT 1`, timeout]);
+    return c.json({ status: "ok" });
+  } catch (error) {
+    console.error(`[health] database check failed: ${error instanceof Error ? error.message || error.name : String(error)}`);
+    return c.json({ status: "error", database: "unreachable" }, 503);
+  } finally {
+    clearTimeout(timer);
+  }
 });
 
 // better-auth: sign in/out, session, password reset, ... (see packages/auth)
