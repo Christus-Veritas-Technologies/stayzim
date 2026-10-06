@@ -37,6 +37,7 @@ COPY packages/config/package.json packages/config/
 COPY packages/db/package.json packages/db/
 COPY packages/env/package.json packages/env/
 COPY packages/mail/package.json packages/mail/
+COPY packages/sites/package.json packages/sites/
 COPY packages/ui/package.json packages/ui/
 
 COPY packages/db/prisma.config.ts packages/db/

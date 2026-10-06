@@ -15,6 +15,7 @@
     "@stayzim/db": "workspace:*",
     "@stayzim/env": "workspace:*",
     "@stayzim/mail": "workspace:*",
+    "@stayzim/sites": "workspace:*",
     "dotenv": "^17.2.2",
     "hono": "^4.8.2",
     "hono-rate-limiter": "^0.5.4",

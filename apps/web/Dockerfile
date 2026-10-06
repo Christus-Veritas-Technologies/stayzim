@@ -29,6 +29,7 @@ COPY packages/config/package.json packages/config/
 COPY packages/db/package.json packages/db/
 COPY packages/env/package.json packages/env/
 COPY packages/mail/package.json packages/mail/
+COPY packages/sites/package.json packages/sites/
 COPY packages/ui/package.json packages/ui/
 
 RUN pnpm install --frozen-lockfile --filter "web..."
@@ -42,11 +43,15 @@ ENV NEXT_PUBLIC_SERVER_URL=${NEXT_PUBLIC_SERVER_URL}
 # the landing page buttons open WhatsApp with no chat chosen.
 ARG NEXT_PUBLIC_WHATSAPP_NUMBER=
 ENV NEXT_PUBLIC_WHATSAPP_NUMBER=${NEXT_PUBLIC_WHATSAPP_NUMBER}
+# Lodge sites are {slug}.NEXT_PUBLIC_SITES_DOMAIN
+ARG NEXT_PUBLIC_SITES_DOMAIN=stayzim.co.zw
+ENV NEXT_PUBLIC_SITES_DOMAIN=${NEXT_PUBLIC_SITES_DOMAIN}
 ENV NEXT_TELEMETRY_DISABLED=1
 
 COPY packages/config/ packages/config/
 COPY packages/env/ packages/env/
 COPY packages/ui/ packages/ui/
+COPY packages/sites/ packages/sites/
 COPY apps/web/ apps/web/
 
 RUN pnpm --filter web build

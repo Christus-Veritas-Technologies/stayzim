@@ -33,6 +33,7 @@ COPY packages/config/package.json packages/config/
 COPY packages/db/package.json packages/db/
 COPY packages/env/package.json packages/env/
 COPY packages/mail/package.json packages/mail/
+COPY packages/sites/package.json packages/sites/
 COPY packages/ui/package.json packages/ui/
 
 # packages/db's postinstall runs `prisma generate`, which needs the schema and a
@@ -55,6 +56,7 @@ COPY packages/env/ packages/env/
 COPY packages/db/ packages/db/
 COPY packages/mail/ packages/mail/
 COPY packages/auth/ packages/auth/
+COPY packages/sites/ packages/sites/
 COPY apps/server/ apps/server/
 COPY docker/start.sh /usr/local/bin/stayzim-start
 RUN chmod +x /usr/local/bin/stayzim-start

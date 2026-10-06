@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@stayzim/env": "workspace:*",
+    "@stayzim/sites": "workspace:*",
     "@stayzim/ui": "workspace:*",
     "babel-plugin-react-compiler": "^1.0.0",
     "better-auth": "catalog:",

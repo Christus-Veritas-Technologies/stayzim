@@ -1,0 +1,6 @@
+{
+  "extends": "@stayzim/config/tsconfig.base.json",
+  "compilerOptions": {
+    "types": []
+  }
+}
