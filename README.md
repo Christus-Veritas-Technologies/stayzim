@@ -113,6 +113,8 @@ Lodge sites open at `http://{slug}.localhost:9999` (Chrome and Firefox resolve `
 | `pnpm dev:web` / `dev:server` / `dev:outreach` / `dev:native` | Start one app |
 | `pnpm build` | Build every app |
 | `pnpm check-types` | Type-check every package |
+| `pnpm test` | Unit tests in every package (`bun test`) |
+| `pnpm --filter web e2e` | Browser tests against the running apps ([apps/web/e2e](apps/web/e2e/README.md)) |
 | `pnpm db:deploy` | Apply new migrations to the database in `apps/server/.env` |
 | `pnpm db:migrate` | After editing the schema: create a migration and apply it locally |
 | `pnpm db:generate` | Regenerate the Prisma client |
@@ -121,6 +123,20 @@ Lodge sites open at `http://{slug}.localhost:9999` (Chrome and Firefox resolve `
 | `pnpm --filter @stayzim/db create-lodge …` | Create the lodge for an owner login, on a 14-day Growth trial |
 | `pnpm --filter @stayzim/auth seed-demos --whatsapp 2637…` | Create the landing page's demo lodges (mistvalley, msasaridge, lakeview) with rooms and copy, each with a demo owner login; skips any that exist. Sign in as the demo owner to add photos |
 | `pnpm --filter @stayzim/db resolve-request …` | List open change requests (`--list`) or answer one (`--ref R-XXXX --status done --reply "…"`); the team screen does the same |
+
+## Testing
+
+- **Unit tests** (`pnpm test`) run with `bun test`. They cover:
+  - template rules (`packages/sites`);
+  - SMTP settings and emails (`packages/mail`);
+  - visit chaining, lodge origins, devices and photo `srcset`s (`apps/server`, `src/lib/*.test.ts`);
+  - dates, periods, site addresses and WhatsApp links (`apps/web`, `src/lib/*.test.ts`).
+
+  Each app's `test/setup.ts` sets fixed settings and Zimbabwe time, so a local `.env` doesn't change the results.
+- **Browser tests** (`pnpm --filter web e2e`) are Playwright smoke tests: the landing page, an owner signing in, and a lodge site's Book on WhatsApp links. See [apps/web/e2e/README.md](apps/web/e2e/README.md).
+- **CI** (`.github/workflows/ci.yml`) runs on every push to `main` and on pull requests. It has two jobs:
+  - type-check, unit tests, and builds of web and server;
+  - browser tests: a fresh Postgres with the migrations, an owner and lodge made with the scripts, and the production builds of both apps.
 
 ## Database changes
 
