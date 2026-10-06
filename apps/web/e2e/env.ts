@@ -1,0 +1,15 @@
+/** Who and what the browser tests use. CI creates them (.github/workflows/ci.yml). */
+export const E2E = {
+  baseURL: process.env.E2E_BASE_URL ?? "http://localhost:9999",
+  email: process.env.E2E_EMAIL ?? "rudo@mistvalley.test",
+  password: process.env.E2E_PASSWORD ?? "testpass123",
+  /** The signed-in owner's lodge; it needs rooms and a WhatsApp number */
+  lodge: process.env.E2E_LODGE ?? "mistvalley",
+};
+
+/** http://mistvalley.localhost:9999 (Chromium sends *.localhost to this machine). */
+export function lodgeSiteUrl(slug = E2E.lodge) {
+  const url = new URL(E2E.baseURL);
+  url.hostname = `${slug}.${url.hostname}`;
+  return url.origin;
+}
