@@ -8,15 +8,18 @@ export const SITES_DOMAIN = env.NEXT_PUBLIC_SITES_DOMAIN.toLowerCase();
 
 const SUFFIX = `.${SITES_DOMAIN}`;
 
+/** Plain http for local development (localhost, or names under it like stayzim.localhost); https everywhere else. */
+const PROTOCOL = /(^|\.)localhost(:\d+)?$/.test(SITES_DOMAIN) ? "http" : "https";
+
 export function siteHost(lodge: { slug: string }) {
   return `${lodge.slug}${SUFFIX}`;
 }
 
 /** StayZim's own site: https://stayzim.co.zw (http://localhost:9999 in development). */
-export const MAIN_URL = `${SITES_DOMAIN.startsWith("localhost") ? "http" : "https"}://${SITES_DOMAIN}`;
+export const MAIN_URL = `${PROTOCOL}://${SITES_DOMAIN}`;
 
 export function siteUrl(lodge: { slug: string }) {
-  return `${SITES_DOMAIN.startsWith("localhost") ? "http" : "https"}://${siteHost(lodge)}`;
+  return `${PROTOCOL}://${siteHost(lodge)}`;
 }
 
 /** "mistvalley.stayzim.co.zw" → "mistvalley"; the app's own hosts → null. */
