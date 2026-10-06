@@ -8,7 +8,8 @@ import { z } from "zod";
 
 import { HERO_LIMITS } from "../index";
 import { AMENITY_KEYS } from "./amenities";
-import { LODGE_LIMITS, ROOM_LIMITS } from "./limits";
+import { SOCIAL_KEYS, socialLink, STAY_TIMES, type SocialLinks } from "./guest-info";
+import { GUEST_INFO_LIMITS, LODGE_LIMITS, ROOM_LIMITS } from "./limits";
 import type { PublicSite } from "./types";
 
 /** Digits only, with the country code: "+263 77 123 4567" → "263771234567". */
@@ -42,6 +43,44 @@ const email = z
   .transform((value) => value || null)
   .refine((value) => value === null || z.email().safeParse(value).success, "Check the email address");
 
+const stayTime = z
+  .string()
+  .nullable()
+  .refine((value) => value === null || STAY_TIMES.includes(value), "Pick a time");
+
+/** Each network's link, cleaned (https, @handles turned into links); empty ones are left out. */
+const socialLinks = z.object(Object.fromEntries(SOCIAL_KEYS.map((key) => [key, z.string().max(300).optional()]))).transform((input, ctx) => {
+  const links: SocialLinks = {};
+  for (const key of SOCIAL_KEYS) {
+    const value = (input as Record<string, string | undefined>)[key];
+    if (!value) continue;
+    const result = socialLink(key, value);
+    if ("error" in result) ctx.addIssue({ code: "custom", message: result.error, path: [key] });
+    else if (result.url) links[key] = result.url;
+  }
+  return links;
+});
+
+/** Guest info (docs/cms/guest-info.md). */
+const guestInfo = {
+  checkInFrom: stayTime,
+  checkOutBy: stayTime,
+  houseRules: z
+    .array(z.string().trim().max(GUEST_INFO_LIMITS.rule, `Keep each rule under ${GUEST_INFO_LIMITS.rule} characters`))
+    .max(GUEST_INFO_LIMITS.rules, `Up to ${GUEST_INFO_LIMITS.rules} house rules`)
+    .transform((rules) => rules.filter(Boolean)),
+  cancellationPolicy: optionalText(GUEST_INFO_LIMITS.policy, "The cancellation policy"),
+  faq: z
+    .array(
+      z.object({
+        q: z.string().trim().min(3, "Write the question").max(GUEST_INFO_LIMITS.question, `Keep each question under ${GUEST_INFO_LIMITS.question} characters`),
+        a: z.string().trim().min(1, "Write the answer").max(GUEST_INFO_LIMITS.answer, `Keep each answer under ${GUEST_INFO_LIMITS.answer} characters`),
+      }),
+    )
+    .max(GUEST_INFO_LIMITS.faq, `Up to ${GUEST_INFO_LIMITS.faq} questions`),
+  socialLinks,
+};
+
 /** PATCH /api/lodge: send only what changed. */
 export const lodgePatch = z
   .object({
@@ -60,6 +99,7 @@ export const lodgePatch = z
     template: z.string().min(1).max(40),
     heroHeadline: optionalText(HERO_LIMITS.headline, "The headline"),
     heroSubline: optionalText(HERO_LIMITS.subline, "The line under the headline"),
+    ...guestInfo,
   })
   .partial();
 
@@ -141,6 +181,19 @@ const liveSite = z.object({
   heroSrcSet: z.string().nullable().default(null),
   rooms: z.array(siteRoom).default([]),
   gallery: z.array(sitePhoto.extend({ caption: z.string().default("") })).default([]),
+  checkInFrom: z.string().nullable().default(null),
+  checkOutBy: z.string().nullable().default(null),
+  houseRules: z.array(z.string()).default([]),
+  cancellationPolicy: z.string().nullable().default(null),
+  faq: z.array(z.object({ q: z.string(), a: z.string() })).default([]),
+  socialLinks: z
+    .array(z.object({ key: z.string(), label: z.string(), url: z.string() }))
+    .default([])
+    .transform((links) =>
+      links.filter((link): link is { key: (typeof SOCIAL_KEYS)[number]; label: string; url: string } =>
+        (SOCIAL_KEYS as readonly string[]).includes(link.key),
+      ),
+    ),
 });
 
 export const publicSiteSchema = z.discriminatedUnion("status", [

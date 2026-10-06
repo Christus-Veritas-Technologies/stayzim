@@ -1,5 +1,15 @@
 import prisma from "@stayzim/db";
-import { demoEnded, effectiveTemplate, isAmenity, type DashboardLodge, type DashboardPhoto, type DashboardRoom } from "@stayzim/sites";
+import {
+  demoEnded,
+  effectiveTemplate,
+  isAmenity,
+  readFaq,
+  readHouseRules,
+  readSocialLinks,
+  type DashboardLodge,
+  type DashboardPhoto,
+  type DashboardRoom,
+} from "@stayzim/sites";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 
@@ -110,6 +120,12 @@ export async function lodgeJson(lodgeId: string): Promise<DashboardLodge> {
       updatedAt: room.updatedAt.toISOString(),
     })),
     gallery,
+    checkInFrom: lodge.checkInFrom,
+    checkOutBy: lodge.checkOutBy,
+    houseRules: readHouseRules(lodge.houseRules),
+    cancellationPolicy: lodge.cancellationPolicy || null,
+    faq: readFaq(lodge.faq),
+    socialLinks: readSocialLinks(lodge.socialLinks),
   };
 }
 

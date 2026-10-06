@@ -1,15 +1,16 @@
 import { Avatar } from "@stayzim/ui/components/avatar";
-import { ArrowUpRight, BedDouble, Mail, MapPin, Phone, Users } from "lucide-react";
-import type { CSSProperties } from "react";
+import { ArrowUpRight, BedDouble, Check, ChevronDown, LogIn, LogOut, Mail, MapPin, Phone, Users } from "lucide-react";
+import type { CSSProperties, ReactNode } from "react";
 
 import { WhatsAppIcon } from "@/components/landing/brand";
 import { Reveal } from "@/components/motion";
 import { ClampedText } from "@/components/site/clamped-text";
 import { RoomPhotos, SiteGallery } from "@/components/site/gallery";
+import { SocialIcon } from "@/components/site/social-icons";
 import { BookLink } from "@/components/site/tracking";
 import { AMENITIES, AMENITIES_ON_CARD, formatPhone, formatPrice, lodgePlace } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
-import { roomFacts } from "@/lib/site-content";
+import { hasStayInfo, roomFacts } from "@/lib/site-content";
 import { MAIN_URL } from "@/lib/site-host";
 
 const whatsappButton =
@@ -20,6 +21,18 @@ function SectionTitle({ eyebrow, children }: { eyebrow: string; children: string
     <div className="mb-5 flex flex-col gap-1">
       <span className="text-xs font-bold tracking-[0.12em] text-[var(--theme)] uppercase">{eyebrow}</span>
       <h2 className="font-serif text-[28px] leading-9 font-semibold text-[#0C181F] sm:text-[34px] sm:leading-10">{children}</h2>
+    </div>
+  );
+}
+
+function StayTime({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-1 rounded-3xl bg-white p-5 shadow-[0_0_0_1px_rgba(12,24,31,0.06)]">
+      <span className="inline-flex items-center gap-1.5 text-sm text-[#6C767D]">
+        <span className="text-[var(--theme)]">{icon}</span>
+        {label}
+      </span>
+      <span className="font-serif text-xl font-semibold whitespace-nowrap sm:text-2xl">{value}</span>
     </div>
   );
 }
@@ -36,6 +49,7 @@ export function ClassicTemplate({ site }: { site: LiveSite }) {
   const mostGuests = site.rooms.length > 0 ? Math.max(...site.rooms.map((room) => room.sleeps)) : null;
   const located = site.latitude !== null && site.longitude !== null;
   const mapsLink = located ? `https://www.google.com/maps?q=${site.latitude},${site.longitude}` : site.mapsUrl;
+  const stayInfo = hasStayInfo(site);
 
   return (
     <div style={{ "--theme": site.themeColor } as CSSProperties} className="min-h-svh bg-[#FAF9F6] pb-24 text-[#0C181F] lg:pb-0">
@@ -51,6 +65,11 @@ export function ClassicTemplate({ site }: { site: LiveSite }) {
             {site.gallery.length > 0 ? (
               <a href="#gallery" className="hover:text-[var(--theme)]">
                 Gallery
+              </a>
+            ) : null}
+            {stayInfo || site.faq.length > 0 ? (
+              <a href={stayInfo ? "#good-to-know" : "#questions"} className="hover:text-[var(--theme)]">
+                Info
               </a>
             ) : null}
             {mapsLink ? (
@@ -219,6 +238,67 @@ export function ClassicTemplate({ site }: { site: LiveSite }) {
           </section>
         ) : null}
 
+        {/* Good to know */}
+        {stayInfo ? (
+          <section id="good-to-know" className="scroll-mt-20">
+            <SectionTitle eyebrow="Before you come">Good to know</SectionTitle>
+            <Reveal className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+              {site.checkInFrom || site.checkOutBy ? (
+                <div className="grid grid-cols-2 gap-3 self-start">
+                  {site.checkInFrom ? <StayTime icon={<LogIn className="size-4" />} label="Check-in" value={`From ${site.checkInFrom}`} /> : null}
+                  {site.checkOutBy ? <StayTime icon={<LogOut className="size-4" />} label="Check-out" value={`By ${site.checkOutBy}`} /> : null}
+                </div>
+              ) : null}
+              {site.houseRules.length > 0 || site.cancellationPolicy ? (
+                <div className="flex flex-col gap-4 rounded-3xl bg-white p-5 shadow-[0_0_0_1px_rgba(12,24,31,0.06)] sm:p-6">
+                  {site.houseRules.length > 0 ? (
+                    <div className="flex flex-col gap-2.5">
+                      <h3 className="font-semibold">House rules</h3>
+                      <ul className="grid gap-2 text-[15px] text-[#4F5A60] sm:grid-cols-2">
+                        {site.houseRules.map((rule) => (
+                          <li key={rule} className="flex items-start gap-2">
+                            <Check className="mt-1 size-4 shrink-0 text-[var(--theme)]" />
+                            {rule}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                  {site.cancellationPolicy ? (
+                    <div className="flex flex-col gap-1.5 border-t border-black/5 pt-4 first:border-0 first:pt-0">
+                      <h3 className="font-semibold">Cancellations</h3>
+                      <p className="text-[15px] leading-6 whitespace-pre-line text-[#4F5A60]">{site.cancellationPolicy}</p>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </Reveal>
+          </section>
+        ) : null}
+
+        {/* Questions */}
+        {site.faq.length > 0 ? (
+          <section id="questions" className="scroll-mt-20">
+            <SectionTitle eyebrow="Asked often">Questions</SectionTitle>
+            <Reveal className="flex flex-col gap-2.5">
+              {site.faq.map((entry, index) => (
+                // Native details: opens without JavaScript, and screen readers know it
+                <details
+                  key={entry.q}
+                  open={index === 0}
+                  className="group rounded-2xl bg-white px-5 py-4 shadow-[0_0_0_1px_rgba(12,24,31,0.06)] open:shadow-[0_0_0_1px_rgba(12,24,31,0.06),0_12px_24px_-18px_rgba(12,24,31,0.3)]"
+                >
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold [&::-webkit-details-marker]:hidden">
+                    {entry.q}
+                    <ChevronDown className="size-5 shrink-0 text-[var(--theme)] transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none" />
+                  </summary>
+                  <p className="mt-2 text-[15px] leading-6 whitespace-pre-line text-[#4F5A60]">{entry.a}</p>
+                </details>
+              ))}
+            </Reveal>
+          </section>
+        ) : null}
+
         {/* Location */}
         {mapsLink ? (
           <section id="location" className="scroll-mt-20">
@@ -278,6 +358,23 @@ export function ClassicTemplate({ site }: { site: LiveSite }) {
                   </a>
                 ) : null}
               </div>
+              {site.socialLinks.length > 0 ? (
+                <div className="flex flex-wrap gap-2 sm:justify-end">
+                  {site.socialLinks.map((link) => (
+                    <a
+                      key={link.key}
+                      href={link.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`${site.name} on ${link.label}`}
+                      title={link.label}
+                      className="flex size-11 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25"
+                    >
+                      <SocialIcon network={link.key} />
+                    </a>
+                  ))}
+                </div>
+              ) : null}
             </div>
           </Reveal>
         </section>

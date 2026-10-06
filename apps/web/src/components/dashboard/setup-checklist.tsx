@@ -17,6 +17,7 @@ const ACTIONS: Record<SetupStep["key"], { label: string; href?: Route }> = {
   rooms: { label: "Add", href: "/dashboard/rooms" },
   photos: { label: "Upload", href: "/dashboard/gallery" },
   whatsapp: { label: "Check", href: "/dashboard/site" },
+  "guest-info": { label: "Add", href: "/dashboard/guest-info" },
   share: { label: "Share" },
 };
 

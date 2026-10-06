@@ -1,5 +1,6 @@
 import type { Plan } from "../index";
 import type { AmenityKey } from "./amenities";
+import type { FaqEntry, SocialKey, SocialLinks } from "./guest-info";
 
 /**
  * The lodge content contract: what the API sends, typed once for the server
@@ -70,7 +71,17 @@ export type LiveSite = {
   heroSrcSet: string | null;
   rooms: SiteRoom[];
   gallery: SiteGalleryPhoto[];
+  /** "14:00"; null when the owner hasn't said */
+  checkInFrom: string | null;
+  checkOutBy: string | null;
+  houseRules: string[];
+  cancellationPolicy: string | null;
+  faq: FaqEntry[];
+  /** In display order, only the ones the owner filled in */
+  socialLinks: SiteSocialLink[];
 };
+
+export type SiteSocialLink = { key: SocialKey; label: string; url: string };
 
 export type PublicSite = { status: "SUSPENDED" | "DEMO_ENDED"; slug: string; name: string } | LiveSite;
 
@@ -145,4 +156,10 @@ export type DashboardLodge = {
   rooms: DashboardRoom[];
   /** Photos not on a room, in order */
   gallery: DashboardPhoto[];
+  checkInFrom: string | null;
+  checkOutBy: string | null;
+  houseRules: string[];
+  cancellationPolicy: string | null;
+  faq: FaqEntry[];
+  socialLinks: SocialLinks;
 };

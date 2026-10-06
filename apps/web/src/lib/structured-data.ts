@@ -21,6 +21,9 @@ export function lodgeStructuredData(site: LiveSite) {
     email: site.email ?? undefined,
     address: place ? { "@type": "PostalAddress", addressLocality: site.town ?? undefined, addressRegion: site.region ?? undefined, addressCountry: "ZW" } : undefined,
     geo: site.latitude !== null && site.longitude !== null ? { "@type": "GeoCoordinates", latitude: site.latitude, longitude: site.longitude } : undefined,
+    checkinTime: site.checkInFrom ?? undefined,
+    checkoutTime: site.checkOutBy ?? undefined,
+    sameAs: site.socialLinks.length > 0 ? site.socialLinks.map((link) => link.url) : undefined,
     priceRange: site.rooms.length > 0 ? `$${Math.min(...site.rooms.map((room) => room.price))}+` : undefined,
     containsPlace: site.rooms.map((room) => ({
       "@type": "HotelRoom",
@@ -32,7 +35,15 @@ export function lodgeStructuredData(site: LiveSite) {
       image: room.photos[0]?.url,
     })),
   };
-  return [lodge];
+  const questions =
+    site.faq.length > 0
+      ? {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: site.faq.map((entry) => ({ "@type": "Question", name: entry.q, acceptedAnswer: { "@type": "Answer", text: entry.a } })),
+        }
+      : null;
+  return questions ? [lodge, questions] : [lodge];
 }
 
 /** JSON for a <script type="application/ld+json">, safe to put in HTML. */

@@ -1,6 +1,6 @@
 import { zValidator } from "@hono/zod-validator";
 import prisma from "@stayzim/db";
-import { demoEnded, findTemplate, heroText, type PublicSite } from "@stayzim/sites";
+import { demoEnded, findTemplate, heroText, SOCIAL_KEYS, SOCIAL_NETWORKS, type PublicSite } from "@stayzim/sites";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { rateLimiter } from "hono-rate-limiter";
@@ -87,6 +87,15 @@ export const sites = new Hono<{ Variables: AuthVariables }>()
           size: room.size,
         })),
       gallery: full.gallery.map(({ url, srcSet, width, height, caption }) => ({ url, srcSet, width, height, caption })),
+      checkInFrom: full.checkInFrom,
+      checkOutBy: full.checkOutBy,
+      houseRules: full.houseRules,
+      cancellationPolicy: full.cancellationPolicy,
+      faq: full.faq,
+      socialLinks: SOCIAL_KEYS.flatMap((key) => {
+        const url = full.socialLinks[key];
+        return url ? [{ key, label: SOCIAL_NETWORKS[key].label, url }] : [];
+      }),
     } satisfies PublicSite);
   })
 

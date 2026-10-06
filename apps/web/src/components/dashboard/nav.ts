@@ -17,7 +17,14 @@ export type NavLink = {
 };
 
 /** Pages under "My site". On phones they share one tab in the bottom bar. */
-export const SITE_PAGES = ["/dashboard/site", "/dashboard/rooms", "/dashboard/gallery", "/dashboard/design", "/dashboard/requests"];
+export const SITE_PAGES = [
+  "/dashboard/site",
+  "/dashboard/rooms",
+  "/dashboard/gallery",
+  "/dashboard/guest-info",
+  "/dashboard/design",
+  "/dashboard/requests",
+];
 
 export function navLinks(lodge: Lodge): NavLink[] {
   const missingPhotos = Math.max(0, GALLERY_GOAL - lodge.gallery.length);
@@ -45,6 +52,7 @@ export function navLinks(lodge: Lodge): NavLink[] {
           count: lodge.gallery.length,
           attention: missingPhotos > 0 ? `Add ${missingPhotos} more` : undefined,
         },
+        { href: "/dashboard/guest-info", label: "Guest info" },
         {
           href: "/dashboard/design",
           label: "Design",
@@ -94,6 +102,7 @@ export function breadcrumb(pathname: string): string[] {
   if (pathname.startsWith("/dashboard/site")) return ["My site", "Lodge info"];
   if (pathname.startsWith("/dashboard/rooms")) return ["My site", "Rooms"];
   if (pathname.startsWith("/dashboard/gallery")) return ["My site", "Gallery"];
+  if (pathname.startsWith("/dashboard/guest-info")) return ["My site", "Guest info"];
   if (pathname.startsWith("/dashboard/design")) return ["My site", "Design"];
   if (pathname.startsWith("/dashboard/requests")) return ["My site", "Change requests"];
   if (pathname.startsWith("/dashboard/analytics")) return ["Analytics"];

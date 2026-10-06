@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { canHold, fillsLast, fullNights, occupancy, overbookedNights } from "./content/availability";
+import { readFaq, readHouseRules, readSocialLinks, socialLink } from "./content/guest-info";
 import { dateAdd, dateAddMonths, eachNight, formatStay, isDateString, nightsBetween, staysOverlap, todayInHarare } from "./content/dates";
 import { lodgePatch, publicSiteSchema, roomInput, roomPatch } from "./content/schemas";
 
@@ -128,5 +129,44 @@ describe("patches", () => {
     expect(roomPatch.parse({ name: "Hillside" })).toEqual({ name: "Hillside" });
     expect(roomPatch.parse({ visible: false })).toEqual({ visible: false });
     expect(roomPatch.parse({ description: "" })).toEqual({ description: null });
+  });
+});
+
+describe("guest info", () => {
+  test("social links: handles become links, other sites are refused", () => {
+    expect(socialLink("instagram", "@mistvalley")).toEqual({ url: "https://instagram.com/mistvalley" });
+    expect(socialLink("tiktok", "mistvalley")).toEqual({ url: "https://www.tiktok.com/@mistvalley" });
+    expect(socialLink("facebook", "facebook.com/mistvalley")).toEqual({ url: "https://facebook.com/mistvalley" });
+    expect(socialLink("facebook", "http://m.facebook.com/mistvalley#about")).toEqual({ url: "https://m.facebook.com/mistvalley" });
+    expect(socialLink("instagram", "https://evil.com/instagram.com")).toEqual({ error: "That isn't an Instagram link" });
+    expect(socialLink("bookingCom", "booking.com")).toEqual({ error: "Add the link to your Booking.com page" });
+    expect(socialLink("airbnb", "")).toEqual({ url: null });
+  });
+
+  test("guest info in a lodge patch", () => {
+    const parsed = lodgePatch.parse({
+      checkInFrom: "14:00",
+      houseRules: ["No smoking indoors", "  "],
+      faq: [{ q: "Is breakfast included?", a: "Yes, from 7." }],
+      socialLinks: { instagram: "@mistvalley", facebook: "" },
+    });
+    expect(parsed).toEqual({
+      checkInFrom: "14:00",
+      houseRules: ["No smoking indoors"],
+      faq: [{ q: "Is breakfast included?", a: "Yes, from 7." }],
+      socialLinks: { instagram: "https://instagram.com/mistvalley" },
+    });
+    expect(lodgePatch.safeParse({ checkInFrom: "14:15" }).error?.issues[0]?.message).toBe("Pick a time");
+    expect(lodgePatch.safeParse({ faq: [{ q: "Parking?", a: "" }] }).error?.issues[0]?.message).toBe("Write the answer");
+    expect(lodgePatch.safeParse({ socialLinks: { instagram: "facebook.com/x" } }).error?.issues[0]?.path).toEqual(["socialLinks", "instagram"]);
+  });
+
+  test("stored JSON that went wrong reads as empty", () => {
+    expect(readHouseRules("oops")).toEqual([]);
+    expect(readHouseRules(["Quiet after 22:00", 3, ""])).toEqual(["Quiet after 22:00"]);
+    expect(readFaq([{ q: "Wi-Fi?", a: "Yes" }, { q: 1 }])).toEqual([{ q: "Wi-Fi?", a: "Yes" }]);
+    expect(readSocialLinks({ instagram: "https://instagram.com/x", facebook: "javascript:alert(1)", other: "https://x.com" })).toEqual({
+      instagram: "https://instagram.com/x",
+    });
   });
 });

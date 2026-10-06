@@ -26,6 +26,12 @@ const site: LiveSite = {
   heroSrcSet: null,
   rooms: [],
   gallery: [],
+  checkInFrom: null,
+  checkOutBy: null,
+  houseRules: [],
+  cancellationPolicy: null,
+  faq: [],
+  socialLinks: [],
 };
 
 describe("bookingUrl", () => {
