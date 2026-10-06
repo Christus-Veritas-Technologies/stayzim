@@ -59,6 +59,15 @@ RUN pnpm --filter web build
 # ---- Runtime ----
 FROM base AS runtime
 
+# The same public settings at runtime: next.config.ts checks them again when
+# `next start` loads it, and stops the server if they're missing
+ARG NEXT_PUBLIC_SERVER_URL=http://localhost:9998
+ARG NEXT_PUBLIC_WHATSAPP_NUMBER=
+ARG NEXT_PUBLIC_SITES_DOMAIN=stayzim.co.zw
+ENV NEXT_PUBLIC_SERVER_URL=${NEXT_PUBLIC_SERVER_URL} \
+    NEXT_PUBLIC_WHATSAPP_NUMBER=${NEXT_PUBLIC_WHATSAPP_NUMBER} \
+    NEXT_PUBLIC_SITES_DOMAIN=${NEXT_PUBLIC_SITES_DOMAIN}
+
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     PORT=9999 \
