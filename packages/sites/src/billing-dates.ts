@@ -72,3 +72,33 @@ export function statusFor(lodge: { status: BillingStatus; paidUntil: Date | null
 export function demoEnded(lodge: { status: BillingStatus; demoEndsAt: Date | null }, now: Date) {
   return lodge.status === "DEMO" && lodge.demoEndsAt !== null && lodge.demoEndsAt.getTime() <= now.getTime();
 }
+
+const HARARE = "Africa/Harare";
+
+function harareParts(date: Date, options: Intl.DateTimeFormatOptions) {
+  const parts = new Intl.DateTimeFormat("en-GB", { timeZone: HARARE, ...options }).formatToParts(date);
+  return Object.fromEntries(parts.map((part) => [part.type, part.value]));
+}
+
+/** "Thursday 8 October" in Zimbabwe time, for emails, invoices and receipts. */
+export function formatHarareDate(date: Date) {
+  const parts = harareParts(date, { weekday: "long", day: "numeric", month: "long" });
+  return `${parts.weekday} ${parts.day} ${parts.month}`;
+}
+
+/** "8 October 2026" in Zimbabwe time. */
+export function formatHarareDay(date: Date) {
+  const parts = harareParts(date, { day: "numeric", month: "long", year: "numeric" });
+  return `${parts.day} ${parts.month} ${parts.year}`;
+}
+
+/** "Thursday 8 October at 14:30" in Zimbabwe time. */
+export function formatHarareDateTime(date: Date) {
+  const parts = harareParts(date, { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+  return `${formatHarareDate(date)} at ${parts.hour}:${parts.minute}`;
+}
+
+/** 4000 → "$40.00" */
+export function formatCents(cents: number) {
+  return `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}

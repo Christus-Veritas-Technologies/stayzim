@@ -15,6 +15,7 @@ import { account } from "./routes/account";
 import { admin } from "./routes/admin";
 import { landing } from "./routes/landing";
 import { lodge } from "./routes/lodge";
+import { onboarding } from "./routes/onboarding";
 import { sites } from "./routes/sites";
 
 const app = new Hono<{ Variables: AuthVariables }>();
@@ -68,6 +69,8 @@ app.on(["GET", "POST"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
 app.route("/api/landing", landing);
 
+app.use("/api/onboarding/*", withSession);
+app.route("/api/onboarding", onboarding);
 app.use("/api/account/*", withSession);
 app.route("/api/account", account);
 

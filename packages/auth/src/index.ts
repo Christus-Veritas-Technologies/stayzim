@@ -30,10 +30,12 @@ export const auth = betterAuth({
 
   emailAndPassword: {
     enabled: true,
-    // There is no public sign-up: StayZim creates every owner account (scripts/create-owner.ts)
-    disableSignUp: true,
+    // Owners sign up themselves (/signup), then build their demo site at /start.
+    // StayZim can still create accounts (scripts/create-owner.ts).
+    disableSignUp: false,
     minPasswordLength: MIN_PASSWORD_LENGTH,
-    // Accounts are created by us with a known email, so there's nothing to verify
+    // No email check before the demo: sign-up to a live site has to take minutes.
+    // Invoices and receipts go to this address, so owners have every reason to type it right.
     requireEmailVerification: false,
     resetPasswordTokenExpiresIn: 60 * 60,
     revokeSessionsOnPasswordReset: true,
@@ -53,14 +55,13 @@ export const auth = betterAuth({
     },
   },
 
-  // Sign in with Google links to the owner account with the same email. There is
-  // no sign-up here either: an unknown Google email is refused ("signup_disabled").
+  // Sign in with Google links to the owner account with the same email, or
+  // creates one (sign-up with Google, then /start).
   socialProviders: googleSignInEnabled
     ? {
         google: {
           clientId: env.GOOGLE_CLIENT_ID!,
           clientSecret: env.GOOGLE_CLIENT_SECRET!,
-          disableSignUp: true,
           prompt: "select_account",
         },
       }
@@ -111,6 +112,8 @@ export const auth = betterAuth({
     customRules: {
       // 5 sign-in attempts per 10 minutes, then wait
       "/sign-in/email": { window: 10 * 60, max: 5 },
+      // Sign-ups from one IP: enough for a family sharing a phone, not for a script
+      "/sign-up/email": { window: 10 * 60, max: 5 },
       "/request-password-reset": { window: 10 * 60, max: 3 },
       "/change-password": { window: 10 * 60, max: 5 },
     },

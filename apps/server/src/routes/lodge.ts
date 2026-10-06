@@ -5,7 +5,7 @@ import { bodyLimit } from "hono/body-limit";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 
-import { lodgeJson, phoneDigits, requireLodge, type LodgeVariables } from "../lib/lodge";
+import { lodgeJson, phoneNumber, requireLodge, type LodgeVariables } from "../lib/lodge";
 import { coordinatesFromMapsUrl } from "../lib/maps";
 import { requireAuth, withSession } from "../lib/session";
 import { MAX_UPLOAD_BYTES, removeUploads, saveImage } from "../lib/uploads";
@@ -23,16 +23,6 @@ const optionalText = (max: number, label: string) =>
     .max(max, `${label} is too long (${max} characters at most)`)
     .nullable()
     .transform((value) => value || null);
-
-/** A phone number with its country code, stored as digits only. */
-const phoneNumber = (label: string) =>
-  z
-    .string()
-    .trim()
-    .nullable()
-    .transform((value) => (value ? phoneDigits(value) : null))
-    .refine((value) => value === null || !value.startsWith("2630"), "Remove the 0 at the start. The +263 is already added.")
-    .refine((value) => value === null || /^\d{9,15}$/.test(value), `Check the ${label} number, with the country code`);
 
 const lodgeUpdateSchema = z
   .object({

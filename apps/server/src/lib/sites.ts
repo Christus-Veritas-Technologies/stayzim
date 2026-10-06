@@ -79,3 +79,13 @@ export function describeDevice(userAgent: string | undefined) {
               : null;
   return { device: device as "PHONE" | "TABLET" | "COMPUTER", browser: [os, browser].filter(Boolean).join(", ") || null };
 }
+
+const SITE_PROTOCOL = /(^|\.)localhost(:\d+)?$/.test(env.SITES_DOMAIN) ? "http" : "https";
+
+/** A lodge's public address, for emails: its own domain when it has one. */
+export function siteUrlFor(lodge: { slug: string; customDomain?: string | null }) {
+  return lodge.customDomain ? `https://${lodge.customDomain}` : `${SITE_PROTOCOL}://${lodge.slug}.${env.SITES_DOMAIN}`;
+}
+
+/** The owner dashboard on the web app, for links in emails. */
+export const DASHBOARD_URL = `${(env.WEB_URL ?? env.CORS_ORIGIN[0]!).replace(/\/$/, "")}/dashboard`;

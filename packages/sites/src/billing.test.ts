@@ -95,3 +95,15 @@ describe("billing dates", () => {
     expect(demoEnded({ status: "ACTIVE", demoEndsAt: null }, at("2030-01-01T00:00:00Z"))).toBe(false);
   });
 });
+
+describe("formatting", () => {
+  test("dates in Zimbabwe time, amounts in dollars", async () => {
+    const { formatCents, formatHarareDate, formatHarareDateTime, formatHarareDay } = await import("./index");
+    // 22:30 UTC is 00:30 the next day in Harare
+    expect(formatHarareDate(at("2026-10-07T22:30:00Z"))).toBe("Thursday 8 October");
+    expect(formatHarareDateTime(at("2026-10-07T22:30:00Z"))).toBe("Thursday 8 October at 00:30");
+    expect(formatHarareDay(at("2026-10-07T22:30:00Z"))).toBe("8 October 2026");
+    expect(formatCents(4000)).toBe("$40.00");
+    expect(formatCents(90000)).toBe("$900.00");
+  });
+});

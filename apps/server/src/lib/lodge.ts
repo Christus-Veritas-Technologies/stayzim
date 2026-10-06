@@ -1,6 +1,7 @@
 import prisma from "@stayzim/db";
 import { demoEnded, effectiveTemplate } from "@stayzim/sites";
 import { createMiddleware } from "hono/factory";
+import { z } from "zod";
 import { HTTPException } from "hono/http-exception";
 
 import type { AuthVariables } from "./session";
@@ -8,12 +9,12 @@ import { photoSrcSet, uploadUrl } from "./uploads";
 
 export type LodgeVariables = AuthVariables & { lodgeId: string };
 
-/** The signed-in owner's lodge, as `c.var.lodgeId`. 404 until StayZim has created it. */
+/** The signed-in owner's lodge, as `c.var.lodgeId`. 404 until they've made it at /start. */
 export const requireLodge = createMiddleware<{ Variables: LodgeVariables }>(async (c, next) => {
   const user = c.get("user");
   if (!user) throw new HTTPException(401, { message: "Sign in to continue" });
   const lodge = await prisma.lodge.findUnique({ where: { ownerId: user.id }, select: { id: true } });
-  if (!lodge) throw new HTTPException(404, { message: "Your lodge isn't set up yet. Message us on WhatsApp." });
+  if (!lodge) throw new HTTPException(404, { message: "Your lodge isn't set up yet." });
   c.set("lodgeId", lodge.id);
   await next();
 });
@@ -169,3 +170,13 @@ export async function lodgeJson(lodgeId: string): Promise<LodgeJson> {
 export function phoneDigits(value: string) {
   return value.replace(/\D/g, "");
 }
+
+/** A phone number with its country code, stored as digits only. Used by Lodge info and the start screen. */
+export const phoneNumber = (label: string) =>
+  z
+    .string()
+    .trim()
+    .nullable()
+    .transform((value) => (value ? phoneDigits(value) : null))
+    .refine((value) => value === null || !value.startsWith("2630"), "Remove the 0 at the start. The +263 is already added.")
+    .refine((value) => value === null || /^\d{9,15}$/.test(value), `Check the ${label} number, with the country code`);
