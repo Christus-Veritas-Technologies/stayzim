@@ -13,6 +13,7 @@ import { describeStorage, serveUpload } from "./lib/uploads";
 import { account } from "./routes/account";
 import { landing } from "./routes/landing";
 import { lodge } from "./routes/lodge";
+import { sites } from "./routes/sites";
 
 const app = new Hono<{ Variables: AuthVariables }>();
 
@@ -51,6 +52,9 @@ app.use("/api/account/*", withSession);
 app.route("/api/account", account);
 
 app.route("/api/lodge", lodge);
+
+// Public: lodge site content and visit tracking
+app.route("/api/sites", sites);
 
 app.notFound((c) => c.json({ error: "Not found" }, 404));
 
