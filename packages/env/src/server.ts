@@ -5,7 +5,15 @@ import { z } from "zod";
 export const env = createEnv({
   server: {
     DATABASE_URL: z.string().min(1),
-    CORS_ORIGIN: z.url(),
+    // Web app origins allowed to call the API with cookies, comma-separated,
+    // e.g. "https://app.stayzim.co.zw,https://stayzim.co.zw"
+    CORS_ORIGIN: z
+      .string()
+      .transform((value) => value.split(",").map((origin) => origin.trim().replace(/\/+$/, "")).filter(Boolean))
+      .pipe(z.array(z.url()).min(1)),
+    // Lodge sites live at {slug}.SITES_DOMAIN and may report visits to the API.
+    // "stayzim.co.zw" in production; "localhost:9999" locally (mistvalley.localhost:9999).
+    SITES_DOMAIN: z.string().min(1).default("stayzim.co.zw"),
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
     PORT: z.coerce.number().default(9998),
 

@@ -30,8 +30,8 @@ function fail(message: string): never {
   process.exit(1);
 }
 
-/** Subdomains we use ourselves. */
-const RESERVED = new Set(["www", "app", "api", "admin", "mail", "outreach", "help", "status", "demo"]);
+/** Subdomains we use ourselves. Mirrored in apps/server/src/lib/sites.ts. */
+const RESERVED = new Set(["www", "app", "api", "admin", "mail", "media", "outreach", "help", "status", "demo"]);
 
 const email = values.owner?.trim().toLowerCase();
 if (!email) fail("Pass --owner with the owner's login email.");
