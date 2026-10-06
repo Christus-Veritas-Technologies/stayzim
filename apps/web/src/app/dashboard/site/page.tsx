@@ -34,6 +34,7 @@ import { MapPreview } from "@/components/dashboard/map-preview";
 import { Page, PageHeader, PageSection } from "@/components/dashboard/page";
 import { SitePreview } from "@/components/dashboard/site-preview";
 import { WhatsAppIcon } from "@/components/landing/brand";
+import { WhyDisabled } from "@/components/why-disabled";
 import { api, apiUpload } from "@/lib/api";
 import { ImageReadError, LOGO_EDGE, photoForm, resizeImage } from "@/lib/images";
 import {
@@ -210,9 +211,11 @@ export default function LodgeInfoPage() {
       <Button variant="outline" onClick={onDiscard} disabled={!dirty || saving}>
         Discard
       </Button>
-      <Button onClick={onSave} loading={saving} disabled={!dirty}>
-        Save changes
-      </Button>
+      <WhyDisabled reason={dirty || saving ? null : "No changes to save"}>
+        <Button onClick={onSave} loading={saving} disabled={!dirty}>
+          Save changes
+        </Button>
+      </WhyDisabled>
     </>
   );
 
