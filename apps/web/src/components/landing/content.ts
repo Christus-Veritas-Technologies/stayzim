@@ -3,7 +3,7 @@
 export const NAV_LINKS = [
   { id: "how-it-works", label: "How it works" },
   { id: "examples", label: "Examples" },
-  { id: "pricing", label: "Pricing", badge: "14 days free" },
+  { id: "pricing", label: "Pricing", badge: "2 days free" },
   { id: "questions", label: "Questions" },
 ] as const;
 
@@ -91,7 +91,7 @@ export const PLANS: Plan[] = [
     tagline: "Get found",
     description: "For new guesthouses and Airbnbs that need to be online.",
     price: "$20",
-    cta: "Ask about Starter",
+    cta: "Try Starter free",
     features: [
       "Lodge site on yourlodge.stayzim.co.zw",
       "Rooms, gallery and map on one page",
@@ -105,7 +105,7 @@ export const PLANS: Plan[] = [
     tagline: "Get booked",
     description: "For most lodges. Know who visits and book them direct.",
     price: "$40",
-    cta: "Start your 14-day free trial",
+    cta: "Try Growth free for 2 days",
     features: ["Everything in Starter", "Visitor analytics"],
     featured: true,
   },
@@ -115,7 +115,7 @@ export const PLANS: Plan[] = [
     tagline: "Get full",
     description: "For busy lodges with 5+ rooms, or owners living abroad.",
     price: "$75",
-    cta: "Ask about Pro",
+    cta: "Try Pro free",
     features: [
       "Everything in Growth",
       "We look after your Booking.com and Airbnb photos and text",
@@ -154,7 +154,7 @@ export const FOOTER_COLUMNS = [
     title: "For owners",
     links: [
       { label: "Log in", href: "/login" },
-      { label: "Start a free trial", whatsapp: "growth" },
+      { label: "Try it free", href: "/signup" },
       { label: "Message us", whatsapp: "general" },
     ],
   },

@@ -1,7 +1,7 @@
 "use client";
 
 import { animate, motion, useMotionValue, useScroll, useTransform } from "framer-motion";
-import { ArrowUpRight, MapPin } from "lucide-react";
+import { ArrowRight, MapPin } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { WhatsAppIcon } from "./brand";
@@ -191,22 +191,22 @@ export function Hero() {
           variants={fadeUp}
           className="mt-6 flex w-full flex-col gap-2.5 sm:w-auto sm:flex-row sm:items-center sm:gap-3 lg:mt-[30px]"
         >
+          <TrackedLink
+            href="/signup"
+            track={{ cta: "hero_signup", section: "hero" }}
+            className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-brand px-7 text-[17px] font-semibold whitespace-nowrap text-white no-underline shadow-[0_10px_24px_-10px_rgba(0,125,162,0.8)] hover:bg-brand-dark hover:text-white"
+          >
+            Make my free site
+            <ArrowRight size={19} strokeWidth={2} />
+          </TrackedLink>
           <WhatsAppLink
             message="general"
             track={{ cta: "hero_whatsapp", section: "hero" }}
-            className="inline-flex h-14 items-center justify-center gap-2.5 rounded-full bg-whatsapp pr-[26px] pl-5 text-[17px] font-semibold whitespace-nowrap text-ink no-underline shadow-[0_6px_16px_rgba(12,24,31,0.10)] hover:text-ink"
+            className="inline-flex h-[52px] items-center justify-center gap-2.5 rounded-full border border-[#CED6DA] bg-white pr-[22px] pl-4 text-base font-semibold whitespace-nowrap text-ink no-underline hover:text-ink sm:h-14"
           >
-            <WhatsAppIcon size={22} />
+            <WhatsAppIcon size={20} />
             Chat on WhatsApp
           </WhatsAppLink>
-          <TrackedLink
-            href="#examples"
-            track={{ cta: "hero_example", section: "hero" }}
-            className="inline-flex h-[52px] items-center justify-center gap-2 rounded-full border border-[#CED6DA] bg-white px-[22px] text-base font-semibold whitespace-nowrap text-ink no-underline hover:text-ink sm:h-14 sm:rounded-md sm:border-muted"
-          >
-            See a real example
-            <ArrowUpRight size={18} strokeWidth={1.75} />
-          </TrackedLink>
         </motion.div>
 
         {/* Location pills as a row, below xl */}

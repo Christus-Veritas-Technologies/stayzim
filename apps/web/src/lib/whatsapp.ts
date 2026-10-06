@@ -6,7 +6,7 @@ export const WHATSAPP_MESSAGES = {
   demo: "Hi StayZim, can you build a demo site for my lodge first? My lodge is called: ",
   question: "Hi StayZim, I have a question: ",
   starter: "Hi StayZim, I'd like to ask about the Starter plan ($20/month).",
-  growth: "Hi StayZim, I'd like to start the 14-day free trial on Growth. My lodge is called: ",
+  growth: "Hi StayZim, I'd like to ask about the Growth plan ($40/month).",
   pro: "Hi StayZim, I'd like to ask about the Pro plan ($75/month).",
   help: "Hi StayZim, I need help with my lodge dashboard: ",
   login: "Hi StayZim, I can't log in to my lodge dashboard. My email is: ",

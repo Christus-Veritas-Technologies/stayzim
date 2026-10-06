@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowUpRight, Sparkles, TrendingUp } from "lucide-react";
+import { ArrowRight, Sparkles, TrendingUp } from "lucide-react";
 
 import { WhatsAppIcon } from "./brand";
 import { TrackedLink, WhatsAppLink } from "./cta";
@@ -38,7 +38,7 @@ export function FinalCta() {
                     <Sparkles size={13} strokeWidth={1.75} />
                   </motion.span>
                 </span>
-                14 days free, built before you pay
+                Free for 2 days, live in 5 minutes
               </span>
             </Item>
             <Item>
@@ -48,27 +48,27 @@ export function FinalCta() {
             </Item>
             <Item>
               <p className="max-w-[400px] text-base leading-relaxed text-muted lg:text-lg lg:leading-7">
-                Send us a message with your lodge name. Your site can be live before you pay anything.
+                Sign up and make your site yourself in 5 minutes, or message us and we'll help. It's live before you pay anything.
               </p>
             </Item>
           </div>
           <Item className="flex flex-col gap-2.5 sm:flex-row sm:gap-3">
+            <TrackedLink
+              href="/signup"
+              track={{ cta: "final_signup", section: "final_cta" }}
+              className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-brand px-7 text-[17px] font-semibold whitespace-nowrap text-white no-underline shadow-[0_10px_24px_-10px_rgba(0,125,162,0.8)] hover:bg-brand-dark hover:text-white"
+            >
+              Make my free site
+              <ArrowRight size={19} strokeWidth={2} />
+            </TrackedLink>
             <WhatsAppLink
               message="general"
               track={{ cta: "final_whatsapp", section: "final_cta" }}
-              className="inline-flex h-14 items-center justify-center gap-2.5 rounded-full bg-whatsapp pr-[26px] pl-5 text-[17px] font-semibold whitespace-nowrap text-ink no-underline shadow-[0_10px_24px_-8px_rgba(37,211,102,0.6)] hover:text-ink"
+              className="inline-flex h-14 items-center justify-center gap-2.5 rounded-full border border-[#DDE3E7] bg-white pr-6 pl-4 text-base font-semibold whitespace-nowrap text-ink no-underline hover:text-ink"
             >
-              <WhatsAppIcon size={22} />
+              <WhatsAppIcon size={20} />
               Chat on WhatsApp
             </WhatsAppLink>
-            <TrackedLink
-              href="#examples"
-              track={{ cta: "final_example", section: "final_cta" }}
-              className="inline-flex h-14 items-center justify-center gap-2 rounded-full border border-[#DDE3E7] bg-white px-6 text-base font-semibold whitespace-nowrap text-ink no-underline hover:text-ink"
-            >
-              See a real example
-              <ArrowUpRight size={18} strokeWidth={1.75} />
-            </TrackedLink>
           </Item>
         </Stagger>
 

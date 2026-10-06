@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     template: "%s · StayZim",
   },
   description:
-    "Stop paying 20% to Booking.com. StayZim builds your lodge its own website where guests book you directly on WhatsApp. Made in Mutare for Zimbabwean lodges. 14 days free.",
+    "Stop paying 20% to Booking.com. StayZim builds your lodge its own website where guests book you directly on WhatsApp. Made in Mutare for Zimbabwean lodges. Live in 5 minutes, free for 2 days.",
   openGraph: {
     title: "StayZim: your own lodge website",
     description: "Your own lodge website. Guests book on WhatsApp. 0% commission.",

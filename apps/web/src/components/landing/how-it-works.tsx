@@ -190,13 +190,13 @@ export function HowItWorks() {
             </Item>
             <Item>
               <h2 className="font-display text-[34px] leading-[37px] font-semibold tracking-[-0.03em] text-balance lg:text-[52px] lg:leading-[56px]">
-                Your site is built before you pay anything
+                Your site is live before you pay anything
               </h2>
             </Item>
           </div>
           <Item>
             <p className="text-base leading-relaxed text-pretty text-muted lg:text-lg lg:leading-7">
-              We build your site from what you send on WhatsApp. Guests book you direct. Try it free on Growth for 14 days.
+              Make it yourself in 5 minutes from your phone, or send us your photos on WhatsApp and we'll do it. Guests book you direct. Free for 2 days.
             </p>
           </Item>
         </Stagger>

@@ -4,9 +4,9 @@ import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "framer-
 import { Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { Wordmark, WhatsAppIcon } from "./brand";
+import { Wordmark } from "./brand";
 import { NAV_LINKS } from "./content";
-import { TrackedLink, WhatsAppLink } from "./cta";
+import { TrackedLink } from "./cta";
 import { EASE_OUT } from "@/components/motion";
 
 /** Which section is under the nav, for the highlight. */
@@ -113,14 +113,13 @@ export function Nav() {
           >
             Log in
           </TrackedLink>
-          <WhatsAppLink
-            message="general"
-            track={{ cta: "nav_whatsapp", section: "nav" }}
-            className="inline-flex h-10 items-center gap-[7px] rounded-full bg-whatsapp pr-3 pl-2.5 text-[13.5px] font-semibold whitespace-nowrap text-ink no-underline hover:text-ink lg:h-11 lg:gap-2 lg:pr-[18px] lg:pl-3.5 lg:text-[15px]"
+          <TrackedLink
+            href="/signup"
+            track={{ cta: "nav_signup", section: "nav" }}
+            className="inline-flex h-10 items-center rounded-full bg-brand px-4 text-[13.5px] font-semibold whitespace-nowrap text-white no-underline hover:bg-brand-dark hover:text-white lg:h-11 lg:px-5 lg:text-[15px]"
           >
-            <WhatsAppIcon size={18} />
-            Chat on WhatsApp
-          </WhatsAppLink>
+            Try it free
+          </TrackedLink>
           <button
             type="button"
             className="flex size-10 items-center justify-center rounded-[10px] bg-[#F0F4F7] text-ink lg:hidden"

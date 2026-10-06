@@ -1,11 +1,11 @@
 "use client";
 
 import { motion, type Variants } from "framer-motion";
-import { BadgePercent, CircleCheck, CreditCard, Globe, Star } from "lucide-react";
+import { ArrowRight, BadgePercent, CircleCheck, CreditCard, Globe, Star } from "lucide-react";
 
-import { Eyebrow, WhatsAppIcon } from "./brand";
+import { Eyebrow } from "./brand";
 import { PLANS, type Plan } from "./content";
-import { WhatsAppLink } from "./cta";
+import { TrackedLink } from "./cta";
 import { EASE_OUT, Item, Stagger } from "@/components/motion";
 
 const planCard: Variants = {
@@ -59,18 +59,18 @@ function PlanCard({ plan }: { plan: Plan }) {
         <span className="text-[15px] text-muted">/month</span>
       </div>
 
-      <WhatsAppLink
-        message={plan.id}
+      <TrackedLink
+        href={`/signup?plan=${plan.id}`}
         track={{ cta: `pricing_${plan.id}`, section: "pricing", plan: plan.id }}
-        className={`inline-flex min-h-[52px] w-full items-center justify-center rounded-full py-2.5 text-center text-[15.5px] leading-5 font-semibold text-balance text-ink no-underline hover:text-ink ${
+        className={`inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full px-[22px] py-2.5 text-center text-[15.5px] leading-5 font-semibold text-balance no-underline ${
           featured
-            ? "gap-2.5 bg-whatsapp pr-[26px] pl-5 shadow-[0_6px_16px_rgba(12,24,31,0.10)]"
-            : "gap-2 border border-[#CED6DA] bg-white px-[22px] transition-colors hover:border-ink"
+            ? "bg-brand text-white shadow-[0_8px_20px_-8px_rgba(0,125,162,0.7)] hover:bg-brand-dark hover:text-white"
+            : "border border-[#CED6DA] bg-white text-ink transition-colors hover:border-ink hover:text-ink"
         }`}
       >
-        {featured ? <WhatsAppIcon size={22} /> : <WhatsAppIcon size={17} color="#4F5A60" />}
         {plan.cta}
-      </WhatsAppLink>
+        <ArrowRight size={17} strokeWidth={2} />
+      </TrackedLink>
 
       <div className="h-px bg-line-3" />
 
@@ -111,12 +111,12 @@ export function Pricing() {
           </Item>
           <Item>
             <h2 className="font-display text-[34px] leading-[37px] font-semibold tracking-[-0.03em] text-balance lg:text-center lg:text-[52px] lg:leading-[56px]">
-              Pick a plan after your free trial
+              Try any plan free for 2 days
             </h2>
           </Item>
           <Item>
             <p className="text-base leading-relaxed text-pretty text-muted lg:text-center lg:text-lg lg:leading-7">
-              Every lodge starts on Growth for 14 days, with the site already built. No commission on any plan.
+              Sign up and your site is live in 5 minutes. Keep it live for the price of your plan. No commission on any plan.
             </p>
           </Item>
         </Stagger>
