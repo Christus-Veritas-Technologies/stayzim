@@ -35,3 +35,18 @@ export function authErrorMessage(error: { code?: string; status?: number; messag
       return error.message || "Something went wrong. Try again.";
   }
 }
+
+/** Plain-language messages for the `?error=` better-auth adds when Google sign-in can't finish. */
+export function oauthErrorMessage(code: string | null) {
+  if (!code) return null;
+  switch (code) {
+    case "signup_disabled":
+      return "No StayZim account uses that Google email. Log in with your email and password, or message us on WhatsApp.";
+    case "account_not_linked":
+      return "That Google account can't be linked to your login. Log in with your email and password.";
+    case "access_denied":
+      return "Google sign-in was cancelled.";
+    default:
+      return "Google sign-in didn't work. Try again, or log in with your email and password.";
+  }
+}
