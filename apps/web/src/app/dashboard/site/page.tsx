@@ -330,6 +330,7 @@ export default function LodgeInfoPage() {
                         value={draft.phone}
                         onChange={(event) => set("phone", event.target.value)}
                         inputMode="tel"
+                        autoComplete="tel-national"
                         placeholder="77 123 4567"
                       />
                     </InputGroup>
@@ -338,6 +339,7 @@ export default function LodgeInfoPage() {
                     <Input
                       type="email"
                       inputMode="email"
+                      autoComplete="email"
                       value={draft.email}
                       onChange={(event) => set("email", event.target.value)}
                       placeholder="bookings@yourlodge.co.zw"
@@ -592,12 +594,13 @@ function LocationSections({
         summary={located ? `${draft.latitude}, ${draft.longitude}` : "Filled in from your link, or type them"}
         state={sectionState("latitude" in changes || "longitude" in changes, lodge.latitude !== null)}
       >
+        {/* The full keyboard on purpose: iPhone's number pad has no minus key, and every Zimbabwean latitude is negative */}
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Latitude" error={errors.latitude}>
-            <Input value={draft.latitude} onChange={(event) => set("latitude", event.target.value)} inputMode="decimal" placeholder="-18.2869" />
+            <Input value={draft.latitude} onChange={(event) => set("latitude", event.target.value)} placeholder="-18.2869" />
           </Field>
           <Field label="Longitude" error={errors.longitude}>
-            <Input value={draft.longitude} onChange={(event) => set("longitude", event.target.value)} inputMode="decimal" placeholder="32.7414" />
+            <Input value={draft.longitude} onChange={(event) => set("longitude", event.target.value)} placeholder="32.7414" />
           </Field>
         </div>
       </FormSection>
