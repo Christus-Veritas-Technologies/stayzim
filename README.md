@@ -119,6 +119,7 @@ Lodge sites open at `http://{slug}.localhost:9999` (Chrome and Firefox resolve `
 | `pnpm db:studio` | Browse the database |
 | `pnpm --filter @stayzim/auth create-owner …` | Create an owner login or give one a new temporary password ([docs/auth.md](docs/auth.md)) |
 | `pnpm --filter @stayzim/db create-lodge …` | Create the lodge for an owner login, on a 14-day Growth trial |
+| `pnpm --filter @stayzim/auth seed-demos --whatsapp 2637…` | Create the landing page's demo lodges (mistvalley, msasaridge, lakeview) with rooms and copy, each with a demo owner login; skips any that exist. Sign in as the demo owner to add photos |
 | `pnpm --filter @stayzim/db resolve-request …` | List open change requests (`--list`) or answer one (`--ref R-XXXX --status done --reply "…"`); the team screen does the same |
 
 ## Database changes
