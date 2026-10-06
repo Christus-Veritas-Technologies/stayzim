@@ -11,6 +11,7 @@ import { requireAuth, withSession } from "../lib/session";
 import { MAX_UPLOAD_BYTES, removeUploads, saveImage } from "../lib/uploads";
 import { validJson } from "../lib/validate";
 import { photos } from "./photos";
+import { requests } from "./requests";
 import { rooms } from "./rooms";
 import { stats } from "./stats";
 
@@ -125,4 +126,5 @@ export const lodge = new Hono<{ Variables: LodgeVariables }>()
 
   .route("/rooms", rooms)
   .route("/photos", photos)
+  .route("/requests", requests)
   .route("/", stats);
