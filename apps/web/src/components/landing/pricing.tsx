@@ -62,7 +62,7 @@ function PlanCard({ plan }: { plan: Plan }) {
       <WhatsAppLink
         message={plan.id}
         track={{ cta: `pricing_${plan.id}`, section: "pricing", plan: plan.id }}
-        className={`inline-flex h-[52px] w-full items-center justify-center rounded-full text-[15.5px] font-semibold whitespace-nowrap text-ink no-underline hover:text-ink ${
+        className={`inline-flex min-h-[52px] w-full items-center justify-center rounded-full py-2.5 text-center text-[15.5px] leading-5 font-semibold text-balance text-ink no-underline hover:text-ink ${
           featured
             ? "gap-2.5 bg-whatsapp pr-[26px] pl-5 shadow-[0_6px_16px_rgba(12,24,31,0.10)]"
             : "gap-2 border border-[#CED6DA] bg-white px-[22px] transition-colors hover:border-ink"
@@ -124,7 +124,7 @@ export function Pricing() {
         <Stagger
           stagger={0.14}
           amount={0.1}
-          className="grid items-stretch gap-8 md:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.08fr)_minmax(0,1fr)] lg:gap-5"
+          className="grid grid-cols-[minmax(0,1fr)] items-stretch gap-8 md:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.08fr)_minmax(0,1fr)] lg:gap-5"
         >
           {PLANS.map((plan) => (
             <PlanCard key={plan.id} plan={plan} />

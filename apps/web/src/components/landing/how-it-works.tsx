@@ -95,7 +95,7 @@ function BookStep() {
       >
         <span className="size-[52px] shrink-0 rounded-[9px]" style={{ background: LODGES[1]!.roomPhoto }} />
         <div className="flex min-w-0 flex-1 flex-col gap-px">
-          <span className="text-[13.5px] font-semibold whitespace-nowrap">Garden Cottage</span>
+          <span className="truncate text-[13.5px] font-semibold">Garden Cottage</span>
           <span className="text-[12.5px] whitespace-nowrap text-muted">$85 / night</span>
           <span className="text-[12.5px] whitespace-nowrap text-muted">Sleeps 2</span>
         </div>
@@ -201,7 +201,7 @@ export function HowItWorks() {
           </Item>
         </Stagger>
 
-        <Stagger stagger={0.18} amount={0.15} className="relative grid gap-4 lg:grid-cols-3 lg:gap-7">
+        <Stagger stagger={0.18} amount={0.15} className="relative grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-3 lg:gap-7">
           <Step number="01" title="We build your site" body="Send us your photos and prices on WhatsApp. Your site goes live on its own web address.">
             <BuildStep />
           </Step>
