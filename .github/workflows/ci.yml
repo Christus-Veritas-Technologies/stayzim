@@ -1,0 +1,146 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Types, unit tests and builds
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      # pnpm's version comes from "packageManager" in package.json
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # The web app checks its settings when it builds (next.config.ts), as in Docker
+      - name: Web settings
+        run: |
+          cat > apps/web/.env <<'EOF'
+          NEXT_PUBLIC_SERVER_URL=http://localhost:9998
+          NEXT_PUBLIC_SITES_DOMAIN=localhost:9999
+          EOF
+
+      - name: Type-check
+        run: pnpm check-types
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Build web and server
+        run: pnpm turbo build --filter=web --filter=server
+
+  e2e:
+    name: Browser tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: stayzim
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      E2E_EMAIL: owner@e2e.test
+      E2E_PASSWORD: e2e-password-123
+      E2E_LODGE: mistvalley
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # The same env files as local development (see the .env.example files)
+      - name: Settings
+        run: |
+          cat > apps/server/.env <<'EOF'
+          DATABASE_URL=postgresql://postgres:postgres@localhost:5432/stayzim
+          CORS_ORIGIN=http://localhost:9999
+          SITES_DOMAIN=localhost:9999
+          BETTER_AUTH_SECRET=ci-only-secret-that-is-at-least-32-characters-long
+          BETTER_AUTH_URL=http://localhost:9998
+          WEB_URL=http://localhost:9999
+          EOF
+          cat > apps/web/.env <<'EOF'
+          NEXT_PUBLIC_SERVER_URL=http://localhost:9998
+          NEXT_PUBLIC_SITES_DOMAIN=localhost:9999
+          EOF
+
+      - name: Database
+        run: pnpm --filter @stayzim/db db:deploy
+
+      - name: Test owner and lodge
+        run: |
+          pnpm --filter @stayzim/auth create-owner --email "$E2E_EMAIL" --name "Rudo Moyo" --password "$E2E_PASSWORD"
+          pnpm --filter @stayzim/db create-lodge --owner "$E2E_EMAIL" --name "Mist Valley Lodge" --slug "$E2E_LODGE" \
+            --town Nyanga --region Manicaland --whatsapp 263771234567 --demo
+
+      - name: Build web
+        run: pnpm --filter web build
+
+      - name: Start the API and the web app
+        run: |
+          (cd apps/server && nohup bun src/index.ts > ../../server.log 2>&1 &)
+          (cd apps/web && nohup pnpm start > ../../web.log 2>&1 &)
+          for port in 9998 9999; do
+            for attempt in $(seq 60); do
+              curl -sf -o /dev/null "http://localhost:$port/" && break
+              sleep 1
+            done
+            curl -sf -o /dev/null "http://localhost:$port/" || { echo "Nothing on port $port"; cat server.log web.log; exit 1; }
+          done
+
+      - name: Install Chromium
+        run: pnpm --filter web exec playwright install --with-deps chromium
+
+      - name: Browser tests
+        run: pnpm --filter web e2e
+
+      - name: Logs
+        if: failure()
+        run: cat server.log web.log
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            apps/web/playwright-report
+            apps/web/test-results
+          retention-days: 7
