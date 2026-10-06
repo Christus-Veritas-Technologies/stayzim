@@ -43,7 +43,8 @@ model Lodge {
 
   /// Headings, prices and links on the site, e.g. Highland #1E4A3B. The WhatsApp button stays green.
   themeColor  String      @default("#1E4A3B") @map("theme_color")
-  logoUrl     String?     @map("logo_url")
+  /// Path under the upload directory, like Photo.key
+  logoKey     String?     @map("logo_key")
   /// The big photo at the top of the site. Defaults to the first gallery photo.
   heroPhotoId String?     @unique @map("hero_photo_id")
   heroPhoto   Photo?      @relation("LodgeHero", fields: [heroPhotoId], references: [id], onDelete: SetNull)

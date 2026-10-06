@@ -11,6 +11,7 @@ import { withSession, type AuthVariables } from "./lib/session";
 import { serveUpload } from "./lib/uploads";
 import { account } from "./routes/account";
 import { landing } from "./routes/landing";
+import { lodge } from "./routes/lodge";
 
 const app = new Hono<{ Variables: AuthVariables }>();
 
@@ -46,6 +47,8 @@ app.route("/api/landing", landing);
 
 app.use("/api/account/*", withSession);
 app.route("/api/account", account);
+
+app.route("/api/lodge", lodge);
 
 app.notFound((c) => c.json({ error: "Not found" }, 404));
 
