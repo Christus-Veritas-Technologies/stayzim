@@ -1,11 +1,287 @@
 "use client";
 
-import { Page, PageHeader } from "@/components/dashboard/page";
+import { Badge } from "@stayzim/ui/components/badge";
+import { buttonVariants } from "@stayzim/ui/components/button";
+import { Card } from "@stayzim/ui/components/card";
+import { CopyButton } from "@stayzim/ui/components/copy-button";
+import { cn } from "@stayzim/ui/lib/utils";
+import { motion } from "framer-motion";
+import { ArrowUpRight, CircleCheck, Clock, ReceiptText, TriangleAlert } from "lucide-react";
+
+import { useLodge } from "@/components/dashboard/lodge-provider";
+import { Page, PageHeader, PageSection } from "@/components/dashboard/page";
+import { WhatsAppIcon } from "@/components/landing/brand";
+import { EASE_OUT } from "@/components/motion";
+import { formatMoney, PAYMENT_METHODS } from "@/lib/billing";
+import { formatDate, formatLongDate } from "@/lib/format";
+import { dueDate, offlineDate, PLAN_ORDER, PLANS, trialDaysLeft, type Lodge, type PlanKey } from "@/lib/lodge";
+import { stayzimChatUrl } from "@/lib/whatsapp";
+
+const TRIAL_DAYS = 14;
+
+const STATUS = {
+  TRIAL: { label: "Trial", badge: "bg-white/12 text-white", dot: "bg-[#B9A7F0]" },
+  ACTIVE: { label: "Active", badge: "bg-success-wash text-success", dot: "bg-success" },
+  OVERDUE: { label: "Overdue", badge: "bg-warning-tint text-warning", dot: "bg-[#e8833a]" },
+  SUSPENDED: { label: "Suspended", badge: "bg-danger-tint text-danger", dot: "bg-danger" },
+} as const;
+
+/** A line under the plan name explaining where things stand. */
+function statusLine(lodge: Lodge) {
+  const plan = PLANS[lodge.plan];
+  const due = dueDate(lodge);
+  const offline = offlineDate(lodge);
+  switch (lodge.status) {
+    case "TRIAL":
+      return `${plan.features[0]}${plan.features[1] ? `, plus ${plan.features[1].toLowerCase()}` : ""}. $${plan.price}/month after your trial.`;
+    case "ACTIVE":
+      return lodge.paidUntil ? `Paid until ${formatLongDate(lodge.paidUntil)}. Nothing to do.` : "Paid up. Nothing to do.";
+    case "OVERDUE":
+      return `Was due ${due ? formatLongDate(due) : "recently"}. Your site goes offline on ${offline ? formatLongDate(offline) : "soon"}.`;
+    case "SUSPENDED":
+      return `Pay ${formatMoney(plan.price)} and tap I have paid. Your site comes back as soon as we confirm.`;
+  }
+}
+
+function PlanCard({ lodge }: { lodge: Lodge }) {
+  const plan = PLANS[lodge.plan];
+  const status = STATUS[lodge.status];
+  const days = trialDaysLeft(lodge);
+  const due = dueDate(lodge);
+
+  return (
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-[20px] p-5 text-white shadow-[0_24px_48px_-24px_rgba(12,24,31,0.6)] sm:p-6",
+        lodge.status === "SUSPENDED"
+          ? "bg-[linear-gradient(135deg,#3A1512,#0C181F_70%)]"
+          : lodge.status === "OVERDUE"
+            ? "bg-[linear-gradient(135deg,#3B2410,#0C181F_70%)]"
+            : "bg-[linear-gradient(135deg,#123A4A,#0C181F_65%)]",
+      )}
+    >
+      <span aria-hidden="true" className="absolute -top-24 -right-24 size-72 rounded-full border border-white/8" />
+      <span aria-hidden="true" className="absolute -top-12 -right-12 size-48 rounded-full border border-white/10" />
+
+      <div className="relative flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex flex-col gap-2">
+          <span className={cn("inline-flex w-fit items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold", status.badge)}>
+            <span className={cn("size-1.5 rounded-full", status.dot)} />
+            {status.label}
+          </span>
+          <h2 className="font-display text-2xl leading-8 font-semibold tracking-[-0.02em]">{plan.name} plan</h2>
+          <p className="max-w-md text-[13.5px] leading-5 text-[#C6D3D9]">{statusLine(lodge)}</p>
+        </div>
+
+        {lodge.status === "TRIAL" ? (
+          <div className="flex flex-col gap-2 lg:items-end">
+            <span className="font-display text-[28px] leading-8 font-semibold">
+              {days} {days === 1 ? "day" : "days"} remaining
+            </span>
+            <div className="flex gap-1" aria-hidden="true">
+              {Array.from({ length: TRIAL_DAYS }, (_, index) => (
+                <motion.span
+                  key={index}
+                  className={cn("h-1.5 w-3.5 rounded-full sm:w-4", index < TRIAL_DAYS - days ? "bg-white/15" : "bg-brand-sky")}
+                  initial={{ scaleY: 0, opacity: 0 }}
+                  animate={{ scaleY: 1, opacity: 1 }}
+                  transition={{ duration: 0.3, delay: 0.2 + index * 0.03, ease: EASE_OUT }}
+                />
+              ))}
+            </div>
+            {lodge.trialEndsAt ? <span className="text-[13px] text-[#C6D3D9]">Trial ends {formatLongDate(lodge.trialEndsAt)}</span> : null}
+          </div>
+        ) : null}
+      </div>
+
+      <dl className="relative mt-6 grid overflow-hidden rounded-[14px] border border-white/10 bg-white/5 sm:grid-cols-3">
+        <div className="flex flex-col gap-1 border-b border-white/10 p-4 sm:border-r sm:border-b-0">
+          <dt className="text-xs text-[#9FB2BB]">{lodge.status === "TRIAL" ? "First payment" : "Amount"}</dt>
+          <dd className="font-display text-xl font-semibold">{formatMoney(plan.price)}</dd>
+        </div>
+        <div className="flex flex-col gap-1 border-b border-white/10 p-4 sm:border-r sm:border-b-0">
+          <dt className="text-xs text-[#9FB2BB]">{lodge.status === "ACTIVE" ? "Next payment" : "Due"}</dt>
+          <dd className="font-display text-xl font-semibold">{due ? formatDate(due) : "When you're ready"}</dd>
+        </div>
+        <div className="flex items-center justify-between gap-3 p-4">
+          <div className="flex flex-col gap-1">
+            <dt className="text-xs text-[#9FB2BB]">Payment reference</dt>
+            <dd className="font-display text-xl font-semibold">{lodge.slug}</dd>
+          </div>
+          <CopyButton value={lodge.slug} variant="secondary" size="sm" className="bg-white/12 text-white hover:bg-white/20">
+            Copy
+          </CopyButton>
+        </div>
+      </dl>
+    </div>
+  );
+}
+
+function HowToPay({ lodge }: { lodge: Lodge }) {
+  const amount = formatMoney(PLANS[lodge.plan].price);
+  return (
+    <section className="flex flex-col gap-3" aria-labelledby="how-to-pay">
+      <div>
+        <h2 id="how-to-pay" className="text-[15px] font-semibold">
+          How to pay
+        </h2>
+        <p className="text-[13px] text-muted">
+          Pay {amount} with reference <strong className="font-semibold text-ink">{lodge.slug}</strong>, then tell us.
+        </p>
+      </div>
+      <div className="grid gap-3 md:grid-cols-3">
+        {PAYMENT_METHODS.map((method, index) => (
+          <motion.div
+            key={method.key}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: 0.15 + index * 0.06, ease: EASE_OUT }}
+          >
+            <Card className="flex-row items-center gap-3 p-3.5 transition-transform duration-300 hover:-translate-y-0.5">
+              <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-xl text-[13px] font-bold", method.tone)}>
+                {method.short}
+              </span>
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="text-[14px] font-semibold">{method.name}</span>
+                <span className="truncate text-xs text-muted">{method.detail}</span>
+              </span>
+              {"href" in method ? (
+                <a href={method.href} target="_blank" rel="noreferrer" className={buttonVariants({ variant: "outline", size: "sm" })}>
+                  Open
+                  <ArrowUpRight />
+                </a>
+              ) : (
+                <CopyButton value={method.copy} size="icon-sm" copiedLabel="Code copied" />
+              )}
+            </Card>
+          </motion.div>
+        ))}
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-[14px] bg-surface-2 p-3.5 sm:flex-row sm:items-center">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white text-slate shadow-xs">
+          <ReceiptText className="size-[18px]" strokeWidth={1.75} />
+        </span>
+        <span className="flex flex-1 flex-col">
+          <span className="text-[14px] font-semibold">Paid already?</span>
+          <span className="text-[13px] text-muted">Send us your proof of payment. Your lodge name and amount are filled in.</span>
+        </span>
+        <a
+          href={stayzimChatUrl(`Hi StayZim, I have paid ${amount} for ${lodge.name} (reference ${lodge.slug}). Here is my proof of payment:`)}
+          target="_blank"
+          rel="noreferrer"
+          className={buttonVariants({ variant: "whatsapp", size: "lg" })}
+        >
+          <WhatsAppIcon size={17} />I have paid
+        </a>
+      </div>
+    </section>
+  );
+}
+
+function Plans({ lodge }: { lodge: Lodge }) {
+  return (
+    <section className="flex flex-col gap-3" aria-labelledby="plans">
+      <div>
+        <h2 id="plans" className="text-[15px] font-semibold">
+          Plans
+        </h2>
+        <p className="text-[13px] text-muted">Switching sends us a request on WhatsApp. Features change on your next page load.</p>
+      </div>
+      <div className="grid gap-3 lg:grid-cols-3">
+        {PLAN_ORDER.map((key: PlanKey, index) => {
+          const plan = PLANS[key];
+          const current = key === lodge.plan;
+          return (
+            <motion.div
+              key={key}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 + index * 0.07, ease: EASE_OUT }}
+              className={cn("flex flex-col gap-4 rounded-[20px] bg-white p-5", current ? "ring-2 ring-ink" : "shadow-card")}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[13px] font-semibold text-slate">
+                  {plan.name} · {plan.tagline}
+                </span>
+                {current ? <Badge className="border-ink bg-ink text-white">Current plan</Badge> : null}
+              </div>
+              <div>
+                <p>
+                  <span className="font-display text-[28px] font-semibold tracking-[-0.02em]">${plan.price}</span>
+                  <span className="text-[13px] text-muted">/month</span>
+                </p>
+                <p className="text-[13px] text-muted">{plan.pitch}</p>
+              </div>
+              <ul className="flex flex-col gap-2 border-t border-line-3 pt-4 text-[13.5px]">
+                {plan.features.map((feature) => (
+                  <li key={feature} className="flex items-start gap-2">
+                    <CircleCheck className="mt-0.5 size-4 shrink-0 text-brand" />
+                    {feature}
+                  </li>
+                ))}
+                {plan.later ? (
+                  <li className="flex items-start gap-2 text-muted-2">
+                    <Clock className="mt-0.5 size-4 shrink-0" />
+                    {plan.later}
+                  </li>
+                ) : null}
+              </ul>
+              <div className="mt-auto">
+                {current ? (
+                  <span className="flex h-10 items-center justify-center rounded-[10px] bg-surface-2 text-sm font-semibold text-muted">Your plan</span>
+                ) : (
+                  <a
+                    href={stayzimChatUrl(`Hi StayZim, I'd like to switch ${lodge.name} to the ${plan.name} plan ($${plan.price}/month).`)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={buttonVariants({ variant: "outline", className: "w-full" })}
+                  >
+                    Switch to this plan
+                  </a>
+                )}
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
 
 export default function BillingPage() {
+  const { lodge } = useLodge();
+  const offline = offlineDate(lodge);
+
   return (
     <Page>
       <PageHeader title="Billing" description="We update your status by hand after you pay." />
+
+      {lodge.status === "OVERDUE" || lodge.status === "SUSPENDED" ? (
+        <PageSection>
+          <div
+            role="alert"
+            className="flex items-start gap-3 rounded-[14px] border border-danger-line bg-danger-tint px-4 py-3 text-[13.5px] text-danger"
+          >
+            <TriangleAlert className="mt-0.5 size-4 shrink-0" />
+            {lodge.status === "SUSPENDED"
+              ? "Your site is offline. Guests see “temporarily unavailable” until you pay."
+              : `Your payment is late. Pay by ${offline ? formatLongDate(offline) : "soon"} to keep your site live.`}
+          </div>
+        </PageSection>
+      ) : null}
+
+      <PageSection>
+        <PlanCard lodge={lodge} />
+      </PageSection>
+      {lodge.status === "ACTIVE" ? null : (
+        <PageSection>
+          <HowToPay lodge={lodge} />
+        </PageSection>
+      )}
+      <PageSection>
+        <Plans lodge={lodge} />
+      </PageSection>
     </Page>
   );
 }
