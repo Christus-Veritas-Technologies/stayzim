@@ -22,13 +22,13 @@ const SECTIONS: LegalSection[] = [
     title: "Lodge owners",
     body: (
       <>
-        <p>When we set up your lodge, we keep:</p>
+        <p>When you sign up (or we set up your lodge for you), we keep:</p>
         <ul>
           <li>your name, email address and a scrambled (hashed) copy of your password, so you can log in;</li>
-          <li>if you sign in with Google, the email address on your Google account, matched to the one we already have;</li>
+          <li>if you sign up or sign in with Google, the name and email address on your Google account;</li>
           <li>what you put on your site: the lodge name, description, location, phone and WhatsApp numbers, rooms, prices and photos;</li>
           <li>change requests you send us, and our replies;</li>
-          <li>your plan, and when you paid. We never see or keep card details: you pay by Paynow, EcoCash or InnBucks.</li>
+          <li>your plan, your invoices and receipts, and the payments you make: the amount, how you paid, and the mobile money number a payment prompt went to. We never see your card details or PIN: Paynow handles them.</li>
         </ul>
         <p>
           Everything on your lodge site is public, because that is its job. Your login details and change requests are not.
@@ -76,7 +76,8 @@ const SECTIONS: LegalSection[] = [
         <ul>
           <li>Cloudflare stores lodge photos and logos, and may sit in front of our sites to keep them fast and safe;</li>
           <li>our hosting provider runs our servers and database;</li>
-          <li>our email provider (Spacemail) sends password reset emails;</li>
+          <li>our email provider (Spacemail) sends password reset emails, invoices and receipts;</li>
+          <li>Paynow takes payments, and receives the amount, a reference, your email address and, for a phone prompt, your mobile money number;</li>
           <li>Google, only if you choose to sign in with Google;</li>
           <li>WhatsApp, which carries the chats you start from our buttons, under WhatsApp&apos;s own privacy policy.</li>
         </ul>
@@ -96,8 +97,9 @@ const SECTIONS: LegalSection[] = [
     title: "How long we keep it",
     body: (
       <p>
-        We keep owner accounts and lodge content while the lodge uses StayZim. When a lodge leaves, we take its site down and, if the owner
-        asks, delete its photos, content and visit records.
+        We keep owner accounts and lodge content while the lodge uses StayZim. A demo that was never paid for is deleted, with its photos,
+        content, visit records and the account, 30 days after it ended. When a paying lodge leaves, we take its site down and, if the
+        owner asks, delete its photos, content and visit records. We keep invoices and receipts as long as the law asks us to.
       </p>
     ),
   },

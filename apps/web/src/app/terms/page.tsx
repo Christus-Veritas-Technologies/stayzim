@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 
 import { LegalPage, type LegalSection } from "@/components/legal-page";
+import { DEMO_DAYS, DEMO_KEEP_DAYS } from "@stayzim/sites";
+
 import { GRACE_DAYS, PLANS } from "@/lib/lodge";
 
 export const metadata: Metadata = {
@@ -22,7 +24,7 @@ const SECTIONS: LegalSection[] = [
     ),
   },
   {
-    title: "Plans, the trial and paying",
+    title: "Plans, the demo and paying",
     body: (
       <>
         <ul>
@@ -30,11 +32,26 @@ const SECTIONS: LegalSection[] = [
             {PLANS.STARTER.name} is ${PLANS.STARTER.price}, {PLANS.GROWTH.name} ${PLANS.GROWTH.price} and {PLANS.PRO.name} ${PLANS.PRO.price} a
             month, in US dollars. What each plan includes is on stayzim.co.zw.
           </li>
-          <li>Every lodge starts with a free 14-day trial of {PLANS.GROWTH.name}, with the site already built. Nothing is charged during the trial.</li>
-          <li>You pay a month at a time, in advance, by Paynow, EcoCash or InnBucks, and send us the proof on WhatsApp. We mark you as paid by hand.</li>
+          <li>
+            When you sign up, your site goes live as a free demo on the plan you choose, for {DEMO_DAYS} days, with small &quot;demo&quot;
+            badges on it. Nothing is charged for the demo.
+          </li>
+          <li>
+            To keep the site live after the demo, pay for a plan. If you don&apos;t, the site goes offline when the demo ends, and we
+            delete the demo, its photos and your account {DEMO_KEEP_DAYS} days later.
+          </li>
+          <li>
+            You pay in advance, for 1, 3 or 12 months, online through Paynow (EcoCash, InnBucks, OneMoney or card), or to our EcoCash or
+            InnBucks merchant code. We email an invoice 3 days before your paid time ends, the day before and on the day, and a receipt
+            when you pay.
+          </li>
           <li>
             If a payment is late, your site stays up for {GRACE_DAYS} more days. After that it shows “temporarily unavailable” until you pay;
-            your dashboard keeps working so you can.
+            your dashboard keeps working so you can, and the site comes back as soon as you do.
+          </li>
+          <li>
+            Your own domain: on any plan you can connect a domain you have; {PLANS.GROWTH.name} and {PLANS.PRO.name} include a free .co.zw
+            domain, which StayZim registers for your lodge while you stay on one of those plans.
           </li>
           <li>If we change our prices, we&apos;ll tell you at least 30 days before your next payment.</li>
         </ul>
