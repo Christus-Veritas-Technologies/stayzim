@@ -121,6 +121,7 @@ Lodge sites open at `http://{slug}.localhost:9999` (Chrome and Firefox resolve `
 | `pnpm db:studio` | Browse the database |
 | `pnpm --filter @stayzim/auth create-owner …` | Create an owner login or give one a new temporary password ([docs/auth.md](docs/auth.md)) |
 | `pnpm --filter @stayzim/db create-lodge …` | Create the lodge for an owner login, on a 14-day Growth trial |
+| `pnpm --filter @stayzim/db set-domain --slug … --domain …` | Give a lodge its own domain (`--remove`, `--list`); DNS and certificates in [docs/deployment.md](docs/deployment.md#custom-domains) |
 | `pnpm --filter @stayzim/auth seed-demos --whatsapp 2637…` | Create the landing page's demo lodges (mistvalley, msasaridge, lakeview) with rooms and copy, each with a demo owner login; skips any that exist. Sign in as the demo owner to add photos |
 | `pnpm --filter @stayzim/db resolve-request …` | List open change requests (`--list`) or answer one (`--ref R-XXXX --status done --reply "…"`); the team screen does the same |
 
@@ -144,6 +145,7 @@ The schema lives in `packages/db/prisma/schema/*.prisma` and changes through mig
 
 1. Edit the schema.
 2. `pnpm db:migrate --name what_changed` creates the migration from the difference and applies it to your local database. Read the SQL before committing it.
+   If `migrate dev` refuses to run because the terminal isn't interactive, write the migration with `npx prisma migrate diff --from-config-datasource --to-schema prisma/schema --script -o prisma/migrations/<timestamp>_<name>/migration.sql`, then `pnpm db:deploy`.
 3. `pnpm db:generate` regenerates the Prisma client (Prisma 7's `migrate dev` no longer does), then restart the API: a running `--hot` server keeps the old client.
 4. Commit the schema and the migration together. Containers apply it on their next start (`prisma migrate deploy`).
 

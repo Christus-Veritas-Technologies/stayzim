@@ -49,7 +49,7 @@ Routes:
 | `/dashboard/site`, `rooms`, `gallery`, `design`, `requests` | The "My site" pages: Lodge info, Rooms, Gallery, Design (template and hero text) and Change requests |
 | `/dashboard/analytics`, `billing` | Visits (Growth and Pro; a locked preview on Starter) and Billing |
 | `/admin/requests` | Team screen: work through owners' change requests (`role` `ADMIN` only) |
-| `/sites/[slug]` | A lodge site (reached through its subdomain) |
+| `/sites/[slug]` | A lodge site (reached through its subdomain, or the lodge's own domain) |
 | `/preview/[slug]/[template]` | A lodge site in any template, for the Design screen. `noindex`, tracking off |
 
 Search engines and the browser:
@@ -110,6 +110,7 @@ Shared UX pieces, so every screen behaves the same:
 - **CORS:** allows the `CORS_ORIGIN` list (comma-separated web origins) and any `{slug}.SITES_DOMAIN` origin (lodge sites report visits), with credentials, so the session cookie is sent.
 - **Mail check at boot:** if SMTP is configured, the server checks the connection on startup and logs the result.
 - **Health:** `GET /health` answers `{"status":"ok"}` when the database replies to `SELECT 1` within 2 seconds, and 503 otherwise (the reason is logged). The Docker health check uses it; `GET /` stays a plain `OK`.
+- **Custom domains:** `Lodge.customDomain` (set with `packages/db/scripts/set-domain.ts`). `GET /api/sites/domain/:host` answers which lodge a domain belongs to (`slugForCustomDomain` in `src/lib/sites.ts`, cached). CORS accepts those origins as lodge sites. The web proxy uses the same lookup (`src/lib/custom-domains.ts`), and `siteHost`/`siteUrl` prefer the custom domain, so dashboard links and share messages use it. Setup is in [deployment.md](deployment.md#custom-domains).
 - **Client IP:** read from `CLIENT_IP_HEADER` (`cf-connecting-ip` behind Cloudflare), for visit records and sign-in rate limits ([auth.md](auth.md#rules)).
 - **Lodge routes** need a signed-in owner with their own password and a lodge (`requireLodge` in `src/lib/lodge.ts`, 404 until StayZim creates it). Each answers with the whole lodge (`lodgeJson`).
 - **Team routes** (`src/routes/admin.ts`) need a signed-in user with `role` `ADMIN`.

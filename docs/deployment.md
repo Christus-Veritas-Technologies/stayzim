@@ -176,6 +176,31 @@ pg_restore --no-owner --no-privileges --dbname="$DATABASE_URL" stayzim-2026-10-0
 
 Try a restore now and then. One was tested here on the dev database, and the row counts matched.
 
-## Custom domains (later)
+## Custom domains
 
-A lodge on its own domain (for example `mistvalleylodge.co.zw`) needs routing and a certificate per domain. That's covered when custom domains are added to the app.
+A lodge can have its own domain, like `mistvalleylodge.co.zw`, on any plan (pricing is up to you). Its site then answers there and on `{slug}.stayzim.co.zw`, and its pages tell search engines the custom domain is the main address. The dashboard shows the custom domain as the lodge's address, and owners without one can ask from the Lodge info screen (it opens a change request).
+
+1. **The domain:** the owner registers it (for `.co.zw`, through a ZISPA-accredited registrar), or StayZim does it for them.
+2. **Point it at us:**
+   - Recommended, **Cloudflare for SaaS** (Custom Hostnames, on the `stayzim.co.zw` zone; the first 100 are free):
+     - one-off setup: SSL/TLS → Custom Hostnames, fallback origin `sites.stayzim.co.zw` (covered by the `*` record);
+     - per lodge: add the domain as a Custom Hostname;
+     - the owner adds at their DNS host: `CNAME @ → sites.stayzim.co.zw` (or ALIAS/flattening for the apex) and `CNAME www → sites.stayzim.co.zw`, plus the TXT record Cloudflare shows to prove ownership.
+
+     Cloudflare issues and renews the certificate, and visitors' countries and real IPs keep working.
+   - Alternative, **Coolify**: the owner points `A @` and `A www` at the VPS IP, and you add `https://mistvalleylodge.co.zw,https://www.mistvalleylodge.co.zw` to the `web` service's domains, so Traefik gets a Let's Encrypt certificate. With no Cloudflare in front, there are no countries for that domain.
+3. **Tell StayZim which lodge it is** (in the server container, or locally with the production `DATABASE_URL`):
+
+   ```bash
+   cd /app/packages/db && bun scripts/set-domain.ts --slug mistvalley --domain mistvalleylodge.co.zw
+   bun scripts/set-domain.ts --list
+   bun scripts/set-domain.ts --slug mistvalley --remove
+   ```
+
+   It stores the bare domain (lowercase, no `www.`); `www.` works too. Within about a minute (the lookup is cached), the domain shows the lodge's site.
+
+How it works:
+
+- The web app's proxy sees a host that isn't StayZim's and asks the API, `GET /api/sites/domain/:host`, which lodge it belongs to. Answers are cached for 5 minutes, and unknown domains for 1 minute. An unknown domain gets the "Lodge not found" page.
+- The API accepts visit reports from those domains (CORS).
+- **Limit:** owners' own visits on their custom domain are counted. The session cookie belongs to `stayzim.co.zw` and isn't sent from another site; on the subdomain they're still skipped.
