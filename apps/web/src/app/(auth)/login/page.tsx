@@ -4,9 +4,10 @@ import { Button } from "@stayzim/ui/components/button";
 import { Field, FormMessage } from "@stayzim/ui/components/field";
 import { Input, PasswordInput } from "@stayzim/ui/components/input";
 import { Separator } from "@stayzim/ui/components/separator";
+import { Spinner } from "@stayzim/ui/components/spinner";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState, type FormEvent } from "react";
+import { Suspense, useEffect, useState, type FormEvent } from "react";
 
 import { GoogleSignIn } from "@/components/auth/google-button";
 import { AuthHeading, AuthSection, AuthShell, NewToStayZim } from "@/components/auth/shell";
@@ -18,6 +19,12 @@ function LoginForm() {
   const [pending, setPending] = useState<"password" | "google" | null>(null);
   // Google sends people back here with ?error=… when it can't sign them in
   const [error, setError] = useState<string | null>(() => oauthErrorMessage(params.get("error")));
+  const { data: session } = authClient.useSession();
+
+  // Already logged in on this device (e.g. a bookmarked login page): skip the form
+  useEffect(() => {
+    if (session) router.replace(session.user.mustChangePassword ? "/set-password" : "/dashboard");
+  }, [router, session]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -45,6 +52,19 @@ function LoginForm() {
     }
     // Accounts start with a temporary password; the owner picks their own first
     router.replace(data.user.mustChangePassword ? "/set-password" : "/dashboard");
+  }
+
+  if (session && pending === null) {
+    return (
+      <AuthShell>
+        <AuthHeading title="You're logged in">
+          <span className="inline-flex items-center gap-2">
+            <Spinner className="size-4 text-brand" />
+            Opening your dashboard…
+          </span>
+        </AuthHeading>
+      </AuthShell>
+    );
   }
 
   return (
