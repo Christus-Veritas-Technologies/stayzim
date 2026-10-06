@@ -15,6 +15,7 @@ import { account } from "./routes/account";
 import { admin } from "./routes/admin";
 import { landing } from "./routes/landing";
 import { lodge } from "./routes/lodge";
+import { startBillingJob } from "./jobs/billing";
 import { onboarding } from "./routes/onboarding";
 import { paynow } from "./routes/paynow";
 import { sites } from "./routes/sites";
@@ -96,6 +97,9 @@ app.onError((err, c) => {
 });
 
 console.log(`[uploads] Lodge photos are stored in ${describeStorage()}`);
+
+// Invoices, reminders, overdue sites and old demos (src/jobs/billing.ts)
+if (env.NODE_ENV !== "test") startBillingJob();
 
 // Surface a broken SMTP setup at boot, not when an owner is waiting for a reset link
 if (isMailConfigured()) {
