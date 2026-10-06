@@ -1,0 +1,3 @@
+[test]
+# Fixed settings for tests, before any module reads the environment
+preload = ["./test/setup.ts"]
