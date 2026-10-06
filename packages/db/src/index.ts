@@ -12,3 +12,6 @@ export function createPrismaClient() {
 
 const prisma = createPrismaClient();
 export default prisma;
+
+/** Enums (e.g. Device, SiteEventType), so apps can name the types Prisma returns. */
+export * from "../prisma/generated/enums";
