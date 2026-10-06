@@ -111,12 +111,14 @@ function ResetPasswordForm() {
     <AuthShell>
       <AuthHeading title="Set a new password">You will use it to log in from now on.</AuthHeading>
       <AuthSection>
-        <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
-          <FormMessage>{error}</FormMessage>
-          <NewPasswordFields error={fieldError} />
-          <Button type="submit" size="lg" className="mt-2 w-full" loading={pending}>
-            {pending ? "Saving" : "Save new password"}
-          </Button>
+        <form onSubmit={onSubmit} noValidate>
+          <fieldset disabled={pending} className="flex flex-col gap-4">
+            <FormMessage>{error}</FormMessage>
+            <NewPasswordFields error={fieldError} />
+            <Button type="submit" size="lg" className="mt-2 w-full" loading={pending}>
+              {pending ? "Saving" : "Save new password"}
+            </Button>
+          </fieldset>
         </form>
       </AuthSection>
     </AuthShell>

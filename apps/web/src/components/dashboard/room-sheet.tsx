@@ -139,7 +139,8 @@ export function RoomSheet({
           <SheetBody className="flex flex-col gap-5">
             <FormMessage>{formError}</FormMessage>
 
-            <fieldset disabled={created} className="flex flex-col gap-5 disabled:opacity-60">
+            {/* Locked while saving (so a second tap can't add the room twice) and once it exists */}
+            <fieldset disabled={created || saving} className="flex flex-col gap-5 disabled:opacity-60">
               <Field label="Room name" error={errors.name}>
                 <Input
                   value={draft.name}

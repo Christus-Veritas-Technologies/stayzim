@@ -92,17 +92,19 @@ export default function ForgotPasswordPage() {
       </AuthHeading>
 
       <AuthSection>
-        <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
-          <FormMessage>{error}</FormMessage>
-          <Field label="Email">
-            <Input name="email" type="email" autoComplete="email" inputMode="email" className="sm:h-11" required />
-          </Field>
-          <div className="mt-2 flex flex-col gap-3">
-            <Button type="submit" size="lg" className="w-full" loading={pending}>
-              {pending ? "Sending link" : "Send reset link"}
-            </Button>
-            <p className="text-center text-[12.5px] text-muted-2">The link works for 1 hour.</p>
-          </div>
+        <form onSubmit={onSubmit} noValidate>
+          <fieldset disabled={pending} className="flex flex-col gap-4">
+            <FormMessage>{error}</FormMessage>
+            <Field label="Email">
+              <Input name="email" type="email" autoComplete="email" inputMode="email" className="sm:h-11" required />
+            </Field>
+            <div className="mt-2 flex flex-col gap-3">
+              <Button type="submit" size="lg" className="w-full" loading={pending}>
+                {pending ? "Sending link" : "Send reset link"}
+              </Button>
+              <p className="text-center text-[12.5px] text-muted-2">The link works for 1 hour.</p>
+            </div>
+          </fieldset>
         </form>
       </AuthSection>
     </AuthShell>

@@ -249,209 +249,212 @@ export default function LodgeInfoPage() {
       </AnimatePresence>
 
       <PageSection className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <Tabs value={tab} onValueChange={(value) => setTab(String(value))} className="min-w-0">
-          <TabsList aria-label="Lodge info">
-            <TabsTab value="details">
-              <FileText />
-              Details
-            </TabsTab>
-            <TabsTab value="location">
-              <MapPin />
-              Location
-            </TabsTab>
-            <TabsTab value="look">
-              <Palette />
-              Look
-            </TabsTab>
-          </TabsList>
+        {/* Locked while saving, so nothing typed meanwhile is lost when the saved copy comes back */}
+        <fieldset disabled={saving} className="min-w-0">
+          <Tabs value={tab} onValueChange={(value) => setTab(String(value))} className="min-w-0">
+            <TabsList aria-label="Lodge info">
+              <TabsTab value="details">
+                <FileText />
+                Details
+              </TabsTab>
+              <TabsTab value="location">
+                <MapPin />
+                Location
+              </TabsTab>
+              <TabsTab value="look">
+                <Palette />
+                Look
+              </TabsTab>
+            </TabsList>
 
-          <TabsPanel value="details" className="flex flex-col gap-3">
-            <FormSection
-              icon={Type}
-              title="Basics"
-              summary="Name and the short intro at the top of your site"
-              state={sectionState(
-                ["name", "description", "town", "region"].some((key) => key in changes),
-                Boolean(lodge.name && lodge.description),
-              )}
-              defaultOpen
-            >
-              <Field label="Lodge name" error={errors.name}>
-                <Input value={draft.name} onChange={(event) => set("name", event.target.value)} maxLength={80} autoComplete="organization" />
-              </Field>
-              <Field label="Description" count={{ value: draft.description.length, max: DESCRIPTION_MAX }} error={errors.description}>
-                <Textarea
-                  value={draft.description}
-                  onChange={(event) => set("description", event.target.value)}
-                  placeholder="A quiet stone lodge in the Nyanga hills, 10 minutes from World's View."
-                />
-              </Field>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Town">
-                  <Input value={draft.town} onChange={(event) => set("town", event.target.value)} placeholder="Nyanga" maxLength={60} />
-                </Field>
-                <Field label="Province">
-                  <Input value={draft.region} onChange={(event) => set("region", event.target.value)} placeholder="Manicaland" maxLength={60} />
-                </Field>
-              </div>
-            </FormSection>
-
-            <FormSection
-              icon={Phone}
-              title="Contact"
-              summary={
-                [lodge.whatsapp && `WhatsApp ${formatPhone(lodge.whatsapp)}`, lodge.phone && `Phone ${formatPhone(lodge.phone)}`]
-                  .filter(Boolean)
-                  .join(" · ") || "Where Book on WhatsApp sends guests"
-              }
-              state={sectionState(["whatsapp", "phone", "email"].some((key) => key in changes), Boolean(lodge.whatsapp))}
-              defaultOpen={!lodge.whatsapp}
-            >
-              <Field
-                label="WhatsApp number"
-                error={errors.whatsapp}
-                hint="Every Book on WhatsApp button opens a chat with this number."
+            <TabsPanel value="details" className="flex flex-col gap-3">
+              <FormSection
+                icon={Type}
+                title="Basics"
+                summary="Name and the short intro at the top of your site"
+                state={sectionState(
+                  ["name", "description", "town", "region"].some((key) => key in changes),
+                  Boolean(lodge.name && lodge.description),
+                )}
+                defaultOpen
               >
-                <InputGroup>
-                  <InputGroupAddon>
-                    <WhatsAppIcon size={15} color="#1F7A4D" />
-                    +263
-                  </InputGroupAddon>
-                  <InputGroupInput
-                    value={draft.whatsapp}
-                    onChange={(event) => set("whatsapp", event.target.value)}
-                    inputMode="tel"
-                    autoComplete="tel-national"
-                    placeholder="77 123 4567"
+                <Field label="Lodge name" error={errors.name}>
+                  <Input value={draft.name} onChange={(event) => set("name", event.target.value)} maxLength={80} autoComplete="organization" />
+                </Field>
+                <Field label="Description" count={{ value: draft.description.length, max: DESCRIPTION_MAX }} error={errors.description}>
+                  <Textarea
+                    value={draft.description}
+                    onChange={(event) => set("description", event.target.value)}
+                    placeholder="A quiet stone lodge in the Nyanga hills, 10 minutes from World's View."
                   />
-                </InputGroup>
-              </Field>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Phone (optional)" error={errors.phone} hint="For guests who'd rather call.">
+                </Field>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Town">
+                    <Input value={draft.town} onChange={(event) => set("town", event.target.value)} placeholder="Nyanga" maxLength={60} />
+                  </Field>
+                  <Field label="Province">
+                    <Input value={draft.region} onChange={(event) => set("region", event.target.value)} placeholder="Manicaland" maxLength={60} />
+                  </Field>
+                </div>
+              </FormSection>
+
+              <FormSection
+                icon={Phone}
+                title="Contact"
+                summary={
+                  [lodge.whatsapp && `WhatsApp ${formatPhone(lodge.whatsapp)}`, lodge.phone && `Phone ${formatPhone(lodge.phone)}`]
+                    .filter(Boolean)
+                    .join(" · ") || "Where Book on WhatsApp sends guests"
+                }
+                state={sectionState(["whatsapp", "phone", "email"].some((key) => key in changes), Boolean(lodge.whatsapp))}
+                defaultOpen={!lodge.whatsapp}
+              >
+                <Field
+                  label="WhatsApp number"
+                  error={errors.whatsapp}
+                  hint="Every Book on WhatsApp button opens a chat with this number."
+                >
                   <InputGroup>
-                    <InputGroupAddon>+263</InputGroupAddon>
+                    <InputGroupAddon>
+                      <WhatsAppIcon size={15} color="#1F7A4D" />
+                      +263
+                    </InputGroupAddon>
                     <InputGroupInput
-                      value={draft.phone}
-                      onChange={(event) => set("phone", event.target.value)}
+                      value={draft.whatsapp}
+                      onChange={(event) => set("whatsapp", event.target.value)}
                       inputMode="tel"
+                      autoComplete="tel-national"
                       placeholder="77 123 4567"
                     />
                   </InputGroup>
                 </Field>
-                <Field label="Email (optional)" error={errors.email}>
-                  <Input
-                    type="email"
-                    inputMode="email"
-                    value={draft.email}
-                    onChange={(event) => set("email", event.target.value)}
-                    placeholder="bookings@yourlodge.co.zw"
-                  />
-                </Field>
-              </div>
-            </FormSection>
-            <p className="flex items-center gap-2 px-1 text-[12.5px] text-muted-2">
-              <Info className="size-3.5" />
-              Location and Look have their own tabs, so you only see one part at a time.
-            </p>
-          </TabsPanel>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Phone (optional)" error={errors.phone} hint="For guests who'd rather call.">
+                    <InputGroup>
+                      <InputGroupAddon>+263</InputGroupAddon>
+                      <InputGroupInput
+                        value={draft.phone}
+                        onChange={(event) => set("phone", event.target.value)}
+                        inputMode="tel"
+                        placeholder="77 123 4567"
+                      />
+                    </InputGroup>
+                  </Field>
+                  <Field label="Email (optional)" error={errors.email}>
+                    <Input
+                      type="email"
+                      inputMode="email"
+                      value={draft.email}
+                      onChange={(event) => set("email", event.target.value)}
+                      placeholder="bookings@yourlodge.co.zw"
+                    />
+                  </Field>
+                </div>
+              </FormSection>
+              <p className="flex items-center gap-2 px-1 text-[12.5px] text-muted-2">
+                <Info className="size-3.5" />
+                Location and Look have their own tabs, so you only see one part at a time.
+              </p>
+            </TabsPanel>
 
-          <TabsPanel value="location" className="flex flex-col gap-3">
-            <LocationSections draft={draft} set={set} errors={errors} changes={changes} lodge={lodge} />
-          </TabsPanel>
+            <TabsPanel value="location" className="flex flex-col gap-3">
+              <LocationSections draft={draft} set={set} errors={errors} changes={changes} lodge={lodge} />
+            </TabsPanel>
 
-          <TabsPanel value="look" className="flex flex-col gap-3">
-            <FormSection
-              icon={Palette}
-              title="Theme colour"
-              summary={`${themeColorName(draft.themeColor)} · ${draft.themeColor.toUpperCase()}`}
-              state={sectionState("themeColor" in changes, true)}
-              defaultOpen
-            >
-              <div role="radiogroup" aria-label="Theme colour" className="flex flex-wrap items-center gap-2.5">
-                {THEME_COLORS.map((color) => {
-                  const selected = draft.themeColor.toLowerCase() === color.value.toLowerCase();
-                  return (
-                    <button
-                      key={color.value}
-                      type="button"
-                      role="radio"
-                      aria-checked={selected}
-                      aria-label={color.name}
-                      title={color.name}
-                      onClick={() => set("themeColor", color.value)}
-                      className={cn(
-                        "flex size-9 items-center justify-center rounded-full text-white ring-offset-2 transition-transform outline-none hover:scale-110 focus-visible:ring-3 focus-visible:ring-ring/40",
-                        selected && "ring-2 ring-ink",
-                      )}
-                      style={{ backgroundColor: color.value }}
-                    >
-                      {selected ? <Check className="size-4 animate-in zoom-in-50" strokeWidth={3} /> : null}
-                    </button>
-                  );
-                })}
-                <label className={buttonVariants({ variant: "outline", size: "sm", className: "relative cursor-pointer" })}>
-                  <Plus />
-                  Custom
-                  <input
-                    type="color"
-                    value={draft.themeColor}
-                    onChange={(event) => set("themeColor", event.target.value.toUpperCase())}
-                    className="absolute inset-0 cursor-pointer opacity-0"
-                    aria-label="Pick any colour"
-                  />
-                </label>
-              </div>
-              <p className="text-[13px] text-muted-2">Used for headings, prices and links. The WhatsApp button always stays green.</p>
-            </FormSection>
-
-            <LogoSection lodge={lodge} onUploaded={setLodge} onRemove={() => save("/logo", "DELETE")} />
-
-            <FormSection
-              icon={ImageIcon}
-              title="Hero image"
-              summary="The big photo at the top of your site"
-              state={sectionState("heroPhotoId" in changes, lodge.gallery.length > 0)}
-            >
-              {lodge.gallery.length === 0 ? (
-                <p className="text-[13.5px] text-muted">
-                  Upload photos in{" "}
-                  <Link href="/dashboard/gallery" className="font-semibold text-brand hover:text-brand-dark">
-                    Gallery
-                  </Link>{" "}
-                  first, then pick one here.
-                </p>
-              ) : (
-                <div role="radiogroup" aria-label="Hero image" className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                  {lodge.gallery.map((photo, index) => {
-                    const selected = (draft.heroPhotoId ?? lodge.gallery[0]?.id) === photo.id;
+            <TabsPanel value="look" className="flex flex-col gap-3">
+              <FormSection
+                icon={Palette}
+                title="Theme colour"
+                summary={`${themeColorName(draft.themeColor)} · ${draft.themeColor.toUpperCase()}`}
+                state={sectionState("themeColor" in changes, true)}
+                defaultOpen
+              >
+                <div role="radiogroup" aria-label="Theme colour" className="flex flex-wrap items-center gap-2.5">
+                  {THEME_COLORS.map((color) => {
+                    const selected = draft.themeColor.toLowerCase() === color.value.toLowerCase();
                     return (
                       <button
-                        key={photo.id}
+                        key={color.value}
                         type="button"
                         role="radio"
                         aria-checked={selected}
-                        aria-label={photo.caption || `Photo ${index + 1}`}
-                        onClick={() => set("heroPhotoId", photo.id)}
+                        aria-label={color.name}
+                        title={color.name}
+                        onClick={() => set("themeColor", color.value)}
                         className={cn(
-                          "relative aspect-[4/3] overflow-hidden rounded-lg outline-none ring-offset-2 transition focus-visible:ring-3 focus-visible:ring-ring/40",
-                          selected ? "ring-2 ring-brand" : "opacity-80 hover:opacity-100",
+                          "flex size-9 items-center justify-center rounded-full text-white ring-offset-2 transition-transform outline-none hover:scale-110 focus-visible:ring-3 focus-visible:ring-ring/40",
+                          selected && "ring-2 ring-ink",
                         )}
+                        style={{ backgroundColor: color.value }}
                       >
-                        {/* eslint-disable-next-line @next/next/no-img-element -- photos come from our upload server */}
-                        <img src={photo.url} alt="" className="size-full object-cover" />
-                        {selected ? (
-                          <span className="absolute top-1 left-1 flex size-5 items-center justify-center rounded-full bg-brand text-white animate-in zoom-in-50">
-                            <Check className="size-3" strokeWidth={3} />
-                          </span>
-                        ) : null}
+                        {selected ? <Check className="size-4 animate-in zoom-in-50" strokeWidth={3} /> : null}
                       </button>
                     );
                   })}
+                  <label className={buttonVariants({ variant: "outline", size: "sm", className: "relative cursor-pointer" })}>
+                    <Plus />
+                    Custom
+                    <input
+                      type="color"
+                      value={draft.themeColor}
+                      onChange={(event) => set("themeColor", event.target.value.toUpperCase())}
+                      className="absolute inset-0 cursor-pointer opacity-0"
+                      aria-label="Pick any colour"
+                    />
+                  </label>
                 </div>
-              )}
-            </FormSection>
-          </TabsPanel>
-        </Tabs>
+                <p className="text-[13px] text-muted-2">Used for headings, prices and links. The WhatsApp button always stays green.</p>
+              </FormSection>
+
+              <LogoSection lodge={lodge} onUploaded={setLodge} onRemove={() => save("/logo", "DELETE")} />
+
+              <FormSection
+                icon={ImageIcon}
+                title="Hero image"
+                summary="The big photo at the top of your site"
+                state={sectionState("heroPhotoId" in changes, lodge.gallery.length > 0)}
+              >
+                {lodge.gallery.length === 0 ? (
+                  <p className="text-[13.5px] text-muted">
+                    Upload photos in{" "}
+                    <Link href="/dashboard/gallery" className="font-semibold text-brand hover:text-brand-dark">
+                      Gallery
+                    </Link>{" "}
+                    first, then pick one here.
+                  </p>
+                ) : (
+                  <div role="radiogroup" aria-label="Hero image" className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                    {lodge.gallery.map((photo, index) => {
+                      const selected = (draft.heroPhotoId ?? lodge.gallery[0]?.id) === photo.id;
+                      return (
+                        <button
+                          key={photo.id}
+                          type="button"
+                          role="radio"
+                          aria-checked={selected}
+                          aria-label={photo.caption || `Photo ${index + 1}`}
+                          onClick={() => set("heroPhotoId", photo.id)}
+                          className={cn(
+                            "relative aspect-[4/3] overflow-hidden rounded-lg outline-none ring-offset-2 transition focus-visible:ring-3 focus-visible:ring-ring/40",
+                            selected ? "ring-2 ring-brand" : "opacity-80 hover:opacity-100",
+                          )}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element -- photos come from our upload server */}
+                          <img src={photo.url} alt="" className="size-full object-cover" />
+                          {selected ? (
+                            <span className="absolute top-1 left-1 flex size-5 items-center justify-center rounded-full bg-brand text-white animate-in zoom-in-50">
+                              <Check className="size-3" strokeWidth={3} />
+                            </span>
+                          ) : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </FormSection>
+            </TabsPanel>
+          </Tabs>
+        </fieldset>
 
         <aside className="sticky top-20 hidden flex-col gap-3 xl:flex">
           <div className="flex items-center justify-between text-[13px]">

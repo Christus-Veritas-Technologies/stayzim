@@ -105,26 +105,28 @@ export default function SetPasswordPage() {
       </AuthHeading>
 
       <AuthSection>
-        <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
-          <FormMessage>{error}</FormMessage>
-          {firstLogin ? null : (
-            <Field
-              label="Current password"
-              action={
-                // Owners who only ever used Google have no password they know
-                <Link href="/forgot-password" className="text-[13px] font-semibold text-brand hover:text-brand-dark">
-                  Forgot it?
-                </Link>
-              }
-            >
-              <PasswordInput name="current" autoComplete="current-password" className="sm:h-11" required />
-            </Field>
-          )}
-          <NewPasswordFields error={fieldError} />
-          <Button type="submit" size="lg" className="group mt-2 w-full" loading={pending}>
-            {pending ? "Saving" : firstLogin ? "Save and open dashboard" : "Save password"}
-            {firstLogin ? <ArrowRight className="transition-transform group-hover:translate-x-0.5" /> : null}
-          </Button>
+        <form onSubmit={onSubmit} noValidate>
+          <fieldset disabled={pending} className="flex flex-col gap-4">
+            <FormMessage>{error}</FormMessage>
+            {firstLogin ? null : (
+              <Field
+                label="Current password"
+                action={
+                  // Owners who only ever used Google have no password they know
+                  <Link href="/forgot-password" className="text-[13px] font-semibold text-brand hover:text-brand-dark">
+                    Forgot it?
+                  </Link>
+                }
+              >
+                <PasswordInput name="current" autoComplete="current-password" className="sm:h-11" required />
+              </Field>
+            )}
+            <NewPasswordFields error={fieldError} />
+            <Button type="submit" size="lg" className="group mt-2 w-full" loading={pending}>
+              {pending ? "Saving" : firstLogin ? "Save and open dashboard" : "Save password"}
+              {firstLogin ? <ArrowRight className="transition-transform group-hover:translate-x-0.5" /> : null}
+            </Button>
+          </fieldset>
         </form>
       </AuthSection>
     </AuthShell>
