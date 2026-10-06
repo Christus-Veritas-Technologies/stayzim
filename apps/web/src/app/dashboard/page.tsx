@@ -1,8 +1,9 @@
 "use client";
 
-import { buttonVariants } from "@stayzim/ui/components/button";
+import { Button, buttonVariants } from "@stayzim/ui/components/button";
 import { CopyButton } from "@stayzim/ui/components/copy-button";
-import { ArrowUpRight } from "lucide-react";
+import { FormMessage } from "@stayzim/ui/components/field";
+import { ArrowUpRight, RotateCcw } from "lucide-react";
 import { useState } from "react";
 
 import { useLodge } from "@/components/dashboard/lodge-provider";
@@ -10,11 +11,11 @@ import { ActivityCard, RoomsSummaryCard } from "@/components/dashboard/overview-
 import { Page, PageHeader, PageSection } from "@/components/dashboard/page";
 import { SetupChecklist } from "@/components/dashboard/setup-checklist";
 import { ShareCard, useShareLink } from "@/components/dashboard/share";
-import { PeriodTabs, StatCards, VisitsCard } from "@/components/dashboard/visit-stats";
+import { AnalyticsUpsell, PeriodTabs, StatCards, VisitsCard } from "@/components/dashboard/visit-stats";
 import { WhatsAppIcon } from "@/components/landing/brand";
 import { authClient } from "@/lib/auth-client";
-import { siteHost, siteUrl } from "@/lib/lodge";
-import { visitStats, type Period } from "@/lib/stats";
+import { hasAnalytics, siteHost, siteUrl } from "@/lib/lodge";
+import { useVisitStats, type Period } from "@/lib/stats";
 
 /** Phones: the link, View site and Share, at the top where thumbs reach. */
 function MobileSiteCard() {
@@ -53,7 +54,7 @@ export default function DashboardPage() {
   const { lodge } = useLodge();
   const { data: session } = authClient.useSession();
   const [period, setPeriod] = useState<Period>("7d");
-  const stats = visitStats(period);
+  const { stats, loading, locked, error, retry } = useVisitStats(period, hasAnalytics(lodge));
   const firstName = session?.user.name.split(" ")[0] ?? "";
 
   return (
@@ -61,7 +62,7 @@ export default function DashboardPage() {
       <PageHeader
         title={firstName ? `Hi, ${firstName}` : "Welcome"}
         description={`Here is how ${lodge.name} is doing.`}
-        actions={<PeriodTabs value={period} onChange={setPeriod} className="hidden sm:flex" />}
+        actions={locked ? null : <PeriodTabs value={period} onChange={setPeriod} className="hidden sm:flex" />}
       />
 
       <PageSection className="lg:hidden">
@@ -72,27 +73,49 @@ export default function DashboardPage() {
         <SetupChecklist />
       </PageSection>
 
-      <PageSection className="sm:hidden">
-        <PeriodTabs value={period} onChange={setPeriod} />
-      </PageSection>
+      {locked ? (
+        <PageSection className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+          <AnalyticsUpsell className="self-start" />
+          <ShareCard className="hidden lg:flex" />
+        </PageSection>
+      ) : (
+        <>
+          <PageSection className="sm:hidden">
+            <PeriodTabs value={period} onChange={setPeriod} />
+          </PageSection>
 
-      <PageSection>
-        <StatCards stats={stats} period={period} />
-      </PageSection>
+          {error ? (
+            <PageSection>
+              <FormMessage className="items-center">
+                <span className="flex-1">Visits didn&apos;t load. {error}</span>
+                <Button variant="outline" size="sm" onClick={retry} className="shrink-0">
+                  <RotateCcw />
+                  Try again
+                </Button>
+              </FormMessage>
+            </PageSection>
+          ) : null}
 
-      <PageSection className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
-        <VisitsCard
-          stats={stats}
-          period={period}
-          empty={
-            <>
-              <strong className="block font-semibold text-ink">No visits counted yet</strong>
-              Visits show here once guests open {siteHost(lodge)}.
-            </>
-          }
-        />
-        <ShareCard className="hidden lg:flex" />
-      </PageSection>
+          <PageSection>
+            <StatCards stats={stats} period={period} loading={loading} />
+          </PageSection>
+
+          <PageSection className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+            <VisitsCard
+              stats={stats}
+              period={period}
+              loading={loading}
+              empty={
+                <>
+                  <strong className="block font-semibold text-ink">No visits counted yet</strong>
+                  Visits show here once guests open {siteHost(lodge)}.
+                </>
+              }
+            />
+            <ShareCard className="hidden lg:flex" />
+          </PageSection>
+        </>
+      )}
 
       <PageSection className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
         <RoomsSummaryCard />

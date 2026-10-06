@@ -10,10 +10,11 @@ import { useState } from "react";
 import { useLodge } from "@/components/dashboard/lodge-provider";
 import { Page, PageHeader, PageSection } from "@/components/dashboard/page";
 import { useShareLink } from "@/components/dashboard/share";
+import { RecentVisits } from "@/components/dashboard/recent-visits";
 import { PeriodTabs, StatCards, VisitsCard } from "@/components/dashboard/visit-stats";
 import { WhatsAppIcon } from "@/components/landing/brand";
 import { hasAnalytics, PLANS, siteHost } from "@/lib/lodge";
-import { PERIODS, visitStats, type Period } from "@/lib/stats";
+import { PERIODS, useVisitStats, type Period } from "@/lib/stats";
 import { stayzimChatUrl } from "@/lib/whatsapp";
 
 /** Hours of one day say little here; the overview has Today. */
@@ -76,8 +77,8 @@ export default function AnalyticsPage() {
   const { lodge } = useLodge();
   const share = useShareLink();
   const [period, setPeriod] = useState<Period>("7d");
-  const stats = visitStats(period);
-  const unlocked = hasAnalytics(lodge);
+  const { stats, loading, locked } = useVisitStats(period, hasAnalytics(lodge));
+  const unlocked = !locked;
 
   return (
     <Page>
@@ -94,10 +95,20 @@ export default function AnalyticsPage() {
       {unlocked ? (
         <>
           <PageSection>
-            <StatCards stats={stats} period={period} />
+            <StatCards stats={stats} period={period} loading={loading} />
           </PageSection>
           <PageSection>
-            <VisitsCard stats={stats} period={period} />
+            <VisitsCard
+              stats={stats}
+              period={period}
+              loading={loading}
+              empty={
+                <>
+                  <strong className="block font-semibold text-ink">No visits counted yet</strong>
+                  Visits show here once guests open {siteHost(lodge)}.
+                </>
+              }
+            />
           </PageSection>
           <PageSection>
             <Card>
@@ -105,26 +116,30 @@ export default function AnalyticsPage() {
                 <CardTitle>Recent visits</CardTitle>
                 <CardAction className="text-[13px] text-muted-2">Newest first</CardAction>
               </CardHeader>
-              <EmptyState
-                icon={<Radar />}
-                title="No visits yet. Share your link to get started"
-                description="Every visit shows here with its date, country, page and device, and whether the guest tapped Book on WhatsApp."
-                action={
-                  <>
-                    <CopyButton value={share.url} onCopied={share.markShared} copiedLabel="Link copied">
-                      Copy link
-                    </CopyButton>
-                    <a
-                      href={share.whatsappUrl()}
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={share.markShared}
-                      className={buttonVariants({ variant: "whatsapp" })}
-                    >
-                      <WhatsAppIcon size={16} />
-                      Share on WhatsApp
-                    </a>
-                  </>
+              <RecentVisits
+                empty={
+                  <EmptyState
+                    icon={<Radar />}
+                    title="No visits yet. Share your link to get started"
+                    description="Every visit shows here with its date, country, page and device, and whether the guest tapped Book on WhatsApp."
+                    action={
+                      <>
+                        <CopyButton value={share.url} onCopied={share.markShared} copiedLabel="Link copied">
+                          Copy link
+                        </CopyButton>
+                        <a
+                          href={share.whatsappUrl()}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={share.markShared}
+                          className={buttonVariants({ variant: "whatsapp" })}
+                        >
+                          <WhatsAppIcon size={16} />
+                          Share on WhatsApp
+                        </a>
+                      </>
+                    }
+                  />
                 }
               />
             </Card>
