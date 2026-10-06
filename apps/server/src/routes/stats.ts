@@ -43,7 +43,10 @@ const visitsQuery = z.object({
 
 /** /api/lodge/stats, /visits, /activity. Mounted under the lodge router. */
 export const stats = new Hono<{ Variables: LodgeVariables }>()
-  .use(requireAnalytics)
+  // Only these paths: this router is mounted at the lodge root, beside rooms and photos
+  .use("/stats", requireAnalytics)
+  .use("/visits", requireAnalytics)
+  .use("/activity", requireAnalytics)
 
   /** Totals, the period before, countries and the chart, for the overview and Analytics. */
   .get("/stats", async (c) => {
