@@ -12,7 +12,14 @@ pnpm --filter @stayzim/auth create-owner --email owner@lodge.co.zw --name "Tenda
 
 This prints a **temporary password**; send it to the owner on WhatsApp with the login link.
 
-- **First sign-in:** the owner is sent to "Choose your own password". The dashboard and API stay closed (403) until they do.
+- **First sign-in:** the owner is sent to "Set your password", beside a preview of their live site. The dashboard and API stay closed (403) until they do.
+- **Their lodge:** create it once the login exists, so the dashboard has something to show:
+
+  ```bash
+  pnpm --filter @stayzim/db create-lodge --owner owner@lodge.co.zw --name "Mist Valley Lodge" --slug mistvalley --town Nyanga --region Manicaland --whatsapp 263771234567
+  ```
+
+  Every lodge starts on a 14-day Growth trial. Add `--demo` for three sample rooms. Without a lodge, the dashboard says it isn't set up yet.
 - **Locked out, and the reset email never arrived:** issue a new temporary password. This also signs them out everywhere.
 
   ```bash
@@ -46,7 +53,9 @@ The rate limiter keeps counts in memory, so it resets when the server restarts a
 2. better-auth checks the token and redirects to `/reset-password?token=…`, or to `?error=INVALID_TOKEN` if it expired or was used.
 3. The owner sets a new password and logs in again.
 
-**First login.** `/set-password` posts the temporary and new password to `POST /api/account/set-password`. That route calls better-auth's `changePassword`, forwards the refreshed session cookie, and clears `mustChangePassword`.
+**First login.** `/set-password` posts the new password to `POST /api/account/set-password`. The owner just signed in with the temporary password, so it isn't asked for again: the route replaces the password, signs out other devices (keeping this one), and clears `mustChangePassword`.
+
+**Changing it later** (account menu → Change password) uses the same screen and route with the current password, through better-auth's `changePassword`, which forwards the refreshed session cookie.
 
 **Protecting a route.**
 
