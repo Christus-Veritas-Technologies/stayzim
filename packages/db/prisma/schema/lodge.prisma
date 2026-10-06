@@ -110,6 +110,11 @@ model Photo {
 
   /// Path under the upload directory, e.g. "lodges/<lodgeId>/<id>.jpg"
   key       String   @unique
+  /// Smaller copies made on the owner's phone with the full one, so lodge sites send phones what
+  /// they need: at most 1280px (full-width on phones) and 640px (thumbnails) on the longest side,
+  /// e.g. "lodges/<lodgeId>/<id>-md.jpg". Null for photos already that small, and older uploads.
+  mediumKey String?  @map("medium_key")
+  smallKey  String?  @map("small_key")
   width     Int
   height    Int
   /// Bytes, after resizing on the owner's phone

@@ -51,13 +51,13 @@ export const rooms = new Hono<{ Variables: LodgeVariables }>()
   .delete("/:id", async (c) => {
     const lodgeId = c.var.lodgeId;
     const room = await findRoom(lodgeId, c.req.param("id"));
-    const photos = await prisma.photo.findMany({ where: { roomId: room.id }, select: { key: true } });
+    const photos = await prisma.photo.findMany({ where: { roomId: room.id }, select: { key: true, mediumKey: true, smallKey: true } });
     await prisma.$transaction(async (tx) => {
       await tx.room.delete({ where: { id: room.id } });
       const remaining = await tx.room.findMany({ where: { lodgeId }, orderBy: { position: "asc" }, select: { id: true } });
       await Promise.all(remaining.map(({ id }, position) => tx.room.update({ where: { id }, data: { position } })));
     });
-    await removeUploads(photos.map((photo) => photo.key));
+    await removeUploads(photos.flatMap((photo) => [photo.key, photo.mediumKey, photo.smallKey].filter((key): key is string => Boolean(key))));
     return c.json(await lodgeJson(lodgeId));
   })
 

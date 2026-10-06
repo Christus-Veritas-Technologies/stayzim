@@ -8,6 +8,29 @@ import { HTTPException } from "hono/http-exception";
 /** Photos are resized on the owner's phone first, so anything near this is a mistake. */
 export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 
+/**
+ * The longest side of a photo's smaller copies, made on the phone with the full
+ * one (1600px): medium for full-width images on phones, small for thumbnails.
+ * Mirrored in apps/web/src/lib/images.ts.
+ */
+export const COPY_EDGES = { medium: 1280, small: 640 } as const;
+
+/**
+ * `srcset` for a photo with smaller copies: "…-sm.jpg 640w, …-md.jpg 1280w,
+ * ….jpg 1600w", so browsers download the smallest one that looks sharp. Null
+ * without copies.
+ */
+export function photoSrcSet(photo: { key: string; mediumKey: string | null; smallKey: string | null; width: number; height: number }) {
+  const longest = Math.max(photo.width, photo.height);
+  const widthAt = (edge: number) => Math.round(photo.width * Math.min(1, edge / longest));
+  const copies = [
+    photo.smallKey ? `${uploadUrl(photo.smallKey)} ${widthAt(COPY_EDGES.small)}w` : null,
+    photo.mediumKey ? `${uploadUrl(photo.mediumKey)} ${widthAt(COPY_EDGES.medium)}w` : null,
+  ].filter(Boolean);
+  if (copies.length === 0) return null;
+  return [...copies, `${uploadUrl(photo.key)} ${photo.width}w`].join(", ");
+}
+
 /** File signatures, so a renamed .exe can't pass as a photo. */
 const IMAGE_TYPES = [
   { ext: "jpg", mime: "image/jpeg", magic: [0xff, 0xd8, 0xff] },

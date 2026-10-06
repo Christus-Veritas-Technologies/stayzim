@@ -4,7 +4,7 @@ import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 
 import type { AuthVariables } from "./session";
-import { uploadUrl } from "./uploads";
+import { photoSrcSet, uploadUrl } from "./uploads";
 
 export type LodgeVariables = AuthVariables & { lodgeId: string };
 
@@ -31,6 +31,8 @@ function loadLodge(lodgeId: string) {
 type StoredPhoto = {
   id: string;
   key: string;
+  mediumKey: string | null;
+  smallKey: string | null;
   width: number;
   height: number;
   size: number;
@@ -41,6 +43,8 @@ type StoredPhoto = {
 export type PhotoJson = {
   id: string;
   url: string;
+  /** "small 640w, medium 1280w, full 1600w" when the photo has smaller copies, for <img srcset> */
+  srcSet: string | null;
   width: number;
   height: number;
   size: number;
@@ -82,6 +86,7 @@ export type LodgeJson = {
   logoUrl: string | null;
   heroPhotoId: string | null;
   heroUrl: string | null;
+  heroSrcSet: string | null;
   plan: "STARTER" | "GROWTH" | "PRO";
   status: "TRIAL" | "ACTIVE" | "OVERDUE" | "SUSPENDED";
   trialEndsAt: Date | null;
@@ -97,6 +102,7 @@ export function photoJson(photo: StoredPhoto): PhotoJson {
   return {
     id: photo.id,
     url: uploadUrl(photo.key),
+    srcSet: photoSrcSet(photo),
     width: photo.width,
     height: photo.height,
     size: photo.size,
@@ -132,6 +138,7 @@ export async function lodgeJson(lodgeId: string): Promise<LodgeJson> {
     logoUrl: lodge.logoKey ? uploadUrl(lodge.logoKey) : null,
     heroPhotoId: hero?.id ?? null,
     heroUrl: hero?.url ?? null,
+    heroSrcSet: hero?.srcSet ?? null,
     plan: lodge.plan,
     status: lodge.status,
     trialEndsAt: lodge.trialEndsAt,

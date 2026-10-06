@@ -33,15 +33,17 @@ export type PublicSite =
       themeColor: string;
       logoUrl: string | null;
       heroUrl: string | null;
+      /** `srcset` for the hero, so phones get the 1024px copy */
+      heroSrcSet: string | null;
       rooms: {
         id: string;
         name: string;
         price: number;
         sleeps: number;
         amenities: string[];
-        photos: { url: string; width: number; height: number }[];
+        photos: { url: string; srcSet: string | null; width: number; height: number }[];
       }[];
-      gallery: { url: string; width: number; height: number; caption: string }[];
+      gallery: { url: string; srcSet: string | null; width: number; height: number; caption: string }[];
     };
 
 const eventSchema = z.object({
@@ -88,15 +90,16 @@ export const sites = new Hono<{ Variables: AuthVariables }>()
       themeColor: full.themeColor,
       logoUrl: full.logoUrl,
       heroUrl: full.heroUrl,
+      heroSrcSet: full.heroSrcSet,
       rooms: full.rooms.map((room) => ({
         id: room.id,
         name: room.name,
         price: room.price,
         sleeps: room.sleeps,
         amenities: room.amenities,
-        photos: room.photos.map(({ url, width, height }) => ({ url, width, height })),
+        photos: room.photos.map(({ url, srcSet, width, height }) => ({ url, srcSet, width, height })),
       })),
-      gallery: full.gallery.map(({ url, width, height, caption }) => ({ url, width, height, caption })),
+      gallery: full.gallery.map(({ url, srcSet, width, height, caption }) => ({ url, srcSet, width, height, caption })),
     } satisfies PublicSite);
   })
 

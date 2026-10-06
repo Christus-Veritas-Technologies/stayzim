@@ -38,9 +38,10 @@ export const photos = new Hono<{ Variables: LodgeVariables }>()
   /**
    * One photo per request (the dashboard uploads them one after another, so
    * each can show progress and retry). multipart/form-data: `file`, `width`,
-   * `height`, and `roomId` for a room photo. Photos are resized on the phone first.
+   * `height`, `medium` and `small` (1280px and 640px copies of big photos) and
+   * `roomId` for a room photo. Photos are resized on the phone first.
    */
-  .post("/", bodyLimit({ maxSize: MAX_UPLOAD_BYTES + 64 * 1024 }), async (c) => {
+  .post("/", bodyLimit({ maxSize: 3 * MAX_UPLOAD_BYTES + 64 * 1024 }), async (c) => {
     const lodgeId = c.var.lodgeId;
     const body = await c.req.parseBody();
     const fields = uploadFields.safeParse(body);
@@ -59,9 +60,22 @@ export const photos = new Hono<{ Variables: LodgeVariables }>()
 
     const id = crypto.randomUUID();
     const { key, size } = await saveImage(body.file, `lodges/${lodgeId}`, id);
-    const photo = await prisma.photo.create({
-      data: { lodgeId, roomId: roomId ?? null, key, width, height, size, caption: caption ?? "", position: count },
-    });
+    // The phone also sends a smaller copy (`medium`) for big photos; lodge sites serve it to phones
+    // The phone also sends smaller copies of big photos (`medium`, `small`); lodge sites serve those to phones
+    let mediumKey: string | null = null;
+    let smallKey: string | null = null;
+    let photo;
+    try {
+      mediumKey = body.medium ? (await saveImage(body.medium, `lodges/${lodgeId}`, `${id}-md`)).key : null;
+      smallKey = body.small ? (await saveImage(body.small, `lodges/${lodgeId}`, `${id}-sm`)).key : null;
+      photo = await prisma.photo.create({
+        data: { lodgeId, roomId: roomId ?? null, key, mediumKey, smallKey, width, height, size, caption: caption ?? "", position: count },
+      });
+    } catch (error) {
+      // Don't leave files nobody points to
+      await removeUploads([key, mediumKey, smallKey].filter((stored): stored is string => Boolean(stored)));
+      throw error;
+    }
     return c.json({ photo: photoJson(photo), lodge: await lodgeJson(lodgeId) }, 201);
   })
 
@@ -77,7 +91,7 @@ export const photos = new Hono<{ Variables: LodgeVariables }>()
     // Deleting the hero photo falls back to the first gallery photo (heroPhotoId is set null)
     await prisma.photo.delete({ where: { id: photo.id } });
     await renumber(lodgeId, photo.roomId);
-    await removeUploads([photo.key]);
+    await removeUploads([photo.key, photo.mediumKey, photo.smallKey].filter((key): key is string => Boolean(key)));
     return c.json(await lodgeJson(lodgeId));
   })
 
