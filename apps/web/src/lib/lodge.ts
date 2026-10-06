@@ -12,6 +12,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import { siteHost } from "@/lib/site-host";
+
 /** GET /api/lodge (mirrors LodgeJson in apps/server/src/lib/lodge.ts; dates arrive as strings). */
 export type Photo = {
   id: string;
@@ -63,16 +65,7 @@ export type Lodge = {
   gallery: Photo[];
 };
 
-/** Lodge sites live at {slug}.stayzim.co.zw. */
-export const SITES_DOMAIN = "stayzim.co.zw";
-
-export function siteHost(lodge: Pick<Lodge, "slug">) {
-  return `${lodge.slug}.${SITES_DOMAIN}`;
-}
-
-export function siteUrl(lodge: Pick<Lodge, "slug">) {
-  return `https://${siteHost(lodge)}`;
-}
+export { SITES_DOMAIN, siteHost, siteUrl } from "@/lib/site-host";
 
 /** "Nyanga, Manicaland" */
 export function lodgePlace(lodge: Pick<Lodge, "town" | "region">) {
