@@ -76,6 +76,16 @@ function RequestForm({ onSent }: { onSent: (request: ChangeRequest) => void }) {
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState<ChangeRequest | null>(null);
 
+  // Other screens open this form filled in, e.g. "Ask us" for an own domain:
+  // /dashboard/requests?topic=OTHER&message=…
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const asked = params.get("topic") as RequestTopic | null;
+    if (asked && REQUEST_TOPIC_ORDER.includes(asked)) setTopic(asked);
+    const text = params.get("message");
+    if (text) setMessage(text.slice(0, REQUEST_MESSAGE.max));
+  }, []);
+
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
     if (message.trim().length < REQUEST_MESSAGE.min) {
