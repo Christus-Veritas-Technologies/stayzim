@@ -48,6 +48,7 @@ import {
   themeColorName,
   type Lodge,
 } from "@/lib/lodge";
+import { OFFLINE_REASON, useOnline } from "@/lib/online";
 
 const DESCRIPTION_MAX = 300;
 
@@ -140,6 +141,7 @@ export default function LodgeInfoPage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [tab, setTab] = useState("details");
   const [previewOpen, setPreviewOpen] = useState(false);
+  const online = useOnline();
   const { changes } = useMemo(() => changesFrom(draft, lodge), [draft, lodge]);
   const dirty = Object.keys(changes).length > 0 || draft.whatsapp !== phoneToInput(lodge.whatsapp) || draft.phone !== phoneToInput(lodge.phone);
 
@@ -211,8 +213,8 @@ export default function LodgeInfoPage() {
       <Button variant="outline" onClick={onDiscard} disabled={!dirty || saving}>
         Discard
       </Button>
-      <WhyDisabled reason={dirty || saving ? null : "No changes to save"}>
-        <Button onClick={onSave} loading={saving} disabled={!dirty}>
+      <WhyDisabled reason={saving ? null : !online ? OFFLINE_REASON : dirty ? null : "No changes to save"}>
+        <Button onClick={onSave} loading={saving} disabled={!dirty || !online}>
           Save changes
         </Button>
       </WhyDisabled>

@@ -7,6 +7,7 @@ import { useEffect, useState, type ReactNode } from "react";
 
 import { NavigationTracker } from "@/components/dashboard/back-link";
 import { LodgeProvider } from "@/components/dashboard/lodge-provider";
+import { OfflineBanner } from "@/components/dashboard/offline-banner";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { BottomNav, MobileHeader, Topbar } from "@/components/dashboard/topbar";
 import { authClient } from "@/lib/auth-client";
@@ -86,6 +87,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
             <NavigationTracker />
             <MobileHeader user={user} />
             <Topbar />
+            <OfflineBanner />
             <main className="flex-1 px-4 pt-5 pb-28 sm:px-6 lg:px-7 lg:pt-6 lg:pb-10">{children}</main>
           </div>
           <BottomNav />

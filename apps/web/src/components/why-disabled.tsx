@@ -17,7 +17,7 @@ export function WhyDisabled({ reason, className, children }: { reason?: string |
         render={
           <span
             tabIndex={0}
-            className={cn("inline-flex cursor-not-allowed rounded-[10px] outline-none focus-visible:ring-3 focus-visible:ring-ring/30", className)}
+            className={cn("inline-flex cursor-not-allowed rounded-[10px] outline-none *:flex-1 focus-visible:ring-3 focus-visible:ring-ring/30", className)}
           />
         }
       >

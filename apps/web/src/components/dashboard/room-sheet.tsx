@@ -16,7 +16,9 @@ import { toast } from "sonner";
 import { useLodge } from "@/components/dashboard/lodge-provider";
 import { AddPhotosTile, FullTile, UploadTile } from "@/components/dashboard/photo-tiles";
 import { usePhotoUploads } from "@/components/dashboard/use-photo-uploads";
+import { WhyDisabled } from "@/components/why-disabled";
 import { AMENITIES, AMENITIES_ON_CARD, AMENITY_KEYS, ROOM_PHOTO_LIMIT, type AmenityKey, type Lodge, type Room } from "@/lib/lodge";
+import { OFFLINE_REASON, useOnline } from "@/lib/online";
 
 type RoomDraft = { name: string; price: string; sleeps: number; amenities: AmenityKey[] };
 
@@ -48,6 +50,7 @@ export function RoomSheet({
   const [errors, setErrors] = useState<{ name?: string; price?: string }>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const online = useOnline();
   /** Photos being deleted */
   const [removing, setRemoving] = useState<string[]>([]);
 
@@ -279,9 +282,16 @@ export function RoomSheet({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               {created ? "Close" : "Cancel"}
             </Button>
-            <Button type="submit" loading={saving || (created && busyUploading)} className={cn(created && !busyUploading && "bg-success hover:bg-success")}>
-              {created ? (busyUploading ? "Uploading photos" : "Done") : isNew ? "Add room" : "Save room"}
-            </Button>
+            <WhyDisabled reason={!online && !created && !saving ? OFFLINE_REASON : null}>
+              <Button
+                type="submit"
+                loading={saving || (created && busyUploading)}
+                disabled={!online && !created}
+                className={cn(created && !busyUploading && "bg-success hover:bg-success")}
+              >
+                {created ? (busyUploading ? "Uploading photos" : "Done") : isNew ? "Add room" : "Save room"}
+              </Button>
+            </WhyDisabled>
           </SheetFooter>
         </form>
       </SheetContent>
