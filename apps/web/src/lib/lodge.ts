@@ -205,3 +205,27 @@ export function shareMessage(lodge: Pick<Lodge, "name" | "slug">) {
 export function roomNeedsPhoto(room: Room) {
   return room.photos.length === 0;
 }
+
+/**
+ * What goes in the "+263 [ ]" box: the number without 263, or the whole
+ * number with its + for other countries.
+ */
+export function phoneToInput(digits: string | null) {
+  if (!digits) return "";
+  return digits.startsWith("263") ? digits.slice(3) : `+${digits}`;
+}
+
+/** The digits to store from what was typed, or the problem with it. */
+export function phoneFromInput(text: string): { digits: string | null; error?: string } {
+  const trimmed = text.trim();
+  if (!trimmed) return { digits: null };
+  if (trimmed.startsWith("+")) {
+    const digits = trimmed.replace(/\D/g, "");
+    if (digits.startsWith("2630")) return { digits: null, error: "Remove the 0 after +263." };
+    return /^\d{9,15}$/.test(digits) ? { digits } : { digits: null, error: "Check the number and its country code." };
+  }
+  const local = trimmed.replace(/\D/g, "");
+  if (local.startsWith("0")) return { digits: null, error: "Remove the 0 at the start. The +263 is already added." };
+  if (local.length !== 9) return { digits: null, error: "Zimbabwean numbers have 9 digits after +263, like 77 123 4567." };
+  return { digits: `263${local}` };
+}
