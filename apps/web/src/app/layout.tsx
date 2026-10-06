@@ -22,6 +22,9 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#007DA2",
+  // Pages reach under the iPhone notch and home bar; bottom bars pad themselves
+  // with env(safe-area-inset-bottom), and the body keeps text off the notch sideways
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

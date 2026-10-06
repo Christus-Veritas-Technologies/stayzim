@@ -88,7 +88,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
             <MobileHeader user={user} />
             <Topbar />
             <OfflineBanner />
-            <main className="flex-1 px-4 pt-5 pb-28 sm:px-6 lg:px-7 lg:pt-6 lg:pb-10">{children}</main>
+            <main className="flex-1 px-4 pt-5 pb-[calc(7rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-7 lg:pt-6 lg:pb-10">{children}</main>
           </div>
           <BottomNav />
         </div>

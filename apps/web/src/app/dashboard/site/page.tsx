@@ -502,7 +502,7 @@ export default function LodgeInfoPage() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 80, opacity: 0 }}
             transition={{ type: "spring", stiffness: 420, damping: 36 }}
-            className="fixed inset-x-0 bottom-[68px] z-30 grid grid-cols-[1fr_2fr] gap-2 border-t border-line-3 bg-white/95 px-4 py-3 backdrop-blur lg:hidden"
+            className="fixed inset-x-0 bottom-[calc(64px+max(0.5rem,env(safe-area-inset-bottom)))] z-30 grid grid-cols-[1fr_2fr] gap-2 border-t border-line-3 bg-white/95 px-4 py-3 backdrop-blur lg:hidden"
           >
             {actions}
           </motion.div>

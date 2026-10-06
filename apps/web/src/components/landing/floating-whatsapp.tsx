@@ -24,7 +24,7 @@ export function FloatingWhatsApp() {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.6, y: 24 }}
           transition={{ type: "spring", stiffness: 300, damping: 22 }}
-          className="fixed right-[18px] bottom-[30px] z-40 inline-flex h-14 items-center gap-2.5 rounded-full bg-whatsapp pr-5 pl-4 text-[15.5px] font-semibold text-ink no-underline shadow-[0_12px_28px_rgba(12,24,31,0.28)] hover:text-ink lg:right-7 lg:bottom-7 lg:size-16 lg:justify-center lg:p-0 lg:shadow-[0_12px_28px_rgba(12,24,31,0.22)]"
+          className="fixed right-[18px] bottom-[max(30px,calc(env(safe-area-inset-bottom)+14px))] z-40 inline-flex h-14 items-center gap-2.5 rounded-full bg-whatsapp pr-5 pl-4 text-[15.5px] font-semibold text-ink no-underline shadow-[0_12px_28px_rgba(12,24,31,0.28)] hover:text-ink lg:right-7 lg:bottom-7 lg:size-16 lg:justify-center lg:p-0 lg:shadow-[0_12px_28px_rgba(12,24,31,0.22)]"
         >
           {/* Ping only on the round desktop button; on the wide mobile pill it reads as a smear */}
           <span className="pointer-events-none absolute inset-0 hidden animate-wa-ping rounded-full bg-whatsapp lg:block" />
