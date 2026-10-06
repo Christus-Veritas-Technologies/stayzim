@@ -41,6 +41,12 @@ model Lodge {
   latitude    Float?
   longitude   Float?
 
+  /// Site template key from @stayzim/sites. Null: the plan's default.
+  template     String?    @map("template")
+  /// The owner's own hero text. Null: the template's default copy.
+  heroHeadline String?    @map("hero_headline")
+  heroSubline  String?    @map("hero_subline")
+
   /// Headings, prices and links on the site, e.g. Highland #1E4A3B. The WhatsApp button stays green.
   themeColor  String      @default("#1E4A3B") @map("theme_color")
   /// Path under the upload directory, like Photo.key
@@ -64,6 +70,7 @@ model Lodge {
   rooms       Room[]
   photos      Photo[]     @relation("LodgePhotos")
   events      SiteEvent[]
+  requests    ChangeRequest[]
 
   createdAt   DateTime    @default(now()) @map("created_at")
   updatedAt   DateTime    @updatedAt @map("updated_at")
@@ -115,4 +122,40 @@ model Photo {
 
   @@index([lodgeId, roomId, position])
   @@map("photo")
+}
+
+enum ChangeRequestTopic {
+  TEXT
+  PHOTOS
+  ROOMS
+  DESIGN
+  OTHER
+}
+
+enum ChangeRequestStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+  DECLINED
+}
+
+/// Something the owner can't edit themselves, asked of StayZim. Also sent on
+/// WhatsApp; StayZim updates the status (scripts/resolve-request.ts).
+model ChangeRequest {
+  id         String              @id @default(cuid())
+  /// Short code the owner and StayZim both quote, e.g. "R-7K2Q"
+  reference  String              @unique
+  lodgeId    String              @map("lodge_id")
+  lodge      Lodge               @relation(fields: [lodgeId], references: [id], onDelete: Cascade)
+  topic      ChangeRequestTopic
+  message    String
+  status     ChangeRequestStatus @default(OPEN)
+  /// StayZim's note back to the owner, e.g. what was changed
+  reply      String?
+  createdAt  DateTime            @default(now()) @map("created_at")
+  updatedAt  DateTime            @updatedAt @map("updated_at")
+  resolvedAt DateTime?           @map("resolved_at")
+
+  @@index([lodgeId, createdAt])
+  @@map("change_request")
 }
