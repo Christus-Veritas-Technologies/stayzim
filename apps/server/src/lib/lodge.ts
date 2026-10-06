@@ -1,0 +1,146 @@
+import prisma from "@stayzim/db";
+import { createMiddleware } from "hono/factory";
+import { HTTPException } from "hono/http-exception";
+
+import type { AuthVariables } from "./session";
+import { uploadUrl } from "./uploads";
+
+export type LodgeVariables = AuthVariables & { lodgeId: string };
+
+/** The signed-in owner's lodge, as `c.var.lodgeId`. 404 until StayZim has created it. */
+export const requireLodge = createMiddleware<{ Variables: LodgeVariables }>(async (c, next) => {
+  const user = c.get("user");
+  if (!user) throw new HTTPException(401, { message: "Sign in to continue" });
+  const lodge = await prisma.lodge.findUnique({ where: { ownerId: user.id }, select: { id: true } });
+  if (!lodge) throw new HTTPException(404, { message: "Your lodge isn't set up yet. Message us on WhatsApp." });
+  c.set("lodgeId", lodge.id);
+  await next();
+});
+
+function loadLodge(lodgeId: string) {
+  return prisma.lodge.findUniqueOrThrow({
+    where: { id: lodgeId },
+    include: {
+      rooms: { orderBy: { position: "asc" }, include: { photos: { orderBy: { position: "asc" } } } },
+      photos: { where: { roomId: null }, orderBy: { position: "asc" } },
+    },
+  });
+}
+
+type StoredPhoto = {
+  id: string;
+  key: string;
+  width: number;
+  height: number;
+  size: number;
+  caption: string;
+  roomId: string | null;
+};
+
+export type PhotoJson = {
+  id: string;
+  url: string;
+  width: number;
+  height: number;
+  size: number;
+  caption: string;
+  roomId: string | null;
+};
+
+export type RoomJson = {
+  id: string;
+  name: string;
+  price: number;
+  sleeps: number;
+  amenities: string[];
+  photos: PhotoJson[];
+  updatedAt: Date;
+};
+
+/** GET /api/lodge, and what every lodge edit returns. Mirrored in apps/web/src/lib/lodge.ts. */
+export type LodgeJson = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  town: string | null;
+  region: string | null;
+  whatsapp: string | null;
+  phone: string | null;
+  email: string | null;
+  mapsUrl: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  themeColor: string;
+  logoUrl: string | null;
+  heroPhotoId: string | null;
+  heroUrl: string | null;
+  plan: "STARTER" | "GROWTH" | "PRO";
+  status: "TRIAL" | "ACTIVE" | "OVERDUE" | "SUSPENDED";
+  trialEndsAt: Date | null;
+  paidUntil: Date | null;
+  linkSharedAt: Date | null;
+  updatedAt: Date;
+  rooms: RoomJson[];
+  /** Photos not on a room, in order */
+  gallery: PhotoJson[];
+};
+
+export function photoJson(photo: StoredPhoto): PhotoJson {
+  return {
+    id: photo.id,
+    url: uploadUrl(photo.key),
+    width: photo.width,
+    height: photo.height,
+    size: photo.size,
+    caption: photo.caption,
+    roomId: photo.roomId,
+  };
+}
+
+/** Everything the dashboard shows, in one response, so every edit can return it fresh. */
+export async function lodgeJson(lodgeId: string): Promise<LodgeJson> {
+  const lodge = await loadLodge(lodgeId);
+  const gallery = lodge.photos.map(photoJson);
+  const hero = gallery.find((photo) => photo.id === lodge.heroPhotoId) ?? gallery[0] ?? null;
+
+  return {
+    id: lodge.id,
+    slug: lodge.slug,
+    name: lodge.name,
+    description: lodge.description,
+    town: lodge.town,
+    region: lodge.region,
+    whatsapp: lodge.whatsapp,
+    phone: lodge.phone,
+    email: lodge.email,
+    mapsUrl: lodge.mapsUrl,
+    latitude: lodge.latitude,
+    longitude: lodge.longitude,
+    themeColor: lodge.themeColor,
+    logoUrl: lodge.logoKey ? uploadUrl(lodge.logoKey) : null,
+    heroPhotoId: hero?.id ?? null,
+    heroUrl: hero?.url ?? null,
+    plan: lodge.plan,
+    status: lodge.status,
+    trialEndsAt: lodge.trialEndsAt,
+    paidUntil: lodge.paidUntil,
+    linkSharedAt: lodge.linkSharedAt,
+    updatedAt: lodge.updatedAt,
+    rooms: lodge.rooms.map((room) => ({
+      id: room.id,
+      name: room.name,
+      price: room.price,
+      sleeps: room.sleeps,
+      amenities: room.amenities,
+      photos: room.photos.map(photoJson),
+      updatedAt: room.updatedAt,
+    })),
+    gallery,
+  };
+}
+
+/** Digits only, with the country code: "+263 77 123 4567" → "263771234567". */
+export function phoneDigits(value: string) {
+  return value.replace(/\D/g, "");
+}
