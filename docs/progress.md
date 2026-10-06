@@ -2,7 +2,7 @@
 
 _What's built, what's next, and what's blocking. Update this file whenever a piece of work lands. For what StayZim is and why, see [project.md](project.md)._
 
-**Last updated:** 5 October 2026
+**Last updated:** 6 October 2026
 
 ## At a glance
 
@@ -11,13 +11,15 @@ _What's built, what's next, and what's blocking. Update this file whenever a pie
 | Marketing landing page | ✅ Built |
 | Landing page analytics (CTA clicks, page views) | ✅ Built |
 | WhatsApp outreach tool (internal) | ✅ Built |
-| Owner sign-in (login, reset, first-login password) | ✅ Built |
+| Owner sign-in (login, reset, first-login password) | ✅ Built, matches the app screens design |
 | Email (SMTP via Nodemailer) | ✅ Built, needs SMTP credentials |
-| Owner dashboard | 🟡 Placeholder only |
+| Owner dashboard (overview, lodge info, rooms, gallery) | ✅ Built |
+| Photo storage (Cloudflare R2) | ✅ Built, needs R2 credentials |
+| Shared UI components (packages/ui) | ✅ Built |
 | Lodge sites ({slug}.stayzim.co.zw) | ⬜ Not started |
-| Owner analytics | ⬜ Not started |
-| Billing screen | ⬜ Not started |
-| Shared states (suspended, 404, locked features) | ⬜ Not started |
+| Owner analytics | 🟡 Screen built; waits for visit tracking on lodge sites |
+| Billing screen | ✅ Built, payment details are placeholders |
+| Shared states (suspended, 404, locked features) | 🟡 Dashboard side done (errors, loading, locked analytics); lodge-site pages not started |
 | Mobile app (apps/native) | ⬜ Scaffold only |
 | Docker images (server, web, outreach) | ✅ Written, not yet built in Docker |
 | Deployment | ⬜ Not started |
@@ -51,14 +53,16 @@ Story IDs refer to the designer brief.
 
 ### Dashboard (Screen 4)
 
-- [ ] D1 Lodge name, plan, status and View my site
-- [ ] D2 Trial days left banner
-- [ ] D3 Edit lodge info, WhatsApp number validated
-- [ ] D4 Location from a Google Maps link or coordinates
-- [ ] D5 Theme colour and logo
-- [ ] D6–D7 Add, edit, reorder and delete rooms
-- [ ] D8–D9 Upload, reorder and delete gallery photos (resized on the phone)
-- [ ] D10 Copy link and share on WhatsApp
+- [x] D1 Lodge name, plan, status and View my site
+- [x] D2 Trial days left banner
+- [x] D3 Edit lodge info, WhatsApp number validated ("Remove the 0 at the start")
+- [x] D4 Location from a Google Maps link (short links followed, Google only) or coordinates
+- [x] D5 Theme colour and logo
+- [x] D6–D7 Add, edit, reorder (drag or menu) and delete rooms
+- [x] D8–D9 Upload, reorder and delete gallery photos, resized on the phone; pick the hero
+- [x] D10 Copy link and share on WhatsApp (ticks off the setup checklist)
+- [x] Setup checklist: rooms, 5 gallery photos, WhatsApp number, link shared
+- [x] Responsive: sidebar on desktop (collapsible), header and bottom bar on phones
 
 ### Lodge site (Screen 2)
 
@@ -66,23 +70,27 @@ Story IDs refer to the designer brief.
 
 ### Analytics (Screen 5) and Billing (Screen 6)
 
-- [ ] N1–N5 Visits table, totals, locked preview for Starter, empty state, owner visits excluded
-- [ ] B1–B6 Plan, status pill and due date, how to pay, "I have paid" and plan-change WhatsApp buttons, overdue warning
+- [ ] N1–N2 Visits table and totals (screen and stat cards built; no visit data until lodge sites record visits)
+- [x] N3 Locked preview for Starter, with an upgrade button
+- [x] N4 Empty state with Copy link and Share on WhatsApp
+- [ ] N5 Owner visits excluded (with visit tracking)
+- [x] B1–B5 Plan, status pill and due date, how to pay, "I have paid" and plan-change WhatsApp buttons
+- [x] B6 Overdue and suspended warnings
+- [ ] Real Paynow link and EcoCash/InnBucks merchant codes (`apps/web/src/lib/billing.ts`)
 
 ### Shared states
 
 - [ ] X1 Suspended site page
 - [ ] X2 Unknown lodge 404
-- [ ] X3–X5 Save errors, loading spinners, locked features
+- [x] X3–X5 Save errors, loading skeletons and spinners, locked features (dashboard)
 
 ## Next up
 
-1. **Data model for lodges:** lodge (slug, plan, status, trial end, theme), rooms, photos, link to the owner's user.
-2. **Owner dashboard (D1–D10)** on top of the auth base.
-3. **Lodge site renderer** for `{slug}.stayzim.co.zw`, starting with the three demo lodges.
-4. **Visit tracking and owner analytics** (S8, N1–N5).
-5. **Billing screen** and plan/status rules (B1–B6, X1).
-6. **Deployment:**
+1. **Lodge site renderer** for `{slug}.stayzim.co.zw`, starting with the three demo lodges. The data is ready (lodge, rooms, photos, theme).
+2. **Visit tracking** on lodge sites (S8), then wire it into `visitStats()` in `apps/web/src/lib/stats.ts` so the overview and Analytics show real numbers (N1, N2, N5).
+3. **Suspended and 404 pages** for lodge sites (X1, X2).
+4. **Deployment:**
+   - Create the R2 bucket with a public custom domain (e.g. `media.stayzim.co.zw`) and set the `R2_*` variables.
    - Build and run the three Docker images on a machine with Docker; none have been built yet.
    - VPS, wildcard subdomains, HTTPS, `COOKIE_DOMAIN=.stayzim.co.zw`.
    - Let `CORS_ORIGIN` accept both `stayzim.co.zw` and `app.stayzim.co.zw`.
@@ -91,6 +99,8 @@ Story IDs refer to the designer brief.
 ## Blocked on / needs a decision
 
 - **SMTP credentials** for hello@stayzim.co.zw (Spacemail), to send real reset emails.
+- **Cloudflare R2** bucket, API token and public domain for lodge photos.
+- **Payment details:** the Paynow link and the EcoCash and InnBucks merchant codes for the Billing screen.
 - **Sales WhatsApp number** for the landing page.
 - **First real demo lodge** (photos and content).
 - The open questions in [project.md](project.md#open-questions).
@@ -98,6 +108,14 @@ Story IDs refer to the designer brief.
 ## Log
 
 Newest first. One line per piece of work that landed on `main`.
+
+### 6 October 2026
+
+- **Shared UI (`packages/ui`):** StayZim tokens moved into the package (one palette for the landing page and the app). shadcn-style components on Base UI, restyled to the app design: Button (with loading), Input, InputGroup, PasswordInput, Textarea, Field, Badge, Avatar, Card, Tabs (sliding indicator), Toggle chips, Dialog, AlertDialog, Sheet, DropdownMenu, Tooltip, Progress and ProgressRing, Collapsible, NumberField, CopyButton, EmptyState, Skeleton, Spinner.
+- **Auth screens to the design:** form on the left and the animated Kariba panel on the right (Kariba header on phones); check-your-email state; first login shows the owner's live site. First-login "Set your password" no longer asks for the temporary password.
+- **Lodge data and API:** `Lodge`, `Room` and `Photo` models; `/api/lodge` (info, map link, logo, link shared), `/api/lodge/rooms` and `/api/lodge/photos`; `create-lodge` script.
+- **Photos:** resized on the phone, uploaded one at a time with progress and Retry, stored in Cloudflare R2 (a local folder in development without R2).
+- **Dashboard:** overview (setup checklist, stat cards, visits chart, Send your link, rooms, activity), Lodge info (details, location, look, live preview), Rooms (drag to reorder, side sheet), Gallery (hero, captions, reorder), Analytics (empty and locked states) and Billing. Subtle framer-motion animations throughout, off with the OS "reduce motion" setting.
 
 ### 5 October 2026
 
