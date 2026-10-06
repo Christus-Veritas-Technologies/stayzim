@@ -5,8 +5,8 @@
 #
 # Runtime env (not baked in): DATABASE_URL (the stayzim-outreach database),
 # CORS_ORIGIN, OUTREACH_PASSWORD, WHATSAPP_ACCOUNTS, WHATSAPP_DAILY_LIMIT.
-# See apps/outreach/.env.example. Set SKIP_DB_PUSH=1 to start without
-# applying the Prisma schema.
+# See apps/outreach/.env.example. Set SKIP_DB_MIGRATE=1 to start without
+# applying Prisma migrations.
 #
 # Each WhatsApp number runs its own Chromium, so give the container memory
 # accordingly (roughly 300 MB per number) and a larger /dev/shm, e.g.
@@ -85,5 +85,5 @@ EXPOSE 9997
 HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3 \
   CMD bun -e "fetch('http://localhost:' + (process.env.PORT || 9997) + '/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
 
-# Applies the Prisma schema, then runs outreach with Bun (TypeScript source, as in dev)
+# Applies new Prisma migrations, then runs outreach with Bun (TypeScript source, as in dev)
 CMD ["stayzim-start"]

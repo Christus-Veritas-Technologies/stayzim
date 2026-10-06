@@ -5,7 +5,7 @@
 #
 # Runtime env (not baked in): DATABASE_URL, CORS_ORIGIN, BETTER_AUTH_SECRET,
 # BETTER_AUTH_URL, WEB_URL, COOKIE_DOMAIN, SMTP_*. See apps/server/.env.example.
-# Set SKIP_DB_PUSH=1 to start without applying the Prisma schema.
+# Set SKIP_DB_MIGRATE=1 to start without applying Prisma migrations.
 #
 # Node is the base because pnpm and the Prisma CLI run on it; Bun is copied in
 # to run the app itself, as in development.
@@ -71,5 +71,5 @@ EXPOSE 9998
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD bun -e "fetch('http://localhost:' + (process.env.PORT || 9998) + '/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
 
-# Applies the Prisma schema, then runs the API with Bun (TypeScript source, as in dev)
+# Applies new Prisma migrations, then runs the API with Bun (TypeScript source, as in dev)
 CMD ["stayzim-start"]
