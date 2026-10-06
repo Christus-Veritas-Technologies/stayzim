@@ -74,7 +74,7 @@ export function ShareCard({ className }: { className?: string }) {
       <button
         type="button"
         onClick={() => setEditing((value) => !value)}
-        className="inline-flex w-fit items-center gap-1.5 text-[13px] font-semibold text-muted hover:text-ink"
+        className="-my-2.5 inline-flex w-fit items-center gap-1.5 py-2.5 text-[13px] font-semibold text-muted hover:text-ink"
       >
         <Pencil className="size-3.5" />
         {editing ? "Done editing" : "Edit message"}

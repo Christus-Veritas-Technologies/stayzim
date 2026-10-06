@@ -20,7 +20,7 @@ export function PreviewBanner({ template }: { template: string }) {
         type="button"
         onClick={() => setOpen(false)}
         aria-label="Hide preview bar"
-        className="absolute right-2 flex size-7 items-center justify-center rounded-full text-white/70 outline-none transition-colors hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-white/50"
+        className="absolute right-1.5 flex size-8 items-center justify-center rounded-full text-white/70 outline-none transition-colors hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-white/50"
       >
         <X className="size-3.5" />
       </button>

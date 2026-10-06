@@ -23,7 +23,7 @@ const buttonVariants = cva(
         link: "h-auto rounded-sm px-0 text-brand hover:text-brand-dark hover:underline active:scale-100",
       },
       size: {
-        xs: "h-7 gap-1 rounded-[7px] px-2.5 text-xs [&_svg:not([class*='size-'])]:size-3.5",
+        xs: "h-7 gap-1 rounded-[7px] px-2.5 text-xs pointer-coarse:h-8 [&_svg:not([class*='size-'])]:size-3.5",
         sm: "h-[34px] gap-1.5 px-3 text-[13px]",
         default: "h-10 px-3.5",
         lg: "h-11 px-4",

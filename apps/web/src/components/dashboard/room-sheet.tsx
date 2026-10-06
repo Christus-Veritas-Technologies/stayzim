@@ -250,7 +250,7 @@ export function RoomSheet({
                         type="button"
                         onClick={() => removePhoto(photo.id)}
                         aria-label="Remove photo"
-                        className="absolute top-1.5 right-1.5 flex size-6 items-center justify-center rounded-md bg-white/95 text-muted-2 shadow-xs hover:text-danger"
+                        className="absolute top-1 right-1 flex size-8 items-center justify-center rounded-lg bg-white/95 text-muted-2 shadow-xs hover:text-danger"
                       >
                         <X className="size-3.5" />
                       </button>
@@ -273,7 +273,7 @@ export function RoomSheet({
                         type="button"
                         onClick={() => setPending((current) => current.filter((_, position) => position !== index))}
                         aria-label="Remove photo"
-                        className="absolute top-1.5 right-1.5 flex size-6 items-center justify-center rounded-md bg-white/95 text-muted-2 shadow-xs hover:text-danger"
+                        className="absolute top-1 right-1 flex size-8 items-center justify-center rounded-lg bg-white/95 text-muted-2 shadow-xs hover:text-danger"
                       >
                         <X className="size-3.5" />
                       </button>

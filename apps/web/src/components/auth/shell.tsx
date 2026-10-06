@@ -108,7 +108,7 @@ export function BackToLogin() {
     <Item variants={riseIn} className="mb-5">
       <Link
         href="/login"
-        className="group inline-flex items-center gap-1.5 text-[13px] font-semibold text-muted hover:text-ink"
+        className="group -my-2.5 inline-flex items-center gap-1.5 py-2.5 text-[13px] font-semibold text-muted hover:text-ink"
       >
         <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-0.5" />
         Back to log in

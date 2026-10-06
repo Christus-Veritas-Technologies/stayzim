@@ -92,7 +92,7 @@ export default function SetPasswordPage() {
     >
       {firstLogin ? null : (
         <Item variants={riseIn} className="mb-5">
-          <Link href="/dashboard" className="group inline-flex items-center gap-1.5 text-[13px] font-semibold text-muted hover:text-ink">
+          <Link href="/dashboard" className="group -my-2.5 inline-flex items-center gap-1.5 py-2.5 text-[13px] font-semibold text-muted hover:text-ink">
             <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-0.5" />
             Back to dashboard
           </Link>
@@ -113,7 +113,7 @@ export default function SetPasswordPage() {
                 label="Current password"
                 action={
                   // Owners who only ever used Google have no password they know
-                  <Link href="/forgot-password" className="text-[13px] font-semibold text-brand hover:text-brand-dark">
+                  <Link href="/forgot-password" className="-my-2.5 py-2.5 text-[13px] font-semibold text-brand hover:text-brand-dark">
                     Forgot it?
                   </Link>
                 }

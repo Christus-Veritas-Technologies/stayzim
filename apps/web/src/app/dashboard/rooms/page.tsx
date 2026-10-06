@@ -176,7 +176,7 @@ function RoomRow({
             type="button"
             aria-label={`Hold and drag to reorder ${room.name}`}
             onPointerDown={(event) => controls.start(event)}
-            className="-ml-1 flex h-10 w-6 touch-none items-center justify-center text-soft"
+            className="-my-1 -mr-1 -ml-2 flex h-12 w-9 touch-none items-center justify-center text-soft"
           >
             <GripVertical className="size-4" />
           </button>

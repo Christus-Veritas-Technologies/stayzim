@@ -96,7 +96,7 @@ function CaptionEditor({ photo, fallback }: { photo: Photo; fallback: string }) 
     <button
       type="button"
       onClick={() => setEditing(true)}
-      className="truncate text-left text-[13.5px] font-semibold hover:text-brand"
+      className="-my-2 truncate py-2 text-left text-[13.5px] font-semibold hover:text-brand"
       title="Edit caption"
     >
       {photo.caption || <span className="text-muted-2">{fallback}</span>}

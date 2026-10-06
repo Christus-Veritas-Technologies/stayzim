@@ -96,7 +96,7 @@ function LoginForm() {
             <Field
               label="Password"
               action={
-                <Link href="/forgot-password" className="text-[13px] font-semibold text-brand hover:text-brand-dark">
+                <Link href="/forgot-password" className="-my-2.5 py-2.5 text-[13px] font-semibold text-brand hover:text-brand-dark">
                   Forgot password?
                 </Link>
               }

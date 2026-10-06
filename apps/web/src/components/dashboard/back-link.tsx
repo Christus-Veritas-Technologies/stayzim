@@ -37,7 +37,7 @@ export function BackLink({ label, href }: { label: string; href: Route }) {
         event.preventDefault();
         router.back();
       }}
-      className="group -ml-1 inline-flex w-fit items-center gap-0.5 rounded-md px-1 text-[13px] font-semibold text-brand outline-none hover:text-brand-dark focus-visible:ring-3 focus-visible:ring-ring/30 lg:hidden"
+      className="group -my-2.5 -ml-1 inline-flex w-fit items-center gap-0.5 rounded-md px-1 py-2.5 text-[13px] font-semibold text-brand outline-none hover:text-brand-dark focus-visible:ring-3 focus-visible:ring-ring/30 lg:hidden"
     >
       <ChevronLeft className="size-[15px] transition-transform duration-200 group-hover:-translate-x-0.5 group-active:-translate-x-1 motion-reduce:transition-none" />
       {label}

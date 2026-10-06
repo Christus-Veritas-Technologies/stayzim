@@ -19,7 +19,7 @@ export function LegalPage({ title, intro, updated, sections }: { title: string; 
           <Link href="/" className="text-lg text-ink no-underline" aria-label="StayZim home">
             <Wordmark size={30} />
           </Link>
-          <Link href="/" className="group inline-flex items-center gap-1.5 text-[13.5px] font-semibold text-muted transition-colors hover:text-ink">
+          <Link href="/" className="group -my-2.5 inline-flex items-center gap-1.5 py-2.5 text-[13.5px] font-semibold text-muted transition-colors hover:text-ink">
             <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-0.5" />
             Home
           </Link>

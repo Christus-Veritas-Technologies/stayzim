@@ -130,7 +130,7 @@ export function MobileHeader({ user }: { user: { name: string; email: string } }
           <PlanPill lodge={lodge} compact />
           <Link
             href="/dashboard/billing"
-            className={cn("font-semibold underline underline-offset-2", lodge.status === "TRIAL" ? "text-purple" : "text-danger")}
+            className={cn("-my-2.5 py-2.5 font-semibold underline underline-offset-2", lodge.status === "TRIAL" ? "text-purple" : "text-danger")}
           >
             {lodge.status === "TRIAL" ? "Choose a plan" : "Pay now"}
           </Link>
