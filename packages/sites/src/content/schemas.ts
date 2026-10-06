@@ -8,8 +8,9 @@ import { z } from "zod";
 
 import { HERO_LIMITS } from "../index";
 import { AMENITY_KEYS } from "./amenities";
+import { isDateString, nightsBetween } from "./dates";
 import { SOCIAL_KEYS, socialLink, STAY_TIMES, type SocialLinks } from "./guest-info";
-import { GUEST_INFO_LIMITS, LODGE_LIMITS, ROOM_LIMITS } from "./limits";
+import { BOOKING_LIMITS, GUEST_INFO_LIMITS, LODGE_LIMITS, ROOM_LIMITS } from "./limits";
 import type { PublicSite } from "./types";
 
 /** Digits only, with the country code: "+263 77 123 4567" → "263771234567". */
@@ -137,6 +138,77 @@ export const roomInput = roomFields.extend({
 
 /** PATCH /api/lodge/rooms/:id: only what was sent changes. */
 export const roomPatch = roomFields.partial();
+
+// --- Bookings ---
+
+const date = z.string().refine(isDateString, "Pick a date");
+
+/** Check-in before check-out, and not too long a stay. Date ranges (how far ahead) are checked by the server, which knows today. */
+type Stay = { checkIn: string; checkOut: string };
+
+function stayDates<T extends z.ZodRawShape>(shape: T) {
+  return z
+    .object({ ...shape, checkIn: date, checkOut: date })
+    .refine((stay) => (stay as Stay).checkOut > (stay as Stay).checkIn, { message: "Check-out is after check-in", path: ["checkOut"] })
+    .refine((stay) => nightsBetween((stay as Stay).checkIn, (stay as Stay).checkOut) <= BOOKING_LIMITS.maxNights, {
+      message: `A booking is up to ${BOOKING_LIMITS.maxNights} nights`,
+      path: ["checkOut"],
+    });
+}
+
+const guestCount = z.number().int().min(1, "At least 1 guest").max(200, "Check the number of guests");
+const guestName = optionalText(BOOKING_LIMITS.guestName, "The name");
+
+/** POST /api/lodge/bookings: a booking the owner took on WhatsApp or by phone. */
+export const ownerBookingInput = stayDates({
+  roomId: z.string().min(1),
+  quantity: z.number().int().min(1).max(ROOM_LIMITS.unitsMax).default(1),
+  guests: guestCount.nullable().default(null),
+  guestName: guestName.default(null),
+  guestPhone: phoneNumber("guest's").default(null),
+  guestEmail: email.default(null),
+  notes: optionalText(BOOKING_LIMITS.notes, "The note").default(null),
+});
+
+/** POST /api/lodge/bookings/blocks: dates the owner closed. No quantity: all of the room. */
+export const blockInput = stayDates({
+  roomId: z.string().min(1),
+  quantity: z.number().int().min(1).max(ROOM_LIMITS.unitsMax).nullable().default(null),
+  notes: optionalText(BOOKING_LIMITS.notes, "The note").default(null),
+});
+
+const reason = optionalText(BOOKING_LIMITS.reason, "The reason").optional();
+
+/** PATCH /api/lodge/bookings/:id */
+export const bookingAction = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("confirm") }),
+  z.object({ action: z.literal("decline"), reason }),
+  z.object({ action: z.literal("cancel"), reason }),
+  z.object({
+    action: z.literal("edit"),
+    roomId: z.string().min(1).optional(),
+    checkIn: date.optional(),
+    checkOut: date.optional(),
+    quantity: z.number().int().min(1).max(ROOM_LIMITS.unitsMax).optional(),
+    guests: guestCount.nullable().optional(),
+    guestName: guestName.optional(),
+    guestPhone: phoneNumber("guest's").optional(),
+    guestEmail: email.optional(),
+    notes: optionalText(BOOKING_LIMITS.notes, "The note").optional(),
+  }),
+]);
+
+/** POST /api/sites/:slug/bookings: a guest's request from the lodge site. */
+export const bookingRequestInput = stayDates({
+  roomId: z.string().min(1).max(64),
+  guests: guestCount,
+  name: z.string().trim().min(2, "Add your name").max(BOOKING_LIMITS.guestName),
+  phone: phoneNumber("WhatsApp").refine((value) => value !== null, "Add your WhatsApp number"),
+  email: email.default(null),
+  message: optionalText(BOOKING_LIMITS.message, "Your note").default(null),
+  /** Left empty by people; bots fill it in */
+  website: z.string().max(200).optional(),
+});
 
 // --- What a lodge site reads. Every field added later gets a default here. ---
 

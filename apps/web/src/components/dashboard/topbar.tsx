@@ -155,7 +155,8 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Dashboard"
-      className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-line-3 bg-white/95 px-2 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur lg:hidden"
+      style={{ gridTemplateColumns: `repeat(${links.length}, minmax(0, 1fr))` }}
+      className="fixed inset-x-0 bottom-0 z-40 grid border-t border-line-3 bg-white/95 px-2 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur lg:hidden"
     >
       {links.map((link) => {
         const active = isActive(pathname, link.href);
@@ -179,7 +180,7 @@ export function BottomNav() {
                 />
               ) : null}
               <NavIcon icon={Icon} className="relative size-5" />
-              {link.attention || (link.badge && !isLiveDemo(lodge)) ? (
+              {link.attention || (link.badge && !isLiveDemo(lodge)) || link.count ? (
                 <span className="absolute top-0.5 right-2.5 size-1.5 rounded-full bg-purple ring-2 ring-white" />
               ) : null}
             </span>

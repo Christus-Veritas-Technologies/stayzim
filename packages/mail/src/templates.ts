@@ -3,6 +3,7 @@ import type { Email } from "./index";
 import { BRAND, button, escapeHtml, greeting, layout, MUTED } from "./layout";
 
 export * from "./billing";
+export * from "./bookings";
 
 export function resetPasswordEmail({ to, name, url }: { to: string; name: string; url: string }): Email {
   return {

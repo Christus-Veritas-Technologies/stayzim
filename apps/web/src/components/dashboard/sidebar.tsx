@@ -45,14 +45,14 @@ function NavItem({ link, collapsed }: { link: NavLink; collapsed: boolean }) {
       ) : null}
       <span className="relative">
         <NavIcon icon={Icon} className="size-[18px]" />
-        {collapsed && link.attention ? (
+        {collapsed && (link.attention || link.count) ? (
           <span className="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-purple ring-2 ring-surface-2" />
         ) : null}
       </span>
       {collapsed ? <span className="sr-only">{link.label}</span> : link.label}
-      {!collapsed && link.badge ? (
-        <Badge variant={active ? "inverse" : "purple"} className="ml-auto">
-          {link.badge}
+      {!collapsed && (link.badge || link.count) ? (
+        <Badge variant={active ? "inverse" : "purple"} className="ml-auto" aria-label={link.count ? `${link.count} waiting` : undefined}>
+          {link.badge ?? link.count}
         </Badge>
       ) : null}
     </Link>

@@ -10,6 +10,7 @@ import { useLodge } from "@/components/dashboard/lodge-provider";
 import { ActivityCard, RoomsSummaryCard } from "@/components/dashboard/overview-cards";
 import { Page, PageHeader, PageSection } from "@/components/dashboard/page";
 import { SetupChecklist } from "@/components/dashboard/setup-checklist";
+import { TodayStrip } from "@/components/dashboard/today-strip";
 import { ShareCard, useShareLink } from "@/components/dashboard/share";
 import { AnalyticsUpsell, PeriodTabs, StatCards, VisitsCard } from "@/components/dashboard/visit-stats";
 import { WhatsAppIcon } from "@/components/landing/brand";
@@ -68,6 +69,8 @@ export default function DashboardPage() {
       <PageSection className="lg:hidden">
         <MobileSiteCard />
       </PageSection>
+
+      <TodayStrip lodge={lodge} />
 
       <PageSection>
         <SetupChecklist />

@@ -4,6 +4,8 @@ enum SiteEventType {
   PAGE_VIEW
   /// A tap on a Book on WhatsApp button
   BOOKING_CHAT
+  /// A booking request sent from the site (Growth and Pro)
+  BOOKING_REQUEST
 }
 
 enum Device {

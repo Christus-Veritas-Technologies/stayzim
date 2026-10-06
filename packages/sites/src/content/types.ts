@@ -162,4 +162,61 @@ export type DashboardLodge = {
   cancellationPolicy: string | null;
   faq: FaqEntry[];
   socialLinks: SocialLinks;
+  /** Booking requests waiting for an answer (0 without the calendar) */
+  bookingsWaiting: number;
+  /** Today in the calendar (zeros without it) */
+  today: { arriving: number; leaving: number; staying: number };
+};
+
+// --- Bookings (Growth and Pro; docs/cms/bookings.md) ---
+
+export type BookingKind = "STAY" | "BLOCK";
+export type BookingStatus = "REQUESTED" | "CONFIRMED" | "DECLINED" | "CANCELLED";
+
+export type DashboardBooking = {
+  id: string;
+  /** "B-7K2Q" */
+  reference: string;
+  kind: BookingKind;
+  status: BookingStatus;
+  source: "SITE" | "OWNER";
+  roomId: string;
+  /** As it was when booked */
+  roomName: string;
+  /** YYYY-MM-DD, the first night */
+  checkIn: string;
+  /** YYYY-MM-DD, the morning they leave */
+  checkOut: string;
+  nights: number;
+  quantity: number;
+  guests: number | null;
+  guestName: string | null;
+  guestPhone: string | null;
+  guestEmail: string | null;
+  message: string | null;
+  notes: string | null;
+  /** Whole USD a night, as it was when booked */
+  nightlyPrice: number;
+  /** nightlyPrice × nights × quantity */
+  total: number;
+  /** A request nobody answered before its check-in day */
+  expired: boolean;
+  createdAt: string;
+  decidedAt: string | null;
+  cancelledAt: string | null;
+  cancelReason: string | null;
+};
+
+/** GET /api/lodge/bookings: what overlaps a window of dates, and what the calendar needs to draw it. */
+export type BookingsWindow = {
+  from: string;
+  to: string;
+  rooms: { id: string; name: string; units: number; visible: boolean; price: number }[];
+  bookings: DashboardBooking[];
+  /** Nights where more are booked than the lodge has (after "how many" went down) */
+  overbooked: { roomId: string; night: string; taken: number; units: number }[];
+  /** Requests waiting for an answer */
+  waiting: number;
+  /** Whether the plan includes bookings; false: read-only (after a downgrade) */
+  enabled: boolean;
 };

@@ -91,6 +91,7 @@ model Lodge {
   requests ChangeRequest[]
   invoices Invoice[]
   payments Payment[]
+  bookings Booking[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -99,17 +100,17 @@ model Lodge {
 }
 
 model Room {
-  id          String   @id @default(cuid())
-  lodgeId     String   @map("lodge_id")
-  lodge       Lodge    @relation(fields: [lodgeId], references: [id], onDelete: Cascade)
+  id          String    @id @default(cuid())
+  lodgeId     String    @map("lodge_id")
+  lodge       Lodge     @relation(fields: [lodgeId], references: [id], onDelete: Cascade)
   name        String
   /// USD per night, whole dollars
   price       Int
-  sleeps      Int      @default(2)
+  sleeps      Int       @default(2)
   /// Keys from the amenity list in @stayzim/sites, e.g. ["wifi", "braai"]
-  amenities   String[] @default([])
+  amenities   String[]  @default([])
   /// Order on the site, from 0
-  position    Int      @default(0)
+  position    Int       @default(0)
   /// Optional details guests see on the room card
   description String?
   /// "1 queen + 2 singles"
@@ -117,10 +118,11 @@ model Room {
   /// Square metres
   size        Int?
   /// How many of this room the lodge has ("Standard Room × 6"); bookings use it
-  units       Int      @default(1)
+  units       Int       @default(1)
   /// false: hidden from the site, kept in the dashboard
-  visible     Boolean  @default(true)
+  visible     Boolean   @default(true)
   photos      Photo[]
+  bookings    Booking[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

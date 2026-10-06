@@ -1,4 +1,4 @@
-import { BarChart3, Globe, LayoutGrid, ReceiptText, type LucideIcon } from "lucide-react";
+import { BarChart3, CalendarDays, Globe, LayoutGrid, ReceiptText, type LucideIcon } from "lucide-react";
 import type { Route } from "next";
 
 import { demoTimeLeft, formatTimeLeft, GALLERY_GOAL, PLANS, type Lodge } from "@/lib/lodge";
@@ -7,7 +7,7 @@ export type NavLink = {
   href: Route;
   label: string;
   icon: LucideIcon;
-  /** Small number at the right, e.g. 3 rooms */
+  /** Small number at the right, e.g. 3 rooms (top-level links: something waiting, e.g. 2 booking requests) */
   count?: number;
   /** Jacaranda dot: something to finish here */
   attention?: string;
@@ -32,6 +32,13 @@ export function navLinks(lodge: Lodge): NavLink[] {
   const hiddenRooms = lodge.rooms.filter((room) => !room.visible).length;
   return [
     { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
+    {
+      href: "/dashboard/bookings",
+      label: "Bookings",
+      icon: CalendarDays,
+      // Requests waiting for an answer
+      count: lodge.bookingsWaiting > 0 ? lodge.bookingsWaiting : undefined,
+    },
     {
       href: "/dashboard/site",
       label: "My site",
@@ -105,6 +112,7 @@ export function breadcrumb(pathname: string): string[] {
   if (pathname.startsWith("/dashboard/guest-info")) return ["My site", "Guest info"];
   if (pathname.startsWith("/dashboard/design")) return ["My site", "Design"];
   if (pathname.startsWith("/dashboard/requests")) return ["My site", "Change requests"];
+  if (pathname.startsWith("/dashboard/bookings")) return ["Bookings"];
   if (pathname.startsWith("/dashboard/analytics")) return ["Analytics"];
   if (pathname.startsWith("/dashboard/billing")) return ["Billing"];
   return ["Dashboard"];

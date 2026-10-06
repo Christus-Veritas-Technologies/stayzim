@@ -4,6 +4,7 @@ import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 
 import type { LodgeVariables } from "../lib/lodge";
+import { newReference } from "../lib/reference";
 import { validJson } from "../lib/validate";
 
 /** Plenty for real use; stops a stuck button from flooding StayZim. */
@@ -15,12 +16,6 @@ const requestSchema = z.object({
 });
 
 /** Easy to read out on the phone: no 0/O or 1/I. */
-function newReference() {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  const bytes = crypto.getRandomValues(new Uint8Array(4));
-  return `R-${[...bytes].map((byte) => alphabet[byte % alphabet.length]).join("")}`;
-}
-
 function requestJson(request: {
   id: string;
   reference: string;
@@ -51,7 +46,7 @@ export const requests = new Hono<{ Variables: LodgeVariables }>()
     // References are short, so retry on the rare clash
     for (let attempt = 0; attempt < 5; attempt++) {
       try {
-        const created = await prisma.changeRequest.create({ data: { ...c.req.valid("json"), lodgeId, reference: newReference() } });
+        const created = await prisma.changeRequest.create({ data: { ...c.req.valid("json"), lodgeId, reference: newReference("R") } });
         return c.json(requestJson(created), 201);
       } catch (error) {
         if (attempt === 4) throw error;

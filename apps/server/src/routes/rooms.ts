@@ -1,7 +1,7 @@
 import prisma from "@stayzim/db";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { MAX_ROOMS, ROOM_LIMITS } from "@stayzim/sites";
+import { dateValue, MAX_ROOMS, ROOM_LIMITS, todayInHarare } from "@stayzim/sites";
 import { roomInput, roomPatch } from "@stayzim/sites/schemas";
 import { z } from "zod";
 
@@ -10,7 +10,7 @@ import { removeUploads } from "../lib/uploads";
 import { validJson } from "../lib/validate";
 
 async function findRoom(lodgeId: string, roomId: string) {
-  const room = await prisma.room.findFirst({ where: { id: roomId, lodgeId }, select: { id: true } });
+  const room = await prisma.room.findFirst({ where: { id: roomId, lodgeId }, select: { id: true, name: true } });
   if (!room) throw new HTTPException(404, { message: "That room no longer exists" });
   return room;
 }
@@ -68,6 +68,18 @@ export const rooms = new Hono<{ Variables: LodgeVariables }>()
   .delete("/:id", async (c) => {
     const lodgeId = c.var.lodgeId;
     const room = await findRoom(lodgeId, c.req.param("id"));
+    // Bookings keep their room (and its name and price at the time): hide it instead
+    const today = dateValue(todayInHarare());
+    const [upcoming, any] = await Promise.all([
+      prisma.booking.count({ where: { roomId: room.id, status: "CONFIRMED", kind: "STAY", checkOut: { gt: today } } }),
+      prisma.booking.count({ where: { roomId: room.id } }),
+    ]);
+    if (upcoming > 0) {
+      throw new HTTPException(409, {
+        message: `${room.name} has ${upcoming} upcoming ${upcoming === 1 ? "booking" : "bookings"}. Hide it instead, or cancel ${upcoming === 1 ? "it" : "them"} first.`,
+      });
+    }
+    if (any > 0) throw new HTTPException(409, { message: `${room.name} has past bookings, so it can't be deleted. Hide it instead.` });
     const photos = await prisma.photo.findMany({ where: { roomId: room.id }, select: { key: true, mediumKey: true, smallKey: true } });
     await prisma.$transaction(async (tx) => {
       await tx.room.delete({ where: { id: room.id } });

@@ -13,6 +13,7 @@ import {
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 
+import { bookingsToday } from "./bookings";
 import type { AuthVariables } from "./session";
 import { photoSrcSet, uploadUrl } from "./uploads";
 
@@ -71,6 +72,7 @@ export function photoJson(photo: StoredPhoto): PhotoJson {
 /** Everything the dashboard shows, in one response, so every edit can return it fresh. */
 export async function lodgeJson(lodgeId: string): Promise<DashboardLodge> {
   const lodge = await loadLodge(lodgeId);
+  const bookings = await bookingsToday(lodge.id, lodge.plan);
   const gallery = lodge.photos.map(photoJson);
   const hero = gallery.find((photo) => photo.id === lodge.heroPhotoId) ?? gallery[0] ?? null;
 
@@ -116,7 +118,7 @@ export async function lodgeJson(lodgeId: string): Promise<DashboardLodge> {
       size: room.size,
       units: room.units,
       visible: room.visible,
-      upcomingBookings: 0,
+      upcomingBookings: bookings.upcoming.get(room.id) ?? 0,
       updatedAt: room.updatedAt.toISOString(),
     })),
     gallery,
@@ -126,6 +128,8 @@ export async function lodgeJson(lodgeId: string): Promise<DashboardLodge> {
     cancellationPolicy: lodge.cancellationPolicy || null,
     faq: readFaq(lodge.faq),
     socialLinks: readSocialLinks(lodge.socialLinks),
+    bookingsWaiting: bookings.waiting,
+    today: bookings.today,
   };
 }
 

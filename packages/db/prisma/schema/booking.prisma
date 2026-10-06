@@ -1,0 +1,63 @@
+/// A stay at a lodge, or dates the owner closed (docs/cms/bookings.md).
+/// Nights run from checkIn up to, not including, checkOut.
+model Booking {
+  id           String        @id @default(cuid())
+  /// "B-7K2Q": what the guest and the owner quote on WhatsApp
+  reference    String        @unique
+  lodgeId      String        @map("lodge_id")
+  lodge        Lodge         @relation(fields: [lodgeId], references: [id], onDelete: Cascade)
+  /// Rooms with bookings can be hidden but not deleted
+  roomId       String        @map("room_id")
+  room         Room          @relation(fields: [roomId], references: [id], onDelete: Restrict)
+  kind         BookingKind
+  status       BookingStatus
+  source       BookingSource
+  checkIn      DateTime      @map("check_in") @db.Date
+  /// The morning they leave (not a night)
+  checkOut     DateTime      @map("check_out") @db.Date
+  /// How many of the room type it takes
+  quantity     Int           @default(1)
+  guests       Int?
+  guestName    String?       @map("guest_name")
+  /// Digits only with the country code
+  guestPhone   String?       @map("guest_phone")
+  guestEmail   String?       @map("guest_email")
+  /// The guest's note
+  message      String?
+  /// The owner's private note (deposits, arrival time)
+  notes        String?
+  /// Snapshots, so later room edits don't rewrite the booking
+  roomName     String        @map("room_name")
+  nightlyPrice Int           @map("nightly_price")
+  decidedAt    DateTime?     @map("decided_at")
+  cancelledAt  DateTime?     @map("cancelled_at")
+  cancelReason String?       @map("cancel_reason")
+  /// Set when guest details were cleared, 12 months after the stay
+  anonymisedAt DateTime?     @map("anonymised_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([lodgeId, checkIn])
+  @@index([roomId, checkIn, checkOut])
+  @@map("booking")
+}
+
+/// STAY: a guest's booking. BLOCK: dates the owner closed (repairs, a private event).
+enum BookingKind {
+  STAY
+  BLOCK
+}
+
+/// REQUESTED holds no rooms; CONFIRMED stays and blocks do.
+enum BookingStatus {
+  REQUESTED
+  CONFIRMED
+  DECLINED
+  CANCELLED
+}
+
+enum BookingSource {
+  SITE
+  OWNER
+}

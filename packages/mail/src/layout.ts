@@ -16,7 +16,7 @@ export function escapeHtml(value: string) {
  * The StayZim email frame: wordmark, white card, footer. Inline styles and
  * tables only, since most mail clients drop <style> blocks and flexbox.
  */
-export function layout({ preview, body }: { preview: string; body: string }) {
+export function layout({ preview, body, footer }: { preview: string; body: string; footer?: string }) {
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -34,8 +34,11 @@ export function layout({ preview, body }: { preview: string; body: string }) {
         ${body}
       </td></tr>
       <tr><td style="padding:20px 4px 0;font-size:13px;line-height:20px;color:#6C767D">
-        Lodge websites with booking on WhatsApp. Made in Mutare.<br>
-        Questions? Reply to this email or message us on WhatsApp.
+        ${
+          footer ??
+          `Lodge websites with booking on WhatsApp. Made in Mutare.<br>
+        Questions? Reply to this email or message us on WhatsApp.`
+        }
       </td></tr>
     </table>
   </td></tr>
