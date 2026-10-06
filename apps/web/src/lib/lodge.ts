@@ -11,6 +11,7 @@ import {
   Wifi,
   type LucideIcon,
 } from "lucide-react";
+import { GRACE_DAYS, includesAnalytics, PLAN_PRICES } from "@stayzim/sites";
 
 import { siteHost } from "@/lib/site-host";
 
@@ -38,7 +39,7 @@ export type Room = {
 };
 
 export type PlanKey = "STARTER" | "GROWTH" | "PRO";
-export type LodgeStatus = "TRIAL" | "ACTIVE" | "OVERDUE" | "SUSPENDED";
+export type LodgeStatus = "DEMO" | "ACTIVE" | "OVERDUE" | "SUSPENDED";
 
 export type Lodge = {
   id: string;
@@ -69,7 +70,10 @@ export type Lodge = {
   heroSrcSet: string | null;
   plan: PlanKey;
   status: LodgeStatus;
-  trialEndsAt: string | null;
+  /** When a demo's site goes offline (DEMO only) */
+  demoEndsAt: string | null;
+  /** A demo whose time is up: its site is offline until it's paid for */
+  demoEnded: boolean;
   paidUntil: string | null;
   linkSharedAt: string | null;
   updatedAt: string;
@@ -127,14 +131,14 @@ export const PLANS: Record<
   STARTER: {
     name: "Starter",
     tagline: "Get found",
-    price: 20,
+    price: PLAN_PRICES.STARTER,
     pitch: "For guesthouses that just need to be online.",
     features: ["Lodge site on stayzim.co.zw", "Rooms, gallery and map", "Book on WhatsApp button", "Google Business setup"],
   },
   GROWTH: {
     name: "Growth",
     tagline: "Get booked",
-    price: 40,
+    price: PLAN_PRICES.GROWTH,
     pitch: "For most lodges. See who visits.",
     features: ["Everything in Starter", "Visitor analytics"],
     later: "Custom domain and booking calendar, coming later",
@@ -142,7 +146,7 @@ export const PLANS: Record<
   PRO: {
     name: "Pro",
     tagline: "Get full",
-    price: 75,
+    price: PLAN_PRICES.PRO,
     pitch: "For busy lodges with 5 or more rooms.",
     features: ["Everything in Growth", "We manage your Booking.com and Airbnb listings", "Priority WhatsApp support"],
   },
@@ -150,31 +154,44 @@ export const PLANS: Record<
 
 export const PLAN_ORDER: PlanKey[] = ["STARTER", "GROWTH", "PRO"];
 
-/** Visitor analytics come with Growth and Pro (and the Growth trial). */
+/** Visitor analytics come with Growth and Pro, demos included. */
 export function hasAnalytics(lodge: Pick<Lodge, "plan">) {
-  return lodge.plan !== "STARTER";
+  return includesAnalytics(lodge.plan);
 }
 
-const DAY = 24 * 60 * 60 * 1000;
+const MINUTE = 60 * 1000;
+const HOUR = 60 * MINUTE;
+const DAY = 24 * HOUR;
 
-/** Whole days left in the trial, rounded up; 0 once it has ended. */
-export function trialDaysLeft(lodge: Pick<Lodge, "trialEndsAt">, now = Date.now()) {
-  if (!lodge.trialEndsAt) return 0;
-  return Math.max(0, Math.ceil((new Date(lodge.trialEndsAt).getTime() - now) / DAY));
+/** Milliseconds left in a demo; 0 once it has ended (or for a lodge that isn't a demo). */
+export function demoTimeLeft(lodge: Pick<Lodge, "status" | "demoEndsAt">, now = Date.now()) {
+  if (lodge.status !== "DEMO" || !lodge.demoEndsAt) return 0;
+  return Math.max(0, new Date(lodge.demoEndsAt).getTime() - now);
 }
 
-/** Overdue sites stay up 3 more days after the due date. */
-export const GRACE_DAYS = 3;
+/** "1 day 4 h", "5 h", "40 min": a demo's time left, short enough for a pill. */
+export function formatTimeLeft(ms: number) {
+  if (ms <= 0) return "0 min";
+  const days = Math.floor(ms / DAY);
+  const hours = Math.floor((ms % DAY) / HOUR);
+  if (days > 0) return hours > 0 ? `${days} ${days === 1 ? "day" : "days"} ${hours} h` : `${days} ${days === 1 ? "day" : "days"}`;
+  if (hours > 0) return `${hours} h`;
+  return `${Math.max(1, Math.ceil(ms / MINUTE))} min`;
+}
 
-/** When the next payment is due: the end of the trial or of the paid period. */
-export function dueDate(lodge: Pick<Lodge, "status" | "trialEndsAt" | "paidUntil">) {
-  const date = lodge.status === "TRIAL" || !lodge.paidUntil ? lodge.trialEndsAt : lodge.paidUntil;
+export { GRACE_DAYS };
+
+/** When the next payment is due: the end of the demo or of the paid period. */
+export function dueDate(lodge: Pick<Lodge, "status" | "demoEndsAt" | "paidUntil">) {
+  const date = lodge.status === "DEMO" ? lodge.demoEndsAt : lodge.paidUntil;
   return date ? new Date(date) : null;
 }
 
-export function offlineDate(lodge: Pick<Lodge, "status" | "trialEndsAt" | "paidUntil">) {
+/** When the site goes offline without payment: right as a demo ends, GRACE_DAYS after a paid period ends. */
+export function offlineDate(lodge: Pick<Lodge, "status" | "demoEndsAt" | "paidUntil">) {
   const due = dueDate(lodge);
-  return due ? new Date(due.getTime() + GRACE_DAYS * DAY) : null;
+  if (!due) return null;
+  return lodge.status === "DEMO" ? due : new Date(due.getTime() + GRACE_DAYS * DAY);
 }
 
 export type SetupStep = { key: "rooms" | "photos" | "whatsapp" | "share"; label: string; done: boolean };

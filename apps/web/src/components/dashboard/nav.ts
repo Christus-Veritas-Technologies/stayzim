@@ -1,7 +1,7 @@
 import { BarChart3, Globe, LayoutGrid, ReceiptText, type LucideIcon } from "lucide-react";
 import type { Route } from "next";
 
-import { GALLERY_GOAL, PLANS, trialDaysLeft, type Lodge } from "@/lib/lodge";
+import { demoTimeLeft, formatTimeLeft, GALLERY_GOAL, PLANS, type Lodge } from "@/lib/lodge";
 
 export type NavLink = {
   href: Route;
@@ -20,7 +20,6 @@ export type NavLink = {
 export const SITE_PAGES = ["/dashboard/site", "/dashboard/rooms", "/dashboard/gallery", "/dashboard/design", "/dashboard/requests"];
 
 export function navLinks(lodge: Lodge): NavLink[] {
-  const days = trialDaysLeft(lodge);
   const missingPhotos = Math.max(0, GALLERY_GOAL - lodge.gallery.length);
   const roomsWithoutPhotos = lodge.rooms.filter((room) => room.photos.length === 0).length;
   return [
@@ -57,7 +56,7 @@ export function navLinks(lodge: Lodge): NavLink[] {
       href: "/dashboard/billing",
       label: "Billing",
       icon: ReceiptText,
-      badge: lodge.status === "TRIAL" ? `${days} ${days === 1 ? "day" : "days"}` : lodge.status === "ACTIVE" ? undefined : "Due",
+      badge: lodge.status === "ACTIVE" ? undefined : lodge.status === "DEMO" && !lodge.demoEnded ? formatTimeLeft(demoTimeLeft(lodge)) : "Due",
     },
   ];
 }
@@ -73,12 +72,12 @@ export function isCurrent(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-/** "Live · Growth trial", with the colour of the dot beside it. */
-export function lodgeStatus(lodge: Pick<Lodge, "status" | "plan">) {
+/** "Live · Growth demo", with the colour of the dot beside it. */
+export function lodgeStatus(lodge: Pick<Lodge, "status" | "plan" | "demoEnded">) {
   const plan = PLANS[lodge.plan].name;
   switch (lodge.status) {
-    case "TRIAL":
-      return { label: `Live · ${plan} trial`, dot: "bg-success" };
+    case "DEMO":
+      return lodge.demoEnded ? { label: "Offline · Demo ended", dot: "bg-destructive" } : { label: `Live · ${plan} demo`, dot: "bg-purple" };
     case "ACTIVE":
       return { label: `Live · ${plan}`, dot: "bg-success" };
     case "OVERDUE":

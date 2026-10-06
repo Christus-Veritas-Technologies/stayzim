@@ -72,7 +72,7 @@ You need Node 22+, [Bun](https://bun.sh), pnpm 11 and PostgreSQL.
    ```
 
    ```bash
-   pnpm --filter @stayzim/db create-lodge --owner owner@example.com --name "Mist Valley Lodge" --slug mistvalley --demo
+   pnpm --filter @stayzim/db create-lodge --owner owner@example.com --name "Mist Valley Lodge" --slug mistvalley --sample-rooms
    ```
 
    For yourself, a team account opens the change requests screen (`/admin/requests`) after login:
@@ -120,7 +120,7 @@ Lodge sites open at `http://{slug}.localhost:9999` (Chrome and Firefox resolve `
 | `pnpm db:generate` | Regenerate the Prisma client |
 | `pnpm db:studio` | Browse the database |
 | `pnpm --filter @stayzim/auth create-owner …` | Create an owner login or give one a new temporary password ([docs/auth.md](docs/auth.md)) |
-| `pnpm --filter @stayzim/db create-lodge …` | Create the lodge for an owner login, on a 14-day Growth trial |
+| `pnpm --filter @stayzim/db create-lodge …` | Create the lodge for an owner login: a 2-day demo, or `--paid-months N` |
 | `pnpm --filter @stayzim/db set-domain --slug … --domain …` | Give a lodge its own domain (`--remove`, `--list`); DNS and certificates in [docs/deployment.md](docs/deployment.md#custom-domains) |
 | `pnpm --filter @stayzim/auth seed-demos --whatsapp 2637…` | Create the landing page's demo lodges (mistvalley, msasaridge, lakeview) with rooms and copy, each with a demo owner login; skips any that exist. Sign in as the demo owner to add photos |
 | `pnpm --filter @stayzim/db resolve-request …` | List open change requests (`--list`) or answer one (`--ref R-XXXX --status done --reply "…"`); the team screen does the same |

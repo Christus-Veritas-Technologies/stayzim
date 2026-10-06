@@ -14,14 +14,20 @@ import { AccountMenu } from "@/components/dashboard/account-menu";
 import { NavIcon } from "@/components/dashboard/link-pending";
 import { useLodge } from "@/components/dashboard/lodge-provider";
 import { breadcrumb, isActive, lodgeStatus, navLinks } from "@/components/dashboard/nav";
-import { PLANS, siteHost, siteUrl, trialDaysLeft, type Lodge } from "@/lib/lodge";
+import { demoTimeLeft, formatTimeLeft, PLANS, siteHost, siteUrl, type Lodge } from "@/lib/lodge";
+import { useNow } from "@/lib/use-now";
 
-/** "Growth trial: 9 days left [Choose a plan]", or a payment warning once the trial is over. */
+/** A demo that's still live: purple, with the time left. Everything else that isn't Active is a payment warning. */
+function isLiveDemo(lodge: Lodge) {
+  return lodge.status === "DEMO" && !lodge.demoEnded;
+}
+
+/** "Growth demo: 1 day 4 h left [Pay to keep it]", or a payment warning once the demo or the paid period is over. */
 function PlanPill({ lodge, compact = false }: { lodge: Lodge; compact?: boolean }) {
-  const days = trialDaysLeft(lodge);
+  const now = useNow();
   if (lodge.status === "ACTIVE") return null;
 
-  if (lodge.status === "TRIAL") {
+  if (isLiveDemo(lodge)) {
     return (
       <span
         className={cn(
@@ -31,11 +37,11 @@ function PlanPill({ lodge, compact = false }: { lodge: Lodge; compact?: boolean 
       >
         <Clock className="size-4 text-purple" />
         <span>
-          <strong className="font-semibold">{PLANS[lodge.plan].name} trial:</strong> {days} {days === 1 ? "day" : "days"} left
+          <strong className="font-semibold">{PLANS[lodge.plan].name} demo:</strong> {formatTimeLeft(demoTimeLeft(lodge, now))} left
         </span>
         {compact ? null : (
           <Link href="/dashboard/billing" className={buttonVariants({ variant: "accent", size: "xs", className: "rounded-full" })}>
-            Choose a plan
+            Pay to keep it
           </Link>
         )}
       </span>
@@ -50,7 +56,7 @@ function PlanPill({ lodge, compact = false }: { lodge: Lodge; compact?: boolean 
       )}
     >
       <TriangleAlert className="size-4" />
-      <strong className="font-semibold">{lodge.status === "SUSPENDED" ? "Site offline" : "Payment due"}</strong>
+      <strong className="font-semibold">{lodge.status === "DEMO" ? "Demo ended" : lodge.status === "SUSPENDED" ? "Site offline" : "Payment due"}</strong>
       {compact ? null : (
         <Link href="/dashboard/billing" className={buttonVariants({ variant: "destructive", size: "xs", className: "rounded-full" })}>
           Pay now
@@ -124,15 +130,15 @@ export function MobileHeader({ user }: { user: { name: string; email: string } }
         <div
           className={cn(
             "flex h-9 items-center justify-between gap-3 px-4 text-[13px]",
-            lodge.status === "TRIAL" ? "bg-purple-tint" : "bg-danger-tint",
+            isLiveDemo(lodge) ? "bg-purple-tint" : "bg-danger-tint",
           )}
         >
           <PlanPill lodge={lodge} compact />
           <Link
             href="/dashboard/billing"
-            className={cn("-my-2.5 py-2.5 font-semibold underline underline-offset-2", lodge.status === "TRIAL" ? "text-purple" : "text-danger")}
+            className={cn("-my-2.5 py-2.5 font-semibold underline underline-offset-2", isLiveDemo(lodge) ? "text-purple" : "text-danger")}
           >
-            {lodge.status === "TRIAL" ? "Choose a plan" : "Pay now"}
+            {isLiveDemo(lodge) ? "Pay to keep it" : "Pay now"}
           </Link>
         </div>
       )}
@@ -173,7 +179,7 @@ export function BottomNav() {
                 />
               ) : null}
               <NavIcon icon={Icon} className="relative size-5" />
-              {link.attention || (link.badge && lodge.status !== "TRIAL") ? (
+              {link.attention || (link.badge && !isLiveDemo(lodge)) ? (
                 <span className="absolute top-0.5 right-2.5 size-1.5 rounded-full bg-purple ring-2 ring-white" />
               ) : null}
             </span>

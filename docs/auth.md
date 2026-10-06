@@ -19,7 +19,7 @@ This prints a **temporary password**; send it to the owner on WhatsApp with the 
   pnpm --filter @stayzim/db create-lodge --owner owner@lodge.co.zw --name "Mist Valley Lodge" --slug mistvalley --town Nyanga --region Manicaland --whatsapp 263771234567
   ```
 
-  Every lodge starts on a 14-day Growth trial. Add `--demo` for three sample rooms. Without a lodge, the dashboard says it isn't set up yet.
+  Like a sign-up, the lodge starts as a 2-day demo; add `--paid-months 1` for a lodge that's paid already (record the payment with `mark-paid`). Add `--sample-rooms` for three sample rooms.
 - **Locked out, and the reset email never arrived:** issue a new temporary password. This also signs them out everywhere.
 
   ```bash

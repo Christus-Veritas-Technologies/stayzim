@@ -26,7 +26,7 @@ const PERIODS = {
 
 type Period = keyof typeof PERIODS;
 
-/** Visitor analytics come with Growth and Pro (and the Growth trial). */
+/** Visitor analytics come with Growth and Pro. */
 const requireAnalytics = createMiddleware<{ Variables: LodgeVariables }>(async (c, next) => {
   const lodge = await prisma.lodge.findUniqueOrThrow({ where: { id: c.var.lodgeId }, select: { plan: true } });
   if (lodge.plan === "STARTER") throw new HTTPException(403, { message: "Visitor analytics come with the Growth plan" });

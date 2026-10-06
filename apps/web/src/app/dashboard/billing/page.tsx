@@ -4,6 +4,7 @@ import { Badge } from "@stayzim/ui/components/badge";
 import { buttonVariants } from "@stayzim/ui/components/button";
 import { Card } from "@stayzim/ui/components/card";
 import { CopyButton } from "@stayzim/ui/components/copy-button";
+import { DEMO_DAYS } from "@stayzim/sites";
 import { cn } from "@stayzim/ui/lib/utils";
 import { motion } from "framer-motion";
 import { ArrowUpRight, CircleCheck, Clock, ReceiptText, TriangleAlert } from "lucide-react";
@@ -13,14 +14,13 @@ import { Page, PageHeader, PageSection } from "@/components/dashboard/page";
 import { WhatsAppIcon } from "@/components/landing/brand";
 import { EASE_OUT } from "@/components/motion";
 import { formatMoney, PAYMENT_METHODS } from "@/lib/billing";
-import { formatDate, formatLongDate } from "@/lib/format";
-import { dueDate, offlineDate, PLAN_ORDER, PLANS, trialDaysLeft, type Lodge, type PlanKey } from "@/lib/lodge";
+import { formatClock, formatDate, formatLongDate } from "@/lib/format";
+import { demoTimeLeft, dueDate, formatTimeLeft, offlineDate, PLAN_ORDER, PLANS, type Lodge, type PlanKey } from "@/lib/lodge";
+import { useNow } from "@/lib/use-now";
 import { stayzimChatUrl } from "@/lib/whatsapp";
 
-const TRIAL_DAYS = 14;
-
 const STATUS = {
-  TRIAL: { label: "Trial", badge: "bg-white/12 text-white", dot: "bg-[#B9A7F0]" },
+  DEMO: { label: "Demo", badge: "bg-white/12 text-white", dot: "bg-[#B9A7F0]" },
   ACTIVE: { label: "Active", badge: "bg-success-wash text-success", dot: "bg-success" },
   OVERDUE: { label: "Overdue", badge: "bg-warning-tint text-warning", dot: "bg-[#e8833a]" },
   SUSPENDED: { label: "Suspended", badge: "bg-danger-tint text-danger", dot: "bg-danger" },
@@ -32,8 +32,10 @@ function statusLine(lodge: Lodge) {
   const due = dueDate(lodge);
   const offline = offlineDate(lodge);
   switch (lodge.status) {
-    case "TRIAL":
-      return `${plan.features[0]}${plan.features[1] ? `, plus ${plan.features[1].toLowerCase()}` : ""}. $${plan.price}/month after your trial.`;
+    case "DEMO":
+      return lodge.demoEnded
+        ? `Your demo has ended and your site is offline. Pay ${formatMoney(plan.price)} to put it back live, just as you left it.`
+        : `Your site is live as a free demo. Pay ${formatMoney(plan.price)} for the first month to keep it live and remove the demo badges.`;
     case "ACTIVE":
       return lodge.paidUntil ? `Paid until ${formatLongDate(lodge.paidUntil)}. Nothing to do.` : "Paid up. Nothing to do.";
     case "OVERDUE":
@@ -46,7 +48,8 @@ function statusLine(lodge: Lodge) {
 function PlanCard({ lodge }: { lodge: Lodge }) {
   const plan = PLANS[lodge.plan];
   const status = STATUS[lodge.status];
-  const days = trialDaysLeft(lodge);
+  const now = useNow();
+  const left = demoTimeLeft(lodge, now);
   const due = dueDate(lodge);
 
   return (
@@ -73,30 +76,29 @@ function PlanCard({ lodge }: { lodge: Lodge }) {
           <p className="max-w-md text-[13.5px] leading-5 text-[#C6D3D9]">{statusLine(lodge)}</p>
         </div>
 
-        {lodge.status === "TRIAL" ? (
-          <div className="flex flex-col gap-2 lg:items-end">
-            <span className="font-display text-[28px] leading-8 font-semibold">
-              {days} {days === 1 ? "day" : "days"} remaining
-            </span>
-            <div className="flex gap-1" aria-hidden="true">
-              {Array.from({ length: TRIAL_DAYS }, (_, index) => (
-                <motion.span
-                  key={index}
-                  className={cn("h-1.5 w-3.5 rounded-full sm:w-4", index < TRIAL_DAYS - days ? "bg-white/15" : "bg-brand-sky")}
-                  initial={{ scaleY: 0, opacity: 0 }}
-                  animate={{ scaleY: 1, opacity: 1 }}
-                  transition={{ duration: 0.3, delay: 0.2 + index * 0.03, ease: EASE_OUT }}
-                />
-              ))}
+        {lodge.status === "DEMO" && !lodge.demoEnded ? (
+          <div className="flex flex-col gap-2 lg:min-w-56 lg:items-end">
+            <span className="font-display text-[28px] leading-8 font-semibold">{formatTimeLeft(left)} left</span>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/15 lg:w-56" aria-hidden="true">
+              <motion.span
+                className="block h-full origin-left rounded-full bg-brand-sky"
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: Math.min(1, left / (DEMO_DAYS * 24 * 60 * 60 * 1000)) }}
+                transition={{ duration: 0.8, delay: 0.2, ease: EASE_OUT }}
+              />
             </div>
-            {lodge.trialEndsAt ? <span className="text-[13px] text-[#C6D3D9]">Trial ends {formatLongDate(lodge.trialEndsAt)}</span> : null}
+            {lodge.demoEndsAt ? (
+              <span className="text-[13px] text-[#C6D3D9]">
+                Demo ends {formatLongDate(lodge.demoEndsAt)} at {formatClock(lodge.demoEndsAt)}
+              </span>
+            ) : null}
           </div>
         ) : null}
       </div>
 
       <dl className="relative mt-6 grid overflow-hidden rounded-[14px] border border-white/10 bg-white/5 sm:grid-cols-3">
         <div className="flex flex-col gap-1 border-b border-white/10 p-4 sm:border-r sm:border-b-0">
-          <dt className="text-xs text-[#9FB2BB]">{lodge.status === "TRIAL" ? "First payment" : "Amount"}</dt>
+          <dt className="text-xs text-[#9FB2BB]">{lodge.status === "DEMO" ? "First payment" : "Amount"}</dt>
           <dd className="font-display text-xl font-semibold">{formatMoney(plan.price)}</dd>
         </div>
         <div className="flex flex-col gap-1 border-b border-white/10 p-4 sm:border-r sm:border-b-0">

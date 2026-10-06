@@ -1,5 +1,5 @@
 import prisma from "@stayzim/db";
-import { effectiveTemplate } from "@stayzim/sites";
+import { demoEnded, effectiveTemplate } from "@stayzim/sites";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 
@@ -90,8 +90,11 @@ export type LodgeJson = {
   heroUrl: string | null;
   heroSrcSet: string | null;
   plan: "STARTER" | "GROWTH" | "PRO";
-  status: "TRIAL" | "ACTIVE" | "OVERDUE" | "SUSPENDED";
-  trialEndsAt: Date | null;
+  status: "DEMO" | "ACTIVE" | "OVERDUE" | "SUSPENDED";
+  /** When a demo's site goes offline (DEMO only) */
+  demoEndsAt: Date | null;
+  /** A demo whose time is up: its site is offline until it's paid for */
+  demoEnded: boolean;
   paidUntil: Date | null;
   linkSharedAt: Date | null;
   updatedAt: Date;
@@ -144,7 +147,8 @@ export async function lodgeJson(lodgeId: string): Promise<LodgeJson> {
     heroSrcSet: hero?.srcSet ?? null,
     plan: lodge.plan,
     status: lodge.status,
-    trialEndsAt: lodge.trialEndsAt,
+    demoEndsAt: lodge.demoEndsAt,
+    demoEnded: demoEnded(lodge, new Date()),
     paidUntil: lodge.paidUntil,
     linkSharedAt: lodge.linkSharedAt,
     updatedAt: lodge.updatedAt,

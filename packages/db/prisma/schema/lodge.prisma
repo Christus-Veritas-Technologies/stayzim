@@ -3,16 +3,19 @@
 enum LodgePlan {
   /// $20/month: the site and the WhatsApp button
   STARTER
-  /// $40/month: + visitor analytics. Every lodge starts on a Growth trial.
+  /// $40/month: + visitor analytics and a free .co.zw domain
   GROWTH
   /// $75/month: + we manage Booking.com and Airbnb
   PRO
 }
 
-/// Trial → Overdue (site stays up 3 more days) → Suspended → Active once paid.
-/// StayZim changes it by hand after a payment arrives on WhatsApp.
+/// Demo (2 days free after sign-up) → Active once paid → Overdue when the paid
+/// period ends (the site stays up 3 more days) → Suspended (offline) → Active
+/// again once paid. The billing job (apps/server/src/jobs/billing.ts) moves
+/// Active → Overdue → Suspended; a payment (Paynow or mark-paid) makes it Active.
 enum LodgeStatus {
-  TRIAL
+  /// Self-signed-up and not paid yet: live with "This is a demo" badges until demoEndsAt
+  DEMO
   ACTIVE
   OVERDUE
   SUSPENDED
@@ -59,8 +62,9 @@ model Lodge {
   heroPhoto   Photo?      @relation("LodgeHero", fields: [heroPhotoId], references: [id], onDelete: SetNull)
 
   plan        LodgePlan   @default(GROWTH)
-  status      LodgeStatus @default(TRIAL)
-  trialEndsAt DateTime?   @map("trial_ends_at")
+  status      LodgeStatus @default(DEMO)
+  /// When a demo's site goes offline (DEMO only; cleared once paid)
+  demoEndsAt  DateTime?   @map("demo_ends_at")
   /// End of the period the last payment covers
   paidUntil   DateTime?   @map("paid_until")
 
