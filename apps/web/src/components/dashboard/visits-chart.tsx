@@ -48,7 +48,16 @@ export function VisitsChart({ data, empty, className }: { data: ChartPoint[]; em
   const previous = data.map((point, index) => [x(index), y(point.previous)] as [number, number]);
   const area = `${linePath(current)} L${x(data.length - 1)},${HEIGHT} L${x(0)},${HEIGHT} Z`;
   const ticks = [0, 0.25, 0.5, 0.75, 1].map((fraction) => Math.round(max * fraction));
-  const showEvery = data.length > 10 ? Math.ceil(data.length / 8) : 1;
+  // As many labels as fit at about 64px apart (fewer on phones), always ending on the last point
+  const longest = Math.max(...data.map((point) => point.label.length), 1);
+  const maxLabels = Math.max(2, Math.floor(plotWidth / Math.max(44, longest * 9 + 16)));
+  const showEvery = data.length > maxLabels ? Math.ceil(data.length / maxLabels) : 1;
+  const labelled = (index: number) => {
+    const last = data.length - 1;
+    if (index === last) return true;
+    // Count back from the last point so it never collides with the label before it
+    return (last - index) % showEvery === 0;
+  };
   const active = hovered === null ? null : data[hovered];
 
   return (
@@ -115,7 +124,7 @@ export function VisitsChart({ data, empty, className }: { data: ChartPoint[]; em
 
         {data.map((point, index) => (
           <g key={`${point.detail}-${index}`}>
-            {index % showEvery === 0 || index === data.length - 1 ? (
+            {labelled(index) ? (
               <text
                 x={x(index)}
                 y={HEIGHT + 22}

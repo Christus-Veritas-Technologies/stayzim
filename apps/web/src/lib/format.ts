@@ -29,6 +29,12 @@ export function formatDate(date: Date | string) {
   return `${short(DAYS[value.getDay()]!)} ${value.getDate()} ${MONTHS[value.getMonth()]}`;
 }
 
+/** "14 Oct" */
+export function formatDayMonth(date: Date | string) {
+  const value = new Date(date);
+  return `${value.getDate()} ${short(MONTHS[value.getMonth()]!)}`;
+}
+
 /** "Wed 14 Oct" */
 export function formatShortDate(date: Date | string) {
   const value = new Date(date);

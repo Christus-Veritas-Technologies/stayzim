@@ -1,15 +1,25 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
-import { formatClock, formatDate, formatShortDate, formatWeekday } from "@/lib/format";
+import { formatClock, formatDate, formatDayMonth, formatShortDate, formatWeekday } from "@/lib/format";
 
-export type Period = "today" | "7d" | "30d";
+export type Period = "today" | "7d" | "30d" | "90d";
 
+/** The overview's periods. Analytics swaps Today for 90 days. */
 export const PERIODS: { value: Period; label: string }[] = [
   { value: "today", label: "Today" },
   { value: "7d", label: "7 days" },
   { value: "30d", label: "30 days" },
 ];
+
+export const ANALYTICS_PERIODS: { value: Period; label: string }[] = [
+  { value: "7d", label: "7 days" },
+  { value: "30d", label: "30 days" },
+  { value: "90d", label: "90 days" },
+];
+
+/** Days in each period, for "Last 30 days" and the date range under the chart. */
+export const PERIOD_DAYS: Record<Exclude<Period, "today">, number> = { "7d": 7, "30d": 30, "90d": 90 };
 
 export type ChartPoint = { label: string; detail: string; current: number; previous: number };
 
@@ -66,7 +76,8 @@ export function countryName(code: string | null) {
 function chartLabels(period: Period, start: string, now: Date) {
   const at = inZimbabwe(start);
   if (period === "today") return { label: formatClock(at), detail: `Today, ${formatClock(at)}` };
-  return { label: period === "7d" ? formatWeekday(at, now) : String(at.getDate()), detail: formatDate(at) };
+  const label = period === "7d" ? formatWeekday(at, now) : period === "30d" ? String(at.getDate()) : formatDayMonth(at);
+  return { label, detail: formatDate(at) };
 }
 
 function fromResponse(period: Period, response: StatsResponse): VisitStats {
@@ -127,12 +138,18 @@ export function useVisitStats(period: Period, enabled = true): StatsState {
 export function periodRange(period: Period, now = new Date()) {
   if (period === "today") return "Today";
   const start = new Date(now);
-  start.setDate(now.getDate() - (period === "7d" ? 6 : 29));
+  start.setDate(now.getDate() - (PERIOD_DAYS[period] - 1));
   return `${formatShortDate(start)} to today`;
 }
 
 export function previousLabel(period: Period) {
-  return period === "today" ? "yesterday" : period === "7d" ? "the week before" : "the 30 days before";
+  if (period === "today") return "yesterday";
+  return period === "7d" ? "the week before" : `the ${PERIOD_DAYS[period]} days before`;
+}
+
+/** "Last 30 days" */
+export function periodLabel(period: Period) {
+  return period === "today" ? "Today" : `Last ${PERIOD_DAYS[period]} days`;
 }
 
 /** A device as owners say it. */

@@ -12,7 +12,7 @@ import { LeadStatCard, PlainStatCard, Trend, TrayStatCard } from "@/components/d
 import { VisitsChart } from "@/components/dashboard/visits-chart";
 import { useLodge } from "@/components/dashboard/lodge-provider";
 import { PLANS } from "@/lib/lodge";
-import { PERIODS, periodRange, previousLabel, type Period, type VisitStats } from "@/lib/stats";
+import { periodLabel, PERIODS, periodRange, previousLabel, type Period, type VisitStats } from "@/lib/stats";
 import { stayzimChatUrl } from "@/lib/whatsapp";
 
 /** Today / 7 days / 30 days. A grey track on phones, plain pills on desktop. */
@@ -64,7 +64,7 @@ export function StatCards({ stats, period, loading = false }: { stats: VisitStat
       <TrayStatCard
         tone="brand"
         icon={CalendarDays}
-        label={period === "today" ? "Today" : period === "7d" ? "Last 7 days" : "Last 30 days"}
+        label={periodLabel(period)}
         value={stats.visits}
         badge={<Trend current={stats.visits} previous={stats.previousVisits} />}
         foot={`${stats.previousVisits} ${previousLabel(period)}`}
