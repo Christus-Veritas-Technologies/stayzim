@@ -5,6 +5,7 @@ import { bookingUrl, withTemplate, type LiveSite } from "./site";
 
 const site: LiveSite = {
   status: "LIVE",
+  demo: false,
   slug: "mistvalley",
   customDomain: null,
   name: "Mist Valley Lodge",

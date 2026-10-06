@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { PreviewBanner } from "@/components/site/preview-banner";
-import { SuspendedSite } from "@/components/site/site-states";
+import { DemoEndedSite, SuspendedSite } from "@/components/site/site-states";
 import { SiteTemplate } from "@/components/site/templates";
 import { getSite, withTemplate } from "@/lib/site";
 
@@ -26,7 +26,7 @@ export default async function TemplatePreviewPage({ params }: Props) {
   const template = findTemplate(key);
   const site = await getSite(slug);
   if (!site || !template) notFound();
-  if (site.status === "SUSPENDED") return <SuspendedSite name={site.name} />;
+  if (site.status !== "LIVE") return site.status === "DEMO_ENDED" ? <DemoEndedSite name={site.name} /> : <SuspendedSite name={site.name} />;
   return (
     <>
       <PreviewBanner template={template.name} />

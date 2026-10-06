@@ -6,9 +6,11 @@ import { lodgePlace, type AmenityKey } from "@/lib/lodge";
 
 /** GET /api/sites/:slug (mirrors PublicSite in apps/server/src/routes/sites.ts). */
 export type PublicSite =
-  | { status: "SUSPENDED"; slug: string; name: string }
+  | { status: "SUSPENDED" | "DEMO_ENDED"; slug: string; name: string }
   | {
       status: "LIVE";
+      /** Not paid for yet: the site shows "This is a demo" badges */
+      demo: boolean;
       slug: string;
       /** The lodge's own domain: its canonical address when set */
       customDomain: string | null;

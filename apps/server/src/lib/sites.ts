@@ -31,8 +31,9 @@ export async function slugForCustomDomain(host: string | null | undefined) {
   if (!domain) return null;
   const cached = domainCache.get(domain);
   if (cached && cached.until > Date.now()) return cached.slug;
-  const lodge = await prisma.lodge.findUnique({ where: { customDomain: domain }, select: { slug: true } });
-  const slug = lodge?.slug ?? null;
+  const lodge = await prisma.lodge.findUnique({ where: { customDomain: domain }, select: { slug: true, status: true } });
+  // Own domains are for paying lodges; a demo is only on its stayzim.co.zw address
+  const slug = lodge && lodge.status !== "DEMO" ? lodge.slug : null;
   if (domainCache.size > 5000) domainCache.clear();
   domainCache.set(domain, { slug, until: Date.now() + (slug ? FOUND_FOR_MS : MISSING_FOR_MS) });
   return slug;

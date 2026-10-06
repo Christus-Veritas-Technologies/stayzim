@@ -1,5 +1,7 @@
-import { Clock, SearchX } from "lucide-react";
+import { Clock, Hourglass, SearchX } from "lucide-react";
 import type { ReactNode } from "react";
+
+import { MAIN_URL } from "@/lib/site-host";
 
 function StatePage({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
   return (
@@ -23,6 +25,19 @@ export function SuspendedSite({ name }: { name: string }) {
   return (
     <StatePage icon={<Clock className="size-6" />} title={`${name} is temporarily unavailable`}>
       This site is taking a short break. Please check back soon.
+    </StatePage>
+  );
+}
+
+/** A demo whose 2 days are up, until the owner pays. */
+export function DemoEndedSite({ name }: { name: string }) {
+  return (
+    <StatePage icon={<Hourglass className="size-6" />} title={`${name} isn't online right now`}>
+      This lodge&apos;s demo site has ended. Is it yours?{" "}
+      <a href={`${MAIN_URL}/login`} className="font-semibold text-[#0C181F] underline underline-offset-2">
+        Log in
+      </a>{" "}
+      and choose a plan to put it back live, just as you left it.
     </StatePage>
   );
 }

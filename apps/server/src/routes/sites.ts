@@ -1,6 +1,6 @@
 import { zValidator } from "@hono/zod-validator";
 import prisma from "@stayzim/db";
-import { findTemplate, heroText } from "@stayzim/sites";
+import { demoEnded, findTemplate, heroText } from "@stayzim/sites";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { rateLimiter } from "hono-rate-limiter";
@@ -13,9 +13,11 @@ import { describeDevice, slugForCustomDomain } from "../lib/sites";
 
 /** What a lodge site shows. Nothing about the plan, billing or the owner. */
 export type PublicSite =
-  | { status: "SUSPENDED"; slug: string; name: string }
+  | { status: "SUSPENDED" | "DEMO_ENDED"; slug: string; name: string }
   | {
       status: "LIVE";
+      /** Not paid for yet: the site shows "This is a demo" badges */
+      demo: boolean;
       slug: string;
       /** The lodge's own domain: its canonical address when set */
       customDomain: string | null;
@@ -75,18 +77,19 @@ export const sites = new Hono<{ Variables: AuthVariables }>()
     return c.json({ slug });
   })
 
-  /** The lodge's site content. 404 for an unknown lodge; a short answer for a suspended one. */
+  /** The lodge's site content. 404 for an unknown lodge; a short answer for a suspended one or an ended demo. */
   .get("/:slug", async (c) => {
     const lodge = await prisma.lodge.findUnique({ where: { slug: c.req.param("slug").toLowerCase() }, select: { id: true, status: true } });
     if (!lodge) return c.json({ error: "No lodge here" }, 404);
 
     const full = await lodgeJson(lodge.id);
-    if (lodge.status === "SUSPENDED") {
-      return c.json({ status: "SUSPENDED", slug: full.slug, name: full.name } satisfies PublicSite);
+    if (lodge.status === "SUSPENDED" || full.demoEnded) {
+      return c.json({ status: full.demoEnded ? "DEMO_ENDED" : "SUSPENDED", slug: full.slug, name: full.name } satisfies PublicSite);
     }
     const place = [full.town, full.region].filter(Boolean).join(", ") || null;
     return c.json({
       status: "LIVE",
+      demo: lodge.status === "DEMO",
       slug: full.slug,
       customDomain: full.customDomain,
       name: full.name,
@@ -131,9 +134,9 @@ export const sites = new Hono<{ Variables: AuthVariables }>()
       const event = c.req.valid("json");
       const lodge = await prisma.lodge.findUnique({
         where: { slug: (c.req.param("slug") ?? "").toLowerCase() },
-        select: { id: true, ownerId: true, status: true },
+        select: { id: true, ownerId: true, status: true, demoEndsAt: true },
       });
-      if (!lodge || lodge.status === "SUSPENDED") return c.body(null, 204);
+      if (!lodge || lodge.status === "SUSPENDED" || demoEnded(lodge, new Date())) return c.body(null, 204);
 
       const user = c.get("user");
       if (user && (user.id === lodge.ownerId || user.role === "ADMIN")) return c.body(null, 204);
