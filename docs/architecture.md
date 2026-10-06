@@ -97,7 +97,7 @@ Shared UX pieces, so every screen behaves the same:
 - **Mail check at boot:** if SMTP is configured, the server checks the connection on startup and logs the result.
 - **Lodge routes** need a signed-in owner with their own password and a lodge (`requireLodge` in `src/lib/lodge.ts`, 404 until StayZim creates it). Each answers with the whole lodge (`lodgeJson`).
 - **Team routes** (`src/routes/admin.ts`) need a signed-in user with `role` `ADMIN`.
-- **Photos** (`src/lib/uploads.ts`): JPG, PNG or WebP (checked by file signature), 5 MB at most, stored in Cloudflare R2 through Bun's built-in S3 client and served from the bucket's public URL. Without the `R2_*` settings (development), they go to `UPLOAD_DIR` and this server serves them at `/uploads`; production refuses to start without R2. The storage in use is logged at boot.
+- **Photos** (`src/lib/uploads.ts`): JPG, PNG or WebP (checked by file signature), 5 MB at most, stored in Cloudflare R2 through Bun's built-in S3 client and served from the bucket's public URL. Without the `R2_*` settings (development), they go to `UPLOAD_DIR` and this server serves them at `/uploads`; production refuses to start without R2. The storage in use is logged at boot. `R2_ENDPOINT` overrides the endpoint, for buckets in R2's EU jurisdiction or any S3-compatible store (the upload, content type and delete paths were tested against an S3 test server).
 
 ### apps/outreach: Hono on Bun, port 9997
 

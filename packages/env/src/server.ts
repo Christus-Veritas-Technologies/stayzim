@@ -36,6 +36,13 @@ export const env = createEnv({
     // Lodge photos and logos go to a Cloudflare R2 bucket (apps/server/src/lib/uploads.ts).
     // Leave these unset in development to save them in UPLOAD_DIR instead; production refuses to start without R2.
     R2_ACCOUNT_ID: z.string().min(1).optional(),
+    // Optional: the S3 endpoint, when it isn't https://<R2_ACCOUNT_ID>.r2.cloudflarestorage.com
+    // (buckets in R2's EU jurisdiction use https://<R2_ACCOUNT_ID>.eu.r2.cloudflarestorage.com).
+    // Any S3-compatible storage works too, e.g. a local MinIO for testing.
+    R2_ENDPOINT: z
+      .url()
+      .optional()
+      .transform((value) => value?.replace(/\/+$/, "")),
     R2_ACCESS_KEY_ID: z.string().min(1).optional(),
     R2_SECRET_ACCESS_KEY: z.string().min(1).optional(),
     R2_BUCKET: z.string().min(1).optional(),
