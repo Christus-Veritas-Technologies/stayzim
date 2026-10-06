@@ -26,7 +26,16 @@ This prints a **temporary password**; send it to the owner on WhatsApp with the 
   pnpm --filter @stayzim/auth create-owner --email owner@lodge.co.zw --reset
   ```
 
-- **Staff account:** add `--admin` (role `ADMIN`).
+- **Team account:** add `--admin` (role `ADMIN`). Team accounts land on `/admin/requests` after login, where they answer owners' change requests. Their own visits to lodge sites aren't counted.
+
+## Sign in with Google
+
+"Continue with Google" on `/login` is optional. It shows when the server has `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` (setup steps are in `apps/server/.env.example`); `GET /api/account/sign-in-options` tells the login screen.
+
+- **Existing accounts only:** Google signs in the account with the same (verified) email, linking it on first use. It never creates an account (`disableSignUp`); an unknown email comes back as `/login?error=signup_disabled`.
+- **Temporary passwords:** if an owner links Google while still on the temporary password StayZim sent, that password is replaced with a random one and the dashboard opens. They can set their own later with Forgot password.
+- **Errors** return to `/login?error=…`, shown in plain words by `oauthErrorMessage` (`signup_disabled`, `account_not_linked`, `access_denied`).
+- **Not yet tested** with a real Google OAuth client.
 
 ## Rules
 
@@ -45,7 +54,7 @@ The rate limiter keeps counts in memory, so it resets when the server restarts a
 
 ## Flows
 
-**Sign in.** `/login` → `authClient.signIn.email` → session cookie (`stayzim.session_token`) set by the API → `/dashboard`, or `/set-password` if the password is temporary.
+**Sign in.** `/login` → `authClient.signIn.email` → session cookie (`stayzim.session_token`) set by the API → `/dashboard` (`/admin/requests` for team accounts), or `/set-password` if the password is temporary. Someone already logged in who opens `/login` goes straight there.
 
 **Forgot password.**
 
@@ -60,7 +69,8 @@ The rate limiter keeps counts in memory, so it resets when the server restarts a
 **Protecting a route.**
 
 - **Server:** add `withSession` and `requireAuth()` from `apps/server/src/lib/session.ts`. `requireAuth({ allowTemporaryPassword: true })` is only for routes that let the owner fix their password.
-- **Web:** `src/proxy.ts` sends visitors without a cookie to `/login`. Pages call `authClient.useSession()` to check the session itself.
+- **Server, team only:** `requireAdmin` in `apps/server/src/routes/admin.ts` also checks `role` is `ADMIN`.
+- **Web:** `src/proxy.ts` sends visitors without a cookie to `/login` (for `/dashboard`, `/set-password` and `/admin`). Pages call `authClient.useSession()` to check the session itself.
 
 ## Email
 
@@ -83,6 +93,6 @@ The rate limiter keeps counts in memory, so it resets when the server restarts a
 
 - `BETTER_AUTH_URL=https://api.stayzim.co.zw`
 - `WEB_URL=https://app.stayzim.co.zw`
-- `CORS_ORIGIN=https://app.stayzim.co.zw`
+- `CORS_ORIGIN=https://app.stayzim.co.zw,https://stayzim.co.zw` (a list; lodge subdomains are allowed on top of it)
 - `COOKIE_DOMAIN=.stayzim.co.zw`, so the cookie set by `api.` is readable on `app.`, where the route guard checks it
 - A new random `BETTER_AUTH_SECRET` of 32+ characters. Changing it signs everyone out.

@@ -30,7 +30,7 @@ StayZim gives Zimbabwean lodges, guesthouses, cottages and Airbnbs their own web
 | Lodge owner or manager | Runs a lodge, guesthouse or Airbnb. Busy, sometimes in the diaspora, mostly on a phone. | Owner dashboard (app.stayzim.co.zw) |
 | Guest | Local or regional traveller, tourist or diaspora visitor, often on slow or expensive data. | The lodge's own site ({slug}.stayzim.co.zw) |
 | Prospect | A lodge owner who hasn't signed up. Arrives from a Facebook ad, a link or an in-person demo. | Marketing site (stayzim.co.zw) |
-| Kin (admin) | Founder. Sells, onboards and supports every lodge. | The database and internal tools (no admin screens yet) |
+| Kin (admin) | Founder. Sells, onboards and supports every lodge. | Team screen for change requests (`/admin/requests`), scripts and the database |
 
 **Where the lodges are:** Victoria Falls, Kariba, Nyanga, Vumba, Chimanimani, Bulawayo, and Airbnbs in Harare suburbs such as Borrowdale and Greendale. The first demos target the Eastern Highlands (Vumba, Nyanga, Chimanimani), close to Mutare.
 
@@ -63,7 +63,7 @@ StayZim gives Zimbabwean lodges, guesthouses, cottages and Airbnbs their own web
 | Booking | WhatsApp first. No card payments in the MVP. |
 | Sign-up | No public sign-up. StayZim creates every owner account with a temporary password; the owner chooses their own on first login. |
 | Analytics | Basic visit tracking (date, IP, page, country). Shown on Growth and Pro only, as the reason to upgrade. |
-| Admin | No admin screens in the MVP; Kin works in the database and with internal scripts. |
+| Admin | One team screen, for answering owners' change requests (`/admin/requests`). Everything else (creating owners and lodges, marking payments) stays in scripts and the database. |
 | Email | Nodemailer over SMTP with a Spacemail address. |
 | Photos | Stored in Cloudflare R2, resized on the owner's phone before upload. |
 | Lodge sites | Belong to the lodge: the lodge's photos, name and theme colour lead; StayZim shrinks to a "Made with StayZim" footer link. |

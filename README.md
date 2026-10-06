@@ -13,13 +13,15 @@ Websites for Zimbabwean lodges, guesthouses and Airbnbs, where guests book direc
 ```
 stayzim/
 ├── apps/
-│   ├── web/        Next.js: marketing site (stayzim.co.zw), owner login and dashboard
-│   ├── server/     Hono on Bun: API, auth, landing page analytics
+│   ├── web/        Next.js: marketing site (stayzim.co.zw), owner login and dashboard,
+│   │               lodge sites ({slug}.stayzim.co.zw) and the team screen (/admin)
+│   ├── server/     Hono on Bun: API, auth, lodge site content and visit tracking
 │   ├── outreach/   Hono on Bun: WhatsApp outreach to leads from 3 numbers (internal tool)
 │   └── native/     Expo app (scaffold only, not started)
 ├── packages/
-│   ├── db/         Prisma schema (one file per area), client and create-lodge script
-│   ├── auth/       better-auth setup and the create-owner script
+│   ├── db/         Prisma schema (one file per area), client, create-lodge and resolve-request scripts
+│   ├── auth/       better-auth setup (email and password, Google) and the create-owner script
+│   ├── sites/      Lodge site template catalog and plan rules, shared by web and server
 │   ├── mail/       Nodemailer SMTP sending and email templates
 │   ├── env/        Validated environment variables per app
 │   ├── ui/         Design tokens and shared components (shadcn style, on Base UI)
@@ -30,6 +32,7 @@ stayzim/
 | App | Local URL | Database |
 | --- | --- | --- |
 | web | http://localhost:9999 | (uses server) |
+| lodge sites | http://{slug}.localhost:9999, e.g. http://mistvalley.localhost:9999 | (uses server) |
 | server | http://localhost:9998 | `stayzim` |
 | outreach | http://localhost:9997 | `stayzim-outreach` |
 
@@ -60,15 +63,23 @@ You need Node 22+, [Bun](https://bun.sh), pnpm 11 and PostgreSQL.
    DATABASE_URL=postgresql://postgres:postgres@localhost:5432/stayzim-outreach pnpm db:push
    ```
 
-4. Create your first login (there is no public sign-up), and a lodge for it so the dashboard has something to show:
+4. Create an owner login (there is no public sign-up) and a lodge for it, so the dashboard and a lodge site have something to show:
+
+   ```bash
+   pnpm --filter @stayzim/auth create-owner --email owner@example.com --name "Rudo Moyo"
+   ```
+
+   ```bash
+   pnpm --filter @stayzim/db create-lodge --owner owner@example.com --name "Mist Valley Lodge" --slug mistvalley --demo
+   ```
+
+   For yourself, a team account opens the change requests screen (`/admin/requests`) after login:
 
    ```bash
    pnpm --filter @stayzim/auth create-owner --email you@example.com --name "Your Name" --admin
    ```
 
-   ```bash
-   pnpm --filter @stayzim/db create-lodge --owner you@example.com --name "Mist Valley Lodge" --slug mistvalley --demo
-   ```
+   Each command prints a temporary password; the first login asks for a new one.
 
 5. Run everything, or one app at a time:
 
@@ -88,7 +99,9 @@ You need Node 22+, [Bun](https://bun.sh), pnpm 11 and PostgreSQL.
    pnpm dev:outreach
    ```
 
-Without SMTP settings, emails (password resets) are printed in the server's console, so you can still use the links locally. Without the `R2_*` settings, lodge photos are saved in `apps/server/uploads` instead of Cloudflare R2.
+Without SMTP settings, emails (password resets) are printed in the server's console, so you can still use the links locally. Without the `R2_*` settings, lodge photos are saved in `apps/server/uploads` instead of Cloudflare R2. Without the `GOOGLE_*` settings, the login screen hides "Continue with Google".
+
+Lodge sites open at `http://{slug}.localhost:9999` (Chrome and Firefox resolve `*.localhost`), as long as `SITES_DOMAIN` (server) and `NEXT_PUBLIC_SITES_DOMAIN` (web) are both `localhost:9999`.
 
 ## Scripts
 
@@ -103,6 +116,7 @@ Without SMTP settings, emails (password resets) are printed in the server's cons
 | `pnpm db:studio` | Browse the database |
 | `pnpm --filter @stayzim/auth create-owner …` | Create an owner login or give one a new temporary password ([docs/auth.md](docs/auth.md)) |
 | `pnpm --filter @stayzim/db create-lodge …` | Create the lodge for an owner login, on a 14-day Growth trial |
+| `pnpm --filter @stayzim/db resolve-request …` | List open change requests (`--list`) or answer one (`--ref R-XXXX --status done --reply "…"`); the team screen does the same |
 
 ## Docker
 
@@ -129,7 +143,8 @@ Details: [docs/architecture.md](docs/architecture.md#docker).
 ## Working on the code
 
 - Work happens on `main`, with one commit per task.
-- The Prisma schema is split by area in `packages/db/prisma/schema/` (`auth.prisma`, `landing.prisma`, `outreach.prisma`).
+- The Prisma schema is split by area in `packages/db/prisma/schema/` (`auth.prisma`, `landing.prisma`, `lodge.prisma`, `site.prisma`, `outreach.prisma`).
+- Lodge site templates: the catalog and plan rules are in `packages/sites`, the designs in `apps/web/src/components/site/templates/` ([docs/architecture.md](docs/architecture.md#templates)).
 - Build screens from the shared components in `packages/ui` (`@stayzim/ui/components/*`); add new ones there. Colours, shadows and fonts are tokens in `packages/ui/src/styles/globals.css`.
 - Animations use framer-motion helpers in `apps/web/src/components/motion.tsx`; they switch off with the OS "reduce motion" setting.
 - Built with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack).
