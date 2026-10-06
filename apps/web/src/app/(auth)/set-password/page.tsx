@@ -108,7 +108,15 @@ export default function SetPasswordPage() {
         <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
           <FormMessage>{error}</FormMessage>
           {firstLogin ? null : (
-            <Field label="Current password">
+            <Field
+              label="Current password"
+              action={
+                // Owners who only ever used Google have no password they know
+                <Link href="/forgot-password" className="text-[13px] font-semibold text-brand hover:text-brand-dark">
+                  Forgot it?
+                </Link>
+              }
+            >
               <PasswordInput name="current" autoComplete="current-password" className="sm:h-11" required />
             </Field>
           )}
