@@ -1,15 +1,20 @@
 "use client";
 
+import { Badge } from "@stayzim/ui/components/badge";
 import { Button } from "@stayzim/ui/components/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@stayzim/ui/components/collapsible";
 import { Field, FormMessage } from "@stayzim/ui/components/field";
 import { Input, InputGroup, InputGroupAddon, InputGroupInput } from "@stayzim/ui/components/input";
 import { NumberField } from "@stayzim/ui/components/number-field";
 import { Spinner } from "@stayzim/ui/components/spinner";
 import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@stayzim/ui/components/sheet";
+import { Switch } from "@stayzim/ui/components/switch";
+import { Textarea } from "@stayzim/ui/components/textarea";
 import { Toggle, ToggleGroup } from "@stayzim/ui/components/toggle";
 import { cn } from "@stayzim/ui/lib/utils";
+import { ROOM_LIMITS } from "@stayzim/sites";
 import { AnimatePresence, motion } from "framer-motion";
-import { X } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronDown, X } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
@@ -21,12 +26,48 @@ import { WhyDisabled } from "@/components/why-disabled";
 import { AMENITIES, AMENITIES_ON_CARD, AMENITY_KEYS, ROOM_PHOTO_LIMIT, type AmenityKey, type Lodge, type Room } from "@/lib/lodge";
 import { OFFLINE_REASON, useOnline } from "@/lib/online";
 
-type RoomDraft = { name: string; price: string; sleeps: number; amenities: AmenityKey[] };
+type RoomDraft = {
+  name: string;
+  price: string;
+  sleeps: number;
+  units: number;
+  visible: boolean;
+  amenities: AmenityKey[];
+  description: string;
+  beds: string;
+  size: string;
+};
 
-const EMPTY: RoomDraft = { name: "", price: "", sleeps: 2, amenities: [] };
+const EMPTY: RoomDraft = { name: "", price: "", sleeps: 2, units: 1, visible: true, amenities: [], description: "", beds: "", size: "" };
 
 function draftFrom(room: Room | null): RoomDraft {
-  return room ? { name: room.name, price: String(room.price), sleeps: room.sleeps, amenities: room.amenities } : EMPTY;
+  return room
+    ? {
+        name: room.name,
+        price: String(room.price),
+        sleeps: room.sleeps,
+        units: room.units,
+        visible: room.visible,
+        amenities: room.amenities,
+        description: room.description ?? "",
+        beds: room.beds ?? "",
+        size: room.size === null ? "" : String(room.size),
+      }
+    : EMPTY;
+}
+
+function sameDraft(a: RoomDraft, b: RoomDraft) {
+  return (
+    a.name === b.name &&
+    a.price === b.price &&
+    a.sleeps === b.sleeps &&
+    a.units === b.units &&
+    a.visible === b.visible &&
+    a.amenities.join() === b.amenities.join() &&
+    a.description === b.description &&
+    a.beds === b.beds &&
+    a.size === b.size
+  );
 }
 
 /**
@@ -48,7 +89,8 @@ export function RoomSheet({
   const [roomId, setRoomId] = useState<string | null>(editing?.id ?? null);
   const [draft, setDraft] = useState<RoomDraft>(() => draftFrom(editing));
   const [pending, setPending] = useState<File[]>([]);
-  const [errors, setErrors] = useState<{ name?: string; price?: string }>({});
+  const [errors, setErrors] = useState<{ name?: string; price?: string; size?: string }>({});
+  const [detailsOpen, setDetailsOpen] = useState(() => Boolean(editing && (editing.description || editing.beds || editing.size)));
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const online = useOnline();
@@ -80,14 +122,28 @@ export function RoomSheet({
       return;
     }
     const price = Number(draft.price);
+    const size = draft.size ? Number(draft.size) : null;
     const nextErrors = {
       name: draft.name.trim() ? undefined : "Add the room name",
-      price: Number.isInteger(price) && price > 0 ? undefined : "Add the price per night, in whole dollars",
+      price:
+        Number.isInteger(price) && price > 0 && price <= ROOM_LIMITS.priceMax ? undefined : "Add the price per night, in whole dollars",
+      size: size === null || (size >= ROOM_LIMITS.sizeMin && size <= ROOM_LIMITS.sizeMax) ? undefined : "Check the size in square metres",
     };
     setErrors(nextErrors);
-    if (nextErrors.name || nextErrors.price) return;
+    if (nextErrors.size) setDetailsOpen(true);
+    if (nextErrors.name || nextErrors.price || nextErrors.size) return;
 
-    const body = { name: draft.name.trim(), price, sleeps: draft.sleeps, amenities: draft.amenities };
+    const body = {
+      name: draft.name.trim(),
+      price,
+      sleeps: draft.sleeps,
+      units: draft.units,
+      visible: draft.visible,
+      amenities: draft.amenities,
+      description: draft.description.trim() || null,
+      beds: draft.beds.trim() || null,
+      size,
+    };
     setSaving(true);
     setFormError(null);
 
@@ -99,7 +155,7 @@ export function RoomSheet({
         return;
       }
       setRoomId(result.data.roomId);
-      toast.success("Room added", { description: `${body.name} is on your site.` });
+      toast.success("Room added", { description: body.visible ? `${body.name} is on your site.` : `${body.name} is hidden until you show it.` });
       if (pending.length > 0) {
         uploads.add(pending);
         setPending([]);
@@ -119,6 +175,23 @@ export function RoomSheet({
     onOpenChange(false);
   }
 
+  const [reordering, setReordering] = useState(false);
+
+  /** Photos save their new order straight away; the first is the cover. */
+  async function movePhoto(photoId: string, by: number) {
+    if (!roomId) return;
+    const ids = photos.map((photo) => photo.id);
+    const from = ids.indexOf(photoId);
+    const to = from + by;
+    if (from < 0 || to < 0 || to >= ids.length) return;
+    ids.splice(to, 0, ids.splice(from, 1)[0]!);
+    setReordering(true);
+    const error = await save("/photos/order", "PUT", { roomId, ids });
+    setReordering(false);
+    if (error) toast.error(error);
+    else if (to === 0) toast.success("Cover photo changed");
+  }
+
   async function removePhoto(photoId: string) {
     setRemoving((current) => [...current, photoId]);
     const error = await save(`/photos/${photoId}`, "DELETE");
@@ -130,14 +203,7 @@ export function RoomSheet({
 
   // Typed but not saved yet: closing asks first
   const saved = draftFrom(editing);
-  const edited =
-    !created &&
-    !saving &&
-    (draft.name !== saved.name ||
-      draft.price !== saved.price ||
-      draft.sleeps !== saved.sleeps ||
-      draft.amenities.join() !== saved.amenities.join() ||
-      pending.length > 0);
+  const edited = !created && !saving && (!sameDraft(draft, saved) || pending.length > 0);
   const [confirmClose, setConfirmClose] = useState(false);
 
   function requestClose() {
@@ -186,11 +252,73 @@ export function RoomSheet({
                   <NumberField
                     value={draft.sleeps}
                     min={1}
-                    max={30}
+                    max={ROOM_LIMITS.sleepsMax}
                     onValueChange={(value) => setDraft({ ...draft, sleeps: value ?? 1 })}
                   />
                 </Field>
               </div>
+
+              <Field
+                label="How many of this room do you have?"
+                hint="Guests see it once. We use the number for bookings."
+              >
+                <NumberField
+                  value={draft.units}
+                  min={1}
+                  max={ROOM_LIMITS.unitsMax}
+                  onValueChange={(value) => setDraft({ ...draft, units: value ?? 1 })}
+                  className="max-w-40"
+                />
+              </Field>
+
+              <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen} className="rounded-xl border border-line">
+                <CollapsibleTrigger className="flex w-full items-center gap-2 rounded-xl px-3.5 py-3 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/30">
+                  <span className="flex-1 text-[13px] font-semibold text-ink-2">Details</span>
+                  <Badge variant="neutral">Optional</Badge>
+                  <ChevronDown className={cn("size-4 text-muted-2 transition-transform duration-200 motion-reduce:transition-none", detailsOpen && "rotate-180")} />
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="flex flex-col gap-4 px-3.5 pb-3.5">
+                    <Field
+                      label="Description"
+                      action={
+                        <span className="text-xs text-muted-2 tabular-nums">
+                          {draft.description.length}/{ROOM_LIMITS.description}
+                        </span>
+                      }
+                    >
+                      <Textarea
+                        value={draft.description}
+                        onChange={(event) => setDraft({ ...draft, description: event.target.value })}
+                        maxLength={ROOM_LIMITS.description}
+                        rows={3}
+                        placeholder="A quiet rondavel with a view of the hills, a private veranda and an outdoor shower."
+                      />
+                    </Field>
+                    <div className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] gap-3">
+                      <Field label="Beds">
+                        <Input
+                          value={draft.beds}
+                          onChange={(event) => setDraft({ ...draft, beds: event.target.value })}
+                          maxLength={ROOM_LIMITS.beds}
+                          placeholder="1 queen + 2 singles"
+                        />
+                      </Field>
+                      <Field label="Size" error={errors.size}>
+                        <InputGroup>
+                          <InputGroupInput
+                            value={draft.size}
+                            onChange={(event) => setDraft({ ...draft, size: event.target.value.replace(/[^\d]/g, "").slice(0, 4) })}
+                            inputMode="numeric"
+                            placeholder="32"
+                          />
+                          <InputGroupAddon align="end">m²</InputGroupAddon>
+                        </InputGroup>
+                      </Field>
+                    </div>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
 
               <Field
                 label="Amenities"
@@ -213,6 +341,16 @@ export function RoomSheet({
                   })}
                 </ToggleGroup>
               </Field>
+
+              <label className="flex items-center gap-3 rounded-xl border border-line px-3.5 py-3">
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="text-[13px] font-semibold text-ink-2">Show on site</span>
+                  <span className="text-xs text-muted-2">
+                    {draft.visible ? "Guests see this room and can book it." : "Hidden rooms stay here. Guests don't see them."}
+                  </span>
+                </span>
+                <Switch checked={draft.visible} onCheckedChange={(visible) => setDraft({ ...draft, visible })} />
+              </label>
             </fieldset>
 
             <div className="flex flex-col gap-2">
@@ -245,6 +383,28 @@ export function RoomSheet({
                       ) : null}
                       {index === 0 ? (
                         <span className="absolute top-1.5 left-1.5 rounded-md bg-ink/80 px-1.5 py-0.5 text-[11px] font-semibold text-white">Cover</span>
+                      ) : null}
+                      {photos.length > 1 ? (
+                        <span className="absolute bottom-1 left-1 flex gap-1">
+                          <button
+                            type="button"
+                            onClick={() => movePhoto(photo.id, -1)}
+                            disabled={index === 0 || reordering}
+                            aria-label={index === 1 ? "Make this the cover" : "Move earlier"}
+                            className="flex size-8 items-center justify-center rounded-lg bg-white/95 text-slate shadow-xs hover:text-ink disabled:hidden"
+                          >
+                            <ArrowLeft className="size-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => movePhoto(photo.id, 1)}
+                            disabled={index === photos.length - 1 || reordering}
+                            aria-label="Move later"
+                            className="flex size-8 items-center justify-center rounded-lg bg-white/95 text-slate shadow-xs hover:text-ink disabled:hidden"
+                          >
+                            <ArrowRight className="size-3.5" />
+                          </button>
+                        </span>
                       ) : null}
                       <button
                         type="button"
@@ -291,7 +451,7 @@ export function RoomSheet({
               </div>
               <p className="text-xs text-muted-2">
                 {slotsLeft > 0
-                  ? "Photos are resized on your device before they upload. The first one is the cover."
+                  ? "Photos are resized on your device before they upload. The first one is the cover; use the arrows to change the order."
                   : `A room holds up to ${ROOM_PHOTO_LIMIT} photos. Remove one to add another.`}
               </p>
             </div>

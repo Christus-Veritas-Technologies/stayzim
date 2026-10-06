@@ -152,7 +152,7 @@ export type SetupStep = { key: "rooms" | "photos" | "whatsapp" | "share"; label:
 /** The four things that make a lodge site ready to share. */
 export function setupSteps(lodge: Lodge): SetupStep[] {
   return [
-    { key: "rooms", label: "Add rooms", done: lodge.rooms.length > 0 },
+    { key: "rooms", label: "Add rooms", done: lodge.rooms.some((room) => room.visible) },
     { key: "photos", label: "Upload photos", done: lodge.gallery.length >= GALLERY_GOAL },
     { key: "whatsapp", label: "Check your WhatsApp number", done: Boolean(lodge.whatsapp) },
     { key: "share", label: "Share your link", done: Boolean(lodge.linkSharedAt) },

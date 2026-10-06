@@ -18,7 +18,7 @@ export type RequestStatus = "OPEN" | "IN_PROGRESS" | "DONE" | "DECLINED";
 export const REQUEST_TOPICS: Record<RequestTopic, { label: string; icon: LucideIcon; example: string }> = {
   TEXT: { label: "Words", icon: Type, example: "Please add that we have a new swimming pool to our description." },
   PHOTOS: { label: "Photos", icon: ImageIcon, example: "Please swap the hero photo for one of the lake at sunset." },
-  ROOMS: { label: "Rooms", icon: BedDouble, example: "The Garden Cottage now sleeps 4 and costs $95 a night." },
+  ROOMS: { label: "Rooms", icon: BedDouble, example: "Could you add our three new rondavels, with the photos I'll send on WhatsApp?" },
   DESIGN: { label: "Design", icon: Palette, example: "Could the rooms show before the gallery on our site?" },
   OTHER: { label: "Something else", icon: MessageCircle, example: "We'd like a section about our restaurant." },
 };

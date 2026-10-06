@@ -35,8 +35,15 @@ export function RoomThumb({ room, className }: { room: Room; className?: string 
   );
 }
 
-/** ON SITE, or NEEDS PHOTO while it has none. */
+/** HIDDEN when the owner took it off the site, NEEDS PHOTO while it has none, else ON SITE. */
 export function RoomStatus({ room }: { room: Room }) {
+  if (!room.visible) {
+    return (
+      <Badge status variant="neutral">
+        Hidden
+      </Badge>
+    );
+  }
   return roomNeedsPhoto(room) ? (
     <Badge status variant="warning">
       Needs photo

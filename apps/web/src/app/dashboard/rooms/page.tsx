@@ -25,7 +25,7 @@ import { Spinner } from "@stayzim/ui/components/spinner";
 import { Tabs, TabsList, TabsTab } from "@stayzim/ui/components/tabs";
 import { cn } from "@stayzim/ui/lib/utils";
 import { AnimatePresence, motion, Reorder, useDragControls } from "framer-motion";
-import { ArrowDown, ArrowUp, BedDouble, CircleCheck, GripVertical, MoreHorizontal, Pencil, Plus, Trash2, Users } from "lucide-react";
+import { ArrowDown, ArrowUp, BedDouble, CircleCheck, Copy, Eye, EyeOff, GripVertical, MoreHorizontal, Pencil, Plus, Trash2, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -33,12 +33,16 @@ import { useLodge } from "@/components/dashboard/lodge-provider";
 import { Page, PageHeader, PageSection } from "@/components/dashboard/page";
 import { AmenityIcons, RoomStatus, RoomThumb } from "@/components/dashboard/room-bits";
 import { RoomSheet } from "@/components/dashboard/room-sheet";
-import { formatPrice, ROOM_PHOTO_LIMIT, roomNeedsPhoto, type Room } from "@/lib/lodge";
+import { formatPrice, ROOM_PHOTO_LIMIT, roomNeedsPhoto, type Lodge, type Room } from "@/lib/lodge";
+
+type Filter = "all" | "missing" | "hidden";
 
 const COLUMNS = "grid-cols-[40px_minmax(0,1.6fr)_0.8fr_0.9fr_1fr_0.8fr_48px]";
 
 type RowActions = {
   onEdit: (room: Room) => void;
+  onDuplicate: (room: Room) => void;
+  onToggleVisible: (room: Room) => void;
   onMove: (room: Room, by: number) => void;
   onDelete: (room: Room) => void;
   onDragEnd: (room: Room) => void;
@@ -53,11 +57,20 @@ function RoomMenu({ room, index, total, actions }: { room: Room; index: number; 
       >
         <MoreHorizontal className="size-4" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-44">
+      <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuItem onClick={() => actions.onEdit(room)}>
           <Pencil />
           Edit room
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => actions.onDuplicate(room)}>
+          <Copy />
+          Duplicate
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => actions.onToggleVisible(room)}>
+          {room.visible ? <EyeOff /> : <Eye />}
+          {room.visible ? "Hide from site" : "Show on site"}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem disabled={index === 0} onClick={() => actions.onMove(room, -1)}>
           <ArrowUp />
           Move up
@@ -151,6 +164,7 @@ function RoomRow({
             <span className="inline-flex items-center gap-1 text-xs text-muted">
               <Users className="size-3" />
               Sleeps {room.sleeps}
+              {room.units > 1 ? <span className="text-muted-2">· You have {room.units}</span> : null}
             </span>
           </span>
         </button>
@@ -187,8 +201,11 @@ function RoomRow({
             <span className="truncate text-[14px] font-semibold">{room.name}</span>
             <span className="text-xs text-muted">
               {formatPrice(room.price)} / night · Sleeps {room.sleeps}
+              {room.units > 1 ? ` · × ${room.units}` : ""}
             </span>
-            {roomNeedsPhoto(room) ? (
+            {!room.visible ? (
+              <span className="text-xs font-semibold text-muted-2">Hidden from your site</span>
+            ) : roomNeedsPhoto(room) ? (
               <span className="text-xs font-semibold text-warning">Add a photo</span>
             ) : (
               <span className="text-xs text-muted-2">
@@ -204,8 +221,8 @@ function RoomRow({
 }
 
 export default function RoomsPage() {
-  const { lodge, save } = useLodge();
-  const [filter, setFilter] = useState<"all" | "missing">("all");
+  const { lodge, save, saveWith } = useLodge();
+  const [filter, setFilter] = useState<Filter>("all");
   const [order, setOrder] = useState<string[]>(() => lodge.rooms.map((room) => room.id));
   const latestOrder = useRef(order);
   const [sheet, setSheet] = useState<{ open: boolean; roomId: string | null; key: number }>({ open: false, roomId: null, key: 0 });
@@ -220,12 +237,14 @@ export default function RoomsPage() {
     latestOrder.current = ids;
   }, [lodge.rooms]);
 
-  const missing = lodge.rooms.filter(roomNeedsPhoto);
+  const missing = lodge.rooms.filter((room) => room.visible && roomNeedsPhoto(room));
+  const hidden = lodge.rooms.filter((room) => !room.visible);
+  const shown: Filter = filter === "hidden" && hidden.length === 0 ? "all" : filter;
   const rooms = order
     .map((id) => lodge.rooms.find((room) => room.id === id))
     .filter((room): room is Room => Boolean(room))
-    .filter((room) => filter === "all" || roomNeedsPhoto(room));
-  const sortable = filter === "all";
+    .filter((room) => (shown === "missing" ? room.visible && roomNeedsPhoto(room) : shown === "hidden" ? !room.visible : true));
+  const sortable = shown === "all";
 
   async function saveOrder(ids: string[], movedId: string) {
     if (ids.join() === lodge.rooms.map((room) => room.id).join()) return;
@@ -241,6 +260,37 @@ export default function RoomsPage() {
   const actions: RowActions = {
     onEdit: (room) => setSheet((current) => ({ open: true, roomId: room.id, key: current.key + 1 })),
     onDelete: setDeleting,
+    onDuplicate: async (room) => {
+      setMoving(room.id);
+      const result = await saveWith<{ roomId: string; lodge: Lodge }>(`/rooms/${room.id}/duplicate`, "POST");
+      setMoving(null);
+      if (result.error !== undefined) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success("Copy added", { description: "It's hidden until you show it on your site." });
+      setSheet((current) => ({ open: true, roomId: result.data.roomId, key: current.key + 1 }));
+    },
+    onToggleVisible: async (room) => {
+      const visible = !room.visible;
+      setMoving(room.id);
+      const error = await save(`/rooms/${room.id}`, "PATCH", { visible });
+      setMoving(null);
+      if (error) {
+        toast.error(error);
+        return;
+      }
+      toast.success(visible ? `${room.name} is on your site` : `${room.name} is hidden from your site`, {
+        description: visible ? undefined : "It stays here, with its photos. Guests don't see it.",
+        action: {
+          label: "Undo",
+          onClick: async () => {
+            const undoError = await save(`/rooms/${room.id}`, "PATCH", { visible: !visible });
+            if (undoError) toast.error(undoError);
+          },
+        },
+      });
+    },
     onDragEnd: (room) => void saveOrder(latestOrder.current, room.id),
     onMove: (room, by) => {
       const from = order.indexOf(room.id);
@@ -275,7 +325,7 @@ export default function RoomsPage() {
         back={{ label: "My site", href: "/dashboard/site" }}
         title="Rooms"
         count={lodge.rooms.length}
-        description="Guests see rooms in this order. Drag to reorder."
+        description="Guests see rooms in this order. Drag to reorder, or hide a room you're not letting for now."
         actions={
           <Button onClick={() => setSheet((current) => ({ open: true, roomId: null, key: current.key + 1 }))}>
             <Plus />
@@ -300,18 +350,26 @@ export default function RoomsPage() {
             />
           ) : (
             <>
-              <div className="flex flex-wrap items-center gap-3 px-3 py-3 sm:px-4">
-                <Tabs value={filter} onValueChange={(value) => setFilter(value as "all" | "missing")}>
-                  <TabsList aria-label="Show">
+              <div className="flex items-center gap-3 overflow-x-auto px-3 py-3 [scrollbar-width:none] sm:px-4">
+                <Tabs value={shown} onValueChange={(value) => setFilter(value as Filter)}>
+                  <TabsList aria-label="Show" className="shrink-0">
                     <TabsTab value="all">All rooms</TabsTab>
                     <TabsTab value="missing">
                       Missing photos
                       {missing.length > 0 ? (
-                        <Badge variant={filter === "missing" ? "inverse" : "warning"} className="h-5 px-1.5">
+                        <Badge variant={shown === "missing" ? "inverse" : "warning"} className="h-5 px-1.5">
                           {missing.length}
                         </Badge>
                       ) : null}
                     </TabsTab>
+                    {hidden.length > 0 ? (
+                      <TabsTab value="hidden">
+                        Hidden
+                        <Badge variant={shown === "hidden" ? "inverse" : "neutral"} className="h-5 px-1.5">
+                          {hidden.length}
+                        </Badge>
+                      </TabsTab>
+                    ) : null}
                   </TabsList>
                 </Tabs>
               </div>

@@ -63,8 +63,8 @@ export const lodgePatch = z
   })
   .partial();
 
-/** POST /api/lodge/rooms. */
-export const roomInput = z.object({
+/** A room's fields, without defaults (so a PATCH never resets what it didn't send). */
+const roomFields = z.object({
   name: z.string().trim().min(1, "Add the room name").max(ROOM_LIMITS.name, `Keep the room name under ${ROOM_LIMITS.name} characters`),
   price: z
     .number({ error: "Add the price per night" })
@@ -72,11 +72,31 @@ export const roomInput = z.object({
     .min(1, "Add the price per night")
     .max(ROOM_LIMITS.priceMax, "Check the price per night"),
   sleeps: z.number().int().min(1, "A room sleeps at least 1").max(ROOM_LIMITS.sleepsMax, "Check how many it sleeps"),
-  amenities: z.array(z.enum(AMENITY_KEYS)).max(AMENITY_KEYS.length).default([]),
+  amenities: z.array(z.enum(AMENITY_KEYS)).max(AMENITY_KEYS.length),
+  units: z.number().int().min(1, "You have at least 1 of this room").max(ROOM_LIMITS.unitsMax, `Up to ${ROOM_LIMITS.unitsMax} of one room`),
+  visible: z.boolean(),
+  description: optionalText(ROOM_LIMITS.description, "The description"),
+  beds: optionalText(ROOM_LIMITS.beds, "The beds"),
+  size: z
+    .number()
+    .int("Use whole square metres")
+    .min(ROOM_LIMITS.sizeMin, "Check the size in square metres")
+    .max(ROOM_LIMITS.sizeMax, "Check the size in square metres")
+    .nullable(),
 });
 
-/** PATCH /api/lodge/rooms/:id: send only what changed. */
-export const roomPatch = roomInput.partial();
+/** POST /api/lodge/rooms: name, price and sleeps; the rest is optional. */
+export const roomInput = roomFields.extend({
+  amenities: roomFields.shape.amenities.default([]),
+  units: roomFields.shape.units.default(1),
+  visible: roomFields.shape.visible.default(true),
+  description: roomFields.shape.description.default(null),
+  beds: roomFields.shape.beds.default(null),
+  size: roomFields.shape.size.default(null),
+});
+
+/** PATCH /api/lodge/rooms/:id: only what was sent changes. */
+export const roomPatch = roomFields.partial();
 
 // --- What a lodge site reads. Every field added later gets a default here. ---
 
@@ -93,6 +113,9 @@ const siteRoom = z.object({
     .default([])
     .transform((keys) => keys.filter((key): key is (typeof AMENITY_KEYS)[number] => (AMENITY_KEYS as readonly string[]).includes(key))),
   photos: z.array(sitePhoto).default([]),
+  description: z.string().nullable().default(null),
+  beds: z.string().nullable().default(null),
+  size: z.number().nullable().default(null),
 });
 
 const liveSite = z.object({

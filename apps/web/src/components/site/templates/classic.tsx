@@ -4,10 +4,12 @@ import type { CSSProperties } from "react";
 
 import { WhatsAppIcon } from "@/components/landing/brand";
 import { Reveal } from "@/components/motion";
+import { ClampedText } from "@/components/site/clamped-text";
 import { RoomPhotos, SiteGallery } from "@/components/site/gallery";
 import { BookLink } from "@/components/site/tracking";
 import { AMENITIES, AMENITIES_ON_CARD, formatPhone, formatPrice, lodgePlace } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
+import { roomFacts } from "@/lib/site-content";
 import { MAIN_URL } from "@/lib/site-host";
 
 const whatsappButton =
@@ -159,17 +161,22 @@ export function ClassicTemplate({ site }: { site: LiveSite }) {
                     <Reveal delay={index * 0.06} className="flex h-full flex-col overflow-hidden rounded-3xl bg-white shadow-[0_0_0_1px_rgba(12,24,31,0.06),0_16px_32px_-20px_rgba(12,24,31,0.25)]">
                       <RoomPhotos photos={room.photos} name={room.name} theme={site.themeColor} />
                       <div className="flex flex-1 flex-col gap-3 p-5">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-start justify-between gap-3">
                             <h3 className="font-serif text-xl leading-7 font-semibold">{room.name}</h3>
-                            <p className="flex items-center gap-1 text-sm text-[#4F5A60]">
-                              <Users className="size-3.5" />
-                              Sleeps {room.sleeps}
-                            </p>
+                            <span className="shrink-0 rounded-full bg-[var(--theme)] px-3 py-1.5 text-sm font-semibold text-white">
+                              {formatPrice(room.price)} <span className="font-normal opacity-80">/ night</span>
+                            </span>
                           </div>
-                          <span className="shrink-0 rounded-full bg-[var(--theme)] px-3 py-1.5 text-sm font-semibold text-white">
-                            {formatPrice(room.price)} <span className="font-normal opacity-80">/ night</span>
-                          </span>
+                          <p className="flex flex-wrap items-center gap-x-1.5 text-sm text-[#4F5A60]">
+                            <Users className="size-3.5 shrink-0" />
+                            {roomFacts(room).map((fact, position) => (
+                              <span key={fact} className="whitespace-nowrap">
+                                {position > 0 ? <span aria-hidden="true" className="mr-1.5 text-[#A3ADB2]">·</span> : null}
+                                {fact}
+                              </span>
+                            ))}
+                          </p>
                         </div>
                         {room.amenities.length > 0 ? (
                           <ul className="flex flex-wrap gap-x-3 gap-y-1.5 text-[13px] text-[#4F5A60]">
@@ -186,6 +193,7 @@ export function ClassicTemplate({ site }: { site: LiveSite }) {
                             })}
                           </ul>
                         ) : null}
+                        {room.description ? <ClampedText text={room.description} className="text-[14px] leading-6 text-[#4F5A60]" /> : null}
                         {roomBook ? (
                           <BookLink roomId={room.id} href={roomBook} className={`${whatsappButton} mt-auto w-full`}>
                             <WhatsAppIcon size={17} />

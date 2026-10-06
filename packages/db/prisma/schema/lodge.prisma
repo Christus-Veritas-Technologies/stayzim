@@ -88,18 +88,28 @@ model Lodge {
 }
 
 model Room {
-  id        String   @id @default(cuid())
-  lodgeId   String   @map("lodge_id")
-  lodge     Lodge    @relation(fields: [lodgeId], references: [id], onDelete: Cascade)
-  name      String
+  id          String   @id @default(cuid())
+  lodgeId     String   @map("lodge_id")
+  lodge       Lodge    @relation(fields: [lodgeId], references: [id], onDelete: Cascade)
+  name        String
   /// USD per night, whole dollars
-  price     Int
-  sleeps    Int      @default(2)
-  /// Keys from the amenity list in the web app, e.g. ["wifi", "braai"]
-  amenities String[] @default([])
+  price       Int
+  sleeps      Int      @default(2)
+  /// Keys from the amenity list in @stayzim/sites, e.g. ["wifi", "braai"]
+  amenities   String[] @default([])
   /// Order on the site, from 0
-  position  Int      @default(0)
-  photos    Photo[]
+  position    Int      @default(0)
+  /// Optional details guests see on the room card
+  description String?
+  /// "1 queen + 2 singles"
+  beds        String?
+  /// Square metres
+  size        Int?
+  /// How many of this room the lodge has ("Standard Room × 6"); bookings use it
+  units       Int      @default(1)
+  /// false: hidden from the site, kept in the dashboard
+  visible     Boolean  @default(true)
+  photos      Photo[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

@@ -72,14 +72,20 @@ export const sites = new Hono<{ Variables: AuthVariables }>()
       logoUrl: full.logoUrl,
       heroUrl: full.heroUrl,
       heroSrcSet: full.heroSrcSet,
-      rooms: full.rooms.map((room) => ({
-        id: room.id,
-        name: room.name,
-        price: room.price,
-        sleeps: room.sleeps,
-        amenities: room.amenities,
-        photos: room.photos.map(({ url, srcSet, width, height }) => ({ url, srcSet, width, height })),
-      })),
+      // Hidden rooms never reach a template
+      rooms: full.rooms
+        .filter((room) => room.visible)
+        .map((room) => ({
+          id: room.id,
+          name: room.name,
+          price: room.price,
+          sleeps: room.sleeps,
+          amenities: room.amenities,
+          photos: room.photos.map(({ url, srcSet, width, height }) => ({ url, srcSet, width, height })),
+          description: room.description,
+          beds: room.beds,
+          size: room.size,
+        })),
       gallery: full.gallery.map(({ url, srcSet, width, height, caption }) => ({ url, srcSet, width, height, caption })),
     } satisfies PublicSite);
   })

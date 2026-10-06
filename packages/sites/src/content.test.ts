@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { canHold, fillsLast, fullNights, occupancy, overbookedNights } from "./content/availability";
 import { dateAdd, dateAddMonths, eachNight, formatStay, isDateString, nightsBetween, staysOverlap, todayInHarare } from "./content/dates";
-import { lodgePatch, publicSiteSchema, roomInput } from "./content/schemas";
+import { lodgePatch, publicSiteSchema, roomInput, roomPatch } from "./content/schemas";
 
 describe("dates", () => {
   test("only real dates pass", () => {
@@ -120,5 +120,13 @@ describe("schemas", () => {
     expect(site.gallery).toEqual([]);
     expect(site.rooms[0]?.amenities).toEqual(["wifi"]);
     expect(site.rooms[0]?.photos).toEqual([]);
+  });
+});
+
+describe("patches", () => {
+  test("a room patch changes only what it sends", () => {
+    expect(roomPatch.parse({ name: "Hillside" })).toEqual({ name: "Hillside" });
+    expect(roomPatch.parse({ visible: false })).toEqual({ visible: false });
+    expect(roomPatch.parse({ description: "" })).toEqual({ description: null });
   });
 });

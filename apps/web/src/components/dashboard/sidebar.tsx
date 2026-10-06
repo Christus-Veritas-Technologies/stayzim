@@ -102,7 +102,12 @@ function NavItem({ link, collapsed }: { link: NavLink; collapsed: boolean }) {
                   <span className="size-1.5 rounded-full bg-purple" title={child.attention} aria-label={child.attention} />
                 ) : null}
                 <NavTrailing>
-                  {child.count !== undefined ? <span className="ml-auto text-xs font-semibold text-muted-2">{child.count}</span> : null}
+                  {child.badge || child.count !== undefined ? (
+                    <span className="ml-auto flex items-center gap-1.5">
+                      {child.badge ? <span className="text-[11px] font-medium text-muted-2">{child.badge}</span> : null}
+                      {child.count !== undefined ? <span className="text-xs font-semibold text-muted-2">{child.count}</span> : null}
+                    </span>
+                  ) : null}
                 </NavTrailing>
               </Link>
             );

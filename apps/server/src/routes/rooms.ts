@@ -1,7 +1,7 @@
 import prisma from "@stayzim/db";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { MAX_ROOMS } from "@stayzim/sites";
+import { MAX_ROOMS, ROOM_LIMITS } from "@stayzim/sites";
 import { roomInput, roomPatch } from "@stayzim/sites/schemas";
 import { z } from "zod";
 
@@ -31,6 +31,37 @@ export const rooms = new Hono<{ Variables: LodgeVariables }>()
     const room = await findRoom(lodgeId, c.req.param("id"));
     await prisma.room.update({ where: { id: room.id }, data: c.req.valid("json") });
     return c.json(await lodgeJson(lodgeId));
+  })
+
+  /**
+   * A copy of the room, without its photos, straight after it. It starts hidden
+   * so a half-edited copy never shows on the site.
+   */
+  .post("/:id/duplicate", async (c) => {
+    const lodgeId = c.var.lodgeId;
+    const { id } = await findRoom(lodgeId, c.req.param("id"));
+    const count = await prisma.room.count({ where: { lodgeId } });
+    if (count >= MAX_ROOMS) throw new HTTPException(400, { message: `You can have up to ${MAX_ROOMS} rooms` });
+    const source = await prisma.room.findUniqueOrThrow({ where: { id } });
+    const copy = await prisma.$transaction(async (tx) => {
+      await tx.room.updateMany({ where: { lodgeId, position: { gt: source.position } }, data: { position: { increment: 1 } } });
+      return tx.room.create({
+        data: {
+          lodgeId,
+          name: `${source.name.slice(0, ROOM_LIMITS.name - " (copy)".length)} (copy)`,
+          price: source.price,
+          sleeps: source.sleeps,
+          amenities: source.amenities,
+          description: source.description,
+          beds: source.beds,
+          size: source.size,
+          units: source.units,
+          visible: false,
+          position: source.position + 1,
+        },
+      });
+    });
+    return c.json({ roomId: copy.id, lodge: await lodgeJson(lodgeId) }, 201);
   })
 
   /** Deletes the room and its photos, then closes the gap in the order. */

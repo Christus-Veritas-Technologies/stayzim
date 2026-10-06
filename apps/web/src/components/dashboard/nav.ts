@@ -21,7 +21,8 @@ export const SITE_PAGES = ["/dashboard/site", "/dashboard/rooms", "/dashboard/ga
 
 export function navLinks(lodge: Lodge): NavLink[] {
   const missingPhotos = Math.max(0, GALLERY_GOAL - lodge.gallery.length);
-  const roomsWithoutPhotos = lodge.rooms.filter((room) => room.photos.length === 0).length;
+  const roomsWithoutPhotos = lodge.rooms.filter((room) => room.visible && room.photos.length === 0).length;
+  const hiddenRooms = lodge.rooms.filter((room) => !room.visible).length;
   return [
     { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
     {
@@ -36,6 +37,7 @@ export function navLinks(lodge: Lodge): NavLink[] {
           label: "Rooms",
           count: lodge.rooms.length,
           attention: roomsWithoutPhotos > 0 ? `${roomsWithoutPhotos} without a photo` : undefined,
+          badge: hiddenRooms > 0 ? `${hiddenRooms} hidden` : undefined,
         },
         {
           href: "/dashboard/gallery",

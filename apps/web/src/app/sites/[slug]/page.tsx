@@ -6,6 +6,7 @@ import { DemoEndedSite, SuspendedSite } from "@/components/site/site-states";
 import { lodgePlace } from "@/lib/lodge";
 import { getSite } from "@/lib/site";
 import { siteUrl } from "@/lib/site-host";
+import { jsonLd, lodgeStructuredData } from "@/lib/structured-data";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -32,5 +33,11 @@ export default async function LodgeSitePage({ params }: Props) {
   const site = await getSite((await params).slug);
   if (!site) notFound();
   if (site.status !== "LIVE") return site.status === "DEMO_ENDED" ? <DemoEndedSite name={site.name} /> : <SuspendedSite name={site.name} />;
-  return <SiteTemplate site={site} />;
+  return (
+    <>
+      {/* eslint-disable-next-line react/no-danger -- our own JSON, with "<" escaped */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(lodgeStructuredData(site)) }} />
+      <SiteTemplate site={site} />
+    </>
+  );
 }

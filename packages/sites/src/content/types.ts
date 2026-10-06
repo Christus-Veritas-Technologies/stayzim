@@ -35,6 +35,12 @@ export type SiteRoom = {
   amenities: AmenityKey[];
   /** The first is the cover; may be empty */
   photos: SitePhoto[];
+  /** Plain text, line breaks kept */
+  description: string | null;
+  /** "1 queen + 2 singles" */
+  beds: string | null;
+  /** Square metres */
+  size: number | null;
 };
 
 export type LiveSite = {
@@ -88,6 +94,15 @@ export type DashboardRoom = {
   sleeps: number;
   amenities: AmenityKey[];
   photos: DashboardPhoto[];
+  description: string | null;
+  beds: string | null;
+  size: number | null;
+  /** How many of this room the lodge has, 1 or more */
+  units: number;
+  /** false: hidden from the site */
+  visible: boolean;
+  /** Confirmed stays from today (0 without the bookings calendar) */
+  upcomingBookings: number;
   updatedAt: string;
 };
 
