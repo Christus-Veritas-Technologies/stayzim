@@ -12,7 +12,8 @@ import { WhatsAppIcon } from "@/components/landing/brand";
 import { PlanPicker } from "@/components/plan-picker";
 import { StepHeading } from "@/components/start/frame";
 import { api } from "@/lib/api";
-import { phoneFromInput, type Lodge, type PlanKey } from "@/lib/lodge";
+import { metaEvent } from "@/lib/meta-pixel";
+import { phoneFromInput, PLANS, type Lodge, type PlanKey } from "@/lib/lodge";
 import { SITES_DOMAIN } from "@/lib/site-host";
 
 type SlugCheck = { slug: string; available: boolean; problem: string | null };
@@ -81,6 +82,7 @@ export function LodgeStep({ plan: initialPlan, onCreated }: { plan: PlanKey; onC
       json: { plan, name: name.trim(), town: town.trim(), region: region.trim() || null, whatsapp: phone.digits, slug },
     });
     if (result.data) {
+      metaEvent("StartTrial", { value: 0, currency: "USD", predicted_ltv: PLANS[plan].price * 12, content_name: plan.toLowerCase() });
       onCreated(result.data);
       return;
     }

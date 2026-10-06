@@ -19,12 +19,17 @@ export const env = createEnv({
     // Lodge sites are {slug}.NEXT_PUBLIC_SITES_DOMAIN. "stayzim.co.zw" in production;
     // "localhost:9999" locally, so mistvalley.localhost:9999 opens Mist Valley's site.
     NEXT_PUBLIC_SITES_DOMAIN: z.string().min(1).default("stayzim.co.zw"),
+    // Optional: the Meta (Facebook) Pixel ID for the ads. When set, StayZim's own
+    // pages (landing, sign-up, start, dashboard) load the Pixel and report sign-ups,
+    // demos and payments. Never on lodge sites.
+    NEXT_PUBLIC_META_PIXEL_ID: z.string().regex(/^\d{6,20}$/, "Digits only").optional(),
   },
   runtimeEnv: {
     SERVER_INTERNAL_URL: process.env.SERVER_INTERNAL_URL,
     NEXT_PUBLIC_SERVER_URL: process.env.NEXT_PUBLIC_SERVER_URL,
     NEXT_PUBLIC_WHATSAPP_NUMBER: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER,
     NEXT_PUBLIC_SITES_DOMAIN: process.env.NEXT_PUBLIC_SITES_DOMAIN,
+    NEXT_PUBLIC_META_PIXEL_ID: process.env.NEXT_PUBLIC_META_PIXEL_ID,
   },
   emptyStringAsUndefined: true,
 });

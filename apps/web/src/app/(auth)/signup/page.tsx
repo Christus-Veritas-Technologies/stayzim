@@ -14,6 +14,7 @@ import { GoogleSignIn } from "@/components/auth/google-button";
 import { AuthHeading, AuthSection, AuthShell, HaveAnAccount } from "@/components/auth/shell";
 import { planFromParam, PlanPicker } from "@/components/plan-picker";
 import { authClient, authErrorMessage, MIN_PASSWORD_LENGTH, oauthErrorMessage } from "@/lib/auth-client";
+import { metaEvent } from "@/lib/meta-pixel";
 import type { PlanKey } from "@/lib/lodge";
 
 const PROMISES = ["Live in 5 minutes", "Free for 2 days", "No card needed"];
@@ -59,6 +60,7 @@ function SignupForm() {
       setPending(null);
       return;
     }
+    metaEvent("CompleteRegistration", { content_name: plan.toLowerCase() });
     router.replace(next);
   }
 

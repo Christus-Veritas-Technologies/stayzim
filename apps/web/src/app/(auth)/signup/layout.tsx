@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import { MetaPixel } from "@/components/meta-pixel";
+
 export const metadata: Metadata = {
   title: "Try StayZim free",
   description: "Your lodge's own website, booked on WhatsApp. Sign up and your site is live in 5 minutes, free for 2 days.",
@@ -8,5 +10,10 @@ export const metadata: Metadata = {
 };
 
 export default function SignupLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return (
+    <>
+      {children}
+      <MetaPixel />
+    </>
+  );
 }

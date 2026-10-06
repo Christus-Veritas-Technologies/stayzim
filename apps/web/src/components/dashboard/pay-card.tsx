@@ -16,6 +16,7 @@ import { PlanPicker } from "@/components/plan-picker";
 import { api } from "@/lib/api";
 import { formatCents, PAY_CHANNELS, type PayChannel, type Payment, type StartedPayment } from "@/lib/billing";
 import { formatLongDate } from "@/lib/format";
+import { metaEvent } from "@/lib/meta-pixel";
 import { phoneToInput, PLANS, type Lodge, type PlanKey } from "@/lib/lodge";
 import { useOnline } from "@/lib/online";
 
@@ -83,6 +84,7 @@ export function PayCard({
       const { data } = await api<{ payment: Payment; lodge: Lodge }>(`/api/lodge/billing/payments/${waitingId}`);
       if (!data || stopped) return;
       if (data.payment.status === "PAID") {
+        metaEvent("Purchase", { value: data.payment.amountCents / 100, currency: "USD", content_name: data.payment.plan.toLowerCase(), num_items: data.payment.months });
         setLodge(data.lodge);
         setState({ kind: "paid", payment: data.payment });
         onPaid();
@@ -100,6 +102,7 @@ export function PayCard({
     event.preventDefault();
     setError(null);
     setStarting(true);
+    metaEvent("InitiateCheckout", { value: total / 100, currency: "USD", content_name: plan.toLowerCase(), num_items: months });
     const result = await api<StartedPayment>("/api/lodge/billing/pay", {
       method: "POST",
       json: { plan, months, channel, phone: prompt ? phone : undefined },

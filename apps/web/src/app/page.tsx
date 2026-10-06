@@ -9,6 +9,7 @@ import { Nav } from "@/components/landing/nav";
 import { PageView } from "@/components/landing/page-view";
 import { Pricing } from "@/components/landing/pricing";
 import { Questions } from "@/components/landing/questions";
+import { MetaPixel } from "@/components/meta-pixel";
 
 export default function Home() {
   return (
@@ -26,6 +27,7 @@ export default function Home() {
       <Footer />
       <FloatingWhatsApp />
       <PageView />
+      <MetaPixel />
     </>
   );
 }

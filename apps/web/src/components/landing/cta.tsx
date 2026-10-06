@@ -2,6 +2,7 @@
 
 import { motion, type HTMLMotionProps } from "framer-motion";
 
+import { metaEvent } from "@/lib/meta-pixel";
 import { trackCta, type CtaEvent } from "@/lib/track";
 import { whatsappUrl, type WhatsAppMessage } from "@/lib/whatsapp";
 
@@ -17,7 +18,10 @@ export function WhatsAppLink({ message, track, children, ...props }: WhatsAppLin
       href={whatsappUrl(message)}
       target="_blank"
       rel="noopener noreferrer"
-      onClick={() => trackCta(track)}
+      onClick={() => {
+        trackCta(track);
+        metaEvent("Contact");
+      }}
       whileHover={{ y: -2 }}
       whileTap={{ scale: 0.97 }}
       transition={{ type: "spring", stiffness: 400, damping: 25 }}

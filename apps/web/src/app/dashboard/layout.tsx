@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { DashboardShell } from "@/components/dashboard/shell";
+import { MetaPixel } from "@/components/meta-pixel";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -8,5 +9,10 @@ export const metadata: Metadata = {
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  return <DashboardShell>{children}</DashboardShell>;
+  return (
+    <>
+      <DashboardShell>{children}</DashboardShell>
+      <MetaPixel />
+    </>
+  );
 }

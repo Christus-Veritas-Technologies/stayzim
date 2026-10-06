@@ -17,6 +17,7 @@ services:
         NEXT_PUBLIC_SERVER_URL: ${NEXT_PUBLIC_SERVER_URL:?Set NEXT_PUBLIC_SERVER_URL, e.g. https://api.stayzim.co.zw}
         NEXT_PUBLIC_SITES_DOMAIN: ${NEXT_PUBLIC_SITES_DOMAIN:-stayzim.co.zw}
         NEXT_PUBLIC_WHATSAPP_NUMBER: ${NEXT_PUBLIC_WHATSAPP_NUMBER:-}
+        NEXT_PUBLIC_META_PIXEL_ID: ${NEXT_PUBLIC_META_PIXEL_ID:-}
     image: stayzim-web
     restart: unless-stopped
     environment:
