@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 
-type GalleryPhoto = { url: string; width: number; height: number; caption: string };
+type GalleryPhoto = { url: string; srcSet?: string | null; width: number; height: number; caption: string };
 
 /** Photo grid; a tap opens the photo large, with arrows (and arrow keys) to move through them. */
 export function SiteGallery({ photos, name }: { photos: GalleryPhoto[]; name: string }) {
@@ -37,6 +37,8 @@ export function SiteGallery({ photos, name }: { photos: GalleryPhoto[]; name: st
               {/* eslint-disable-next-line @next/next/no-img-element -- already resized on upload */}
               <img
                 src={photo.url}
+                srcSet={photo.srcSet ?? undefined}
+                sizes={index === 0 ? "(min-width: 768px) 66vw, calc(100vw - 32px)" : "(min-width: 768px) 33vw, 50vw"}
                 alt={photo.caption || `${name}, photo ${index + 1}`}
                 width={photo.width}
                 height={photo.height}
@@ -103,25 +105,41 @@ export function SiteGallery({ photos, name }: { photos: GalleryPhoto[]; name: st
 }
 
 /** A room's photos, swiped sideways, with dots. */
-export function RoomPhotos({ photos, name, theme }: { photos: { url: string; width: number; height: number }[]; name: string; theme: string }) {
+export function RoomPhotos({
+  photos,
+  name,
+  theme,
+}: {
+  photos: { url: string; srcSet?: string | null; width: number; height: number }[];
+  name: string;
+  theme: string;
+}) {
   const [index, setIndex] = useState(0);
+  // Photos further along load only as the guest swipes towards them (data is precious)
+  const [reached, setReached] = useState(0);
   if (photos.length === 0) {
     return <div className="aspect-[4/3] bg-[linear-gradient(135deg,#EEE6DA,#D7C3A6)]" aria-hidden="true" />;
   }
   return (
     <div className="relative">
       <div
-        className="flex aspect-[4/3] snap-x snap-mandatory overflow-x-auto [scrollbar-width:none]"
+        className="flex aspect-[4/3] snap-x snap-mandatory overflow-x-auto bg-[#EEE6DA] [scrollbar-width:none]"
         onScroll={(event) => {
           const element = event.currentTarget;
-          setIndex(Math.round(element.scrollLeft / element.clientWidth));
+          const next = Math.round(element.scrollLeft / element.clientWidth);
+          setIndex(next);
+          setReached((current) => Math.max(current, next));
         }}
+        // A touch on the photos starts loading the next one, so the swipe shows it
+        onPointerDown={() => setReached((current) => Math.max(current, index + 1))}
       >
         {photos.map((photo, position) => (
           // eslint-disable-next-line @next/next/no-img-element -- already resized on upload
           <img
             key={photo.url}
-            src={photo.url}
+            src={position <= reached ? photo.url : undefined}
+            srcSet={position <= reached ? (photo.srcSet ?? undefined) : undefined}
+            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, calc(100vw - 32px)"
             alt={`${name}, photo ${position + 1}`}
             width={photo.width}
             height={photo.height}

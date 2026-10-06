@@ -258,6 +258,9 @@ export default function GalleryPage() {
                     {/* eslint-disable-next-line @next/next/no-img-element -- photos come from our upload server */}
                     <img
                       src={photo.url}
+                      srcSet={photo.srcSet ?? undefined}
+                      sizes="(min-width: 1280px) 25vw, (min-width: 768px) 33vw, 50vw"
+                      decoding="async"
                       alt={photo.caption}
                       loading="lazy"
                       draggable={false}

@@ -23,7 +23,15 @@ export function RoomThumb({ room, className }: { room: Room; className?: string 
   }
   return (
     // eslint-disable-next-line @next/next/no-img-element -- photos come from our upload server
-    <img src={cover.url} alt="" loading="lazy" className={cn("h-10 w-14 shrink-0 rounded-lg bg-surface object-cover", className)} />
+    <img
+      src={cover.url}
+      srcSet={cover.srcSet ?? undefined}
+      sizes="96px"
+      alt=""
+      loading="lazy"
+      decoding="async"
+      className={cn("h-10 w-14 shrink-0 rounded-lg bg-surface object-cover", className)}
+    />
   );
 }
 

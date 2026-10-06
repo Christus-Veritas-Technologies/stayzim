@@ -74,7 +74,15 @@ export function ClassicTemplate({ site }: { site: LiveSite }) {
         <div className="relative h-[68svh] max-h-[620px] min-h-[420px] overflow-hidden bg-[linear-gradient(180deg,#C9D9D2_0%,#7C978B_60%,#3E5A4E_100%)]">
           {site.heroUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- already resized on upload
-            <img src={site.heroUrl} alt="" fetchPriority="high" className="absolute inset-0 size-full object-cover" />
+            <img
+              src={site.heroUrl}
+              srcSet={site.heroSrcSet ?? undefined}
+              sizes="100vw"
+              alt=""
+              fetchPriority="high"
+              decoding="async"
+              className="absolute inset-0 size-full object-cover"
+            />
           ) : null}
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(12,24,31,0.05)_35%,rgba(12,24,31,0.7))]" />
           <div className="absolute inset-x-0 bottom-0">

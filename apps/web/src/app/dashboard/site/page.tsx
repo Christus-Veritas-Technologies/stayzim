@@ -434,7 +434,7 @@ export default function LodgeInfoPage() {
                           )}
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element -- photos come from our upload server */}
-                          <img src={photo.url} alt="" className="size-full object-cover" />
+                          <img src={photo.url} srcSet={photo.srcSet ?? undefined} sizes="160px" alt="" decoding="async" className="size-full object-cover" />
                           {selected ? (
                             <span className="absolute top-1 left-1 flex size-5 items-center justify-center rounded-full bg-brand text-white animate-in zoom-in-50">
                               <Check className="size-3" strokeWidth={3} />

@@ -5,7 +5,7 @@ import { toast } from "sonner";
 
 import { useLodge } from "@/components/dashboard/lodge-provider";
 import { apiUpload } from "@/lib/api";
-import { ImageReadError, photoForm, resizeImage } from "@/lib/images";
+import { ImageReadError, photoForm, resizeImage, smallerCopies } from "@/lib/images";
 import type { Lodge, Photo } from "@/lib/lodge";
 
 export type UploadItem = {
@@ -90,10 +90,11 @@ export function usePhotoUploads({
     void (async () => {
       try {
         const image = await resizeImage(next.file);
-        update(next.id, { size: image.blob.size });
+        const copies = await smallerCopies(image);
+        update(next.id, { size: image.blob.size + (copies.medium?.blob.size ?? 0) + (copies.small?.blob.size ?? 0) });
         const result = await apiUpload<{ photo: Photo; lodge: Lodge }>(
           "/api/lodge/photos",
-          photoForm(image, { roomId }),
+          photoForm(image, { roomId }, copies),
           (fraction) => update(next.id, { progress: fraction }),
         );
         if (result.error !== undefined) {

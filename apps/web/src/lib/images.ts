@@ -5,12 +5,17 @@
 export type ResizedImage = { blob: Blob; width: number; height: number; name: string };
 
 export const PHOTO_EDGE = 1600;
+/**
+ * Big photos also get smaller copies, which lodge sites send to phones: medium
+ * for full-width images, small for thumbnails (COPY_EDGES in apps/server).
+ */
+export const COPY_EDGES = { medium: 1280, small: 640 } as const;
 export const LOGO_EDGE = 512;
 
 export class ImageReadError extends Error {}
 
 export async function resizeImage(
-  file: File,
+  file: File | Blob,
   { maxEdge = PHOTO_EDGE, quality = 0.82, keepTransparency = false }: { maxEdge?: number; quality?: number; keepTransparency?: boolean } = {},
 ): Promise<ResizedImage> {
   let bitmap: ImageBitmap;
@@ -37,14 +42,31 @@ export async function resizeImage(
   const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, png ? "image/png" : "image/jpeg", quality));
   if (!blob) throw new ImageReadError("That photo didn't resize. Try another one.");
 
-  const base = file.name.replace(/\.[^.]+$/, "") || "photo";
+  const base = (file instanceof File ? file.name : "photo").replace(/\.[^.]+$/, "") || "photo";
   return { blob, width, height, name: `${base}.${png ? "png" : "jpg"}` };
 }
 
+export type PhotoCopies = { medium: ResizedImage | null; small: ResizedImage | null };
+
+/**
+ * The smaller copies of a resized photo, made from the resized one (so it's
+ * quick). Each is null when the photo is that small already.
+ */
+export async function smallerCopies(image: ResizedImage): Promise<PhotoCopies> {
+  const copy = async (edge: number, suffix: string, quality: number) => {
+    if (Math.max(image.width, image.height) <= edge) return null;
+    const resized = await resizeImage(image.blob, { maxEdge: edge, quality });
+    return { ...resized, name: image.name.replace(/(\.[^.]+)$/, `-${suffix}$1`) };
+  };
+  return { medium: await copy(COPY_EDGES.medium, "md", 0.8), small: await copy(COPY_EDGES.small, "sm", 0.78) };
+}
+
 /** Form for POST /api/lodge/photos (and /logo, which ignores the size). */
-export function photoForm(image: ResizedImage, fields: Record<string, string | undefined> = {}) {
+export function photoForm(image: ResizedImage, fields: Record<string, string | undefined> = {}, copies?: PhotoCopies) {
   const form = new FormData();
   form.append("file", image.blob, image.name);
+  if (copies?.medium) form.append("medium", copies.medium.blob, copies.medium.name);
+  if (copies?.small) form.append("small", copies.small.blob, copies.small.name);
   form.append("width", String(image.width));
   form.append("height", String(image.height));
   for (const [key, value] of Object.entries(fields)) {

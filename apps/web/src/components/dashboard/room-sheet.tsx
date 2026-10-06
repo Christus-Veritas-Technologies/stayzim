@@ -235,7 +235,7 @@ export function RoomSheet({
                       className={cn("group relative aspect-[4/3] overflow-hidden rounded-xl bg-surface-2", removing.includes(photo.id) && "pointer-events-none")}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element -- photos come from our upload server */}
-                      <img src={photo.url} alt="" className="size-full object-cover" />
+                      <img src={photo.url} srcSet={photo.srcSet ?? undefined} sizes="160px" alt="" decoding="async" className="size-full object-cover" />
                       {removing.includes(photo.id) ? (
                         <span className="absolute inset-0 flex items-center justify-center">
                           <span className="flex size-7 items-center justify-center rounded-full bg-white/95 text-brand shadow-xs">

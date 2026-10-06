@@ -18,6 +18,8 @@ import { siteHost } from "@/lib/site-host";
 export type Photo = {
   id: string;
   url: string;
+  /** "small 640w, medium 1280w, full 1600w" when there are smaller copies, for <img srcset> */
+  srcSet: string | null;
   width: number;
   height: number;
   size: number;
@@ -62,6 +64,7 @@ export type Lodge = {
   heroSubline: string | null;
   heroPhotoId: string | null;
   heroUrl: string | null;
+  heroSrcSet: string | null;
   plan: PlanKey;
   status: LodgeStatus;
   trialEndsAt: string | null;

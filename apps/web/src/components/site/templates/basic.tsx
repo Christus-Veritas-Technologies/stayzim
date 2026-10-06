@@ -66,6 +66,8 @@ export function BasicTemplate({ site, config }: { site: LiveSite; config: BasicC
         // eslint-disable-next-line @next/next/no-img-element -- already resized on upload
         <img
           src={site.heroUrl}
+          srcSet={site.heroSrcSet ?? undefined}
+          sizes={config.layout === "split" ? "(min-width: 768px) 50vw, 100vw" : "100vw"}
           alt=""
           fetchPriority="high"
           className={cn("w-full rounded-lg object-cover", config.layout === "split" ? "aspect-[4/3]" : "aspect-[16/7]")}
@@ -97,7 +99,15 @@ export function BasicTemplate({ site, config }: { site: LiveSite; config: BasicC
     <article key={room.id} className={cn("flex flex-col overflow-hidden rounded-lg border", card, rich && "transition-transform hover:-translate-y-1")}>
       {room.photos[0] ? (
         // eslint-disable-next-line @next/next/no-img-element -- already resized on upload
-        <img src={room.photos[0].url} alt="" loading="lazy" className="aspect-[4/3] w-full object-cover" />
+        <img
+          src={room.photos[0].url}
+          srcSet={room.photos[0].srcSet ?? undefined}
+          sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, calc(100vw - 32px)"
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="aspect-[4/3] w-full object-cover"
+        />
       ) : null}
       <div className="flex flex-1 flex-col gap-2 p-4">
         <h3 className="text-xl font-bold">{room.name}</h3>
@@ -138,7 +148,16 @@ export function BasicTemplate({ site, config }: { site: LiveSite; config: BasicC
           <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-4">
             {site.gallery.map((photo) => (
               // eslint-disable-next-line @next/next/no-img-element -- already resized on upload
-              <img key={photo.url} src={photo.url} alt={photo.caption} loading="lazy" className="aspect-square w-full rounded-md object-cover" />
+              <img
+                key={photo.url}
+                src={photo.url}
+                srcSet={photo.srcSet ?? undefined}
+                sizes="(min-width: 768px) 25vw, 50vw"
+                alt={photo.caption}
+                loading="lazy"
+                decoding="async"
+                className="aspect-square w-full rounded-md object-cover"
+              />
             ))}
           </div>
         </section>

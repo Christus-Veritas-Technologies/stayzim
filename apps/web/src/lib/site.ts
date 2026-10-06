@@ -26,15 +26,17 @@ export type PublicSite =
       themeColor: string;
       logoUrl: string | null;
       heroUrl: string | null;
+      /** `srcset` for the hero, so phones get a smaller copy */
+      heroSrcSet: string | null;
       rooms: {
         id: string;
         name: string;
         price: number;
         sleeps: number;
         amenities: AmenityKey[];
-        photos: { url: string; width: number; height: number }[];
+        photos: { url: string; srcSet: string | null; width: number; height: number }[];
       }[];
-      gallery: { url: string; width: number; height: number; caption: string }[];
+      gallery: { url: string; srcSet: string | null; width: number; height: number; caption: string }[];
     };
 
 export type LiveSite = Extract<PublicSite, { status: "LIVE" }>;
