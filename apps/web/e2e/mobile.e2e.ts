@@ -43,7 +43,7 @@ async function scrollThrough(page: Page) {
   await page.waitForTimeout(500);
 }
 
-const publicPages = ["/", "/login", "/forgot-password", "/privacy", "/terms"];
+const publicPages = ["/", "/signup", "/login", "/forgot-password", "/privacy", "/terms"];
 
 for (const path of publicPages) {
   test(`${path} fits a 360px phone`, async ({ page }) => {
