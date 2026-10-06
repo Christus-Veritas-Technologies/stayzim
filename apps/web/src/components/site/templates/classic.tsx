@@ -5,7 +5,7 @@ import type { CSSProperties } from "react";
 import { WhatsAppIcon } from "@/components/landing/brand";
 import { Reveal } from "@/components/motion";
 import { RoomPhotos, SiteGallery } from "@/components/site/gallery";
-import { BookLink, PageViewTracker } from "@/components/site/tracking";
+import { BookLink } from "@/components/site/tracking";
 import { AMENITIES, AMENITIES_ON_CARD, formatPhone, formatPrice, lodgePlace } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
 
@@ -22,11 +22,11 @@ function SectionTitle({ eyebrow, children }: { eyebrow: string; children: string
 }
 
 /**
- * The lodge's own one-page site. The lodge leads (its photos, name and colour);
- * StayZim is only the footer link. Server-rendered and light, for guests on
- * slow or expensive data.
+ * Classic (Growth): full-width hero, room cards with photos, gallery, map and
+ * contact. The lodge leads (its photos, name and colour); StayZim is only the
+ * footer link. Server-rendered and light, for guests on slow or expensive data.
  */
-export function LodgeSite({ site }: { site: LiveSite }) {
+export function ClassicTemplate({ site }: { site: LiveSite }) {
   const place = lodgePlace(site);
   const book = bookingUrl(site);
   const cheapest = site.rooms.length > 0 ? Math.min(...site.rooms.map((room) => room.price)) : null;
@@ -36,8 +36,6 @@ export function LodgeSite({ site }: { site: LiveSite }) {
 
   return (
     <div style={{ "--theme": site.themeColor } as CSSProperties} className="min-h-svh bg-[#FAF9F6] pb-24 text-[#0C181F] lg:pb-0">
-      <PageViewTracker slug={site.slug} />
-
       {/* Top bar */}
       <header className="sticky top-0 z-30 border-b border-black/5 bg-[#FAF9F6]/85 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-6">
@@ -62,7 +60,7 @@ export function LodgeSite({ site }: { site: LiveSite }) {
             </a>
           </nav>
           {book ? (
-            <BookLink slug={site.slug} href={book} className={`${whatsappButton} hidden h-10 px-4 text-sm lg:inline-flex`}>
+            <BookLink href={book} className={`${whatsappButton} hidden h-10 px-4 text-sm lg:inline-flex`}>
               <WhatsAppIcon size={16} />
               Book on WhatsApp
             </BookLink>
@@ -86,10 +84,13 @@ export function LodgeSite({ site }: { site: LiveSite }) {
                   {place}
                 </span>
               ) : null}
-              <h1 className="max-w-3xl font-serif text-[40px] leading-[46px] font-semibold text-balance sm:text-[56px] sm:leading-[62px]">{site.name}</h1>
+              <h1 className="max-w-3xl font-serif text-[40px] leading-[46px] font-semibold text-balance sm:text-[56px] sm:leading-[62px]">
+                {site.hero.headline}
+              </h1>
+              <p className="max-w-xl text-[17px] leading-7 text-white/90">{site.hero.subline}</p>
               <div className="flex flex-wrap gap-3">
                 {book ? (
-                  <BookLink slug={site.slug} href={book} className={whatsappButton}>
+                  <BookLink href={book} className={whatsappButton}>
                     <WhatsAppIcon size={18} />
                     Book on WhatsApp
                   </BookLink>
@@ -177,7 +178,7 @@ export function LodgeSite({ site }: { site: LiveSite }) {
                           </ul>
                         ) : null}
                         {roomBook ? (
-                          <BookLink slug={site.slug} roomId={room.id} href={roomBook} className={`${whatsappButton} mt-auto w-full`}>
+                          <BookLink roomId={room.id} href={roomBook} className={`${whatsappButton} mt-auto w-full`}>
                             <WhatsAppIcon size={17} />
                             Book on WhatsApp
                           </BookLink>
@@ -241,7 +242,7 @@ export function LodgeSite({ site }: { site: LiveSite }) {
             <p className="max-w-md font-serif text-2xl leading-8">Message us on WhatsApp with your dates. We reply quickly.</p>
             <div className="flex flex-col gap-2 sm:items-end">
               {book ? (
-                <BookLink slug={site.slug} href={book} className={whatsappButton}>
+                <BookLink href={book} className={whatsappButton}>
                   <WhatsAppIcon size={18} />
                   {formatPhone(site.whatsapp)}
                 </BookLink>
@@ -279,7 +280,7 @@ export function LodgeSite({ site }: { site: LiveSite }) {
       {/* Phones: booking always in reach */}
       {book ? (
         <div className="fixed inset-x-0 bottom-0 z-30 border-t border-black/5 bg-[#FAF9F6]/90 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur lg:hidden">
-          <BookLink slug={site.slug} href={book} className={`${whatsappButton} w-full`}>
+          <BookLink href={book} className={`${whatsappButton} w-full`}>
             <WhatsAppIcon size={18} />
             Book on WhatsApp
           </BookLink>

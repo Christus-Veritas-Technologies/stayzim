@@ -10,6 +10,9 @@ export type PublicSite =
       status: "LIVE";
       slug: string;
       name: string;
+      /** Template key from @stayzim/sites, already checked against the plan */
+      template: string;
+      hero: { headline: string; subline: string };
       description: string;
       town: string | null;
       region: string | null;
