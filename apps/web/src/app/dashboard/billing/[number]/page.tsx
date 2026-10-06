@@ -15,7 +15,7 @@ import { Page, PageSection } from "@/components/dashboard/page";
 import { LogoMark } from "@/components/landing/brand";
 import { EASE_OUT } from "@/components/motion";
 import { api } from "@/lib/api";
-import { formatCents, STAYZIM_BUSINESS, type BillingDocument } from "@/lib/billing";
+import { formatCents, type BillingDocument } from "@/lib/billing";
 import { formatLongDate } from "@/lib/format";
 import { PLANS, SITES_DOMAIN } from "@/lib/lodge";
 
@@ -77,11 +77,12 @@ export default function BillingDocumentPage() {
               <div className="flex items-start gap-3">
                 <LogoMark size={36} />
                 <div className="text-[13px] leading-5 text-muted">
-                  <p className="font-display text-[17px] font-bold text-ink">{STAYZIM_BUSINESS.name}</p>
-                  {STAYZIM_BUSINESS.lines.map((line) => (
+                  <p className="font-display text-[17px] font-bold text-ink">{doc.issuer.name}</p>
+                  {doc.issuer.lines.map((line) => (
                     <p key={line}>{line}</p>
                   ))}
-                  <p>{STAYZIM_BUSINESS.email}</p>
+                  <p>{doc.issuer.email}</p>
+                  {doc.issuer.taxNumber ? <p>Tax no. {doc.issuer.taxNumber}</p> : null}
                 </div>
               </div>
               <div className="sm:text-right">
@@ -167,7 +168,7 @@ export default function BillingDocumentPage() {
                 <p>Thank you for your payment.</p>
               )}
               <p className="mt-2">
-                {STAYZIM_BUSINESS.name} · {STAYZIM_BUSINESS.website} · No commission on bookings.
+                {doc.issuer.name} · {doc.issuer.website} · No commission on bookings.
               </p>
             </footer>
           </motion.article>

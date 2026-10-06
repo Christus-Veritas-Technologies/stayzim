@@ -21,6 +21,11 @@ function summaryText(rows: [string, string][]) {
   return rows.map(([label, value]) => `${label}: ${value}`);
 }
 
+/** "Issued by StayZim · Mutare, Zimbabwe · Tax no. …", under invoices and receipts. */
+function issuedBy(line: string | undefined) {
+  return line ? `<p style="margin:16px 0 0;font-size:12px;line-height:18px;color:${MUTED}">Issued by ${escapeHtml(line)}</p>` : "";
+}
+
 function link(url: string) {
   return `<p style="margin:0;font-size:13px;line-height:20px;color:${MUTED};word-break:break-all">Button not working? Paste this into your browser:<br><a href="${escapeHtml(url)}" style="color:${BRAND}">${escapeHtml(url)}</a></p>`;
 }
@@ -79,6 +84,8 @@ export function invoiceEmail(input: {
   period: string;
   due: string;
   payUrl: string;
+  /** Who issues it, e.g. "StayZim · Mutare, Zimbabwe" */
+  issuedBy?: string;
 }): Email {
   const when = input.notice === "DUE_TODAY" ? "today" : input.notice === "DUE_IN_1" ? "tomorrow" : `on ${input.due}`;
   const subject = input.demo
@@ -109,6 +116,7 @@ export function invoiceEmail(input: {
       `Pay with EcoCash, InnBucks, OneMoney or card: ${input.payUrl}`,
       "",
       "Already paid? Thank you. You can ignore this email.",
+      ...(input.issuedBy ? ["", `Issued by ${input.issuedBy}`] : []),
     ].join("\n"),
     html: layout({
       preview: lead,
@@ -117,7 +125,8 @@ export function invoiceEmail(input: {
 ${summary(rows)}
 ${button(input.payUrl, `Pay ${input.amount}`)}
 <p style="margin:0 0 16px;font-size:14px;line-height:20px;color:${MUTED}">EcoCash, InnBucks, OneMoney or card. Already paid? Thank you, you can ignore this email.</p>
-${link(input.payUrl)}`,
+${link(input.payUrl)}
+${issuedBy(input.issuedBy)}`,
     }),
   };
 }
@@ -135,6 +144,7 @@ export function receiptEmail(input: {
   method: string;
   paidUntil: string;
   receiptUrl: string;
+  issuedBy?: string;
 }): Email {
   const rows: [string, string][] = [
     ["Receipt", input.number],
@@ -147,13 +157,14 @@ export function receiptEmail(input: {
   return {
     to: input.to,
     subject: `Receipt ${input.number}: ${input.amount} for ${input.lodgeName}`,
-    text: [`Hi ${input.name},`, "", `Thank you. We've received ${input.amount} for ${input.lodgeName}.`, "", ...summaryText(rows), "", `Your receipt: ${input.receiptUrl}`].join("\n"),
+    text: [`Hi ${input.name},`, "", `Thank you. We've received ${input.amount} for ${input.lodgeName}.`, "", ...summaryText(rows), "", `Your receipt: ${input.receiptUrl}`, ...(input.issuedBy ? ["", `Issued by ${input.issuedBy}`] : [])].join("\n"),
     html: layout({
       preview: `Thank you. We've received ${input.amount} for ${input.lodgeName}.`,
       body: `${greeting(input.name)}
 <p style="margin:0">Thank you. We've received <strong>${escapeHtml(input.amount)}</strong> for ${escapeHtml(input.lodgeName)}.</p>
 ${summary(rows)}
-${button(input.receiptUrl, "View or print the receipt")}`,
+${button(input.receiptUrl, "View or print the receipt")}
+${issuedBy(input.issuedBy)}`,
     }),
   };
 }

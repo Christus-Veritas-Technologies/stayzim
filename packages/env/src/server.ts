@@ -80,6 +80,19 @@ export const env = createEnv({
     PAYNOW_AUTH_EMAIL: z.email().optional(),
     // Tests only: a stand-in for https://www.paynow.co.zw
     PAYNOW_API_URL: z.url().default("https://www.paynow.co.zw"),
+
+    // For owners who pay outside Paynow: StayZim's merchant codes, shown on
+    // Billing. Without one, its card isn't shown.
+    ECOCASH_MERCHANT_CODE: z.string().min(1).optional(),
+    INNBUCKS_MERCHANT_CODE: z.string().min(1).optional(),
+
+    // Who issues invoices and receipts (printed on them and in their emails)
+    BUSINESS_NAME: z.string().min(1).default("StayZim"),
+    // Address lines, separated by "|", e.g. "12 Main Street|Mutare|Zimbabwe"
+    BUSINESS_ADDRESS: z.string().min(1).default("Mutare, Zimbabwe"),
+    BUSINESS_EMAIL: z.email().default("hello@stayzim.co.zw"),
+    // Tax or business registration number (e.g. ZIMRA BP number), printed when set
+    BUSINESS_TAX_NUMBER: z.string().min(1).optional(),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,

@@ -8,6 +8,7 @@ import { z } from "zod";
 
 import { BILLING_URL, newPaymentReference, paymentJson, refreshPayment } from "../lib/billing";
 import { clientIp } from "../lib/ip";
+import { issuer, merchantCodes } from "../lib/business";
 import { lodgeJson, type LodgeVariables } from "../lib/lodge";
 import { MOBILE_CHANNELS, paynowEnabled, startMobilePayment, startWebPayment } from "../lib/paynow";
 import { validJson } from "../lib/validate";
@@ -38,6 +39,7 @@ export const billing = new Hono<{ Variables: LodgeVariables }>()
     ]);
     return c.json({
       paynow: paynowEnabled,
+      merchantCodes: merchantCodes(),
       invoices: invoices.map(({ id, number, plan, amountCents, periodStart, periodEnd, dueAt, status, paidAt }) => ({
         id,
         number,
@@ -139,6 +141,7 @@ export const billing = new Hono<{ Variables: LodgeVariables }>()
       if (!invoice || invoice.status === "VOID") throw new HTTPException(404, { message: "No such invoice" });
       return c.json({
         kind: "invoice" as const,
+        issuer,
         number: invoice.number,
         issuedAt: invoice.createdAt,
         billedTo,
@@ -156,6 +159,7 @@ export const billing = new Hono<{ Variables: LodgeVariables }>()
     if (!payment) throw new HTTPException(404, { message: "No such receipt" });
     return c.json({
       kind: "receipt" as const,
+      issuer,
       number: payment.receiptNumber!,
       issuedAt: payment.paidAt!,
       billedTo,

@@ -13,6 +13,7 @@ import {
   type Plan,
 } from "@stayzim/sites";
 
+import { issuerLine } from "./business";
 import { pollPayment } from "./paynow";
 import { DASHBOARD_URL, siteUrlFor } from "./sites";
 
@@ -174,6 +175,7 @@ export async function applyPayment(paymentId: string, extra: { paynowReference?:
       method: channelName(payment.channel),
       paidUntil: formatHarareDate(paidUntil),
       receiptUrl: `${BILLING_URL}/${payment.receiptNumber}`,
+      issuedBy: issuerLine(),
     }),
   );
   return true;

@@ -1,29 +1,12 @@
-/**
- * Paying by merchant code, for owners who'd rather (or while Paynow isn't
- * switched on): they pay with their lodge's slug as the reference, send proof
- * on WhatsApp, and StayZim records it with mark-paid (which emails a receipt).
- *
- * Merchant codes are placeholders until the accounts exist (docs/progress.md, "Blocked on").
- */
-export const PAYMENT_METHODS = [
-  { key: "ecocash", name: "EcoCash", short: "Ec", detail: "Merchant code 000000", copy: "000000", tone: "bg-danger-tint text-danger" },
-  { key: "innbucks", name: "InnBucks", short: "Ib", detail: "Merchant code 000000", copy: "000000", tone: "bg-warning-tint text-warning" },
-] as const;
+/** Tones for the merchant code cards (the codes come from the API: ECOCASH_MERCHANT_CODE, INNBUCKS_MERCHANT_CODE). */
+export const MERCHANT_TONES = {
+  ecocash: { short: "Ec", tone: "bg-danger-tint text-danger" },
+  innbucks: { short: "Ib", tone: "bg-warning-tint text-warning" },
+} as const;
 
 export function formatMoney(dollars: number) {
   return `$${dollars.toFixed(2)}`;
 }
-
-/**
- * Who issues StayZim's invoices and receipts, printed on them. Fill in the
- * registered business details before launch (docs/progress.md, "Blocked on").
- */
-export const STAYZIM_BUSINESS = {
-  name: "StayZim",
-  lines: ["Mutare, Zimbabwe"],
-  email: "hello@stayzim.co.zw",
-  website: "stayzim.co.zw",
-};
 
 /** GET /api/lodge/billing (apps/server/src/routes/billing.ts) */
 export type Invoice = {
@@ -53,7 +36,13 @@ export type Payment = {
   createdAt: string;
 };
 
-export type BillingOverview = { paynow: boolean; invoices: Invoice[]; payments: Payment[] };
+/** StayZim's merchant codes for paying outside Paynow; only those set on the server. */
+export type MerchantCode = { key: keyof typeof MERCHANT_TONES; name: string; code: string };
+
+export type BillingOverview = { paynow: boolean; merchantCodes: MerchantCode[]; invoices: Invoice[]; payments: Payment[] };
+
+/** Who issues invoices and receipts (BUSINESS_* on the server). */
+export type Issuer = { name: string; lines: string[]; email: string; taxNumber: string | null; website: string };
 
 /** POST /api/lodge/billing/pay */
 export type StartedPayment = { payment: Payment; redirectUrl: string | null; instructions: string | null; innbucksCode: string | null };
@@ -61,6 +50,7 @@ export type StartedPayment = { payment: Payment; redirectUrl: string | null; ins
 /** GET /api/lodge/billing/documents/:number: an invoice or a receipt, for printing. */
 export type BillingDocument = {
   kind: "invoice" | "receipt";
+  issuer: Issuer;
   number: string;
   issuedAt: string;
   billedTo: { lodge: string; slug: string; place: string | null; name: string; email: string };

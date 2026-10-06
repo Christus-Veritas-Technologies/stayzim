@@ -45,6 +45,12 @@ describe("billing emails", () => {
     expect(email.html).toContain("Pay $40.00");
   });
 
+  test("invoices say who issued them, when that's set", () => {
+    const base = { to: "rudo@x.test", name: "Rudo", lodgeName: "Mist Valley", number: "SZ-2026-00042", plan: "Growth", amount: "$40.00", period: "8 Oct – 8 Nov", due: "Thursday 8 October", payUrl: "https://x.test", notice: "DUE_IN_1" as const, demo: false };
+    expect(invoiceEmail({ ...base, issuedBy: "StayZim · Mutare, Zimbabwe" }).text).toContain("Issued by StayZim · Mutare, Zimbabwe");
+    expect(invoiceEmail(base).text).not.toContain("Issued by");
+  });
+
   test("receipts escape what owners typed", () => {
     const email = receiptEmail({ to: "a@b.test", name: "Rudo", lodgeName: "<b>Lodge</b>", number: "R-2026-00007", amount: "$120.00", plan: "Growth", months: 3, paidOn: "Tue 6 Oct", method: "EcoCash", paidUntil: "Wednesday 6 January", receiptUrl: "https://x.test/r" });
     expect(email.html).toContain("&lt;b&gt;Lodge&lt;/b&gt;");

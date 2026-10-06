@@ -18,7 +18,7 @@ import { WhatsAppIcon } from "@/components/landing/brand";
 import { EASE_OUT } from "@/components/motion";
 import { PayCard } from "@/components/dashboard/pay-card";
 import { api } from "@/lib/api";
-import { formatCents, formatMoney, PAYMENT_METHODS, type BillingOverview } from "@/lib/billing";
+import { formatCents, formatMoney, MERCHANT_TONES, type BillingOverview, type MerchantCode } from "@/lib/billing";
 import { formatClock, formatDate, formatLongDate } from "@/lib/format";
 import { demoTimeLeft, dueDate, formatTimeLeft, offlineDate, PLAN_ORDER, PLANS, type Lodge, type PlanKey } from "@/lib/lodge";
 import { useNow } from "@/lib/use-now";
@@ -124,9 +124,34 @@ function PlanCard({ lodge }: { lodge: Lodge }) {
   );
 }
 
-/** Paying by merchant code, then "I have paid" on WhatsApp; StayZim records it. */
-function HowToPay({ lodge, online }: { lodge: Lodge; online: boolean }) {
+/**
+ * Paying by merchant code (the ones set on the server), then "I have paid" on
+ * WhatsApp; StayZim records it with mark-paid. Without codes, a message to ask how.
+ */
+function HowToPay({ lodge, online, codes }: { lodge: Lodge; online: boolean; codes: MerchantCode[] }) {
   const amount = formatMoney(PLANS[lodge.plan].price);
+  if (codes.length === 0) {
+    return (
+      <section className="flex flex-col gap-3 rounded-[14px] bg-surface-2 p-3.5 sm:flex-row sm:items-center" aria-label="Other ways to pay">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white text-slate shadow-xs">
+          <ReceiptText className="size-[18px]" strokeWidth={1.75} />
+        </span>
+        <span className="flex flex-1 flex-col">
+          <span className="text-[14px] font-semibold">{online ? "Paying another way?" : "How to pay"}</span>
+          <span className="text-[13px] text-muted">Message us and we&apos;ll tell you how to pay {amount}. We&apos;ll send your receipt.</span>
+        </span>
+        <a
+          href={stayzimChatUrl(`Hi StayZim, I'd like to pay ${amount} for ${lodge.name} (reference ${lodge.slug}). How can I pay?`)}
+          target="_blank"
+          rel="noreferrer"
+          className={buttonVariants({ variant: "whatsapp", size: "lg" })}
+        >
+          <WhatsAppIcon size={17} />
+          Message us
+        </a>
+      </section>
+    );
+  }
   return (
     <section className="flex flex-col gap-3" aria-labelledby="how-to-pay">
       <div>
@@ -138,7 +163,7 @@ function HowToPay({ lodge, online }: { lodge: Lodge; online: boolean }) {
         </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        {PAYMENT_METHODS.map((method, index) => (
+        {codes.map((method, index) => (
           <motion.div
             key={method.key}
             initial={{ opacity: 0, y: 10 }}
@@ -146,14 +171,16 @@ function HowToPay({ lodge, online }: { lodge: Lodge; online: boolean }) {
             transition={{ duration: 0.45, delay: 0.15 + index * 0.06, ease: EASE_OUT }}
           >
             <Card className="flex-row items-center gap-3 p-3.5 transition-transform duration-300 hover:-translate-y-0.5">
-              <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-xl text-[13px] font-bold", method.tone)}>
-                {method.short}
+              <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-xl text-[13px] font-bold", MERCHANT_TONES[method.key].tone)}>
+                {MERCHANT_TONES[method.key].short}
               </span>
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="text-[14px] font-semibold">{method.name}</span>
-                <span className="truncate text-xs text-muted">{method.detail}</span>
+                <span className="text-xs text-muted">
+                  Merchant code <strong className="font-semibold tracking-wide break-all text-ink">{method.code}</strong>
+                </span>
               </span>
-              <CopyButton value={method.copy} size="icon-sm" copiedLabel="Code copied" />
+              <CopyButton value={method.code} size="icon-sm" copiedLabel="Code copied" />
             </Card>
           </motion.div>
         ))}
@@ -359,7 +386,7 @@ export default function BillingPage() {
           ) : paynow ? (
             <PayCard plan={plan} onPlanChange={setPlan} onPaid={load} />
           ) : null}
-          {overview !== null && (!paynow || lodge.status !== "ACTIVE") ? <HowToPay lodge={lodge} online={paynow} /> : null}
+          {overview !== null && (!paynow || lodge.status !== "ACTIVE") ? <HowToPay lodge={lodge} online={paynow} codes={overview.merchantCodes} /> : null}
         </div>
         <Documents overview={overview} />
       </PageSection>

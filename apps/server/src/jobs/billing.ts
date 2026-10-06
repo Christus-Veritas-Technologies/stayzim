@@ -15,6 +15,7 @@ import {
 } from "@stayzim/sites";
 
 import { BILLING_URL, createInvoice, refreshPayment, sendOnce } from "../lib/billing";
+import { issuerLine } from "../lib/business";
 import { removeUploads } from "../lib/uploads";
 
 /**
@@ -66,6 +67,7 @@ export async function runBilling(now = new Date()) {
             period: `${formatHarareDay(invoice.periodStart)} to ${formatHarareDay(invoice.periodEnd)}`,
             due: formatHarareDate(invoice.dueAt),
             payUrl: BILLING_URL,
+            issuedBy: issuerLine(),
           }),
         );
         if (sent) report.notices += 1;
@@ -132,6 +134,7 @@ export async function runBilling(now = new Date()) {
         period: `${formatHarareDay(invoice.periodStart)} to ${formatHarareDay(invoice.periodEnd)}`,
         due: formatHarareDate(invoice.dueAt),
         payUrl: BILLING_URL,
+        issuedBy: issuerLine(),
       }),
     );
     if (sent) report.notices += 1;
