@@ -272,6 +272,7 @@ export default function RoomsPage() {
     <Page>
       <PageHeader
         sitePage
+        back={{ label: "My site", href: "/dashboard/site" }}
         title="Rooms"
         count={lodge.rooms.length}
         description="Guests see rooms in this order. Drag to reorder."

@@ -223,6 +223,7 @@ export default function LodgeInfoPage() {
     <Page className="pb-20 lg:pb-0">
       <PageHeader
         sitePage
+        back={{ label: "Dashboard", href: "/dashboard" }}
         title="Lodge info"
         description={
           <>

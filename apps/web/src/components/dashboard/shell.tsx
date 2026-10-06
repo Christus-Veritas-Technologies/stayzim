@@ -5,6 +5,7 @@ import { TooltipProvider } from "@stayzim/ui/components/tooltip";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 
+import { NavigationTracker } from "@/components/dashboard/back-link";
 import { LodgeProvider } from "@/components/dashboard/lodge-provider";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { BottomNav, MobileHeader, Topbar } from "@/components/dashboard/topbar";
@@ -82,6 +83,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
         <div className="min-h-svh bg-surface-2 lg:flex">
           <Sidebar user={user} collapsed={collapsed} onToggle={toggleSidebar} />
           <div className="flex min-w-0 flex-1 flex-col lg:my-2.5 lg:mr-2.5 lg:min-h-[calc(100svh-20px)] lg:rounded-[20px] lg:bg-white lg:shadow-panel">
+            <NavigationTracker />
             <MobileHeader user={user} />
             <Topbar />
             <main className="flex-1 px-4 pt-5 pb-28 sm:px-6 lg:px-7 lg:pt-6 lg:pb-10">{children}</main>

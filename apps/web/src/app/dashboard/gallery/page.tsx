@@ -163,6 +163,7 @@ export default function GalleryPage() {
     <Page>
       <PageHeader
         sitePage
+        back={{ label: "My site", href: "/dashboard/site" }}
         title="Gallery"
         count={lodge.gallery.length}
         description="Drag to reorder. The first photo is your hero unless you pick another."
