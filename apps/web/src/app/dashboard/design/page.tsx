@@ -32,6 +32,7 @@ import { Page, PageHeader, PageSection } from "@/components/dashboard/page";
 import { RequestChangeHint } from "@/components/dashboard/request-change-hint";
 import { SitePreview } from "@/components/dashboard/site-preview";
 import { TemplateThumb } from "@/components/dashboard/template-thumb";
+import { UnsavedChangesGuard } from "@/components/dashboard/unsaved-changes";
 import { WhatsAppIcon } from "@/components/landing/brand";
 import { Appear, Item, riseIn } from "@/components/motion";
 import { WhyDisabled } from "@/components/why-disabled";
@@ -254,14 +255,6 @@ function HeroText({ lodge, live }: { lodge: Lodge; live: Template }) {
     setSubline(lodge.heroSubline ?? "");
   }, [lodge.heroHeadline, lodge.heroSubline]);
 
-  // Don't lose edits to a stray tap on Back
-  useEffect(() => {
-    if (!dirty) return;
-    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty]);
-
   async function onSave() {
     setSaving(true);
     setError(null);
@@ -423,6 +416,8 @@ function HeroText({ lodge, live }: { lodge: Lodge; live: Template }) {
           </SheetBody>
         </SheetContent>
       </Sheet>
+
+      <UnsavedChangesGuard when={dirty && !saving} />
 
       {/* Phones: Save stays in reach above the bottom bar while there are edits */}
       <AnimatePresence>

@@ -15,6 +15,7 @@ import { toast } from "sonner";
 
 import { useLodge } from "@/components/dashboard/lodge-provider";
 import { AddPhotosTile, FullTile, UploadTile } from "@/components/dashboard/photo-tiles";
+import { DiscardChangesDialog } from "@/components/dashboard/unsaved-changes";
 import { usePhotoUploads } from "@/components/dashboard/use-photo-uploads";
 import { WhyDisabled } from "@/components/why-disabled";
 import { AMENITIES, AMENITIES_ON_CARD, AMENITY_KEYS, ROOM_PHOTO_LIMIT, type AmenityKey, type Lodge, type Room } from "@/lib/lodge";
@@ -127,8 +128,25 @@ export function RoomSheet({
 
   const busyUploading = uploads.items.some((item) => item.status !== "failed");
 
+  // Typed but not saved yet: closing asks first
+  const saved = draftFrom(editing);
+  const edited =
+    !created &&
+    !saving &&
+    (draft.name !== saved.name ||
+      draft.price !== saved.price ||
+      draft.sleeps !== saved.sleeps ||
+      draft.amenities.join() !== saved.amenities.join() ||
+      pending.length > 0);
+  const [confirmClose, setConfirmClose] = useState(false);
+
+  function requestClose() {
+    if (edited) setConfirmClose(true);
+    else onOpenChange(false);
+  }
+
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={open} onOpenChange={(next) => (next ? onOpenChange(true) : requestClose())}>
       <SheetContent>
         <form onSubmit={onSubmit} className="flex h-full flex-col" noValidate>
           <SheetHeader>
@@ -280,7 +298,7 @@ export function RoomSheet({
           </SheetBody>
 
           <SheetFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={requestClose}>
               {created ? "Close" : "Cancel"}
             </Button>
             <WhyDisabled reason={!online && !created && !saving ? OFFLINE_REASON : null}>
@@ -296,6 +314,14 @@ export function RoomSheet({
           </SheetFooter>
         </form>
       </SheetContent>
+      <DiscardChangesDialog
+        open={confirmClose}
+        onKeep={() => setConfirmClose(false)}
+        onDiscard={() => {
+          setConfirmClose(false);
+          onOpenChange(false);
+        }}
+      />
     </Sheet>
   );
 }

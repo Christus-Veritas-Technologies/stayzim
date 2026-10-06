@@ -34,6 +34,7 @@ import { MapPreview } from "@/components/dashboard/map-preview";
 import { Page, PageHeader, PageSection } from "@/components/dashboard/page";
 import { RequestChangeHint } from "@/components/dashboard/request-change-hint";
 import { SitePreview } from "@/components/dashboard/site-preview";
+import { UnsavedChangesGuard } from "@/components/dashboard/unsaved-changes";
 import { WhatsAppIcon } from "@/components/landing/brand";
 import { WhyDisabled } from "@/components/why-disabled";
 import { api, apiUpload } from "@/lib/api";
@@ -150,14 +151,6 @@ export default function LodgeInfoPage() {
     setDraft((current) => ({ ...current, [key]: value }));
     setErrors((current) => ({ ...current, [key]: undefined }));
   };
-
-  // Don't lose edits to a stray tap on Back
-  useEffect(() => {
-    if (!dirty) return;
-    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty]);
 
   async function onSave() {
     const result = changesFrom(draft, lodge);
@@ -497,6 +490,9 @@ export default function LodgeInfoPage() {
           </SheetBody>
         </SheetContent>
       </Sheet>
+
+      {/* Don't lose edits to a stray tap on another page, Back or reload */}
+      <UnsavedChangesGuard when={dirty && !saving} />
 
       {/* Phones: Save stays in reach above the bottom bar while there are edits */}
       <AnimatePresence>
