@@ -8,18 +8,24 @@ import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
 
 import { withSession, type AuthVariables } from "./lib/session";
+import { serveUpload } from "./lib/uploads";
 import { account } from "./routes/account";
 import { landing } from "./routes/landing";
 
 const app = new Hono<{ Variables: AuthVariables }>();
 
 app.use(logger());
-app.use(secureHeaders());
+app.use(
+  secureHeaders({
+    // Lodge photos are shown on app. and {slug}.stayzim.co.zw, which share a site with api.
+    crossOriginResourcePolicy: "same-site",
+  }),
+);
 app.use(
   "/*",
   cors({
     origin: env.CORS_ORIGIN,
-    allowMethods: ["GET", "POST", "OPTIONS"],
+    allowMethods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
     // The session cookie travels with requests from the web app
     credentials: true,
@@ -29,6 +35,9 @@ app.use(
 app.get("/", (c) => {
   return c.text("OK");
 });
+
+// Lodge photos and logos (see lib/uploads.ts)
+app.get("/uploads/*", async (c) => (await serveUpload(c.req.path)) ?? c.json({ error: "Not found" }, 404));
 
 // better-auth: sign in/out, session, password reset, ... (see packages/auth)
 app.on(["GET", "POST"], "/api/auth/*", (c) => auth.handler(c.req.raw));

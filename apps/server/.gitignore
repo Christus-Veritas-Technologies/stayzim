@@ -1,4 +1,5 @@
 # prod
+/uploads/
 dist/
 /build
 /out/

@@ -20,6 +20,10 @@ export const env = createEnv({
     // Leave unset on localhost.
     COOKIE_DOMAIN: z.string().min(1).optional(),
 
+    // Where lodge photos and logos are saved (apps/server). Relative paths are from the
+    // server's working directory. In Docker, mount a volume here so photos survive redeploys.
+    UPLOAD_DIR: z.string().min(1).default("uploads"),
+
     // Email (packages/mail). Without SMTP_HOST, emails are printed to the console instead.
     SMTP_HOST: z.string().min(1).optional(),
     SMTP_PORT: z.coerce.number().int().positive().optional(),
