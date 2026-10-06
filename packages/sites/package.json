@@ -7,10 +7,12 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "test": "bun test"
   },
   "devDependencies": {
     "@stayzim/config": "workspace:*",
+    "@types/bun": "catalog:",
     "typescript": "^6"
   }
 }
