@@ -2,12 +2,11 @@
 
 import { cn } from "@stayzim/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
-import { useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 
 import { EASE_OUT } from "@/components/motion";
 import type { ChartPoint } from "@/lib/stats";
 
-const WIDTH = 700;
 const HEIGHT = 170;
 const LEFT = 30;
 const TOP = 8;
@@ -31,6 +30,16 @@ function linePath(points: [number, number][]) {
 export function VisitsChart({ data, empty, className }: { data: ChartPoint[]; empty?: ReactNode; className?: string }) {
   const gradientId = useId();
   const [hovered, setHovered] = useState<number | null>(null);
+  // Drawn at the container's real width, so labels stay 12px on any screen
+  const box = useRef<HTMLDivElement>(null);
+  const [WIDTH, setWidth] = useState(700);
+  useEffect(() => {
+    const element = box.current;
+    if (!element) return;
+    const observer = new ResizeObserver(([entry]) => setWidth(Math.max(280, Math.round(entry!.contentRect.width))));
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
   const max = niceMax(Math.max(...data.map((point) => Math.max(point.current, point.previous)), 0));
   const plotWidth = WIDTH - LEFT;
   const x = (index: number) => LEFT + (data.length === 1 ? plotWidth / 2 : (index / (data.length - 1)) * plotWidth);
@@ -43,7 +52,7 @@ export function VisitsChart({ data, empty, className }: { data: ChartPoint[]; em
   const active = hovered === null ? null : data[hovered];
 
   return (
-    <div className={cn("relative", className)}>
+    <div ref={box} className={cn("relative", className)}>
       <svg
         viewBox={`0 0 ${WIDTH} ${HEIGHT + 26}`}
         className="h-auto w-full overflow-visible"
