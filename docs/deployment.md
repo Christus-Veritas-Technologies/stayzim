@@ -71,6 +71,29 @@ Cloudflare also sends:
 
 The API refuses to start in production without R2.
 
+### Paynow (online payments)
+
+Owners pay from Billing through Paynow:
+
+- EcoCash or OneMoney: a prompt on their phone;
+- InnBucks: a code for the app;
+- cards and the rest: Paynow's own page.
+
+Without Paynow set up, Billing shows only the merchant codes and "I have paid", and you record payments with `mark-paid`.
+
+1. In the Paynow merchant account, go to Receive Payments → New integration → "3rd party shopping cart or link". Note the **Integration ID** and **Integration Key**, which become `PAYNOW_INTEGRATION_ID` and `PAYNOW_INTEGRATION_KEY`.
+2. A new integration starts in **test mode**:
+   - Payments must use the merchant account's own email, so set `PAYNOW_AUTH_EMAIL` to it.
+   - Paynow's test phone numbers simulate success and failure.
+   - When Paynow approves the integration for live payments, empty `PAYNOW_AUTH_EMAIL`, so the owner's email is sent.
+3. Paynow calls back to `https://api.stayzim.co.zw/api/paynow/result`. The server sends this address with each payment, so there's nothing to enter in Paynow.
+4. **Check:** pay $1-worth in test mode from a demo lodge's Billing screen. The receipt email arrives, and the lodge becomes Active.
+
+**Invoices and receipts:**
+
+- The emails carry the issuer details from `STAYZIM_BUSINESS` in `apps/web/src/lib/billing.ts`. Fill in the registered business name and address before launch.
+- The billing job runs inside the server container every hour, so there's nothing to schedule.
+
 ## 3. Coolify
 
 Install Coolify on the VPS (Ubuntu 24.04, 2 vCPU, 4 GB RAM is plenty to start). Then:
@@ -104,6 +127,7 @@ Install Coolify on the VPS (Ubuntu 24.04, 2 vCPU, 4 GB RAM is plenty to start). 
 4. **Environment variables:**
    - Paste [`deploy/.env.example`](../deploy/.env.example) and fill it in.
    - Required: `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET` (`openssl rand -base64 32`), the `R2_*` settings, and `NEXT_PUBLIC_WHATSAPP_NUMBER`.
+   - For online payments: `PAYNOW_INTEGRATION_ID` and `PAYNOW_INTEGRATION_KEY` (above). SMTP matters more now: welcome emails, invoices and receipts go through it.
    - SMTP and Google are needed for reset emails and Google sign-in.
    - `NEXT_PUBLIC_*` values are baked in when the web image builds, so mark them as build variables, and redeploy after changing them.
 
@@ -124,7 +148,8 @@ bun scripts/seed-demos.ts --whatsapp 2637XXXXXXXX
 The scripts print temporary passwords.
 
 - Sign in at `https://app.stayzim.co.zw`, choose a password, and add photos to each demo lodge as its demo owner.
-- New lodges follow the same pattern: `create-owner`, then `cd /app/packages/db && bun scripts/create-lodge.ts …` (see the [README](../README.md)).
+- New lodges mostly sign up themselves at `https://stayzim.co.zw/signup`. For one you set up yourself: `create-owner`, then `cd /app/packages/db && bun scripts/create-lodge.ts …` (see the [README](../README.md)).
+- **Payments made outside Paynow:** `cd /app/apps/server && bun scripts/mark-paid.ts --slug mistvalley --months 1 --channel ecocash` records one and emails the receipt. Use `--list` to see every lodge and what it owes. `bun scripts/run-billing.ts` runs the hourly billing job straight away.
 - With the wildcard in place, a new lodge's site is live straight away. Nothing changes in DNS or Coolify.
 
 **Check after deploying:**
