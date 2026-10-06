@@ -1,14 +1,25 @@
 import { getSessionCookie } from "better-auth/cookies";
 import { NextResponse, type NextRequest } from "next/server";
 
-import { lodgeSlugFromHost, siteUrl } from "@/lib/site-host";
+import { slugForCustomDomain } from "@/lib/custom-domains";
+import { isStayZimHost, lodgeSlugFromHost, siteUrl } from "@/lib/site-host";
 
 const SIGNED_IN_ONLY = ["/dashboard", "/set-password", "/admin"];
 
+/** Shows a lodge's site: /sites/{slug} (lodge sites are one page; other paths 404 there). */
+function lodgeSite(request: NextRequest, slug: string) {
+  const url = request.nextUrl.clone();
+  url.pathname = request.nextUrl.pathname === "/" ? `/sites/${slug}` : `/sites/${slug}${request.nextUrl.pathname}`;
+  return NextResponse.rewrite(url);
+}
+
 /**
- * One Next.js app serves three things, told apart by the host:
+ * One Next.js app serves four things, told apart by the host:
  *
  * - {slug}.stayzim.co.zw: a lodge site, rewritten to /sites/{slug}.
+ * - A lodge's own domain (mistvalleylodge.co.zw, set with set-domain.ts): the
+ *   same, after asking the API which lodge it belongs to. Unknown domains get
+ *   the not-found page.
  * - stayzim.co.zw and app.stayzim.co.zw: the landing page, login and dashboard.
  *   Visitors without a session cookie are sent to /login before any dashboard
  *   code loads (the pages and the API still check the session themselves).
@@ -16,15 +27,16 @@ const SIGNED_IN_ONLY = ["/dashboard", "/set-password", "/admin"];
  * The session cookie is set by apps/server. It reaches this app because both run
  * on localhost in development, and share COOKIE_DOMAIN (.stayzim.co.zw) in production.
  */
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const slug = lodgeSlugFromHost(request.headers.get("host"));
+  const host = request.headers.get("host");
 
-  if (slug) {
-    // Lodge sites are one page; everything else on them is a 404 there
-    const url = request.nextUrl.clone();
-    url.pathname = pathname === "/" ? `/sites/${slug}` : `/sites/${slug}${pathname}`;
-    return NextResponse.rewrite(url);
+  const slug = lodgeSlugFromHost(host);
+  if (slug) return lodgeSite(request, slug);
+
+  if (!isStayZimHost(host)) {
+    // "-" is never a lodge, so an unknown domain shows the not-found page
+    return lodgeSite(request, (await slugForCustomDomain(host)) ?? "-");
   }
 
   // A lodge site opened by path on the main domain: send it to its own address

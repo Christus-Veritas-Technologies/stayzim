@@ -6,6 +6,7 @@ import { bookingUrl, withTemplate, type LiveSite } from "./site";
 const site: LiveSite = {
   status: "LIVE",
   slug: "mistvalley",
+  customDomain: null,
   name: "Mist Valley Lodge",
   template: "growth-classic",
   hero: { headline: "Mist Valley Lodge", subline: "A place to rest in Nyanga, Manicaland. Book direct on WhatsApp." },

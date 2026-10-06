@@ -43,6 +43,8 @@ export type LodgeStatus = "TRIAL" | "ACTIVE" | "OVERDUE" | "SUSPENDED";
 export type Lodge = {
   id: string;
   slug: string;
+  /** The lodge's own domain, e.g. "mistvalleylodge.co.zw", when StayZim has set one up */
+  customDomain: string | null;
   name: string;
   description: string;
   town: string | null;

@@ -10,6 +10,8 @@ export type PublicSite =
   | {
       status: "LIVE";
       slug: string;
+      /** The lodge's own domain: its canonical address when set */
+      customDomain: string | null;
       name: string;
       /** Template key from @stayzim/sites, already checked against the plan */
       template: string;

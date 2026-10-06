@@ -5,6 +5,7 @@ import { SiteTemplate } from "@/components/site/templates";
 import { SuspendedSite } from "@/components/site/site-states";
 import { lodgePlace } from "@/lib/lodge";
 import { getSite } from "@/lib/site";
+import { siteUrl } from "@/lib/site-host";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -17,7 +18,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: { absolute: place ? `${site.name} · ${place}` : site.name },
     description,
-    openGraph: { title: site.name, description, type: "website", images: site.heroUrl ? [{ url: site.heroUrl }] : undefined },
+    // One address for search engines: the lodge's own domain when it has one
+    alternates: { canonical: siteUrl(site) },
+    openGraph: { title: site.name, description, type: "website", url: siteUrl(site), images: site.heroUrl ? [{ url: site.heroUrl }] : undefined },
     other: { "theme-color": site.themeColor },
   };
 }

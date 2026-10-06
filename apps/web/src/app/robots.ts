@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
+import { normalizeDomain } from "@stayzim/sites";
 import { headers } from "next/headers";
 
+import { slugForCustomDomain } from "@/lib/custom-domains";
 import { lodgeSlugFromHost, MAIN_URL, siteUrl } from "@/lib/site-host";
 
 /**
@@ -9,9 +11,13 @@ import { lodgeSlugFromHost, MAIN_URL, siteUrl } from "@/lib/site-host";
  * and template previews are private (they're also marked noindex).
  */
 export default async function robots(): Promise<MetadataRoute.Robots> {
-  const slug = lodgeSlugFromHost((await headers()).get("host"));
-  if (slug) {
-    return { rules: { userAgent: "*", allow: "/" }, sitemap: `${siteUrl({ slug })}/sitemap.xml` };
+  const host = (await headers()).get("host");
+  const subdomain = lodgeSlugFromHost(host);
+  const ownDomain = subdomain ? null : await slugForCustomDomain(host);
+  const slug = subdomain ?? ownDomain;
+  const site = slug ? { slug, customDomain: ownDomain ? normalizeDomain(host) : null } : null;
+  if (site) {
+    return { rules: { userAgent: "*", allow: "/" }, sitemap: `${siteUrl(site)}/sitemap.xml` };
   }
   return {
     rules: {
