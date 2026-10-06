@@ -18,5 +18,9 @@ export default defineConfig({
     baseURL: process.env.E2E_BASE_URL ?? "http://localhost:9999",
     trace: "retain-on-failure",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    // Signs in once for every test that needs the dashboard (e2e/auth.setup.ts)
+    { name: "setup", testMatch: "**/*.setup.ts" },
+    { name: "chromium", use: { ...devices["Desktop Chrome"] }, dependencies: ["setup"] },
+  ],
 });

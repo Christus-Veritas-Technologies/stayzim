@@ -1,6 +1,10 @@
 # Browser tests
 
-Playwright smoke tests for the whole stack: the landing page, an owner signing in, and a lodge site. They run against apps that are already running, so start them first.
+Playwright tests for the whole stack:
+
+- `auth.setup.ts` signs the owner in through the login form once and saves the session (`e2e/.auth`, gitignored) for the tests that need the dashboard.
+- `smoke.e2e.ts` checks the landing page, the owner's rooms, and a lodge site's Book on WhatsApp links.
+- `mobile.e2e.ts` checks that public pages, a lodge site and every dashboard screen fit a 360px phone without scrolling sideways. They run against apps that are already running, so start them first.
 
 ```bash
 pnpm dev                          # web on 9999, API on 9998 (from the repo root)

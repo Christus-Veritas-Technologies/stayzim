@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { E2E, lodgeSiteUrl } from "./env";
+import { lodgeSiteUrl, OWNER_STATE } from "./env";
 
 test("the landing page shows the plans and the demo lodges", async ({ page }) => {
   await page.goto("/");
@@ -11,24 +11,14 @@ test("the landing page shows the plans and the demo lodges", async ({ page }) =>
   }
 });
 
-test("an owner signs in and sees their rooms", async ({ page }) => {
-  await page.goto("/login");
-  await page.getByLabel("Email").fill(E2E.email);
-  await page.getByLabel("Password", { exact: true }).fill(E2E.password);
-  await page.getByRole("button", { name: /log in|sign in/i }).click();
-  await page.waitForURL(/\/(dashboard|set-password)/);
+test.describe("signed in", () => {
+  test.use({ storageState: OWNER_STATE });
 
-  // A login made with create-owner starts on a temporary password
-  if (page.url().includes("/set-password")) {
-    await page.locator('input[name="password"]').fill(E2E.password);
-    await page.locator('input[name="confirm"]').fill(E2E.password);
-    await page.getByRole("button", { name: /save/i }).click();
-    await page.waitForURL(/\/dashboard/);
-  }
-
-  await page.goto("/dashboard/rooms");
-  await expect(page.getByRole("heading", { level: 1, name: /^Rooms/ })).toBeVisible();
-  await expect(page.getByRole("button", { name: /^Garden Cottage/ })).toBeVisible();
+  test("the owner sees their rooms", async ({ page }) => {
+    await page.goto("/dashboard/rooms");
+    await expect(page.getByRole("heading", { level: 1, name: /^Rooms/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Garden Cottage/ })).toBeVisible();
+  });
 });
 
 test("a lodge site lists its rooms with a Book on WhatsApp link for each", async ({ page }) => {

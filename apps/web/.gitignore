@@ -63,3 +63,4 @@ dev-dist
 /test-results
 /playwright-report
 /blob-report
+/e2e/.auth

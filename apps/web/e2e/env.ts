@@ -7,6 +7,9 @@ export const E2E = {
   lodge: process.env.E2E_LODGE ?? "mistvalley",
 };
 
+/** The signed-in owner's session, saved by auth.setup.ts */
+export const OWNER_STATE = "e2e/.auth/owner.json";
+
 /** http://mistvalley.localhost:9999 (Chromium sends *.localhost to this machine). */
 export function lodgeSiteUrl(slug = E2E.lodge) {
   const url = new URL(E2E.baseURL);
