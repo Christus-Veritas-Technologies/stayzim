@@ -13,7 +13,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
 import { useLodge } from "@/components/dashboard/lodge-provider";
-import { AddPhotosTile, UploadTile } from "@/components/dashboard/photo-tiles";
+import { AddPhotosTile, FullTile, UploadTile } from "@/components/dashboard/photo-tiles";
 import { usePhotoUploads } from "@/components/dashboard/use-photo-uploads";
 import { AMENITIES, AMENITIES_ON_CARD, AMENITY_KEYS, ROOM_PHOTO_LIMIT, type AmenityKey, type Lodge, type Room } from "@/lib/lodge";
 
@@ -248,9 +248,17 @@ export function RoomSheet({
                     <UploadTile key={item.id} item={item} compact onRetry={() => uploads.retry(item.id)} onDismiss={() => uploads.dismiss(item.id)} />
                   ))}
                 </AnimatePresence>
-                {slotsLeft > 0 ? <AddPhotosTile compact onFiles={addFiles} title="Add room photos" /> : null}
+                {slotsLeft > 0 ? (
+                  <AddPhotosTile compact onFiles={addFiles} title="Add room photos" />
+                ) : (
+                  <FullTile compact limit={ROOM_PHOTO_LIMIT} what="A room" />
+                )}
               </div>
-              <p className="text-xs text-muted-2">Photos are resized on your device before they upload. The first one is the cover.</p>
+              <p className="text-xs text-muted-2">
+                {slotsLeft > 0
+                  ? "Photos are resized on your device before they upload. The first one is the cover."
+                  : `A room holds up to ${ROOM_PHOTO_LIMIT} photos. Remove one to add another.`}
+              </p>
             </div>
           </SheetBody>
 

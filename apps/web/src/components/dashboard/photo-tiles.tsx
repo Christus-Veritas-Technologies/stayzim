@@ -4,7 +4,7 @@ import { Button } from "@stayzim/ui/components/button";
 import { ProgressRing } from "@stayzim/ui/components/progress";
 import { cn } from "@stayzim/ui/lib/utils";
 import { motion } from "framer-motion";
-import { CircleAlert, Clock, ImagePlus, RotateCcw, X } from "lucide-react";
+import { CircleAlert, CircleCheck, Clock, ImagePlus, RotateCcw, X } from "lucide-react";
 import { useRef, useState } from "react";
 
 import type { UploadItem } from "@/components/dashboard/use-photo-uploads";
@@ -168,6 +168,31 @@ export function AddPhotosTile({
           event.target.value = "";
         }}
       />
+    </motion.div>
+  );
+}
+
+/** Takes the Add tile's place once there's no room for more photos, and says why. */
+export function FullTile({ limit, what = "The gallery", compact = false }: { limit: number; what?: string; compact?: boolean }) {
+  return (
+    <motion.div layout initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col gap-2">
+      <div
+        className="flex aspect-[4/3] flex-col items-center justify-center gap-1.5 rounded-xl border-[1.5px] border-dashed border-line-2 bg-surface px-3 text-center"
+        title={compact ? `${what} holds up to ${limit} photos` : undefined}
+      >
+        <CircleCheck className="size-5 text-success" />
+        <span className={cn("font-semibold text-ink-2 tabular-nums", compact ? "text-[11.5px]" : "text-[13.5px]")}>
+          {limit} of {limit}
+        </span>
+      </div>
+      {compact ? null : (
+        <span className="flex flex-col">
+          <span className="text-[13.5px] font-semibold">{what} is full</span>
+          <span className="text-xs text-muted">
+            It holds up to {limit} photos. Delete one to add another.
+          </span>
+        </span>
+      )}
     </motion.div>
   );
 }

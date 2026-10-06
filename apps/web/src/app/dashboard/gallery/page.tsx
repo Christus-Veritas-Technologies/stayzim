@@ -19,8 +19,9 @@ import { toast } from "sonner";
 
 import { useLodge } from "@/components/dashboard/lodge-provider";
 import { Page, PageHeader, PageSection } from "@/components/dashboard/page";
-import { AddPhotosTile, UploadTile } from "@/components/dashboard/photo-tiles";
+import { AddPhotosTile, FullTile, UploadTile } from "@/components/dashboard/photo-tiles";
 import { usePhotoUploads } from "@/components/dashboard/use-photo-uploads";
+import { WhyDisabled } from "@/components/why-disabled";
 import { GALLERY_GOAL, type Photo } from "@/lib/lodge";
 
 const GALLERY_LIMIT = 30;
@@ -160,11 +161,13 @@ export default function GalleryPage() {
         count={lodge.gallery.length}
         description="Drag to reorder. The first photo is your hero unless you pick another."
         actions={
-          <Button onClick={() => picker.current?.click()} disabled={full}>
-            <Upload />
-            <span className="hidden sm:inline">Upload photos</span>
-            <span className="sm:hidden">Upload</span>
-          </Button>
+          <WhyDisabled reason={full ? `The gallery holds up to ${GALLERY_LIMIT} photos` : null}>
+            <Button onClick={() => picker.current?.click()} disabled={full}>
+              <Upload />
+              <span className="hidden sm:inline">Upload photos</span>
+              <span className="sm:hidden">Upload</span>
+            </Button>
+          </WhyDisabled>
         }
       />
       <input
@@ -317,11 +320,7 @@ export default function GalleryPage() {
             ))}
           </AnimatePresence>
 
-          {full ? null : (
-            <li>
-              <AddPhotosTile onFiles={uploads.add} />
-            </li>
-          )}
+          <li>{full ? <FullTile limit={GALLERY_LIMIT} /> : <AddPhotosTile onFiles={uploads.add} />}</li>
         </motion.ul>
         <p className="mt-5 hidden text-center text-[12.5px] text-muted-2 max-sm:block">
           <ImagePlus className="mr-1 inline size-3.5" />
