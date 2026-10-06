@@ -1,82 +1,107 @@
 "use client";
 
-import { Loader2, LogOut } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { buttonVariants } from "@stayzim/ui/components/button";
+import { CopyButton } from "@stayzim/ui/components/copy-button";
+import { ArrowUpRight } from "lucide-react";
+import { useState } from "react";
 
-import { Wordmark } from "@/components/landing/brand";
+import { useLodge } from "@/components/dashboard/lodge-provider";
+import { ActivityCard, RoomsSummaryCard } from "@/components/dashboard/overview-cards";
+import { Page, PageHeader, PageSection } from "@/components/dashboard/page";
+import { SetupChecklist } from "@/components/dashboard/setup-checklist";
+import { ShareCard, useShareLink } from "@/components/dashboard/share";
+import { PeriodTabs, StatCards, VisitsCard } from "@/components/dashboard/visit-stats";
+import { WhatsAppIcon } from "@/components/landing/brand";
 import { authClient } from "@/lib/auth-client";
+import { siteHost, siteUrl } from "@/lib/lodge";
+import { visitStats, type Period } from "@/lib/stats";
 
-/**
- * Placeholder owner dashboard: proves the session end to end. Lodge info,
- * rooms, gallery, analytics and billing come next (see docs/progress.md).
- */
-export default function DashboardPage() {
-  const router = useRouter();
-  const { data: session, isPending } = authClient.useSession();
-  const [signingOut, setSigningOut] = useState(false);
-
-  useEffect(() => {
-    if (isPending) return;
-    if (!session) router.replace("/login");
-    else if (session.user.mustChangePassword) router.replace("/set-password");
-  }, [isPending, router, session]);
-
-  async function signOut() {
-    setSigningOut(true);
-    await authClient.signOut();
-    router.replace("/login");
-  }
-
-  if (isPending || !session || session.user.mustChangePassword) {
-    return (
-      <div className="flex min-h-svh items-center justify-center bg-surface text-muted-2" role="status">
-        <Loader2 size={24} className="animate-spin" aria-hidden="true" />
-        <span className="sr-only">Loading your dashboard</span>
+/** Phones: the link, View site and Share, at the top where thumbs reach. */
+function MobileSiteCard() {
+  const { lodge } = useLodge();
+  const share = useShareLink();
+  return (
+    <div className="flex flex-col gap-2.5 rounded-[20px] bg-white p-3 shadow-card lg:hidden">
+      <div className="flex h-11 items-center gap-2 rounded-xl bg-surface pr-1 pl-3 text-[13.5px]">
+        <span className="size-[7px] shrink-0 rounded-full bg-success shadow-[0_0_0_3px_var(--color-success-wash)]" />
+        <span className="min-w-0 flex-1 truncate">{siteHost(lodge)}</span>
+        <CopyButton value={siteUrl(lodge)} size="sm" onCopied={share.markShared} copiedLabel="Copied">
+          Copy
+        </CopyButton>
       </div>
-    );
-  }
+      <div className="grid grid-cols-2 gap-2">
+        <a href={siteUrl(lodge)} target="_blank" rel="noreferrer" className={buttonVariants({ variant: "outline", size: "lg" })}>
+          View site
+          <ArrowUpRight />
+        </a>
+        <a
+          href={share.whatsappUrl()}
+          target="_blank"
+          rel="noreferrer"
+          onClick={share.markShared}
+          className={buttonVariants({ variant: "whatsapp", size: "lg" })}
+        >
+          <WhatsAppIcon size={17} />
+          Share
+        </a>
+      </div>
+    </div>
+  );
+}
 
-  const firstName = session.user.name.split(" ")[0] || session.user.name;
+export default function DashboardPage() {
+  const { lodge } = useLodge();
+  const { data: session } = authClient.useSession();
+  const [period, setPeriod] = useState<Period>("7d");
+  const stats = visitStats(period);
+  const firstName = session?.user.name.split(" ")[0] ?? "";
 
   return (
-    <div className="min-h-svh bg-surface">
-      <header className="border-b border-line bg-white">
-        <div className="mx-auto flex h-16 max-w-[720px] items-center justify-between px-4">
-          <Link href="/" className="text-xl text-brand no-underline" aria-label="StayZim home">
-            <Wordmark size={30} />
-          </Link>
-          <button
-            type="button"
-            onClick={signOut}
-            disabled={signingOut}
-            className="inline-flex h-12 items-center gap-2 rounded-md px-3 text-sm font-semibold text-muted hover:bg-surface hover:text-ink focus-visible:outline-2 focus-visible:outline-purple disabled:opacity-70"
-          >
-            {signingOut ? <Loader2 size={18} className="animate-spin" /> : <LogOut size={18} strokeWidth={1.5} />}
-            Log out
-          </button>
-        </div>
-      </header>
+    <Page>
+      <PageHeader
+        title={firstName ? `Hi, ${firstName}` : "Welcome"}
+        description={`Here is how ${lodge.name} is doing.`}
+        actions={<PeriodTabs value={period} onChange={setPeriod} className="hidden sm:flex" />}
+      />
 
-      <main className="mx-auto max-w-[720px] px-4 py-8">
-        <h1 className="font-display text-2xl leading-[30px] font-semibold tracking-[-0.02em]">Hi {firstName}</h1>
-        <p className="mt-1.5 text-muted">Signed in as {session.user.email}</p>
+      <PageSection className="lg:hidden">
+        <MobileSiteCard />
+      </PageSection>
 
-        <section className="mt-6 rounded-xl border border-line bg-white p-6">
-          <h2 className="font-display text-xl font-semibold">Your dashboard is on its way</h2>
-          <p className="mt-2 text-muted">
-            Soon you&apos;ll edit your lodge info, rooms and photos here, and see who visits your site. Until then, send
-            changes to us on WhatsApp and we&apos;ll make them for you.
-          </p>
-          <Link
-            href="/set-password"
-            className="mt-5 inline-flex h-12 items-center rounded-md border border-line-2 px-4 font-semibold text-ink hover:border-muted-2"
-          >
-            Change password
-          </Link>
-        </section>
-      </main>
-    </div>
+      <PageSection>
+        <SetupChecklist />
+      </PageSection>
+
+      <PageSection className="sm:hidden">
+        <PeriodTabs value={period} onChange={setPeriod} />
+      </PageSection>
+
+      <PageSection>
+        <StatCards stats={stats} period={period} />
+      </PageSection>
+
+      <PageSection className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+        <VisitsCard
+          stats={stats}
+          period={period}
+          empty={
+            <>
+              <strong className="block font-semibold text-ink">No visits counted yet</strong>
+              Visits show here once guests open {siteHost(lodge)}.
+            </>
+          }
+        />
+        <ShareCard className="hidden lg:flex" />
+      </PageSection>
+
+      <PageSection className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+        <RoomsSummaryCard />
+        <ActivityCard />
+      </PageSection>
+
+      <PageSection className="lg:hidden">
+        <ShareCard />
+      </PageSection>
+    </Page>
   );
 }
