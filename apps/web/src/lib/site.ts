@@ -45,7 +45,8 @@ export type LiveSite = Extract<PublicSite, { status: "LIVE" }>;
  * metadata share one fetch.
  */
 export const getSite = cache(async (slug: string): Promise<PublicSite | null> => {
-  const response = await fetch(`${env.NEXT_PUBLIC_SERVER_URL}/api/sites/${encodeURIComponent(slug)}`, { cache: "no-store" });
+  const api = env.SERVER_INTERNAL_URL ?? env.NEXT_PUBLIC_SERVER_URL;
+  const response = await fetch(`${api}/api/sites/${encodeURIComponent(slug)}`, { cache: "no-store" });
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(`Site ${slug} didn't load (${response.status})`);
   return (await response.json()) as PublicSite;
