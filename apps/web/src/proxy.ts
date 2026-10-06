@@ -23,7 +23,7 @@ export function proxy(request: NextRequest) {
   if (slug) {
     // Lodge sites are one page; everything else on them is a 404 there
     const url = request.nextUrl.clone();
-    url.pathname = pathname === "/" ? `/sites/${slug}` : `/sites/${slug}/missing`;
+    url.pathname = pathname === "/" ? `/sites/${slug}` : `/sites/${slug}${pathname}`;
     return NextResponse.rewrite(url);
   }
 
