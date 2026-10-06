@@ -13,6 +13,12 @@ import { GoogleSignIn } from "@/components/auth/google-button";
 import { AuthHeading, AuthSection, AuthShell, NewToStayZim } from "@/components/auth/shell";
 import { authClient, authErrorMessage, oauthErrorMessage } from "@/lib/auth-client";
 
+/** Where an account lands after logging in: its own password first, then the team's screens or the dashboard. */
+function homeFor(user: { mustChangePassword?: boolean | null; role?: string | null }) {
+  if (user.mustChangePassword) return "/set-password";
+  return user.role === "ADMIN" ? "/admin/requests" : "/dashboard";
+}
+
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
@@ -23,7 +29,7 @@ function LoginForm() {
 
   // Already logged in on this device (e.g. a bookmarked login page): skip the form
   useEffect(() => {
-    if (session) router.replace(session.user.mustChangePassword ? "/set-password" : "/dashboard");
+    if (session) router.replace(homeFor(session.user));
   }, [router, session]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -51,7 +57,7 @@ function LoginForm() {
       return;
     }
     // Accounts start with a temporary password; the owner picks their own first
-    router.replace(data.user.mustChangePassword ? "/set-password" : "/dashboard");
+    router.replace(homeFor(data.user));
   }
 
   if (session && pending === null) {
@@ -60,7 +66,7 @@ function LoginForm() {
         <AuthHeading title="You're logged in">
           <span className="inline-flex items-center gap-2">
             <Spinner className="size-4 text-brand" />
-            Opening your dashboard…
+            Opening StayZim…
           </span>
         </AuthHeading>
       </AuthShell>

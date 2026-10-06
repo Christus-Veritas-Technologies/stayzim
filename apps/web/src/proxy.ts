@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { lodgeSlugFromHost, siteUrl } from "@/lib/site-host";
 
-const SIGNED_IN_ONLY = ["/dashboard", "/set-password"];
+const SIGNED_IN_ONLY = ["/dashboard", "/set-password", "/admin"];
 
 /**
  * One Next.js app serves three things, told apart by the host:
