@@ -80,7 +80,7 @@ export default function DashboardPage() {
         <StatCards stats={stats} period={period} />
       </PageSection>
 
-      <PageSection className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <PageSection className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
         <VisitsCard
           stats={stats}
           period={period}
@@ -94,7 +94,7 @@ export default function DashboardPage() {
         <ShareCard className="hidden lg:flex" />
       </PageSection>
 
-      <PageSection className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <PageSection className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
         <RoomsSummaryCard />
         <ActivityCard />
       </PageSection>
