@@ -20,8 +20,18 @@ export const env = createEnv({
     // Leave unset on localhost.
     COOKIE_DOMAIN: z.string().min(1).optional(),
 
-    // Where lodge photos and logos are saved (apps/server). Relative paths are from the
-    // server's working directory. In Docker, mount a volume here so photos survive redeploys.
+    // Lodge photos and logos go to a Cloudflare R2 bucket (apps/server/src/lib/uploads.ts).
+    // Leave these unset in development to save them in UPLOAD_DIR instead; production refuses to start without R2.
+    R2_ACCOUNT_ID: z.string().min(1).optional(),
+    R2_ACCESS_KEY_ID: z.string().min(1).optional(),
+    R2_SECRET_ACCESS_KEY: z.string().min(1).optional(),
+    R2_BUCKET: z.string().min(1).optional(),
+    // Public URL of the bucket (its custom domain or r2.dev URL), e.g. https://media.stayzim.co.zw
+    R2_PUBLIC_URL: z
+      .url()
+      .optional()
+      .transform((value) => value?.replace(/\/+$/, "")),
+    // Development only, without R2: photos are saved here (relative to the server's working directory)
     UPLOAD_DIR: z.string().min(1).default("uploads"),
 
     // Email (packages/mail). Without SMTP_HOST, emails are printed to the console instead.

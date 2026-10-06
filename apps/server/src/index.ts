@@ -8,7 +8,7 @@ import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
 
 import { withSession, type AuthVariables } from "./lib/session";
-import { serveUpload } from "./lib/uploads";
+import { describeStorage, serveUpload } from "./lib/uploads";
 import { account } from "./routes/account";
 import { landing } from "./routes/landing";
 import { lodge } from "./routes/lodge";
@@ -37,7 +37,7 @@ app.get("/", (c) => {
   return c.text("OK");
 });
 
-// Lodge photos and logos (see lib/uploads.ts)
+// Lodge photos and logos, in development without R2 (see lib/uploads.ts)
 app.get("/uploads/*", async (c) => (await serveUpload(c.req.path)) ?? c.json({ error: "Not found" }, 404));
 
 // better-auth: sign in/out, session, password reset, ... (see packages/auth)
@@ -59,6 +59,8 @@ app.onError((err, c) => {
   console.error(err);
   return c.json({ error: "Internal server error" }, 500);
 });
+
+console.log(`[uploads] Lodge photos are stored in ${describeStorage()}`);
 
 // Surface a broken SMTP setup at boot, not when an owner is waiting for a reset link
 if (isMailConfigured()) {
