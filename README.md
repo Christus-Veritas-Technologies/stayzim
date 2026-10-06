@@ -5,6 +5,8 @@ Websites for Zimbabwean lodges, guesthouses and Airbnbs, where guests book direc
 - **What the project is and where it's going:** [docs/project.md](docs/project.md)
 - **What's built and what's next:** [docs/progress.md](docs/progress.md)
 - **How the code fits together:** [docs/architecture.md](docs/architecture.md)
+- **The lodge CMS (rooms, guest info, bookings):** [docs/cms/](docs/cms/README.md)
+- **Deploying:** [docs/deployment.md](docs/deployment.md)
 - **Sign-in and email:** [docs/auth.md](docs/auth.md)
 - **Outreach tool API:** [apps/outreach/API.md](apps/outreach/API.md)
 
