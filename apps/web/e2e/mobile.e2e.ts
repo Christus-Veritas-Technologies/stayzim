@@ -5,15 +5,30 @@ import { lodgeSiteUrl, OWNER_STATE } from "./env";
 // The narrowest phones in common use in Zimbabwe are 360px wide
 test.use({ ...devices["Galaxy S9+"], viewport: { width: 360, height: 740 } });
 
-/** Elements that stick out past the right edge, for a readable failure. */
+/**
+ * Empty when the page fits; otherwise the widths and the elements that stick out
+ * past the right edge (leaving out fixed bars and anything a parent clips), so a
+ * failure names the culprit.
+ */
 async function sideways(page: Page) {
   return page.evaluate(() => {
-    const width = document.documentElement.clientWidth;
-    if (document.documentElement.scrollWidth <= width) return [];
-    return [...document.body.querySelectorAll("*")]
-      .filter((element) => element.getBoundingClientRect().right > width + 1)
-      .slice(0, 5)
-      .map((element) => `${element.tagName.toLowerCase()}.${String(element.className).slice(0, 80)}`);
+    const root = document.documentElement;
+    const width = root.clientWidth;
+    if (root.scrollWidth <= width) return [];
+    const culprits = [...document.body.querySelectorAll("*")].filter((element) => {
+      const box = element.getBoundingClientRect();
+      if (box.right <= width + 1 || box.width === 0) return false;
+      for (let node: Element | null = element; node; node = node.parentElement) {
+        const style = getComputedStyle(node);
+        if (style.position === "fixed") return false;
+        if (node !== element && /hidden|clip|auto|scroll/.test(style.overflowX)) return false;
+      }
+      return true;
+    });
+    return [
+      `scrollWidth ${root.scrollWidth}, clientWidth ${width}, innerWidth ${window.innerWidth}`,
+      ...culprits.slice(0, 8).map((element) => `${element.tagName.toLowerCase()}.${String(element.className).slice(0, 100)} → ${Math.round(element.getBoundingClientRect().right)}px`),
+    ];
   });
 }
 
