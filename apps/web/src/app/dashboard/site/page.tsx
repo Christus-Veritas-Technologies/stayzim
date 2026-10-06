@@ -31,6 +31,7 @@ import { toast } from "sonner";
 import { FormSection, type SectionState } from "@/components/dashboard/form-section";
 import { useLodge } from "@/components/dashboard/lodge-provider";
 import { MapPreview } from "@/components/dashboard/map-preview";
+import { WebAddress } from "@/components/dashboard/web-address";
 import { Page, PageHeader, PageSection } from "@/components/dashboard/page";
 import { RequestChangeHint } from "@/components/dashboard/request-change-hint";
 import { SitePreview } from "@/components/dashboard/site-preview";
@@ -241,6 +242,10 @@ export default function LodgeInfoPage() {
           </motion.div>
         ) : null}
       </AnimatePresence>
+
+      <PageSection>
+        <WebAddress lodge={lodge} />
+      </PageSection>
 
       <PageSection className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         {/* Locked while saving, so nothing typed meanwhile is lost when the saved copy comes back */}
