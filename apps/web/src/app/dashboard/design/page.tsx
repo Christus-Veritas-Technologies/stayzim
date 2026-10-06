@@ -29,6 +29,7 @@ import { toast } from "sonner";
 
 import { useLodge } from "@/components/dashboard/lodge-provider";
 import { Page, PageHeader, PageSection } from "@/components/dashboard/page";
+import { RequestChangeHint } from "@/components/dashboard/request-change-hint";
 import { SitePreview } from "@/components/dashboard/site-preview";
 import { TemplateThumb } from "@/components/dashboard/template-thumb";
 import { WhatsAppIcon } from "@/components/landing/brand";
@@ -106,6 +107,7 @@ export default function DesignPage() {
         {PLAN_ORDER.map((plan) => (
           <TemplateGroup key={plan} plan={plan} lodge={lodge} liveKey={live.key} onPreview={setPreviewing} />
         ))}
+        <RequestChangeHint className="px-1" />
       </PageSection>
 
       <PreviewSheet lodge={lodge} template={previewing} liveKey={live.key} onClose={() => setPreviewing(null)} />

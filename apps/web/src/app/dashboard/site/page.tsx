@@ -32,6 +32,7 @@ import { FormSection, type SectionState } from "@/components/dashboard/form-sect
 import { useLodge } from "@/components/dashboard/lodge-provider";
 import { MapPreview } from "@/components/dashboard/map-preview";
 import { Page, PageHeader, PageSection } from "@/components/dashboard/page";
+import { RequestChangeHint } from "@/components/dashboard/request-change-hint";
 import { SitePreview } from "@/components/dashboard/site-preview";
 import { WhatsAppIcon } from "@/components/landing/brand";
 import { WhyDisabled } from "@/components/why-disabled";
@@ -454,6 +455,7 @@ export default function LodgeInfoPage() {
               </FormSection>
             </TabsPanel>
           </Tabs>
+          <RequestChangeHint className="mt-5 px-1" />
         </fieldset>
 
         <aside className="sticky top-20 hidden flex-col gap-3 xl:flex">

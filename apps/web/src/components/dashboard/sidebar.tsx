@@ -7,7 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@stayzim/ui
 import { Tooltip, TooltipContent, TooltipTrigger } from "@stayzim/ui/components/tooltip";
 import { cn } from "@stayzim/ui/lib/utils";
 import { motion } from "framer-motion";
-import { ChevronDown, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { ChevronDown, LogOut, MessageSquarePlus, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -183,18 +183,16 @@ export function Sidebar({
             <Tooltip>
               <TooltipTrigger
                 render={
-                  <a
-                    href={whatsappUrl("help")}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label="Message us on WhatsApp"
-                    className="flex size-9 items-center justify-center rounded-full bg-whatsapp transition-transform hover:scale-105"
+                  <Link
+                    href="/dashboard/requests"
+                    aria-label="Request a change"
+                    className="flex size-9 items-center justify-center rounded-full bg-primary text-white shadow-brand transition-transform hover:scale-105"
                   />
                 }
               >
-                <WhatsAppIcon size={17} />
+                <MessageSquarePlus className="size-[17px]" />
               </TooltipTrigger>
-              <TooltipContent side="right">Need a change? Message us</TooltipContent>
+              <TooltipContent side="right">Need a change? Request it</TooltipContent>
             </Tooltip>
             {toggle}
           </>
@@ -207,14 +205,18 @@ export function Sidebar({
                 <span className="text-xs text-muted">We can edit anything for you</span>
               </span>
             </div>
+            <Link href="/dashboard/requests" className={buttonVariants({ size: "sm", className: "w-full" })}>
+              <MessageSquarePlus />
+              Request a change
+            </Link>
             <a
               href={whatsappUrl("help")}
               target="_blank"
               rel="noreferrer"
-              className={buttonVariants({ variant: "whatsapp", size: "sm", className: "w-full" })}
+              className="-mt-1 inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-muted transition-colors hover:text-ink"
             >
-              <WhatsAppIcon size={15} />
-              Message us
+              <WhatsAppIcon size={13} color="#1F7A4D" />
+              Or message us on WhatsApp
             </a>
           </div>
         )}
