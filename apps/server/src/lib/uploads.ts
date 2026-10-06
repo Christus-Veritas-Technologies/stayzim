@@ -130,6 +130,11 @@ export async function serveUpload(requestPath: string) {
   const file = Bun.file(target);
   if (!(await file.exists())) return null;
   return new Response(file, {
-    headers: { "Content-Type": file.type, "Cache-Control": "public, max-age=31536000, immutable" },
+    headers: {
+      "Content-Type": file.type,
+      "Cache-Control": "public, max-age=31536000, immutable",
+      "Cross-Origin-Resource-Policy": "cross-origin",
+      "X-Content-Type-Options": "nosniff",
+    },
   });
 }

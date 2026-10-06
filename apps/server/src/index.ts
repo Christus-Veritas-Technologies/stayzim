@@ -18,6 +18,10 @@ import { sites } from "./routes/sites";
 const app = new Hono<{ Variables: AuthVariables }>();
 
 app.use(logger());
+
+// Lodge photos and logos, in development without R2 (see lib/uploads.ts). Before
+// secureHeaders: they're public and shown on every lodge subdomain.
+app.get("/uploads/*", async (c) => (await serveUpload(c.req.path)) ?? c.json({ error: "Not found" }, 404));
 app.use(
   secureHeaders({
     // Lodge photos are shown on app. and {slug}.stayzim.co.zw, which share a site with api.
@@ -39,9 +43,6 @@ app.use(
 app.get("/", (c) => {
   return c.text("OK");
 });
-
-// Lodge photos and logos, in development without R2 (see lib/uploads.ts)
-app.get("/uploads/*", async (c) => (await serveUpload(c.req.path)) ?? c.json({ error: "Not found" }, 404));
 
 // better-auth: sign in/out, session, password reset, ... (see packages/auth)
 app.on(["GET", "POST"], "/api/auth/*", (c) => auth.handler(c.req.raw));
