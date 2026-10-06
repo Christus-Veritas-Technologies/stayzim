@@ -1,7 +1,6 @@
-import { env } from "@/lib/public-env";
+import { RESERVED_SLUGS } from "@stayzim/sites";
 
-/** Our own subdomains, never a lodge. Mirrored in apps/server/src/lib/sites.ts. */
-const RESERVED = new Set(["www", "app", "api", "admin", "mail", "media", "outreach", "help", "status", "demo", "sites"]);
+import { env } from "@/lib/public-env";
 
 /** Lodge sites live at {slug}.stayzim.co.zw (localhost:9999 in development). */
 export const SITES_DOMAIN = env.NEXT_PUBLIC_SITES_DOMAIN.toLowerCase();
@@ -38,7 +37,7 @@ export function lodgeSlugFromHost(host: string | null) {
   const value = host?.toLowerCase() ?? "";
   if (!value.endsWith(SUFFIX)) return null;
   const slug = value.slice(0, -SUFFIX.length);
-  if (!/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(slug) || RESERVED.has(slug)) return null;
+  if (!/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(slug) || RESERVED_SLUGS.has(slug)) return null;
   return slug;
 }
 

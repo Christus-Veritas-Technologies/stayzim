@@ -1,9 +1,6 @@
 import prisma from "@stayzim/db";
 import { env } from "@stayzim/env/server";
-import { normalizeDomain } from "@stayzim/sites";
-
-/** Subdomains of SITES_DOMAIN that are StayZim's own, never a lodge. Mirrored in packages/db/scripts/create-lodge.ts. */
-export const RESERVED_SUBDOMAINS = new Set(["www", "app", "api", "admin", "mail", "media", "outreach", "help", "status", "demo", "sites"]);
+import { normalizeDomain, RESERVED_SLUGS } from "@stayzim/sites";
 
 const escaped = env.SITES_DOMAIN.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const SITE_ORIGIN = new RegExp(`^https?://([a-z0-9](?:[a-z0-9-]*[a-z0-9])?)\\.${escaped}$`, "i");
@@ -12,7 +9,7 @@ const SITE_ORIGIN = new RegExp(`^https?://([a-z0-9](?:[a-z0-9-]*[a-z0-9])?)\\.${
 export function lodgeSlugFromOrigin(origin: string | undefined | null) {
   const match = origin?.match(SITE_ORIGIN);
   const slug = match?.[1]?.toLowerCase();
-  return slug && !RESERVED_SUBDOMAINS.has(slug) ? slug : null;
+  return slug && !RESERVED_SLUGS.has(slug) ? slug : null;
 }
 
 export function isLodgeSiteOrigin(origin: string | undefined | null) {
