@@ -1,0 +1,104 @@
+// Billing: invoices, payments (Paynow or recorded by StayZim) and the emails
+// sent about them. The rules (prices, dates) live in packages/sites; the work in
+// apps/server/src/lib/billing.ts and the hourly job in apps/server/src/jobs/billing.ts.
+
+enum InvoiceStatus {
+  OPEN
+  PAID
+  /// Replaced or no longer owed (e.g. a demo that was deleted)
+  VOID
+}
+
+enum PaymentMethod {
+  /// Paid online through Paynow (EcoCash, InnBucks, OneMoney, card…)
+  PAYNOW
+  /// Paid another way and recorded by StayZim (scripts/mark-paid.ts)
+  MANUAL
+}
+
+enum PaymentStatus {
+  /// Started on Paynow, waiting for the owner to approve it
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+}
+
+/// What a lodge owes for one period. Made when a demo starts (its first month)
+/// and 3 days before each paid period ends.
+model Invoice {
+  id          String        @id @default(cuid())
+  /// "SZ-2026-00042": printed on the invoice and in emails
+  number      String        @unique
+  lodgeId     String        @map("lodge_id")
+  lodge       Lodge         @relation(fields: [lodgeId], references: [id], onDelete: Cascade)
+  plan        LodgePlan
+  amountCents Int           @map("amount_cents")
+  currency    String        @default("USD")
+  periodStart DateTime      @map("period_start")
+  periodEnd   DateTime      @map("period_end")
+  dueAt       DateTime      @map("due_at")
+  status      InvoiceStatus @default(OPEN)
+  paidAt      DateTime?     @map("paid_at")
+  payments    Payment[]
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  @@index([lodgeId, status])
+  @@map("invoice")
+}
+
+/// A payment, started on Paynow or recorded by StayZim. A paid one has a receipt number.
+model Payment {
+  id              String        @id @default(cuid())
+  lodgeId         String        @map("lodge_id")
+  lodge           Lodge         @relation(fields: [lodgeId], references: [id], onDelete: Cascade)
+  invoiceId       String?       @map("invoice_id")
+  invoice         Invoice?      @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  /// The plan paid for; the lodge moves to it when the payment goes through
+  plan            LodgePlan
+  months          Int
+  amountCents     Int           @map("amount_cents")
+  method          PaymentMethod
+  /// ecocash, innbucks, onemoney or web (Paynow's page) for Paynow; cash, bank, ecocash… for manual ones
+  channel         String
+  /// Our reference, sent to Paynow and shown to the owner
+  reference       String        @unique
+  /// Paynow's own reference, once it has one
+  paynowReference String?       @map("paynow_reference")
+  /// Where to ask Paynow how the payment is going
+  pollUrl         String?       @map("poll_url")
+  /// The mobile money number a prompt went to
+  phone           String?
+  status          PaymentStatus @default(PENDING)
+  /// "R-2026-00007", once paid
+  receiptNumber   String?       @unique @map("receipt_number")
+  /// For manual payments: who recorded it and how
+  note            String?
+  paidAt          DateTime?     @map("paid_at")
+  lastPolledAt    DateTime?     @map("last_polled_at")
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  @@index([lodgeId, createdAt])
+  @@index([status])
+  @@map("payment")
+}
+
+/// Every billing email sent, by a key that names what it was about (e.g.
+/// "invoice:<id>:DUE_IN_1"), so the job never sends the same one twice.
+model BillingNotice {
+  key     String   @id
+  lodgeId String   @map("lodge_id")
+  kind    String
+  sentAt  DateTime @default(now()) @map("sent_at")
+
+  @@index([lodgeId])
+  @@map("billing_notice")
+}
+
+/// Running numbers for invoices and receipts, per year ("invoice-2026").
+model BillingCounter {
+  name  String @id
+  value Int
+
+  @@map("billing_counter")
+}

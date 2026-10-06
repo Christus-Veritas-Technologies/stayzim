@@ -69,6 +69,17 @@ export const env = createEnv({
     SMTP_PASS: z.string().min(1).optional(),
     // e.g. "StayZim <hello@stayzim.co.zw>"; defaults to SMTP_USER
     SMTP_FROM: z.string().min(1).optional(),
+
+    // Paynow (apps/server/src/lib/paynow.ts). Without both, owners pay the manual
+    // way (EcoCash or InnBucks merchant codes, then "I have paid") and StayZim
+    // records it with mark-paid.
+    PAYNOW_INTEGRATION_ID: z.string().min(1).optional(),
+    PAYNOW_INTEGRATION_KEY: z.string().min(1).optional(),
+    // In Paynow's test mode, payments must use the merchant account's email.
+    // Leave empty in live mode: the owner's email is sent.
+    PAYNOW_AUTH_EMAIL: z.email().optional(),
+    // Tests only: a stand-in for https://www.paynow.co.zw
+    PAYNOW_API_URL: z.url().default("https://www.paynow.co.zw"),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,

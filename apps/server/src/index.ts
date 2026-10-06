@@ -16,6 +16,7 @@ import { admin } from "./routes/admin";
 import { landing } from "./routes/landing";
 import { lodge } from "./routes/lodge";
 import { onboarding } from "./routes/onboarding";
+import { paynow } from "./routes/paynow";
 import { sites } from "./routes/sites";
 
 const app = new Hono<{ Variables: AuthVariables }>();
@@ -69,6 +70,8 @@ app.on(["GET", "POST"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
 app.route("/api/landing", landing);
 
+// Paynow tells us about payments here (no session: it's Paynow calling)
+app.route("/api/paynow", paynow);
 app.use("/api/onboarding/*", withSession);
 app.route("/api/onboarding", onboarding);
 app.use("/api/account/*", withSession);

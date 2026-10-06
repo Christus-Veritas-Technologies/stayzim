@@ -10,6 +10,7 @@ import { coordinatesFromMapsUrl } from "../lib/maps";
 import { requireAuth, withSession } from "../lib/session";
 import { MAX_UPLOAD_BYTES, removeUploads, saveImage } from "../lib/uploads";
 import { validJson } from "../lib/validate";
+import { billing } from "./billing";
 import { photos } from "./photos";
 import { requests } from "./requests";
 import { rooms } from "./rooms";
@@ -114,6 +115,7 @@ export const lodge = new Hono<{ Variables: LodgeVariables }>()
     return c.json(await lodgeJson(lodgeId));
   })
 
+  .route("/billing", billing)
   .route("/rooms", rooms)
   .route("/photos", photos)
   .route("/requests", requests)

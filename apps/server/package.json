@@ -8,7 +8,9 @@
     "compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server",
     "dev": "bun run --hot src/index.ts",
     "start": "bun run dist/index.mjs",
-    "test": "bun test"
+    "test": "bun test",
+    "mark-paid": "bun --env-file=.env scripts/mark-paid.ts",
+    "run-billing": "bun --env-file=.env scripts/run-billing.ts"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.9.1",

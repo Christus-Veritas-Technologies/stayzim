@@ -22,65 +22,67 @@ enum LodgeStatus {
 }
 
 model Lodge {
-  id          String      @id @default(cuid())
+  id           String  @id @default(cuid())
   /// Subdomain, e.g. "mistvalley" for mistvalley.stayzim.co.zw. Also the payment reference.
-  slug        String      @unique
+  slug         String  @unique
   /// The lodge's own domain, e.g. "mistvalleylodge.co.zw" (lowercase, no "www."). Its site answers
   /// there as well as on the subdomain. Set by StayZim with scripts/set-domain.ts.
-  customDomain String?    @unique @map("custom_domain")
-  name        String
+  customDomain String? @unique @map("custom_domain")
+  name         String
   /// Short intro at the top of the site
-  description String      @default("")
+  description  String  @default("")
   /// e.g. "Nyanga"
-  town        String?
+  town         String?
   /// e.g. "Manicaland"
-  region      String?
+  region       String?
 
   /// Digits only with country code, e.g. 263771234567. Every Book on WhatsApp button opens this chat.
-  whatsapp    String?
+  whatsapp String?
   /// Digits only with country code, for guests who prefer to call
-  phone       String?
-  email       String?
+  phone    String?
+  email    String?
 
   /// The share link from Google Maps, as pasted
-  mapsUrl     String?     @map("maps_url")
-  latitude    Float?
-  longitude   Float?
+  mapsUrl   String? @map("maps_url")
+  latitude  Float?
+  longitude Float?
 
   /// Site template key from @stayzim/sites. Null: the plan's default.
-  template     String?    @map("template")
+  template     String? @map("template")
   /// The owner's own hero text. Null: the template's default copy.
-  heroHeadline String?    @map("hero_headline")
-  heroSubline  String?    @map("hero_subline")
+  heroHeadline String? @map("hero_headline")
+  heroSubline  String? @map("hero_subline")
 
   /// Headings, prices and links on the site, e.g. Highland #1E4A3B. The WhatsApp button stays green.
-  themeColor  String      @default("#1E4A3B") @map("theme_color")
+  themeColor  String  @default("#1E4A3B") @map("theme_color")
   /// Path under the upload directory, like Photo.key
-  logoKey     String?     @map("logo_key")
+  logoKey     String? @map("logo_key")
   /// The big photo at the top of the site. Defaults to the first gallery photo.
-  heroPhotoId String?     @unique @map("hero_photo_id")
-  heroPhoto   Photo?      @relation("LodgeHero", fields: [heroPhotoId], references: [id], onDelete: SetNull)
+  heroPhotoId String? @unique @map("hero_photo_id")
+  heroPhoto   Photo?  @relation("LodgeHero", fields: [heroPhotoId], references: [id], onDelete: SetNull)
 
-  plan        LodgePlan   @default(GROWTH)
-  status      LodgeStatus @default(DEMO)
+  plan       LodgePlan   @default(GROWTH)
+  status     LodgeStatus @default(DEMO)
   /// When a demo's site goes offline (DEMO only; cleared once paid)
-  demoEndsAt  DateTime?   @map("demo_ends_at")
+  demoEndsAt DateTime?   @map("demo_ends_at")
   /// End of the period the last payment covers
-  paidUntil   DateTime?   @map("paid_until")
+  paidUntil  DateTime?   @map("paid_until")
 
   /// Set the first time the owner copies or shares their link (setup checklist)
-  linkSharedAt DateTime?  @map("link_shared_at")
+  linkSharedAt DateTime? @map("link_shared_at")
 
-  ownerId     String      @unique @map("owner_id")
-  owner       User        @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  ownerId String @unique @map("owner_id")
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Restrict)
 
-  rooms       Room[]
-  photos      Photo[]     @relation("LodgePhotos")
-  events      SiteEvent[]
-  requests    ChangeRequest[]
+  rooms    Room[]
+  photos   Photo[]         @relation("LodgePhotos")
+  events   SiteEvent[]
+  requests ChangeRequest[]
+  invoices Invoice[]
+  payments Payment[]
 
-  createdAt   DateTime    @default(now()) @map("created_at")
-  updatedAt   DateTime    @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("lodge")
 }
@@ -108,27 +110,27 @@ model Room {
 
 /// A photo on the lodge site. In the gallery when `roomId` is null, on a room's card otherwise.
 model Photo {
-  id        String   @id @default(cuid())
-  lodgeId   String   @map("lodge_id")
-  lodge     Lodge    @relation("LodgePhotos", fields: [lodgeId], references: [id], onDelete: Cascade)
-  roomId    String?  @map("room_id")
-  room      Room?    @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  heroOf    Lodge?   @relation("LodgeHero")
+  id      String  @id @default(cuid())
+  lodgeId String  @map("lodge_id")
+  lodge   Lodge   @relation("LodgePhotos", fields: [lodgeId], references: [id], onDelete: Cascade)
+  roomId  String? @map("room_id")
+  room    Room?   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  heroOf  Lodge?  @relation("LodgeHero")
 
   /// Path under the upload directory, e.g. "lodges/<lodgeId>/<id>.jpg"
-  key       String   @unique
+  key       String  @unique
   /// Smaller copies made on the owner's phone with the full one, so lodge sites send phones what
   /// they need: at most 1280px (full-width on phones) and 640px (thumbnails) on the longest side,
   /// e.g. "lodges/<lodgeId>/<id>-md.jpg". Null for photos already that small, and older uploads.
-  mediumKey String?  @map("medium_key")
-  smallKey  String?  @map("small_key")
+  mediumKey String? @map("medium_key")
+  smallKey  String? @map("small_key")
   width     Int
   height    Int
   /// Bytes, after resizing on the owner's phone
   size      Int
-  caption   String   @default("")
+  caption   String  @default("")
   /// Order in the gallery or on the room, from 0
-  position  Int      @default(0)
+  position  Int     @default(0)
 
   createdAt DateTime @default(now()) @map("created_at")
 
