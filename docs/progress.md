@@ -2,7 +2,7 @@
 
 _What's built, what's next, and what's blocking. Update this file whenever a piece of work lands. For what StayZim is and why, see [project.md](project.md)._
 
-**Last updated:** 6 October 2026
+**Last updated:** 6 October 2026 (night)
 
 ## At a glance
 
@@ -18,16 +18,20 @@ _What's built, what's next, and what's blocking. Update this file whenever a pie
 | Owner dashboard (overview, lodge info, rooms, gallery, design, requests) | ✅ Built |
 | Photo storage (Cloudflare R2) | ✅ Built, needs R2 credentials |
 | Shared UI components (packages/ui) | ✅ Built |
-| Lodge sites ({slug}.stayzim.co.zw) | ✅ Rendering, subdomain routing, tracking, suspended and 404 pages, template preview route |
-| Site templates (9, 3 per plan) | 🟡 Catalog, plan rules, Design screen and preview done. Only Classic has a real design; 8 placeholders wait for the design files |
+| Lodge sites ({slug}.stayzim.co.zw) | ✅ Rendering, subdomain routing, tracking, suspended and 404 pages, template preview route, robots and sitemap |
+| Custom domains per lodge | ✅ `set-domain` script, routing, CORS, canonical URLs and the dashboard address card; DNS and TLS steps in deployment.md |
+| Site templates (9, 3 per plan) | 🟡 Catalog, plan rules, Design screen and preview done. Only Classic has a real design; the 8 placeholders stay untouched until the user's designer delivers |
 | Change requests | ✅ Owner screen, team screen (`/admin/requests`), API and script |
-| Owner analytics | 🟡 Live numbers, chart, countries, latest visits and activity. The visits table still needs filters, pages and a 90-day period |
+| Owner analytics | ✅ Live numbers, chart, countries, activity, and the visits table (filters, pages, each visit's path, 90 days) |
+| Booking calendar | ⏸ Skipped for now at the user's request |
 | Billing screen | ✅ Built, payment details are placeholders |
 | Shared states (suspended, 404, errors, locked features, offline) | ✅ Built |
 | UX pass (back, loading, pending, disabled, unsaved changes, offline) | ✅ Built |
 | Mobile app (apps/native) | ⬜ Scaffold only. Out of scope for now: work on web and server only |
-| Docker images (server, web, outreach) | ✅ Written, not yet built in Docker |
-| Deployment | ⬜ Not started |
+| Database migrations | ✅ Prisma migrations, applied on container start |
+| Tests and CI | ✅ Unit tests (`pnpm test`), Playwright browser tests, GitHub Actions |
+| Docker images (server, web) | ✅ Built and run with `deploy/compose.yaml` against Postgres and a test S3 server |
+| Deployment | 🟡 Kit and guide ready (`deploy/`, [deployment.md](deployment.md)); needs the VPS, Coolify, Cloudflare and credentials |
 
 ## MVP checklist
 
@@ -76,14 +80,14 @@ Story IDs refer to the designer brief.
 
 - [x] S1–S7 Hero, rooms with a pre-filled Book on WhatsApp per room, gallery with lightbox, map embed, contact, sticky booking button on phones ("Classic" template)
 - [x] S8 Visit tracking: page views and Book on WhatsApp taps (`site_event`), owner and staff visits skipped
-- [ ] S9 Under 1.5 MB: not measured yet (server-rendered; photos are lazy and resized to 1600px)
+- [x] S9 Under 1.5 MB: about 1.36 MB on a phone with realistic photos (smaller copies, `srcset`, lazy carousels)
 - [x] Templates: 9 in the catalog, plan rules, preview route, Starter templates completely still
-- [ ] Real designs for the 8 placeholder templates (waiting on the design files)
+- [ ] Real designs for the 8 placeholder templates (waiting on the user's designer; don't touch the placeholders until then)
 
 ### Analytics (Screen 5) and Billing (Screen 6)
 
 - [x] N1–N2 Totals, chart, countries and the latest 10 visits (`/api/lodge/stats`, `/visits`, `/activity`)
-- [ ] Visits table: filters (Zimbabwe, outside Zimbabwe, device, booking chat), Previous/Next pages, a list on phones, a 90-day period
+- [x] Visits table: filters (Zimbabwe, outside Zimbabwe, device, page, booking chat), sorting, numbered pages, each visit's path, a list on phones, a 90-day period
 - [x] N3 Locked preview for Starter, with an upgrade button (and an upgrade card on the overview)
 - [x] N4 Empty state with Copy link and Share on WhatsApp
 - [x] N5 Owner visits excluded (server skips events from the owner's or an admin's session; works in production where cookies are shared on .stayzim.co.zw)
@@ -100,73 +104,87 @@ Story IDs refer to the designer brief.
 
 ## Next up
 
-Tiers 1–3 of the remaining work are done. What's left, roughly easiest first:
+Everything that could be done without the user is done. What's left needs them (see [Blocked on](#blocked-on--needs-a-decision)):
 
-1. **Analytics visits table:** filters, Previous/Next pages ("Total N visits"), a list on phones, and a 90-day period (the API already supports all of it).
-2. **Test with the real services** once the credentials arrive: R2 uploads, Google sign-in, reset emails over SMTP, and visit tracking behind Cloudflare (countries).
-3. **Demo lodge sites** with real photos and content, the sales WhatsApp number and the payment details.
-4. **Page weight (S9):** measure a lodge site against 1.5 MB.
-5. **Tests:** unit tests for `@stayzim/sites` and the server routes, and a Playwright smoke test (login → dashboard → lodge site).
+1. **Credentials,** then test with the real services: R2 uploads, Google sign-in, reset emails over SMTP, and visits behind Cloudflare (countries).
+2. **Deploy** with [deployment.md](deployment.md): VPS, Coolify, Cloudflare DNS and the origin certificate.
+3. **Demo lodges:** run `seed-demos` with the sales number, then add real photos as each demo owner.
+4. **Real template designs** for the 8 placeholders, when the designer delivers. Leave `basic.tsx` and `looks.ts` alone until then.
+5. **Booking calendar** (skipped for now).
 6. **Real devices:** iOS Safari and Android Chrome.
-7. **Real template designs,** when the user adds the design files to `designs/`.
-8. **Deployment on Coolify,** migrations instead of `db push`, backups and monitoring. Notes below.
 
-## Handoff (6 October 2026, evening)
+## Handoff (6 October 2026, night)
 
-Written at the end of a session so the next agent can continue. Everything listed as done is committed and pushed on `main`, and type-checks (`tsc` in apps/web, `pnpm --filter server check-types`).
+Written at the end of a session so the next agent can continue. Everything is committed and pushed on `main`. `pnpm check-types` and `pnpm test` pass, and CI runs both, plus browser tests against Postgres.
 
 The user's rules:
 
 - Work on `main` (no separate branches), one commit per small task, and never add a Co-Authored-By line, even when a tool suggests one.
 - Add subtle framer-motion animations wherever they fit, all off with "reduce motion".
 - Web and server only; ignore apps/native.
+- **Don't touch the 8 placeholder templates** (`templates/basic.tsx`, `looks.ts`) until the user's designer delivers.
+- **The booking calendar is skipped** for now.
 
 ### Local setup that differs from the examples
 
 - **Sites domain:**
   - `apps/server/.env` has `SITES_DOMAIN=localhost:9999` and `apps/web/.env` has `NEXT_PUBLIC_SITES_DOMAIN=localhost:9999`.
   - Lodge sites open at `http://{slug}.localhost:9999` (Chrome resolves `*.localhost`).
-- **Test owner:** `rudo@mistvalley.test`, with lodge `mistvalley`. Reset its password with `pnpm --filter @stayzim/auth create-owner --email rudo@mistvalley.test --reset`.
-- **Team account:** make one with `create-owner … --admin` to use `/admin/requests`.
+- **Logins:**
+  - Test owner `rudo@mistvalley.test` (lodge `mistvalley`, with the test custom domain `mistvalleylodge.test`).
+  - Demo owners `msasaridge@demo.stayzim.co.zw` and `lakeview@demo.stayzim.co.zw` (made by `seed-demos`).
+  - Reset any of them with `create-owner --email … --reset`. Team account: `create-owner … --admin`.
+- **Sign-in limits** are in the `rate_limit` table and survive restarts. Clear them locally with `DELETE FROM rate_limit;` if tests keep signing in.
 - **Photos** are on local disk (`apps/server/uploads`), because R2 isn't configured locally.
 - **Agent files:** the root `AGENTS.md` (written by turbo) is committed. `next dev` also writes `apps/web/AGENTS.md` and `CLAUDE.md`; they're untracked, so leave them out of commits unless the user asks.
 
-### Built this session
+### Built this session (tiers 4 and 5)
 
-Each of these is its own commit on `main`; the architecture doc has the details.
+Each of these is its own commit on `main`; the architecture doc, the README and deployment.md have the details.
 
-- **Tier 1:**
-  - `pnpm install` works without `DATABASE_URL`.
-  - Starter templates are completely still.
-  - Logged-in visitors skip `/login`.
-  - Branded 404, and error screens with Try again.
-  - Disabled controls explain themselves (`WhyDisabled`): "No changes to save" and the 30-photo gallery cap.
-  - Rows and photos fade with a spinner while they delete or move, with "Saving order…".
-- **Tier 2:**
-  - A Kariba progress bar during page changes.
-  - `useLinkStatus` spinners in the nav.
-  - "‹ My site" back links on phones.
-  - An offline banner, with Save disabled while offline.
-  - Forms lock while they submit.
-  - The template downgrade notice.
-  - Privacy and Terms.
-  - These docs.
-- **Tier 3:**
-  - The Design screen and the preview route.
-  - Change requests for owners, plus a team screen and API (`/admin/requests`, `/api/admin/requests`).
-  - Live visit stats on the overview and Analytics, with an upgrade card on Starter.
-  - Visits in the activity card.
-  - "Discard your changes?" on Lodge info, Design and the room sheet.
+- **Page weight:**
+  - Photos get 1280px and 640px copies, made on the phone, and lodge sites use `srcset` and `sizes`.
+  - Carousels load photos lazily, and zod is out of the browser bundle.
+  - A lodge site's first load on a phone is about 1.36 MB.
+- **Migrations:**
+  - The baseline is `0_init`; containers run `migrate deploy`; there's a baselining guide.
+  - Later migrations: `auth_rate_limit`, `lodge_custom_domain`.
+- **Production hardening:**
+  - Sign-in rate limits are kept in Postgres.
+  - `CLIENT_IP_HEADER` (`cf-connecting-ip` behind Cloudflare).
+  - `/health` checks the database.
+  - Security headers, and `poweredByHeader` off.
+  - Host-aware robots and sitemap.
+  - `docker/backup.sh`.
+- **Demo lodges:** `seed-demos` creates the landing page's three lodges with demo owner logins.
+- **Tests and CI:**
+  - `bun test` in sites, mail, server and web.
+  - Playwright tests in `apps/web/e2e`: smoke tests, plus every screen at 360px.
+  - `.github/workflows/ci.yml`.
+  - `pnpm check-types` now covers the web app too.
+- **Mobile:**
+  - Tap targets of at least 32px.
+  - `viewport-fit=cover` with safe-area padding.
+  - Coordinates can be typed on iPhone.
+  - Landing cards no longer overflow at 360px (found by CI's different fonts).
+- **Deployment kit:**
+  - `deploy/compose.yaml` and `deploy/.env.example`, with [deployment.md](deployment.md).
+  - Both images were built and run here.
+  - Fixed: the web image couldn't start (its public settings were missing at runtime), and dev photos were going into images.
+- **Custom domains:**
+  - `Lodge.customDomain` and `set-domain`.
+  - The API lookup and CORS.
+  - The proxy routes those domains.
+  - Links and canonical URLs prefer the custom domain.
+  - The "Your web address" card, with "Ask us" opening a prefilled change request.
+- `next build` skips its own type check (`ignoreBuildErrors`, as the user asked). `check-types` covers it.
 
-How it was checked: a local Postgres with seeded visits, both apps running, and Playwright screenshots of every new screen at 1280px and 375px (no horizontal overflow).
+Known gaps:
 
-Known gaps and choices worth knowing:
-
-- **Unsaved changes:** the guard catches links inside the app, reloads and closing the tab, but not the browser's own Back button.
-- **Change requests:** after sending, the WhatsApp hand-off is a button on the success card, not opened automatically, because browsers block pop-ups after a network request.
-- **Nav spinners** only show when the page wasn't prefetched yet (slow connections). In production, Next prefetches visible links.
-- **Template thumbnails** are sketches drawn from `components/site/templates/looks.ts`. Update them when the real designs arrive (or switch to iframe snapshots).
-- **Privacy and Terms** are plain-language drafts based on what the code collects. Review them (ideally with a lawyer) before launch.
+- **Owner visits on a custom domain** are counted (the session cookie is StayZim's). On the subdomain they're skipped.
+- **The Docker build here** skipped `apt-get` (Debian mirrors are blocked in this sandbox). Production builds install OpenSSL as written.
+- **Template thumbnails** are still sketches from `looks.ts`.
+- **Unsaved changes:** the guard doesn't catch the browser's own Back button.
 
 ### Spec: site templates
 
@@ -201,39 +219,40 @@ Built (web):
 - **Design screen** `apps/web/src/app/dashboard/design/page.tsx` (under My site): hero text with counters and a live phone preview; templates grouped by plan with thumbnails (`template-thumb.tsx`), a sliding "Live" ring, locked cards with "Upgrade to {plan}" on WhatsApp; a preview sheet (iframe, Phone and Desktop); "Use this template" (disabled with a reason when locked or live) applies straight away, with Undo in the toast.
 - **Starter templates** have no motion at all (`basic.tsx`).
 
-### Deployment notes to discuss with the user (Coolify on a VPS)
-
-- **DNS:**
-  - `stayzim.co.zw` and `app.` → web
-  - `api.` → server
-  - wildcard `*.stayzim.co.zw` → web (lodge sites)
-  - `media.` → the R2 custom domain
-- **TLS for the wildcard,** two options:
-  - Cloudflare's proxy. Universal SSL covers `*.stayzim.co.zw`, and it also sends `CF-IPCountry`, which gives owners visitor countries.
-  - Traefik in Coolify, with a DNS-01 challenge for a wildcard Let's Encrypt certificate.
-- **Coolify:** add the wildcard to the web service's domains (`https://*.stayzim.co.zw`), or add a custom Traefik router rule with `HostRegexp`.
-- **Env:**
-  - Server: `CORS_ORIGIN=https://app.stayzim.co.zw,https://stayzim.co.zw`, `SITES_DOMAIN=stayzim.co.zw`, `COOKIE_DOMAIN=.stayzim.co.zw`, plus the `R2_*`, `GOOGLE_*` and SMTP settings.
-  - Web build args: `NEXT_PUBLIC_SERVER_URL`, `NEXT_PUBLIC_SITES_DOMAIN` and `NEXT_PUBLIC_WHATSAPP_NUMBER`.
-- **New lodges:** setup stays a script (`create-owner`, then `create-lodge`). With a wildcard record, nothing per lodge is needed in DNS or Coolify.
-- **Custom `.co.zw` domains** (later) will need per-domain routing and certificates.
-- **Before launch:** switch from `db push` to migrations.
-
 ## Blocked on / needs a decision
 
 - **SMTP credentials** for hello@stayzim.co.zw (Spacemail), to send real reset emails.
-- **Cloudflare R2** bucket, API token and public domain for lodge photos.
+- **Cloudflare R2:** a bucket, API token and public domain for lodge photos.
+- **Google OAuth client** (ID and secret), to switch on and test Sign in with Google.
 - **Payment details:** the Paynow link and the EcoCash and InnBucks merchant codes for the Billing screen.
-- **Google OAuth client** (ID and secret) to switch on and test Sign in with Google.
-- **Template designs:** the user will add design files for the 9 templates to `designs/`.
-- **Sales WhatsApp number** for the landing page.
-- **First real demo lodge** (photos and content).
+- **Sales WhatsApp number,** for the landing page and the demo lodges (`seed-demos --whatsapp`).
+- **Demo lodge photos,** and a check of the demo copy in `packages/auth/scripts/seed-demos.ts`.
+- **Hosting:** the VPS, Coolify, the Cloudflare zone, and the origin certificate ([deployment.md](deployment.md)).
+- **Template designs** for the 8 placeholders, from the designer.
+- **Booking calendar:** skipped for now. When it comes back, decide which plans get it.
+- **Custom domains:**
+  - Are they paid, or Pro only?
+  - Who registers the `.co.zw`?
+  - Cloudflare for SaaS, or Coolify certificates?
+- **Real-device check** on iOS Safari and Android Chrome.
 - **A review of the Privacy and Terms drafts** (`apps/web/src/app/privacy`, `apps/web/src/app/terms`).
 - The open questions in [project.md](project.md#open-questions).
 
 ## Log
 
 Newest first. One line per piece of work that landed on `main`.
+
+### 6 October 2026 (night)
+
+- Smaller photo copies and `srcset` on lodge sites; zod out of the browser bundle.
+- Prisma migrations instead of `db push`; containers apply them on start.
+- Sign-in rate limits in Postgres, a trusted client IP header, `/health`, security headers, robots and sitemap, and a backup script.
+- `seed-demos` for the landing page's demo lodges.
+- Unit tests, Playwright browser tests, and GitHub Actions CI.
+- Mobile fixes: tap targets, safe areas, iPhone coordinates, and narrow landing cards.
+- Deployment kit (`deploy/`, deployment.md); the web image now starts.
+- Custom domains per lodge.
+- `ignoreBuildErrors` for `next build`.
 
 ### 6 October 2026 (evening)
 
