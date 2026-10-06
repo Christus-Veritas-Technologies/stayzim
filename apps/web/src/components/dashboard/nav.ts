@@ -17,7 +17,7 @@ export type NavLink = {
 };
 
 /** Pages under "My site". On phones they share one tab in the bottom bar. */
-export const SITE_PAGES = ["/dashboard/site", "/dashboard/rooms", "/dashboard/gallery", "/dashboard/design"];
+export const SITE_PAGES = ["/dashboard/site", "/dashboard/rooms", "/dashboard/gallery", "/dashboard/design", "/dashboard/requests"];
 
 export function navLinks(lodge: Lodge): NavLink[] {
   const days = trialDaysLeft(lodge);
@@ -49,6 +49,7 @@ export function navLinks(lodge: Lodge): NavLink[] {
           label: "Design",
           attention: lodge.template && lodge.template !== lodge.siteTemplate ? "Your template isn't in your plan" : undefined,
         },
+        { href: "/dashboard/requests", label: "Requests" },
       ],
     },
     { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
@@ -93,6 +94,7 @@ export function breadcrumb(pathname: string): string[] {
   if (pathname.startsWith("/dashboard/rooms")) return ["My site", "Rooms"];
   if (pathname.startsWith("/dashboard/gallery")) return ["My site", "Gallery"];
   if (pathname.startsWith("/dashboard/design")) return ["My site", "Design"];
+  if (pathname.startsWith("/dashboard/requests")) return ["My site", "Change requests"];
   if (pathname.startsWith("/dashboard/analytics")) return ["Analytics"];
   if (pathname.startsWith("/dashboard/billing")) return ["Billing"];
   return ["Dashboard"];

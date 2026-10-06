@@ -185,7 +185,7 @@ export function BottomNav() {
   );
 }
 
-/** Lodge info, Rooms, Gallery and Design as pills under the phone header (they share one bottom tab). */
+/** The My site pages as pills under the phone header (they share one bottom tab). */
 export function SitePagesNav() {
   const pathname = usePathname();
   const { lodge } = useLodge();
