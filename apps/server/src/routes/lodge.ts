@@ -11,6 +11,7 @@ import { MAX_UPLOAD_BYTES, removeUploads, saveImage } from "../lib/uploads";
 import { validJson } from "../lib/validate";
 import { photos } from "./photos";
 import { rooms } from "./rooms";
+import { stats } from "./stats";
 
 /** Empty text means "remove it". */
 const optionalText = (max: number, label: string) =>
@@ -111,4 +112,5 @@ export const lodge = new Hono<{ Variables: LodgeVariables }>()
   })
 
   .route("/rooms", rooms)
-  .route("/photos", photos);
+  .route("/photos", photos)
+  .route("/", stats);
