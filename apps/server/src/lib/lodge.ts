@@ -66,6 +66,8 @@ export type RoomJson = {
 export type LodgeJson = {
   id: string;
   slug: string;
+  /** The lodge's own domain, e.g. "mistvalleylodge.co.zw", when StayZim has set one up */
+  customDomain: string | null;
   name: string;
   description: string;
   town: string | null;
@@ -120,6 +122,7 @@ export async function lodgeJson(lodgeId: string): Promise<LodgeJson> {
   return {
     id: lodge.id,
     slug: lodge.slug,
+    customDomain: lodge.customDomain,
     name: lodge.name,
     description: lodge.description,
     town: lodge.town,

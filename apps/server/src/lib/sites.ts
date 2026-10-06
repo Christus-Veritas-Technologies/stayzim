@@ -1,4 +1,6 @@
+import prisma from "@stayzim/db";
 import { env } from "@stayzim/env/server";
+import { normalizeDomain } from "@stayzim/sites";
 
 /** Subdomains of SITES_DOMAIN that are StayZim's own, never a lodge. Mirrored in packages/db/scripts/create-lodge.ts. */
 export const RESERVED_SUBDOMAINS = new Set(["www", "app", "api", "admin", "mail", "media", "outreach", "help", "status", "demo"]);
@@ -15,6 +17,39 @@ export function lodgeSlugFromOrigin(origin: string | undefined | null) {
 
 export function isLodgeSiteOrigin(origin: string | undefined | null) {
   return lodgeSlugFromOrigin(origin) !== null;
+}
+
+/** Custom domains looked up recently: lodge slug, or null for "no lodge here". */
+const domainCache = new Map<string, { slug: string | null; until: number }>();
+const FOUND_FOR_MS = 5 * 60 * 1000;
+const MISSING_FOR_MS = 60 * 1000;
+
+/**
+ * The lodge on a custom domain ("www.mistvalleylodge.co.zw" → "mistvalley"),
+ * or null. Cached for a few minutes, since every lodge site request on a custom
+ * domain asks; a domain set with set-domain.ts works within a minute or so.
+ */
+export async function slugForCustomDomain(host: string | null | undefined) {
+  const domain = normalizeDomain(host);
+  if (!domain) return null;
+  const cached = domainCache.get(domain);
+  if (cached && cached.until > Date.now()) return cached.slug;
+  const lodge = await prisma.lodge.findUnique({ where: { customDomain: domain }, select: { slug: true } });
+  const slug = lodge?.slug ?? null;
+  if (domainCache.size > 5000) domainCache.clear();
+  domainCache.set(domain, { slug, until: Date.now() + (slug ? FOUND_FOR_MS : MISSING_FOR_MS) });
+  return slug;
+}
+
+/** A lodge site's origin: {slug}.SITES_DOMAIN, or a lodge's own domain. */
+export async function isAnyLodgeSiteOrigin(origin: string | undefined | null) {
+  if (isLodgeSiteOrigin(origin)) return true;
+  if (!origin) return false;
+  try {
+    return (await slugForCustomDomain(new URL(origin).host)) !== null;
+  } catch {
+    return false;
+  }
 }
 
 /** Phone, tablet or computer, and "Android, Chrome", from the user agent. Good enough for owners' charts. */

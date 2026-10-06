@@ -9,7 +9,7 @@ import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
 
 import { withSession, type AuthVariables } from "./lib/session";
-import { isLodgeSiteOrigin } from "./lib/sites";
+import { isAnyLodgeSiteOrigin } from "./lib/sites";
 import { describeStorage, serveUpload } from "./lib/uploads";
 import { account } from "./routes/account";
 import { admin } from "./routes/admin";
@@ -33,8 +33,8 @@ app.use(
 app.use(
   "/*",
   cors({
-    // The web app's origins, and any lodge site (they report visits)
-    origin: (origin) => (env.CORS_ORIGIN.includes(origin) || isLodgeSiteOrigin(origin) ? origin : null),
+    // The web app's origins, and any lodge site, on its subdomain or its own domain (they report visits)
+    origin: async (origin) => (env.CORS_ORIGIN.includes(origin) || (await isAnyLodgeSiteOrigin(origin)) ? origin : null),
     allowMethods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
     // The session cookie travels with requests from the web app

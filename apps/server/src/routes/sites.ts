@@ -9,7 +9,7 @@ import { z } from "zod";
 import { clientIp } from "../lib/ip";
 import { lodgeJson } from "../lib/lodge";
 import { withSession, type AuthVariables } from "../lib/session";
-import { describeDevice } from "../lib/sites";
+import { describeDevice, slugForCustomDomain } from "../lib/sites";
 
 /** What a lodge site shows. Nothing about the plan, billing or the owner. */
 export type PublicSite =
@@ -17,6 +17,8 @@ export type PublicSite =
   | {
       status: "LIVE";
       slug: string;
+      /** The lodge's own domain: its canonical address when set */
+      customDomain: string | null;
       name: string;
       /** Template key from @stayzim/sites, already checked against the plan */
       template: string;
@@ -62,6 +64,17 @@ function countryFrom(header: string | undefined) {
 
 /** /api/sites: public, for lodge sites ({slug}.stayzim.co.zw). */
 export const sites = new Hono<{ Variables: AuthVariables }>()
+  /**
+   * Which lodge a custom domain belongs to, for the web app's proxy:
+   * { slug } or 404. "www." and the port are ignored.
+   */
+  .get("/domain/:host", async (c) => {
+    const slug = await slugForCustomDomain(c.req.param("host"));
+    if (!slug) return c.json({ error: "No lodge on this domain" }, 404);
+    c.header("Cache-Control", "public, max-age=60");
+    return c.json({ slug });
+  })
+
   /** The lodge's site content. 404 for an unknown lodge; a short answer for a suspended one. */
   .get("/:slug", async (c) => {
     const lodge = await prisma.lodge.findUnique({ where: { slug: c.req.param("slug").toLowerCase() }, select: { id: true, status: true } });
@@ -75,6 +88,7 @@ export const sites = new Hono<{ Variables: AuthVariables }>()
     return c.json({
       status: "LIVE",
       slug: full.slug,
+      customDomain: full.customDomain,
       name: full.name,
       template: full.siteTemplate,
       hero: heroText(findTemplate(full.siteTemplate)!, { ...full, place }),
