@@ -9,12 +9,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 
-import { LivePanel } from "@/components/auth/kariba-panel";
+import { LivePanel, type LiveLodge } from "@/components/auth/kariba-panel";
 import { NewPasswordFields, newPasswordProblem } from "@/components/auth/new-password-fields";
 import { AuthHeading, AuthSection, AuthShell } from "@/components/auth/shell";
 import { Item, riseIn } from "@/components/motion";
 import { api } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
+import { siteHost } from "@/lib/lodge";
+
+type Me = { lodge: { name: string; slug: string; place: string | null; heroUrl: string | null; roomCount: number } | null };
 
 /**
  * First sign-in: swap the temporary password StayZim sent for the owner's own.
@@ -33,6 +36,15 @@ export default function SetPasswordPage() {
   }, [loadingSession, router, session]);
 
   const firstLogin = session?.user.mustChangePassword ?? true;
+
+  // First login: show the site StayZim already built for them
+  const [lodge, setLodge] = useState<LiveLodge | null>(null);
+  useEffect(() => {
+    if (!session || !firstLogin) return;
+    void api<Me>("/api/account/me").then(({ data }) => {
+      if (data?.lodge) setLodge({ ...data.lodge, siteHost: siteHost(data.lodge) });
+    });
+  }, [firstLogin, session]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -67,7 +79,17 @@ export default function SetPasswordPage() {
   }
 
   return (
-    <AuthShell panel={firstLogin ? <LivePanel lodge={null} /> : undefined}>
+    <AuthShell
+      panel={firstLogin ? <LivePanel lodge={lodge} /> : undefined}
+      mobileBadge={
+        firstLogin && lodge ? (
+          <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
+            <span className="size-1.5 rounded-full bg-[#7BE0A4]" />
+            {lodge.siteHost} is live
+          </span>
+        ) : undefined
+      }
+    >
       {firstLogin ? null : (
         <Item variants={riseIn} className="mb-5">
           <Link href="/dashboard" className="group inline-flex items-center gap-1.5 text-[13px] font-semibold text-muted hover:text-ink">
