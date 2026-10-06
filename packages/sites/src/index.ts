@@ -154,3 +154,26 @@ export function heroText(
     subline: lodge.heroSubline?.trim() || fillCopy(template.defaults.subline, lodge),
   };
 }
+
+/**
+ * A lodge's own domain as we store and match it: lowercase, without the scheme,
+ * path, port, trailing dot or "www." ("https://www.MistValley.co.zw/" →
+ * "mistvalley.co.zw"). Null when it isn't a domain name.
+ */
+export function normalizeDomain(input: string | null | undefined): string | null {
+  const host = (input ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/^[a-z][a-z0-9+.-]*:\/\//, "")
+    .replace(/[/?#].*$/, "")
+    .replace(/:\d+$/, "")
+    .replace(/\.$/, "")
+    .replace(/^www\./, "");
+  if (host.length > 253 || !host.includes(".")) return null;
+  const label = /^(?!-)[a-z0-9-]{1,63}(?<!-)$/;
+  const labels = host.split(".");
+  if (!labels.every((part) => label.test(part))) return null;
+  // The last label is a real top-level domain: letters only
+  if (!/^[a-z]{2,63}$/.test(labels[labels.length - 1]!)) return null;
+  return host;
+}

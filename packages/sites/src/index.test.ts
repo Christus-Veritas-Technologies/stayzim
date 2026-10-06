@@ -6,6 +6,7 @@ import {
   fillCopy,
   findTemplate,
   heroText,
+  normalizeDomain,
   PLAN_RANK,
   TEMPLATE_KEYS,
   TEMPLATES,
@@ -85,5 +86,19 @@ describe("heroText", () => {
       headline: "Sunsets on the lake",
       subline: "Unforgettable days and quiet nights at Lakeview Cabins.",
     });
+  });
+});
+
+describe("normalizeDomain", () => {
+  test("keeps just the host, lowercase, without www", () => {
+    expect(normalizeDomain("mistvalleylodge.co.zw")).toBe("mistvalleylodge.co.zw");
+    expect(normalizeDomain("https://www.MistValleyLodge.co.zw/rooms?x=1")).toBe("mistvalleylodge.co.zw");
+    expect(normalizeDomain(" lodge.example.com.:443 ")).toBe("lodge.example.com");
+  });
+
+  test("refuses anything that isn't a domain name", () => {
+    for (const value of ["", "localhost", "mist valley.co.zw", "-mist.co.zw", "mist-.co.zw", "mist..co.zw", "192.168.1.10", "mist.co.z1", null, undefined]) {
+      expect(normalizeDomain(value)).toBeNull();
+    }
   });
 });
