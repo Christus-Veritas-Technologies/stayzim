@@ -27,6 +27,14 @@ export const env = createEnv({
     // Share the session cookie across subdomains in production, e.g. ".stayzim.co.zw".
     // Leave unset on localhost.
     COOKIE_DOMAIN: z.string().min(1).optional(),
+    // The request header holding the visitor's real IP, set by the proxy in front of the API.
+    // Behind Cloudflare use "cf-connecting-ip": a visitor can't fake it, while the first
+    // X-Forwarded-For entry can be. Used for sign-in rate limits and visit records.
+    CLIENT_IP_HEADER: z
+      .string()
+      .min(1)
+      .default("x-forwarded-for")
+      .transform((value) => value.toLowerCase()),
 
     // Sign in with Google (packages/auth). Leave unset to hide the button. Only links to
     // existing owner accounts: Google never creates one.

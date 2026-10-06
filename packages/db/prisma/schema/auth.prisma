@@ -80,3 +80,16 @@ model Verification {
   @@index([identifier])
   @@map("verification")
 }
+
+/// Sign-in and reset attempts per IP and path (better-auth's rate limiter), kept here so the
+/// limits survive a restart and hold across server instances.
+model RateLimit {
+  id          String @id
+  /// "<ip>|<path>"
+  key         String @unique
+  count       Int
+  /// Milliseconds since 1970 of the window's first request
+  lastRequest BigInt @map("last_request")
+
+  @@map("rate_limit")
+}

@@ -126,8 +126,9 @@ Lodge sites open at `http://{slug}.localhost:9999` (Chrome and Firefox resolve `
 The schema lives in `packages/db/prisma/schema/*.prisma` and changes through migrations in `packages/db/prisma/migrations`:
 
 1. Edit the schema.
-2. `pnpm db:migrate --name what_changed` creates the migration from the difference, applies it to your local database and regenerates the client. Read the SQL before committing it.
-3. Commit the schema and the migration together. Containers apply it on their next start (`prisma migrate deploy`).
+2. `pnpm db:migrate --name what_changed` creates the migration from the difference and applies it to your local database. Read the SQL before committing it.
+3. `pnpm db:generate` regenerates the Prisma client (Prisma 7's `migrate dev` no longer does), then restart the API: a running `--hot` server keeps the old client.
+4. Commit the schema and the migration together. Containers apply it on their next start (`prisma migrate deploy`).
 
 A database created with `db:push` before migrations existed has the tables but no migration history, so `migrate deploy` stops with error P3005. Baseline it once: mark the migrations it already has as applied, then deploy the rest.
 
