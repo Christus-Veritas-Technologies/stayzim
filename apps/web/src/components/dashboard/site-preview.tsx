@@ -16,6 +16,9 @@ export type PreviewLodge = {
   logoUrl: string | null;
   heroUrl: string | null;
   rooms: Room[];
+  /** Hero text, as on the Design screen. Without it the hero shows the lodge name. */
+  headline?: string;
+  subline?: string;
 };
 
 /**
@@ -25,6 +28,7 @@ export type PreviewLodge = {
 export function SitePreview({ lodge, className }: { lodge: PreviewLodge; className?: string }) {
   const room = lodge.rooms[0];
   const roomPhoto = room?.photos[0]?.url;
+  const headline = lodge.headline || lodge.name || "Your lodge";
 
   return (
     <div
@@ -44,10 +48,17 @@ export function SitePreview({ lodge, className }: { lodge: PreviewLodge; classNa
           <Avatar shape="lodge" size="sm" name={lodge.name || "Lodge"} src={lodge.logoUrl} color={lodge.themeColor} className="ring-2 ring-white/70" />
         </div>
         <div className="absolute inset-x-3 bottom-3 text-white">
-          <motion.p key={lodge.name} initial={{ opacity: 0.4 }} animate={{ opacity: 1 }} className="font-serif text-[22px] leading-7 font-semibold">
-            {lodge.name || "Your lodge"}
+          <motion.p
+            key={headline}
+            initial={{ opacity: 0.4 }}
+            animate={{ opacity: 1 }}
+            className="font-serif text-[22px] leading-7 font-semibold break-words"
+          >
+            {headline}
           </motion.p>
-          {lodge.place ? (
+          {lodge.subline ? (
+            <p className="mt-0.5 line-clamp-3 text-xs leading-4 text-white/90">{lodge.subline}</p>
+          ) : lodge.place ? (
             <p className="flex items-center gap-1 text-xs text-white/85">
               <MapPin className="size-3" />
               {lodge.place}

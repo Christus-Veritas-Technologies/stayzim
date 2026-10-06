@@ -53,6 +53,13 @@ export type Lodge = {
   longitude: number | null;
   themeColor: string;
   logoUrl: string | null;
+  /** The owner's pick from @stayzim/sites; null until they choose one */
+  template: string | null;
+  /** What the site shows: the pick, or the plan's default when the plan doesn't include it */
+  siteTemplate: string;
+  /** The owner's own hero text; null shows the template's */
+  heroHeadline: string | null;
+  heroSubline: string | null;
   heroPhotoId: string | null;
   heroUrl: string | null;
   plan: PlanKey;
