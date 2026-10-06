@@ -54,6 +54,7 @@ function upgradeUrl(lodge: Lodge, template: Template) {
 export default function DesignPage() {
   const { lodge } = useLodge();
   const live = findTemplate(lodge.siteTemplate) ?? findTemplate(DEFAULT_TEMPLATE[lodge.plan])!;
+  const chosen = findTemplate(lodge.template);
   const [previewing, setPreviewing] = useState<Template | null>(null);
 
   return (
@@ -68,6 +69,26 @@ export default function DesignPage() {
           </>
         }
       />
+
+      {chosen && chosen.key !== live.key ? (
+        <PageSection>
+          <FormMessage tone="info" className="items-center">
+            <Info className="size-4 shrink-0" />
+            <span className="flex-1">
+              Your plan doesn&apos;t include <strong className="font-semibold">{chosen.name}</strong>, so your site shows{" "}
+              <strong className="font-semibold">{live.name}</strong> for now.
+            </span>
+            <a
+              href={upgradeUrl(lodge, chosen)}
+              target="_blank"
+              rel="noreferrer"
+              className={buttonVariants({ variant: "accent", size: "sm", className: "shrink-0" })}
+            >
+              Upgrade to {PLANS_LABEL[chosen.plan]}
+            </a>
+          </FormMessage>
+        </PageSection>
+      ) : null}
 
       <HeroText lodge={lodge} live={live} />
 

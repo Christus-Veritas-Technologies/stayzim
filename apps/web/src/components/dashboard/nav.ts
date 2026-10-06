@@ -44,7 +44,11 @@ export function navLinks(lodge: Lodge): NavLink[] {
           count: lodge.gallery.length,
           attention: missingPhotos > 0 ? `Add ${missingPhotos} more` : undefined,
         },
-        { href: "/dashboard/design", label: "Design" },
+        {
+          href: "/dashboard/design",
+          label: "Design",
+          attention: lodge.template && lodge.template !== lodge.siteTemplate ? "Your template isn't in your plan" : undefined,
+        },
       ],
     },
     { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
