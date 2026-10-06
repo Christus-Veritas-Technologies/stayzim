@@ -4,7 +4,7 @@ import { Badge } from "@stayzim/ui/components/badge";
 import { Button, buttonVariants } from "@stayzim/ui/components/button";
 import { EmptyState } from "@stayzim/ui/components/empty-state";
 import { Skeleton } from "@stayzim/ui/components/skeleton";
-import { LogOut, ShieldAlert } from "lucide-react";
+import { LayoutGrid, LogOut, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
@@ -68,7 +68,12 @@ export function AdminShell({ children }: { children: ReactNode }) {
             <Badge variant="purple">Team</Badge>
           </span>
           <span className="flex items-center gap-2">
-            <span className="hidden text-[13px] text-muted sm:inline">{session.user.email}</span>
+            <span className="hidden text-[13px] text-muted md:inline">{session.user.email}</span>
+            {/* Team accounts can own a test lodge too */}
+            <Link href="/dashboard" className={buttonVariants({ variant: "ghost", size: "sm" })}>
+              <LayoutGrid />
+              <span className="hidden sm:inline">Lodge dashboard</span>
+            </Link>
             <Button variant="ghost" size="sm" onClick={signOut}>
               <LogOut />
               Log out
