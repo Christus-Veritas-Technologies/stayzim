@@ -1,7 +1,7 @@
 "use client";
 
 import { buttonVariants } from "@stayzim/ui/components/button";
-import { Card, CardAction, CardHeader, CardTitle } from "@stayzim/ui/components/card";
+import { Card } from "@stayzim/ui/components/card";
 import { CopyButton } from "@stayzim/ui/components/copy-button";
 import { EmptyState } from "@stayzim/ui/components/empty-state";
 import { Lock, Radar } from "lucide-react";
@@ -10,15 +10,12 @@ import { useState } from "react";
 import { useLodge } from "@/components/dashboard/lodge-provider";
 import { Page, PageHeader, PageSection } from "@/components/dashboard/page";
 import { useShareLink } from "@/components/dashboard/share";
-import { RecentVisits } from "@/components/dashboard/recent-visits";
+import { VisitsTable } from "@/components/dashboard/visits-table";
 import { PeriodTabs, StatCards, VisitsCard } from "@/components/dashboard/visit-stats";
 import { WhatsAppIcon } from "@/components/landing/brand";
 import { hasAnalytics, PLANS, siteHost } from "@/lib/lodge";
-import { PERIODS, useVisitStats, type Period } from "@/lib/stats";
+import { ANALYTICS_PERIODS, useVisitStats, type Period } from "@/lib/stats";
 import { stayzimChatUrl } from "@/lib/whatsapp";
-
-/** Hours of one day say little here; the overview has Today. */
-const ANALYTICS_PERIODS = PERIODS.filter((period) => period.value !== "today");
 
 /** Made-up rows behind the blur on Starter, to show what Growth unlocks. */
 const SAMPLE_VISITS = [
@@ -111,38 +108,32 @@ export default function AnalyticsPage() {
             />
           </PageSection>
           <PageSection>
-            <Card>
-              <CardHeader className="border-b border-line-3">
-                <CardTitle>Recent visits</CardTitle>
-                <CardAction className="text-[13px] text-muted-2">Newest first</CardAction>
-              </CardHeader>
-              <RecentVisits
-                empty={
-                  <EmptyState
-                    icon={<Radar />}
-                    title="No visits yet. Share your link to get started"
-                    description="Every visit shows here with its date, country, page and device, and whether the guest tapped Book on WhatsApp."
-                    action={
-                      <>
-                        <CopyButton value={share.url} onCopied={share.markShared} copiedLabel="Link copied">
-                          Copy link
-                        </CopyButton>
-                        <a
-                          href={share.whatsappUrl()}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={share.markShared}
-                          className={buttonVariants({ variant: "whatsapp" })}
-                        >
-                          <WhatsAppIcon size={16} />
-                          Share on WhatsApp
-                        </a>
-                      </>
-                    }
-                  />
-                }
-              />
-            </Card>
+            <VisitsTable
+              empty={
+                <EmptyState
+                  icon={<Radar />}
+                  title="No visits yet. Share your link to get started"
+                  description="Every visit shows here with its date, country, page and device, and whether the guest tapped Book on WhatsApp."
+                  action={
+                    <>
+                      <CopyButton value={share.url} onCopied={share.markShared} copiedLabel="Link copied">
+                        Copy link
+                      </CopyButton>
+                      <a
+                        href={share.whatsappUrl()}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={share.markShared}
+                        className={buttonVariants({ variant: "whatsapp" })}
+                      >
+                        <WhatsAppIcon size={16} />
+                        Share on WhatsApp
+                      </a>
+                    </>
+                  }
+                />
+              }
+            />
           </PageSection>
         </>
       ) : (
