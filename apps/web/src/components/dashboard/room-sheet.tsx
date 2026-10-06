@@ -4,6 +4,7 @@ import { Button } from "@stayzim/ui/components/button";
 import { Field, FormMessage } from "@stayzim/ui/components/field";
 import { Input, InputGroup, InputGroupAddon, InputGroupInput } from "@stayzim/ui/components/input";
 import { NumberField } from "@stayzim/ui/components/number-field";
+import { Spinner } from "@stayzim/ui/components/spinner";
 import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@stayzim/ui/components/sheet";
 import { Toggle, ToggleGroup } from "@stayzim/ui/components/toggle";
 import { cn } from "@stayzim/ui/lib/utils";
@@ -47,6 +48,8 @@ export function RoomSheet({
   const [errors, setErrors] = useState<{ name?: string; price?: string }>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  /** Photos being deleted */
+  const [removing, setRemoving] = useState<string[]>([]);
 
   const room = roomId ? (lodge.rooms.find((entry) => entry.id === roomId) ?? null) : null;
   const photos = room?.photos ?? [];
@@ -113,7 +116,9 @@ export function RoomSheet({
   }
 
   async function removePhoto(photoId: string) {
+    setRemoving((current) => [...current, photoId]);
     const error = await save(`/photos/${photoId}`, "DELETE");
+    setRemoving((current) => current.filter((id) => id !== photoId));
     if (error) toast.error(error);
   }
 
@@ -202,12 +207,20 @@ export function RoomSheet({
                       key={photo.id}
                       layout
                       initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
+                      animate={{ opacity: removing.includes(photo.id) ? 0.5 : 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.9 }}
-                      className="group relative aspect-[4/3] overflow-hidden rounded-xl bg-surface-2"
+                      aria-busy={removing.includes(photo.id) || undefined}
+                      className={cn("group relative aspect-[4/3] overflow-hidden rounded-xl bg-surface-2", removing.includes(photo.id) && "pointer-events-none")}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element -- photos come from our upload server */}
                       <img src={photo.url} alt="" className="size-full object-cover" />
+                      {removing.includes(photo.id) ? (
+                        <span className="absolute inset-0 flex items-center justify-center">
+                          <span className="flex size-7 items-center justify-center rounded-full bg-white/95 text-brand shadow-xs">
+                            <Spinner className="size-3.5" label="Removing photo" />
+                          </span>
+                        </span>
+                      ) : null}
                       {index === 0 ? (
                         <span className="absolute top-1.5 left-1.5 rounded-md bg-ink/80 px-1.5 py-0.5 text-[11px] font-semibold text-white">Cover</span>
                       ) : null}

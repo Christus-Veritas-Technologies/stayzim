@@ -21,9 +21,10 @@ import {
 } from "@stayzim/ui/components/dropdown-menu";
 import { EmptyState } from "@stayzim/ui/components/empty-state";
 import { Progress } from "@stayzim/ui/components/progress";
+import { Spinner } from "@stayzim/ui/components/spinner";
 import { Tabs, TabsList, TabsTab } from "@stayzim/ui/components/tabs";
 import { cn } from "@stayzim/ui/lib/utils";
-import { AnimatePresence, Reorder, useDragControls } from "framer-motion";
+import { AnimatePresence, motion, Reorder, useDragControls } from "framer-motion";
 import { ArrowDown, ArrowUp, BedDouble, CircleCheck, GripVertical, MoreHorizontal, Pencil, Plus, Trash2, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -40,7 +41,7 @@ type RowActions = {
   onEdit: (room: Room) => void;
   onMove: (room: Room, by: number) => void;
   onDelete: (room: Room) => void;
-  onDragEnd: () => void;
+  onDragEnd: (room: Room) => void;
 };
 
 function RoomMenu({ room, index, total, actions }: { room: Room; index: number; total: number; actions: RowActions }) {
@@ -92,19 +93,42 @@ function PhotoProgress({ room }: { room: Room }) {
 }
 
 /** One room. Drag it by its handle (mouse or a held finger). */
-function RoomRow({ room, index, total, sortable, actions }: { room: Room; index: number; total: number; sortable: boolean; actions: RowActions }) {
+function RoomRow({
+  room,
+  index,
+  total,
+  sortable,
+  busy,
+  actions,
+}: {
+  room: Room;
+  index: number;
+  total: number;
+  sortable: boolean;
+  /** Deleting, or its new place is saving: faded, with a spinner in place of the menu */
+  busy: boolean;
+  actions: RowActions;
+}) {
   const controls = useDragControls();
+  const menu = busy ? (
+    <span className="flex size-8 items-center justify-center text-brand">
+      <Spinner label={`Saving ${room.name}`} />
+    </span>
+  ) : (
+    <RoomMenu room={room} index={index} total={total} actions={actions} />
+  );
   return (
     <Reorder.Item
       value={room.id}
       dragListener={false}
       dragControls={controls}
-      onDragEnd={actions.onDragEnd}
+      onDragEnd={() => actions.onDragEnd(room)}
       initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
+      animate={{ opacity: busy ? 0.55 : 1, y: 0 }}
+      aria-busy={busy || undefined}
       exit={{ opacity: 0, x: -24 }}
       whileDrag={{ scale: 1.01, boxShadow: "0 16px 40px -12px rgba(12,24,31,0.25)", zIndex: 10 }}
-      className="relative bg-white"
+      className={cn("relative bg-white", busy && "pointer-events-none")}
     >
       {/* Desktop: a table row */}
       <div className={cn("hidden min-h-[68px] items-center border-b border-line-3 md:grid", COLUMNS)}>
@@ -142,9 +166,7 @@ function RoomRow({ room, index, total, sortable, actions }: { room: Room; index:
         <span className="px-3">
           <RoomStatus room={room} />
         </span>
-        <span className="flex justify-center">
-          <RoomMenu room={room} index={index} total={total} actions={actions} />
-        </span>
+        <span className="flex justify-center">{menu}</span>
       </div>
 
       {/* Phones: a card */}
@@ -175,7 +197,7 @@ function RoomRow({ room, index, total, sortable, actions }: { room: Room; index:
             )}
           </span>
         </button>
-        <RoomMenu room={room} index={index} total={total} actions={actions} />
+        {menu}
       </div>
     </Reorder.Item>
   );
@@ -189,6 +211,8 @@ export default function RoomsPage() {
   const [sheet, setSheet] = useState<{ open: boolean; roomId: string | null; key: number }>({ open: false, roomId: null, key: 0 });
   const [deleting, setDeleting] = useState<Room | null>(null);
   const [busyDelete, setBusyDelete] = useState(false);
+  /** The room whose move is saving */
+  const [moving, setMoving] = useState<string | null>(null);
 
   useEffect(() => {
     const ids = lodge.rooms.map((room) => room.id);
@@ -203,9 +227,11 @@ export default function RoomsPage() {
     .filter((room) => filter === "all" || roomNeedsPhoto(room));
   const sortable = filter === "all";
 
-  async function saveOrder(ids: string[]) {
+  async function saveOrder(ids: string[], movedId: string) {
     if (ids.join() === lodge.rooms.map((room) => room.id).join()) return;
+    setMoving(movedId);
     const error = await save("/rooms/order", "PUT", { ids });
+    setMoving(null);
     if (error) {
       toast.error(error);
       setOrder(lodge.rooms.map((room) => room.id));
@@ -215,7 +241,7 @@ export default function RoomsPage() {
   const actions: RowActions = {
     onEdit: (room) => setSheet((current) => ({ open: true, roomId: room.id, key: current.key + 1 })),
     onDelete: setDeleting,
-    onDragEnd: () => void saveOrder(latestOrder.current),
+    onDragEnd: (room) => void saveOrder(latestOrder.current, room.id),
     onMove: (room, by) => {
       const from = order.indexOf(room.id);
       const to = from + by;
@@ -224,7 +250,7 @@ export default function RoomsPage() {
       next.splice(to, 0, next.splice(from, 1)[0]!);
       setOrder(next);
       latestOrder.current = next;
-      void saveOrder(next);
+      void saveOrder(next, room.id);
     },
   };
 
@@ -318,7 +344,15 @@ export default function RoomsPage() {
                 >
                   <AnimatePresence initial={false}>
                     {rooms.map((room, index) => (
-                      <RoomRow key={room.id} room={room} index={index} total={rooms.length} sortable={sortable} actions={actions} />
+                      <RoomRow
+                        key={room.id}
+                        room={room}
+                        index={index}
+                        total={rooms.length}
+                        sortable={sortable}
+                        busy={moving === room.id || (busyDelete && deleting?.id === room.id)}
+                        actions={actions}
+                      />
                     ))}
                   </AnimatePresence>
                 </Reorder.Group>
@@ -334,10 +368,29 @@ export default function RoomsPage() {
                     </>
                   ) : null}
                 </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <CircleCheck className="size-3.5 text-success" />
-                  Order and changes show on your site straight away
-                </span>
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.span
+                    key={moving ? "saving" : "saved"}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.18 }}
+                    role="status"
+                    className="inline-flex items-center gap-1.5"
+                  >
+                    {moving ? (
+                      <>
+                        <Spinner className="size-3.5 text-brand" />
+                        Saving order…
+                      </>
+                    ) : (
+                      <>
+                        <CircleCheck className="size-3.5 text-success" />
+                        Order and changes show on your site straight away
+                      </>
+                    )}
+                  </motion.span>
+                </AnimatePresence>
               </div>
             </>
           )}

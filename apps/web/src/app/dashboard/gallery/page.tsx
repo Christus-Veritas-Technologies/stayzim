@@ -10,6 +10,7 @@ import {
   AlertDialogTitle,
 } from "@stayzim/ui/components/alert-dialog";
 import { Button } from "@stayzim/ui/components/button";
+import { Spinner } from "@stayzim/ui/components/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@stayzim/ui/components/tooltip";
 import { cn } from "@stayzim/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
@@ -110,6 +111,8 @@ export default function GalleryPage() {
   const [dragging, setDragging] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<Photo | null>(null);
   const [busyDelete, setBusyDelete] = useState(false);
+  /** The photo whose move is saving */
+  const [moving, setMoving] = useState<string | null>(null);
   const picker = useRef<HTMLInputElement>(null);
 
   // Follow the saved order (uploads, deletes, another tab)
@@ -118,9 +121,12 @@ export default function GalleryPage() {
   const photos = order.map((id) => lodge.gallery.find((photo) => photo.id === id)).filter((photo): photo is Photo => Boolean(photo));
   const heroId = lodge.heroPhotoId ?? photos[0]?.id;
 
-  async function saveOrder(ids: string[]) {
+  async function saveOrder(ids: string[], movedId: string) {
     setOrder(ids);
+    if (ids.join() === lodge.gallery.map((photo) => photo.id).join()) return;
+    setMoving(movedId);
     const error = await save("/photos/order", "PUT", { roomId: null, ids });
+    setMoving(null);
     if (error) {
       toast.error(error);
       setOrder(lodge.gallery.map((photo) => photo.id));
@@ -133,7 +139,7 @@ export default function GalleryPage() {
     if (to < 0 || to >= order.length) return;
     const next = [...order];
     next.splice(to, 0, next.splice(from, 1)[0]!);
-    void saveOrder(next);
+    void saveOrder(next, id);
   }
 
   async function makeHero(photo: Photo) {
@@ -161,13 +167,29 @@ export default function GalleryPage() {
         count={lodge.gallery.length}
         description="Drag to reorder. The first photo is your hero unless you pick another."
         actions={
-          <WhyDisabled reason={full ? `The gallery holds up to ${GALLERY_LIMIT} photos` : null}>
-            <Button onClick={() => picker.current?.click()} disabled={full}>
-              <Upload />
-              <span className="hidden sm:inline">Upload photos</span>
-              <span className="sm:hidden">Upload</span>
-            </Button>
-          </WhyDisabled>
+          <>
+            <AnimatePresence>
+              {moving ? (
+                <motion.span
+                  initial={{ opacity: 0, x: 8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0 }}
+                  role="status"
+                  className="inline-flex items-center gap-1.5 text-[13px] text-muted"
+                >
+                  <Spinner className="size-3.5 text-brand" />
+                  Saving order…
+                </motion.span>
+              ) : null}
+            </AnimatePresence>
+            <WhyDisabled reason={full ? `The gallery holds up to ${GALLERY_LIMIT} photos` : null}>
+              <Button onClick={() => picker.current?.click()} disabled={full}>
+                <Upload />
+                <span className="hidden sm:inline">Upload photos</span>
+                <span className="sm:hidden">Upload</span>
+              </Button>
+            </WhyDisabled>
+          </>
         }
       />
       <input
@@ -193,12 +215,14 @@ export default function GalleryPage() {
           <AnimatePresence initial={false}>
             {photos.map((photo, index) => {
               const hero = photo.id === heroId;
+              const busy = moving === photo.id || (busyDelete && deleting?.id === photo.id);
               return (
                 <motion.li
                   key={photo.id}
                   layout
                   initial={{ opacity: 0, scale: 0.94 }}
-                  animate={{ opacity: dragging === photo.id ? 0.5 : 1, scale: 1 }}
+                  animate={{ opacity: dragging === photo.id || busy ? 0.5 : 1, scale: 1 }}
+                  aria-busy={busy || undefined}
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ type: "spring", stiffness: 380, damping: 32 }}
                   draggable
@@ -219,10 +243,10 @@ export default function GalleryPage() {
                   }}
                   onDrop={(event) => {
                     event.preventDefault();
-                    if (dragging) void saveOrder(order);
+                    if (dragging) void saveOrder(order, dragging);
                     setDragging(null);
                   }}
-                  className="group flex flex-col gap-2"
+                  className={cn("group flex flex-col gap-2", busy && "pointer-events-none")}
                 >
                   <div
                     className={cn(
@@ -238,6 +262,13 @@ export default function GalleryPage() {
                       draggable={false}
                       className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                     />
+                    {busy ? (
+                      <span className="absolute inset-0 flex items-center justify-center">
+                        <span className="flex size-9 items-center justify-center rounded-full bg-white/95 text-brand shadow-xs">
+                          <Spinner label="Saving" />
+                        </span>
+                      </span>
+                    ) : null}
                     {hero ? (
                       <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-white/95 px-2 py-1 text-xs font-semibold text-ink shadow-xs">
                         <Star className="size-3.5 fill-brand text-brand" />
