@@ -38,7 +38,11 @@ export const auth = betterAuth({
     resetPasswordTokenExpiresIn: 60 * 60,
     revokeSessionsOnPasswordReset: true,
     sendResetPassword: async ({ user, url }) => {
-      await sendEmail(resetPasswordEmail({ to: user.email, name: user.name, url }));
+      // The screen says "check your email" either way (it never reveals which emails exist),
+      // so a failed send only shows here: one clear line for the server log
+      await sendEmail(resetPasswordEmail({ to: user.email, name: user.name, url })).catch((error: unknown) => {
+        console.error(`[mail] Could not send the reset email to ${user.email}: ${error instanceof Error ? error.message : String(error)}`);
+      });
     },
     onPasswordReset: async ({ user }) => {
       // They chose their own password, so a temporary one no longer applies
