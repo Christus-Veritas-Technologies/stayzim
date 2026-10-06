@@ -1,44 +1,52 @@
 "use client";
 
+import { Button } from "@stayzim/ui/components/button";
+import { Field, FormMessage } from "@stayzim/ui/components/field";
+import { PasswordInput } from "@stayzim/ui/components/input";
+import { Spinner } from "@stayzim/ui/components/spinner";
+import { ArrowLeft, ArrowRight } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 
-import { Field, FormError, SubmitButton } from "@/components/auth/form";
-import { apiPost, authClient, MIN_PASSWORD_LENGTH } from "@/lib/auth-client";
+import { LivePanel } from "@/components/auth/kariba-panel";
+import { NewPasswordFields, newPasswordProblem } from "@/components/auth/new-password-fields";
+import { AuthHeading, AuthSection, AuthShell } from "@/components/auth/shell";
+import { Item, riseIn } from "@/components/motion";
+import { apiPost, authClient } from "@/lib/auth-client";
 
-/** First sign-in: swap the temporary password StayZim sent for the owner's own. */
+/**
+ * First sign-in: swap the temporary password StayZim sent for the owner's own.
+ * Later, from the account menu: change it (with the current one).
+ */
 export default function SetPasswordPage() {
   const router = useRouter();
   const { data: session, isPending: loadingSession, refetch } = authClient.useSession();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [fieldError, setFieldError] = useState<string | null>(null);
+  const [fieldError, setFieldError] = useState<ReturnType<typeof newPasswordProblem>>(null);
 
   useEffect(() => {
     if (loadingSession) return;
     if (!session) router.replace("/login");
   }, [loadingSession, router, session]);
 
+  const firstLogin = session?.user.mustChangePassword ?? true;
+
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const currentPassword = String(form.get("current"));
     const newPassword = String(form.get("password"));
-    const confirm = String(form.get("confirm"));
-
-    if (newPassword.length < MIN_PASSWORD_LENGTH) {
-      setFieldError(`Use at least ${MIN_PASSWORD_LENGTH} characters.`);
-      return;
-    }
-    if (newPassword !== confirm) {
-      setFieldError("The two passwords don't match.");
-      return;
-    }
+    const problem = newPasswordProblem(newPassword, String(form.get("confirm")));
+    setFieldError(problem);
+    if (problem) return;
 
     setPending(true);
     setError(null);
-    setFieldError(null);
-    const { error: saveError } = await apiPost("/api/account/set-password", { currentPassword, newPassword });
+    const { error: saveError } = await apiPost("/api/account/set-password", {
+      newPassword,
+      ...(firstLogin ? {} : { currentPassword: String(form.get("current")) }),
+    });
     if (saveError) {
       setError(saveError);
       setPending(false);
@@ -49,40 +57,45 @@ export default function SetPasswordPage() {
     router.replace("/dashboard");
   }
 
-  const firstLogin = session?.user.mustChangePassword ?? true;
+  if (loadingSession || !session) {
+    return (
+      <div className="flex min-h-svh items-center justify-center text-muted-2">
+        <Spinner className="size-6" label="Loading" />
+      </div>
+    );
+  }
 
   return (
-    <>
-      <h1 className="font-display text-2xl leading-[30px] font-semibold tracking-[-0.02em]">
-        {firstLogin ? "Choose your own password" : "Change your password"}
-      </h1>
-      <p className="mt-1.5 text-muted">
+    <AuthShell panel={firstLogin ? <LivePanel lodge={null} /> : undefined}>
+      {firstLogin ? null : (
+        <Item variants={riseIn} className="mb-5">
+          <Link href="/dashboard" className="group inline-flex items-center gap-1.5 text-[13px] font-semibold text-muted hover:text-ink">
+            <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-0.5" />
+            Back to dashboard
+          </Link>
+        </Item>
+      )}
+      <AuthHeading title={firstLogin ? "Set your password" : "Change your password"}>
         {firstLogin
-          ? "You logged in with a temporary password. Choose one only you know before you continue."
-          : "You'll be signed out on your other devices."}
-      </p>
+          ? "First time here. Choose a password only you know."
+          : "You will be logged out on your other devices."}
+      </AuthHeading>
 
-      <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4" noValidate>
-        <FormError message={error} />
-        <Field
-          label={firstLogin ? "Temporary password" : "Current password"}
-          name="current"
-          type="password"
-          autoComplete="current-password"
-          required
-        />
-        <Field
-          label="New password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          hint={`At least ${MIN_PASSWORD_LENGTH} characters.`}
-          error={fieldError ?? undefined}
-          required
-        />
-        <Field label="Type it again" name="confirm" type="password" autoComplete="new-password" required />
-        <SubmitButton pending={pending}>{pending ? "Saving" : "Save password"}</SubmitButton>
-      </form>
-    </>
+      <AuthSection>
+        <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
+          <FormMessage>{error}</FormMessage>
+          {firstLogin ? null : (
+            <Field label="Current password">
+              <PasswordInput name="current" autoComplete="current-password" className="sm:h-11" required />
+            </Field>
+          )}
+          <NewPasswordFields error={fieldError} />
+          <Button type="submit" size="lg" className="group mt-2 w-full" loading={pending}>
+            {pending ? "Saving" : firstLogin ? "Save and open dashboard" : "Save password"}
+            {firstLogin ? <ArrowRight className="transition-transform group-hover:translate-x-0.5" /> : null}
+          </Button>
+        </form>
+      </AuthSection>
+    </AuthShell>
   );
 }
