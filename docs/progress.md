@@ -2,7 +2,7 @@
 
 _What's built, what's next, and what's blocking. Update this file whenever a piece of work lands. For what StayZim is and why, see [project.md](project.md)._
 
-**Last updated:** 6 October 2026 (late night)
+**Last updated:** 6 October 2026 (late night, CMS planned)
 
 ## At a glance
 
@@ -24,7 +24,8 @@ _What's built, what's next, and what's blocking. Update this file whenever a pie
 | Site templates (9, 3 per plan) | 🟡 Catalog, plan rules, Design screen and preview done. Only Classic has a real design; the 8 placeholders stay untouched until the user's designer delivers |
 | Change requests | ✅ Owner screen, team screen (`/admin/requests`), API and script |
 | Owner analytics | ✅ Live numbers, chart, countries, activity, and the visits table (filters, pages, each visit's path, 90 days) |
-| Booking calendar | ⏸ Skipped for now at the user's request (Growth and Pro when built) |
+| Lodge CMS (rooms, guest info, quick wins) | 📝 Planned in [cms/](cms/README.md), not built. All plans. See [CMS (pending)](#cms-pending) |
+| Bookings calendar and booking requests | 📝 Planned in [cms/bookings.md](cms/bookings.md), not built. Growth and Pro: guests request dates, owners confirm, decline, cancel, add bookings and close dates |
 | Billing and payments | ✅ Paynow (phone prompt, InnBucks code, card), invoices and receipts (emailed and printable), `mark-paid`, hourly job for reminders, overdue and suspension. Tested against a Paynow stand-in; needs real Paynow credentials |
 | Shared states (suspended, 404, errors, locked features, offline) | ✅ Built |
 | UX pass (back, loading, pending, disabled, unsaved changes, offline) | ✅ Built |
@@ -58,7 +59,7 @@ Story IDs refer to the designer brief.
 - [x] A4 Reset link by email, valid 1 hour, same message whether or not the email exists
 - [x] A5 Log out
 - [x] A6 5 failed sign-ins in 10 minutes pauses sign-in for 10 minutes
-- [x] Accounts created by StayZim only (`create-owner` script); public sign-up disabled
+- [x] Self sign-up (`/signup`, email or Google), plus `create-owner` for accounts StayZim makes (that script was the only way in before sign-up opened)
 - [x] Owners already logged in skip the login screen; team accounts land on `/admin/requests`
 - [ ] Real SMTP credentials (Spacemail) configured and tested
 
@@ -103,9 +104,61 @@ Story IDs refer to the designer brief.
 - [x] X3–X5 Save errors, loading skeletons and spinners, locked features (dashboard)
 - [x] Error screens with Try again (app, root layout, dashboard), offline banner
 
+## CMS (pending)
+
+Planned with the user on 6 October 2026: [docs/cms/](cms/README.md). Nothing here is built yet. Work through it in this order, one commit per step, ticking each box when it lands.
+
+The rule behind all of it: every lodge and every template has the same data shape; only the rendering differs.
+
+### 1. Foundation ([rooms.md](cms/rooms.md#1-foundation))
+
+- [ ] Content contract in `packages/sites/src/content/`: limits, amenities, input schemas, `publicSiteSchema`, dashboard types, date helpers
+- [ ] Server serializers checked with `satisfies`; the shared schemas used in the lodge and room routes
+- [ ] Web copies of the types and the amenity list replaced by the shared ones; `getSite` parses with defaults; no zod in lodge site browser chunks
+
+### 2. Rooms CMS (core, all plans, [rooms.md](cms/rooms.md))
+
+- [ ] Migration `room_details`: description, beds, size, `units` (how many), `visible`
+- [ ] Room sheet: Basics with "How many of this room", Details · Optional, Show on site switch
+- [ ] Hide or show a room from the row menu, with Undo; a Hidden badge and tab *(5-minute)*
+- [ ] Duplicate a room (`POST /rooms/:id/duplicate`, hidden copy) *(5-minute)*
+- [ ] Reorder a room's photos in the sheet (the API exists) *(5-minute)*
+- [ ] Classic shows the room facts and description; only visible rooms reach any template; `HotelRoom` JSON-LD
+
+### 3. Guest info (3 small, all plans, [guest-info.md](cms/guest-info.md))
+
+- [ ] Migration `lodge_guest_info` and the `guestInfo` schema
+- [ ] Stay details: check-in and check-out times, house rules (with chips), cancellation policy *(small)*
+- [ ] FAQ: up to 8, with suggested questions; `FAQPage` JSON-LD *(small)*
+- [ ] Social and listing links: Facebook, Instagram, TikTok, TripAdvisor, Booking.com, Airbnb *(small)*
+- [ ] The Guest info page under My site; Classic's Good to know and FAQ sections; social icons; "Add guest info" on the checklist
+
+### 4. Quick wins ([quick-wins.md](cms/quick-wins.md))
+
+- [ ] Most asked-about rooms on Analytics *(5-minute)*
+- [ ] Edit your name in the account menu *(5-minute)*
+
+### 5. Bookings calendar and owner tools (hard, Growth and Pro, [bookings.md](cms/bookings.md#part-1-the-calendar-and-owner-tools))
+
+- [ ] Migration `bookings` (`Booking`, `BOOKING_REQUEST` event type); `dates` and `availability` helpers with tests
+- [ ] `/api/lodge/bookings`: list, requests, search, add, close dates, confirm, decline, cancel, edit; advisory lock and 409 when full
+- [ ] Bookings page: Requests, Calendar (timeline on desktop, month grid on phones), Upcoming, Past; locked preview on Starter
+- [ ] Booking sheet: add, edit, cancel with a reason, notes, totals, ready-made WhatsApp messages to the guest
+- [ ] Today card on the overview; the "waiting" badge; Delete refused for rooms with bookings; the overbooked warning when "how many" drops
+- [ ] Guest emails (confirmed, declined, cancelled) when they gave an email
+
+### 6. Booking requests from the lodge site (hard, Growth and Pro, [bookings.md](cms/bookings.md#part-2-booking-requests-from-the-lodge-site))
+
+- [ ] `range-calendar` and `switch` in `packages/ui`
+- [ ] Public `availability` and `bookings` routes: rate limit, honeypot, daily cap, full-night check
+- [ ] `BookLink` opens the lazily loaded booking sheet in request mode (every template, placeholders untouched); "Send on WhatsApp too"
+- [ ] Owner email for new requests; analytics count requests
+- [ ] Privacy page, and guest details cleared 12 months after the stay
+- [ ] Landing page, pricing and plan lists stop saying the calendar is coming later
+
 ## Next up
 
-Everything that could be done without the user is done. What's left needs them (see [Blocked on](#blocked-on--needs-a-decision)):
+**The CMS can be built now, without the user:** follow [CMS (pending)](#cms-pending) from step 1. What's below needs them (see [Blocked on](#blocked-on--needs-a-decision)):
 
 1. **Credentials,** then test with the real services:
    - Paynow (test mode first);
@@ -117,7 +170,7 @@ Everything that could be done without the user is done. What's left needs them (
 3. **Business details on invoices:** set `BUSINESS_NAME`, `BUSINESS_ADDRESS` and `BUSINESS_TAX_NUMBER` on the server.
 4. **Demo lodges:** run `seed-demos` with the sales number, then add real photos as each demo owner.
 5. **Real template designs** for the 8 placeholders, when the designer delivers. Leave `basic.tsx` and `looks.ts` alone until then.
-6. **Booking calendar** (skipped for now; Growth and Pro).
+6. **Bookings calendar:** planned as steps 5 and 6 of [CMS (pending)](#cms-pending).
 7. **Real devices:** iOS Safari and Android Chrome.
 
 ## Handoff (6 October 2026, late night)
@@ -130,7 +183,7 @@ The user's rules:
 - Add subtle framer-motion animations wherever they fit, all off with "reduce motion".
 - Web and server only; ignore apps/native.
 - **Don't touch the 8 placeholder templates** (`templates/basic.tsx`, `looks.ts`) until the user's designer delivers.
-- **The booking calendar is skipped** for now.
+- **The CMS is planned, not built** ([docs/cms/](cms/README.md)). Same data for every template; only the rendering differs. Bookings come from guest requests on the site and from the owner. Rooms are room types with a count. The calendar is for Growth and Pro. Stay inside the MVP scope written there; anything under its "Later" list needs the user first.
 - **There is no trial.** Owners sign up for a free 2-day demo on the plan they pick (`/signup`, `/start`), and pay through Paynow.
 
 ### Local setup that differs from the examples
@@ -254,13 +307,14 @@ Agreed with the user:
 - **Global data:**
   - Every template reads the same `PublicSite`: name, description, place, WhatsApp, phone, email, map, theme colour, logo, hero photo, rooms and gallery. What owners enter in Lodge info is used everywhere.
   - Templates must cope with missing pieces (no rooms, photos, WhatsApp or map).
-- **Owner-editable text (MVP, not a CMS):**
-  - Only the hero headline (60 characters) and subline (140): `Lodge.heroHeadline` and `heroSubline`.
+- **Owner-editable text:**
+  - Today: the hero headline (60 characters) and subline (140): `Lodge.heroHeadline` and `heroSubline`.
+  - Planned: room details, guest info (stay details, FAQ, links) and bookings, through the CMS ([docs/cms/](cms/README.md)). Every template receives the same `LiveSite`; the content contract and the sections every template must render are in [cms/README.md](cms/README.md#the-template-contract).
   - Saved with PATCH `/api/lodge`; an empty string resets to the template default.
   - Stored once, not per template, so switching keeps them.
   - Each template has default copy with `{name}` and `{place}` (`heroText()`, `fillCopy()`).
 - **Switching:** preview, then apply. It goes live straight away, and the "Template changed" toast needs an Undo action (PATCH back to the previous key).
-- **Everything else** goes through change requests.
+- **Everything else** goes through change requests (design changes, domains, custom sections).
 
 Built (web):
 
@@ -288,6 +342,10 @@ Built (web):
 ## Log
 
 Newest first. One line per piece of work that landed on `main`.
+
+### 6 October 2026 (CMS plan)
+
+- Planned the lodge CMS with the user and wrote it up in `docs/cms/`: the shared content contract, the Rooms CMS, guest info, quick wins, the bookings calendar and booking requests. Added the [CMS (pending)](#cms-pending) checklist. Docs only; no code changed.
 
 ### 6 October 2026 (late night)
 
