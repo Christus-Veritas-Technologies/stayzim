@@ -13,17 +13,27 @@ export function SiteTracking({ slug, enabled, children }: { slug: string; enable
   return <TrackingContext.Provider value={{ slug, enabled }}>{children}</TrackingContext.Provider>;
 }
 
+/** A version 4 UUID. crypto.randomUUID only exists on HTTPS pages; getRandomValues works on any. */
+function randomId() {
+  if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6]! & 0x0f) | 0x40;
+  bytes[8] = (bytes[8]! & 0x3f) | 0x80;
+  const hex = [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
 /** A random id kept in this browser, so one guest's visits group together. Never personal data. */
 function visitorId() {
   try {
     const existing = localStorage.getItem(VISITOR_KEY);
     if (existing) return existing;
-    const id = crypto.randomUUID();
+    const id = randomId();
     localStorage.setItem(VISITOR_KEY, id);
     return id;
   } catch {
     // Private mode: a fresh id per page load still counts the visit
-    return crypto.randomUUID();
+    return randomId();
   }
 }
 
