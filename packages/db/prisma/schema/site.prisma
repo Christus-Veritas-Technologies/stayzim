@@ -1,0 +1,39 @@
+// Lodge sites ({slug}.stayzim.co.zw): what guests do there, for owner analytics.
+
+enum SiteEventType {
+  PAGE_VIEW
+  /// A tap on a Book on WhatsApp button
+  BOOKING_CHAT
+}
+
+enum Device {
+  PHONE
+  TABLET
+  COMPUTER
+}
+
+/// One visit or booking tap on a lodge site. The owner's own visits are never stored.
+model SiteEvent {
+  id        String        @id @default(cuid())
+  lodgeId   String        @map("lodge_id")
+  lodge     Lodge         @relation(fields: [lodgeId], references: [id], onDelete: Cascade)
+  type      SiteEventType
+  /// Random id kept in the guest's browser, to group one guest's events
+  visitorId String        @map("visitor_id")
+  /// e.g. "/" or "/#rooms"
+  path      String
+  /// The room whose Book on WhatsApp button was tapped
+  roomId    String?       @map("room_id")
+  /// ISO country code, from Cloudflare's CF-IPCountry header when the site is behind Cloudflare
+  country   String?
+  device    Device
+  /// Browser and OS, e.g. "Android, Chrome"
+  browser   String?
+  ip        String?
+  referrer  String?
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  @@index([lodgeId, createdAt])
+  @@index([lodgeId, type, createdAt])
+  @@map("site_event")
+}
