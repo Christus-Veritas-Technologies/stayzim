@@ -1,0 +1,29 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "web", "dev"],
+      "port": 9999
+    },
+    {
+      "name": "server",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "server", "dev"],
+      "port": 9998
+    },
+    {
+      "name": "outreach",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "outreach", "dev"],
+      "port": 9997
+    },
+    {
+      "name": "designs",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "9988", "--directory", "designs"],
+      "port": 9988
+    }
+  ]
+}
