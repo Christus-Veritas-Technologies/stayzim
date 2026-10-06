@@ -11,6 +11,7 @@ import { withSession, type AuthVariables } from "./lib/session";
 import { isLodgeSiteOrigin } from "./lib/sites";
 import { describeStorage, serveUpload } from "./lib/uploads";
 import { account } from "./routes/account";
+import { admin } from "./routes/admin";
 import { landing } from "./routes/landing";
 import { lodge } from "./routes/lodge";
 import { sites } from "./routes/sites";
@@ -53,6 +54,9 @@ app.use("/api/account/*", withSession);
 app.route("/api/account", account);
 
 app.route("/api/lodge", lodge);
+
+// StayZim staff only
+app.route("/api/admin", admin);
 
 // Public: lodge site content and visit tracking
 app.route("/api/sites", sites);
