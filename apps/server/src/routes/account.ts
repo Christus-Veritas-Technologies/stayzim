@@ -10,7 +10,8 @@ import { z } from "zod";
 import { requireAuth, type AuthVariables } from "../lib/session";
 
 const setPasswordSchema = z.object({
-  currentPassword: z.string().min(1),
+  // Not needed on first sign-in: the owner just proved the temporary password
+  currentPassword: z.string().min(1).optional(),
   newPassword: z.string().min(MIN_PASSWORD_LENGTH, `Use at least ${MIN_PASSWORD_LENGTH} characters`).max(128),
 });
 
@@ -40,28 +41,39 @@ export const account = new Hono<{ Variables: AuthVariables }>()
     }),
     async (c) => {
       const { currentPassword, newPassword } = c.req.valid("json");
-      if (newPassword === currentPassword) {
-        throw new HTTPException(400, { message: "Choose a password different from your current one" });
-      }
-
-      let authHeaders: Headers;
-      try {
-        ({ headers: authHeaders } = await auth.api.changePassword({
-          body: { currentPassword, newPassword, revokeOtherSessions: true },
-          headers: c.req.raw.headers,
-          returnHeaders: true,
-        }));
-      } catch {
-        // better-auth answers a wrong current password with an error, not a status
-        throw new HTTPException(400, { message: "Your current password is wrong" });
-      }
-      // Revoking other sessions also replaces this one; pass the new cookie on,
-      // or the owner is signed out by their own password change
-      for (const cookie of authHeaders.getSetCookie()) {
-        c.header("Set-Cookie", cookie, { append: true });
-      }
-
       const user = c.get("user")!;
+      const session = c.get("session")!;
+
+      if (user.mustChangePassword) {
+        // First sign-in: they're signed in with the temporary password StayZim sent,
+        // so replace it directly and keep this session
+        const ctx = await auth.$context;
+        await ctx.internalAdapter.updatePassword(user.id, await ctx.password.hash(newPassword));
+        await prisma.session.deleteMany({ where: { userId: user.id, id: { not: session.id } } });
+      } else {
+        if (!currentPassword) throw new HTTPException(400, { message: "Enter your current password" });
+        if (newPassword === currentPassword) {
+          throw new HTTPException(400, { message: "Choose a password different from your current one" });
+        }
+
+        let authHeaders: Headers;
+        try {
+          ({ headers: authHeaders } = await auth.api.changePassword({
+            body: { currentPassword, newPassword, revokeOtherSessions: true },
+            headers: c.req.raw.headers,
+            returnHeaders: true,
+          }));
+        } catch {
+          // better-auth answers a wrong current password with an error, not a status
+          throw new HTTPException(400, { message: "Your current password is wrong" });
+        }
+        // Revoking other sessions also replaces this one; pass the new cookie on,
+        // or the owner is signed out by their own password change
+        for (const cookie of authHeaders.getSetCookie()) {
+          c.header("Set-Cookie", cookie, { append: true });
+        }
+      }
+
       await prisma.user.update({ where: { id: user.id }, data: { mustChangePassword: false } });
       await sendEmail(passwordChangedEmail({ to: user.email, name: user.name })).catch((error) => {
         console.error("[account] could not send password changed email:", error);
