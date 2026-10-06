@@ -1,26 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Familjen_Grotesk, Instrument_Sans, Newsreader } from "next/font/google";
 
 import "../index.css";
 import Providers from "@/components/providers";
-
-const familjenGrotesk = Familjen_Grotesk({
-  variable: "--font-familjen-grotesk",
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-});
-
-const instrumentSans = Instrument_Sans({
-  variable: "--font-instrument-sans",
-  subsets: ["latin"],
-});
-
-// Lodge names on the sample lodge sites
-const newsreader = Newsreader({
-  variable: "--font-newsreader",
-  subsets: ["latin"],
-  weight: ["600"],
-});
+import { fontVariables } from "@/lib/fonts";
 
 export const metadata: Metadata = {
   title: {
@@ -50,7 +32,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${familjenGrotesk.variable} ${instrumentSans.variable} ${newsreader.variable} bg-white font-sans text-ink antialiased`}
+        className={`${fontVariables} bg-white font-sans text-ink antialiased`}
       >
         <Providers>{children}</Providers>
       </body>
