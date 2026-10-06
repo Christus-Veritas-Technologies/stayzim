@@ -28,7 +28,7 @@ const TONES = {
   warm: "bg-[#F6EFE4] text-[#2A1F14]",
 };
 
-/** Wraps a block in the template's level of motion. */
+/** Wraps a block in the template's level of motion. Starter templates ("none") stay completely still. */
 function Motion({ level, children, className }: { level: MotionLevel; children: ReactNode; className?: string }) {
   if (level === "none") return <div className={className}>{children}</div>;
   return (
@@ -93,7 +93,7 @@ export function BasicTemplate({ site, config }: { site: LiveSite; config: BasicC
   ) : null;
 
   const roomCards = site.rooms.map((room) => (
-    <article key={room.id} className={cn("flex flex-col overflow-hidden rounded-lg border transition-transform", card, rich && "hover:-translate-y-1")}>
+    <article key={room.id} className={cn("flex flex-col overflow-hidden rounded-lg border", card, rich && "transition-transform hover:-translate-y-1")}>
       {room.photos[0] ? (
         // eslint-disable-next-line @next/next/no-img-element -- already resized on upload
         <img src={room.photos[0].url} alt="" loading="lazy" className="aspect-[4/3] w-full object-cover" />
