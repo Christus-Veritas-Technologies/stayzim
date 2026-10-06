@@ -2,9 +2,16 @@
 
 import { env } from "@stayzim/env/web";
 import { cn } from "@stayzim/ui/lib/utils";
-import { useEffect, type ReactNode } from "react";
+import { createContext, useContext, useEffect, type ReactNode } from "react";
 
 const VISITOR_KEY = "stayzim.visitor";
+
+/** Off in template previews, so owners trying designs don't count as visitors. */
+const TrackingContext = createContext({ slug: "", enabled: true });
+
+export function SiteTracking({ slug, enabled, children }: { slug: string; enabled: boolean; children: ReactNode }) {
+  return <TrackingContext.Provider value={{ slug, enabled }}>{children}</TrackingContext.Provider>;
+}
 
 /** A random id kept in this browser, so one guest's visits group together. Never personal data. */
 function visitorId() {
@@ -45,36 +52,38 @@ export function track(slug: string, type: "PAGE_VIEW" | "BOOKING_CHAT", roomId?:
   }
 }
 
-/** Records the page view once the page has loaded. */
-export function PageViewTracker({ slug }: { slug: string }) {
+/** Records the page view once the page has loaded (not in previews). */
+export function PageViewTracker() {
+  const { slug, enabled } = useContext(TrackingContext);
   useEffect(() => {
-    track(slug, "PAGE_VIEW");
-  }, [slug]);
+    if (enabled && slug) track(slug, "PAGE_VIEW");
+  }, [enabled, slug]);
   return null;
 }
 
 /** A wa.me link that records the tap first. Works without JavaScript too. */
 export function BookLink({
-  slug,
   href,
   roomId,
   className,
   children,
   ...props
 }: {
-  slug: string;
   href: string;
   roomId?: string;
   className?: string;
   children: ReactNode;
   "aria-label"?: string;
 }) {
+  const { slug, enabled } = useContext(TrackingContext);
   return (
     <a
       href={href}
       target="_blank"
       rel="noreferrer"
-      onClick={() => track(slug, "BOOKING_CHAT", roomId)}
+      onClick={() => {
+        if (enabled && slug) track(slug, "BOOKING_CHAT", roomId);
+      }}
       className={cn(className)}
       {...props}
     >
