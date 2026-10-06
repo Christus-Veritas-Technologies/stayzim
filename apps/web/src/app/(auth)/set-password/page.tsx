@@ -13,7 +13,8 @@ import { LivePanel } from "@/components/auth/kariba-panel";
 import { NewPasswordFields, newPasswordProblem } from "@/components/auth/new-password-fields";
 import { AuthHeading, AuthSection, AuthShell } from "@/components/auth/shell";
 import { Item, riseIn } from "@/components/motion";
-import { apiPost, authClient } from "@/lib/auth-client";
+import { api } from "@/lib/api";
+import { authClient } from "@/lib/auth-client";
 
 /**
  * First sign-in: swap the temporary password StayZim sent for the owner's own.
@@ -43,9 +44,9 @@ export default function SetPasswordPage() {
 
     setPending(true);
     setError(null);
-    const { error: saveError } = await apiPost("/api/account/set-password", {
-      newPassword,
-      ...(firstLogin ? {} : { currentPassword: String(form.get("current")) }),
+    const { error: saveError } = await api("/api/account/set-password", {
+      method: "POST",
+      json: { newPassword, ...(firstLogin ? {} : { currentPassword: String(form.get("current")) }) },
     });
     if (saveError) {
       setError(saveError);

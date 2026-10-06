@@ -35,20 +35,3 @@ export function authErrorMessage(error: { code?: string; status?: number; messag
       return error.message || "Something went wrong. Try again.";
   }
 }
-
-/** POST to our own API (not better-auth), sending the session cookie. */
-export async function apiPost<T = unknown>(path: string, body: unknown): Promise<{ data?: T; error?: string }> {
-  try {
-    const response = await fetch(`${env.NEXT_PUBLIC_SERVER_URL}${path}`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const json = (await response.json().catch(() => ({}))) as { error?: string } & T;
-    if (!response.ok) return { error: json.error ?? "Something went wrong. Try again." };
-    return { data: json };
-  } catch {
-    return { error: "Could not reach StayZim. Check your connection and try again." };
-  }
-}
