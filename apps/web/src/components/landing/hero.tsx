@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { WhatsAppIcon } from "./brand";
 import { LOCATIONS, LODGES, type Lodge } from "./content";
 import { TrackedLink, WhatsAppLink } from "./cta";
-import { EASE_OUT, fadeUp } from "./motion";
+import { EASE_OUT, fadeUp } from "@/components/motion";
 
 const RINGS = [
   { size: 600, color: "#DCE3E7" },

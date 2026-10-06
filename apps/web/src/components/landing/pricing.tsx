@@ -6,7 +6,7 @@ import { BadgePercent, CircleCheck, CreditCard, Globe, Star } from "lucide-react
 import { Eyebrow, WhatsAppIcon } from "./brand";
 import { PLANS, type Plan } from "./content";
 import { WhatsAppLink } from "./cta";
-import { EASE_OUT, Item, Stagger } from "./motion";
+import { EASE_OUT, Item, Stagger } from "@/components/motion";
 
 const planCard: Variants = {
   hidden: { opacity: 0, y: 40 },

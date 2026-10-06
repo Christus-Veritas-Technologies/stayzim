@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 
 import { Eyebrow, WhatsAppIcon } from "./brand";
 import { LODGES } from "./content";
-import { EASE_OUT, CountUp, fadeUp, Item, popIn, Stagger } from "./motion";
+import { EASE_OUT, CountUp, fadeUp, Item, popIn, Stagger } from "@/components/motion";
 
 /** Each card fades up, then plays its mockup in sequence. */
 const card: Variants = {

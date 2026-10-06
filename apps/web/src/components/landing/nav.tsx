@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { Wordmark, WhatsAppIcon } from "./brand";
 import { NAV_LINKS } from "./content";
 import { TrackedLink, WhatsAppLink } from "./cta";
-import { EASE_OUT } from "./motion";
+import { EASE_OUT } from "@/components/motion";
 
 /** Which section is under the nav, for the highlight. */
 function useActiveSection() {

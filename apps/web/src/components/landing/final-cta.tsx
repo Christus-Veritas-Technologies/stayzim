@@ -5,7 +5,7 @@ import { ArrowUpRight, Sparkles, TrendingUp } from "lucide-react";
 
 import { WhatsAppIcon } from "./brand";
 import { TrackedLink, WhatsAppLink } from "./cta";
-import { CountUp, EASE_OUT, Item, Stagger } from "./motion";
+import { CountUp, EASE_OUT, Item, Stagger } from "@/components/motion";
 
 const VISIT_BARS = [14, 22, 18, 30, 26, 40, 34];
 const DARK_CARD =

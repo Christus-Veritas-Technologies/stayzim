@@ -64,7 +64,10 @@ export function Reveal({
   );
 }
 
-/** Counts from `from` to `to` the first time it scrolls into view. */
+/**
+ * Counts from `from` to `to` the first time it scrolls into view. When `to`
+ * changes later (e.g. 7 days → 30 days), it counts on from the number shown.
+ */
 export function CountUp({
   to,
   from = 0,
@@ -85,12 +88,21 @@ export function CountUp({
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true, amount: 0.6 });
   const [value, setValue] = useState(from);
+  const shown = useRef(from);
 
   useEffect(() => {
     if (!inView) return;
-    const controls = animate(from, to, { duration, delay, ease: EASE_OUT, onUpdate: setValue });
+    const controls = animate(shown.current, to, {
+      duration,
+      delay,
+      ease: EASE_OUT,
+      onUpdate: (latest) => {
+        shown.current = latest;
+        setValue(latest);
+      },
+    });
     return () => controls.stop();
-  }, [delay, duration, from, inView, to]);
+  }, [delay, duration, inView, to]);
 
   return (
     <span ref={ref} className="tabular-nums">
@@ -116,3 +128,31 @@ export function Float({
     />
   );
 }
+
+/**
+ * Children fade up one after another as soon as this mounts. For app screens,
+ * where content is on screen straight away (use <Stagger> for scroll reveals).
+ */
+export function Appear({
+  stagger = 0.06,
+  delay = 0,
+  children,
+  ...props
+}: HTMLMotionProps<"div"> & { stagger?: number; delay?: number }) {
+  return (
+    <motion.div
+      initial="hidden"
+      animate="show"
+      variants={{ hidden: {}, show: { transition: { staggerChildren: stagger, delayChildren: delay } } }}
+      {...props}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+/** A smaller, quicker fade up for dense app screens. Use as an <Item> variant inside <Appear>. */
+export const riseIn: Variants = {
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: EASE_OUT } },
+};

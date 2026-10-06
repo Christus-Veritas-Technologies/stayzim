@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { ArrowDown, ArrowRight } from "lucide-react";
 
 import { Eyebrow } from "./brand";
-import { CountUp, EASE_OUT, Item, Reveal, Stagger } from "./motion";
+import { CountUp, EASE_OUT, Item, Reveal, Stagger } from "@/components/motion";
 
 /** A bar that grows to its width when scrolled into view. */
 function GrowBar({ width, delay, className, children }: { width: string; delay: number; className: string; children: React.ReactNode }) {

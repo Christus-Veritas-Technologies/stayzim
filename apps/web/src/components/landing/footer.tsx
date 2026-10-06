@@ -7,7 +7,7 @@ import { CONTACT_EMAIL } from "@/lib/whatsapp";
 import { LogoMark, Wordmark, WhatsAppIcon } from "./brand";
 import { FOOTER_COLUMNS } from "./content";
 import { WhatsAppLink } from "./cta";
-import { EASE_OUT, Item, Stagger } from "./motion";
+import { EASE_OUT, Item, Stagger } from "@/components/motion";
 
 const linkClass = "inline-flex items-center gap-2 text-[15px] text-soft no-underline transition-colors hover:text-white";
 

@@ -6,7 +6,7 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import { Eyebrow, LogoMark, WhatsAppIcon } from "./brand";
 import { QUESTIONS } from "./content";
 import { WhatsAppLink } from "./cta";
-import { Item, Reveal, Stagger } from "./motion";
+import { Item, Reveal, Stagger } from "@/components/motion";
 
 const TYPING_MS = 1100;
 

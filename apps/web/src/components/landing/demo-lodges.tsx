@@ -6,7 +6,7 @@ import { ArrowUpRight, MapPin } from "lucide-react";
 import { Eyebrow, WhatsAppIcon } from "./brand";
 import { LODGES, type Lodge } from "./content";
 import { TrackedLink, WhatsAppLink } from "./cta";
-import { EASE_OUT, Item, Reveal, Stagger } from "./motion";
+import { EASE_OUT, Item, Reveal, Stagger } from "@/components/motion";
 
 function LodgeCard({ lodge }: { lodge: Lodge }) {
   return (
