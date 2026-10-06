@@ -20,3 +20,6 @@ apps/native/*
 # WhatsApp Web scratch data (sessions live in Postgres)
 **/.wwebjs_auth
 **/.wwebjs_cache
+
+# Local photos from development (production stores them in R2)
+apps/server/uploads
