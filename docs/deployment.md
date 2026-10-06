@@ -1,0 +1,181 @@
+# Deploying StayZim
+
+StayZim runs on one VPS with [Coolify](https://coolify.io), behind Cloudflare. Coolify builds the Docker images straight from this repository and keeps them running.
+
+[`deploy/compose.yaml`](../deploy/compose.yaml) is the whole stack:
+
+| Service | What | Address |
+| --- | --- | --- |
+| `web` | Landing page, login and dashboard, and every lodge site | `stayzim.co.zw`, `app.stayzim.co.zw`, `*.stayzim.co.zw` |
+| `server` | The API (Hono on Bun). Applies new database migrations each time it starts | `api.stayzim.co.zw` |
+| `db` | Postgres 16, data in the `postgres` volume | internal only |
+
+Lodge photos live in Cloudflare R2, served from `media.stayzim.co.zw`, so the server needs no volume.
+
+The outreach tool (`apps/outreach`) isn't in this stack. Deploy it as its own resource with `apps/outreach/Dockerfile` when it's needed.
+
+**Tested here:**
+
+- Both images built.
+- The stack ran with `docker compose` against a test S3 server, standing in for R2. On start it:
+  - applied the migrations;
+  - passed `/health`;
+  - created an owner and lodge with the scripts inside the container;
+  - served the lodge site through its host name;
+  - stored an upload in the S3 server;
+  - passed every browser test (sign-in across subdomains, and 360px phones).
+
+**Not tested here:** Coolify itself, Cloudflare and real R2.
+
+## 1. Cloudflare
+
+Add `stayzim.co.zw` to Cloudflare and point the registrar's nameservers at it.
+
+**DNS** (all proxied, orange cloud, pointing at the VPS IP):
+
+| Type | Name | Content |
+| --- | --- | --- |
+| A | `stayzim.co.zw` (`@`) | VPS IP |
+| A | `app` | VPS IP |
+| A | `api` | VPS IP |
+| A | `*` | VPS IP (every lodge site) |
+
+The `media` record comes from R2 (step 2), not from you.
+
+**SSL/TLS:**
+
+1. Set the mode to **Full (strict)**.
+2. Go to Origin Server → Create Certificate. Make one for `stayzim.co.zw` and `*.stayzim.co.zw` (RSA, 15 years). Keep the certificate and private key for step 3.
+3. Turn on Always Use HTTPS.
+
+Cloudflare's free Universal SSL covers the apex and one level of wildcard, so visitors get a valid certificate for `mistvalley.stayzim.co.zw` without any per-lodge work. The origin certificate covers the hop from Cloudflare to the VPS, so you don't need a Let's Encrypt wildcard (which would need a DNS-01 challenge).
+
+Cloudflare also sends:
+
+- `CF-Connecting-IP`, the visitor's real IP, used for rate limits. Keep `CLIENT_IP_HEADER=cf-connecting-ip`.
+- `CF-IPCountry`, which gives owners visitor countries.
+
+> Alternative without Cloudflare's proxy: grey-cloud the records and let Coolify's Traefik get a Let's Encrypt wildcard with a DNS-01 challenge (Coolify → Servers → Proxy). Then set `CLIENT_IP_HEADER=x-forwarded-for`, and owners won't see countries.
+
+## 2. Cloudflare R2 (lodge photos)
+
+1. Go to R2 → Create bucket `stayzim-media`.
+2. Under Settings → Custom Domains, add `media.stayzim.co.zw`. Cloudflare creates the DNS record.
+3. Add a Cache Rule for `media.stayzim.co.zw`: cache everything, Edge TTL 1 year. Every photo has a new file name, so nothing ever needs purging.
+4. Go to R2 → Manage API Tokens → Create a token with **Object Read & Write**, limited to this bucket.
+5. Note:
+   - the Account ID → `R2_ACCOUNT_ID`;
+   - the Access Key ID and Secret → `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY`;
+   - `R2_BUCKET=stayzim-media`;
+   - `R2_PUBLIC_URL=https://media.stayzim.co.zw`.
+
+The API refuses to start in production without R2.
+
+## 3. Coolify
+
+Install Coolify on the VPS (Ubuntu 24.04, 2 vCPU, 4 GB RAM is plenty to start). Then:
+
+1. **Origin certificate:** in Servers → your server → Proxy → Dynamic Configurations, add the Cloudflare origin certificate as Traefik's default certificate:
+
+   ```yaml
+   tls:
+     stores:
+       default:
+         defaultCertificate:
+           certFile: /traefik/certs/stayzim.pem
+           keyFile: /traefik/certs/stayzim.key
+   ```
+
+   Save the certificate and key on the server at `/data/coolify/proxy/certs/stayzim.pem` and `stayzim.key`, then restart the proxy.
+
+2. **New resource:**
+   - Go to Project → New Resource → your GitHub repository.
+   - Build pack: **Docker Compose**.
+   - Compose file: `/deploy/compose.yaml`.
+   - Branch: `main`.
+
+3. **Domains:**
+   - service `web`: `https://stayzim.co.zw,https://app.stayzim.co.zw`;
+   - service `server`: `https://api.stayzim.co.zw`;
+   - `db`: none.
+
+   Lodge sites need no domain here: the `web` service's Traefik labels in the compose file send every other `*.stayzim.co.zw` host to it, with lower priority than the named domains. If Coolify adds Let's Encrypt to these routes, switch that off: Cloudflare and the origin certificate handle TLS.
+
+4. **Environment variables:**
+   - Paste [`deploy/.env.example`](../deploy/.env.example) and fill it in.
+   - Required: `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET` (`openssl rand -base64 32`), the `R2_*` settings, and `NEXT_PUBLIC_WHATSAPP_NUMBER`.
+   - SMTP and Google are needed for reset emails and Google sign-in.
+   - `NEXT_PUBLIC_*` values are baked in when the web image builds, so mark them as build variables, and redeploy after changing them.
+
+5. **Deploy.** The server waits for Postgres, applies the migrations, then starts. Web waits for the server's health check (`/health`, which also checks the database).
+
+## 4. First run
+
+Open a terminal on the `server` container (Coolify → the resource → Terminal → `server`):
+
+```bash
+# StayZim's own login, for the team screen (/admin/requests)
+cd /app/packages/auth && bun scripts/create-owner.ts --email you@stayzim.co.zw --name "Your Name" --admin
+
+# The landing page's demo lodges, with the sales number
+bun scripts/seed-demos.ts --whatsapp 2637XXXXXXXX
+```
+
+The scripts print temporary passwords.
+
+- Sign in at `https://app.stayzim.co.zw`, choose a password, and add photos to each demo lodge as its demo owner.
+- New lodges follow the same pattern: `create-owner`, then `cd /app/packages/db && bun scripts/create-lodge.ts …` (see the [README](../README.md)).
+- With the wildcard in place, a new lodge's site is live straight away. Nothing changes in DNS or Coolify.
+
+**Check after deploying:**
+
+- `https://api.stayzim.co.zw/health` → `{"status":"ok"}`.
+- `https://stayzim.co.zw` shows the landing page, and `https://mistvalley.stayzim.co.zw` shows a demo lodge.
+- Signing in on `app.` reaches the dashboard. If it bounces back to the login page, check `COOKIE_DOMAIN=.stayzim.co.zw` and `CORS_ORIGIN`.
+- Five wrong passwords in a row give "Too many attempts". If one person's mistakes lock everyone out, `CLIENT_IP_HEADER` doesn't match the proxy.
+
+## Updates and rollbacks
+
+**Updating:**
+
+- Pushing to `main` and pressing Redeploy (or turning on auto-deploy) rebuilds both images.
+- New migrations in `packages/db/prisma/migrations` apply when the server starts.
+- Migrations only ever apply what a reviewed SQL file says. A failed migration stops the server container before the app starts, and the log names the migration. Fix it, then redeploy.
+
+**Rolling back:** redeploy the previous commit from Coolify's Deployments tab. Migrations don't roll back by themselves, so a rollback across a migration that removed something needs a restore (below).
+
+**A database made before migrations** (with `prisma db push`) stops the server with error P3005. Baseline it once in the server container:
+
+```bash
+cd /app/packages/db && ./node_modules/.bin/prisma migrate resolve --applied 0_init
+```
+
+Then restart. See [Database changes](../README.md#database-changes).
+
+## Backups
+
+**Coolify:**
+
+1. Add R2 (or any S3 storage) under Storages: endpoint `https://<account id>.r2.cloudflarestorage.com`, with its own bucket (for example `stayzim-backups`) and a token.
+2. In the `db` service's Backups tab, schedule a daily backup to it, and keep at least 14.
+
+Coolify's backups need the database as a Coolify-managed Postgres. With the bundled `db` service, use the script instead, from cron on the VPS:
+
+```bash
+# /etc/cron.d/stayzim-backup: 02:30 every night
+30 2 * * * root docker exec $(docker ps -qf name=db- | head -n 1) pg_dump -U stayzim -Fc stayzim > /var/backups/stayzim-$(date +\%F).dump && find /var/backups -name 'stayzim-*.dump' -mtime +14 -delete
+```
+
+[`docker/backup.sh`](../docker/backup.sh) does the same from any machine with `pg_dump` and `DATABASE_URL`, and keeps the newest 14. Copy the files off the VPS (for example `rclone copy /var/backups r2:stayzim-backups`): a backup on the same disk dies with it.
+
+**Restore** into an empty database:
+
+```bash
+pg_restore --no-owner --no-privileges --dbname="$DATABASE_URL" stayzim-2026-10-06.dump
+```
+
+Try a restore now and then. One was tested here on the dev database, and the row counts matched.
+
+## Custom domains (later)
+
+A lodge on its own domain (for example `mistvalleylodge.co.zw`) needs routing and a certificate per domain. That's covered when custom domains are added to the app.

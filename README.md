@@ -160,6 +160,8 @@ If the last command lists differences, the database was pushed from a schema new
 
 ## Docker
 
+To deploy, follow [docs/deployment.md](docs/deployment.md) (Coolify, Cloudflare and R2, with [deploy/compose.yaml](deploy/compose.yaml)).
+
 Each deployable app has a Dockerfile. Build from the repo root:
 
 ```bash

@@ -214,10 +214,12 @@ How they're built:
   - Give it `--shm-size=1g` and about 300 MB of memory per number.
   - Sessions are backed up to Postgres, so no volume is required. A volume on `/app/apps/outreach/.wwebjs_auth` only saves restoring them on restart.
 
-## Production shape (planned)
+## Production shape
+
+Step by step in [deployment.md](deployment.md).
 
 - `stayzim.co.zw` and `app.stayzim.co.zw`: apps/web
-- `{slug}.stayzim.co.zw`: lodge sites, also apps/web, via a wildcard DNS record and certificate (see the deployment notes in [progress.md](progress.md))
+- `{slug}.stayzim.co.zw`: lodge sites, also apps/web, via a wildcard DNS record and certificate (see [deployment.md](deployment.md))
 - `api.stayzim.co.zw`: apps/server, with `COOKIE_DOMAIN=.stayzim.co.zw` so web and API share the session cookie, and `CORS_ORIGIN=https://app.stayzim.co.zw,https://stayzim.co.zw`
 - `media.stayzim.co.zw`: the R2 bucket's public domain, for lodge photos
 - Outreach runs on the same VPS but isn't exposed publicly beyond its password-protected pages
