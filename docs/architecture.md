@@ -152,11 +152,56 @@ Anything owners can't change themselves goes through change requests.
 
 The `resolve-request` script does the same from a terminal (`pnpm --filter @stayzim/db resolve-request --list`, or `--ref R-XXXX --status done --reply "…"`).
 
+## Sign-up and the demo
+
+- **`/signup?plan=growth`:** name, email and password (or Google), with the plan as chips. There's no email check first, because sign-up to a live site has to take minutes (the ads). A rate limit allows 5 sign-ups per IP per 10 minutes.
+- **`/start`** (`app/start/page.tsx`, steps in `components/start/`):
+  1. The lodge: name, town, WhatsApp, and a web address suggested live by `GET /api/onboarding/slug`.
+  2. Photos.
+  3. Quick rooms.
+  4. "You're live".
+
+  Step 1 calls `POST /api/onboarding/lodge`, which creates the lodge as `DEMO` with `demoEndsAt` set 2 days ahead, its first invoice, and the welcome email. Each step is in the URL, so a reload carries on. A signed-in owner without a lodge is sent here from the dashboard.
+- **Demo sites:**
+  - They carry badges, added around any template in `components/site/templates/index.tsx` (`demo-badges.tsx`).
+  - They're `noindex`, and robots and the sitemap leave them out.
+  - Their own domains aren't served.
+  - Once `demoEndsAt` passes, the API answers `DEMO_ENDED` and the site shows "isn't online right now". This is worked out when the site is served, so it's on time without the job.
+- **Rules** (prices, `DEMO_DAYS`, `GRACE_DAYS`, `DEMO_KEEP_DAYS`, slugs, billing dates in Zimbabwe time) live in `@stayzim/sites` (`plans.ts`, `slugs.ts`, `billing-dates.ts`) for the server, the web app and the scripts.
+
+## Billing
+
+- **Statuses:**
+  - `DEMO`: free for 2 days. When it ends, the site is offline; the lodge is deleted 30 days after that if never paid.
+  - `ACTIVE`: paid until `paidUntil`.
+  - `OVERDUE`: past `paidUntil`, and the site stays up.
+  - `SUSPENDED`: 3 days later, and the site is offline.
+
+  A payment makes any of them `ACTIVE`.
+- **Models** (`billing.prisma`):
+  - `Invoice`: `SZ-2026-00042`, one month of a plan, `OPEN`, `PAID` or `VOID`.
+  - `Payment`: `PAYNOW` or `MANUAL`, with a receipt number `R-2026-00007` once paid.
+  - `BillingNotice`: one row per email sent, keyed by what it was about, so nothing goes twice.
+  - `BillingCounter`: running numbers, and the job's hourly lease.
+- **Paynow** (`apps/server/src/lib/paynow.ts`): a small client for Paynow's form protocol, with the same hash as the official SDK.
+  - Owners pay from Billing: a prompt on the phone (EcoCash, OneMoney), a code for the InnBucks app, or Paynow's page ("web", for cards).
+  - The Billing screen polls `GET /api/lodge/billing/payments/:id`, which asks Paynow at most every 5 seconds.
+  - Paynow also posts to `POST /api/paynow/result`. The hash is checked, then we poll Paynow ourselves with the stored poll URL and check the amount before applying.
+  - `applyPayment()` (`lib/billing.ts`) is idempotent: it moves the lodge to the plan paid for, `ACTIVE`, extends `paidUntil` from whichever is later (now or the current `paidUntil`), closes open invoices, and emails the receipt.
+  - Without `PAYNOW_INTEGRATION_*`, the Paynow buttons are hidden and the merchant codes remain.
+- **Manual payments:** `pnpm --filter server mark-paid --slug … [--months 3] [--plan pro] [--channel cash]` records one with the same `applyPayment` (receipt included). `--status` sets a status by hand; `--list` shows everyone.
+- **The job** (`apps/server/src/jobs/billing.ts`) runs a minute after the server starts and then hourly, under a lease, so only one server runs it. `pnpm --filter server run-billing [--now …]` runs it by hand. Each run:
+  1. **Invoices:** for paying lodges within 3 days of `paidUntil`, it makes the next invoice and sends the reminder for the current window (3 days before, the day before, on the day, in Harare dates). Demos get their reminders the day before and on the day.
+  2. **Status:** `ACTIVE` → `OVERDUE` → `SUSPENDED`, with the "site offline" email, plus the "demo ended" email.
+  3. **Missed callbacks:** it re-checks Paynow payments still pending.
+  4. **Clean-up:** it deletes demos never paid for 30 days after they ended (photos, lodge, account).
+- **Documents:** `/dashboard/billing/[number]` shows an invoice or receipt, laid out to print or save as PDF (no PDF library). The issuer details are `STAYZIM_BUSINESS` in `apps/web/src/lib/billing.ts`.
+
 ## Sign-in
 
-- Email and password through better-auth. There's no public sign-up; StayZim creates accounts with `create-owner`. Details, rules and flows: [auth.md](auth.md).
-- **Google:** "Continue with Google" shows when `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set. It signs in the existing account with the same (verified) email and never creates one. Errors come back to `/login?error=…`.
-- **After login:** team accounts (`--admin`) land on `/admin/requests`, owners on `/dashboard`, and anyone on a temporary password on `/set-password` first.
+- Email and password through better-auth. Owners sign up themselves (above); StayZim can still create accounts with `create-owner`. Details, rules and flows: [auth.md](auth.md).
+- **Google:** "Continue with Google" shows when `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set. It signs in the account with the same email, or creates one (then `/start`). Errors come back to `/login?error=…` (or `/signup`).
+- **After login:** team accounts (`--admin`) land on `/admin/requests`, owners on `/dashboard`, anyone on a temporary password on `/set-password` first, and an owner without a lodge on `/start`.
 
 ## Packages
 
@@ -164,8 +209,8 @@ The `resolve-request` script does the same from a terminal (`pnpm --filter @stay
 | --- | --- |
 | `@stayzim/db` | Prisma schema, split by area in `prisma/schema/`, the shared client (`import prisma from "@stayzim/db"`), and the `create-lodge` and `resolve-request` scripts |
 | `@stayzim/auth` | better-auth config (`auth`), `MIN_PASSWORD_LENGTH`, `googleSignInEnabled`, and `scripts/create-owner.ts` |
-| `@stayzim/sites` | The template catalog and its rules: plans, `templateAllowed`, `effectiveTemplate`, `DEFAULT_TEMPLATE`, `HERO_LIMITS`, `heroText`, `fillCopy`. Shared by server and web |
-| `@stayzim/mail` | `sendEmail()` over SMTP with Nodemailer, `verifyMailConnection()`, and templates in `templates.ts` |
+| `@stayzim/sites` | The template catalog and its rules (`templateAllowed`, `effectiveTemplate`, `DEFAULT_TEMPLATE`, `HERO_LIMITS`, `heroText`), plan prices and inclusions (`plans.ts`), slug rules (`slugs.ts`), and billing dates in Zimbabwe time (`billing-dates.ts`). Shared by server, web and scripts |
+| `@stayzim/mail` | `sendEmail()` over SMTP with Nodemailer, `verifyMailConnection()`, and templates: account emails in `templates.ts`; welcome, invoice, receipt, demo ended and site offline in `billing.ts` |
 | `@stayzim/env` | Validated env per app: `server`, `web`, `outreach`, `native` |
 | `@stayzim/ui` | StayZim design tokens and shadcn-style components on Base UI (buttons, fields, dialogs, sheets, tabs, menus, …) |
 | `@stayzim/config` | Base `tsconfig` |
@@ -178,7 +223,8 @@ One Prisma schema, split into files:
 | --- | --- | --- |
 | `auth.prisma` | `User` (with `role` `OWNER` or `ADMIN`, `mustChangePassword`), `Session`, `Account`, `Verification` | server |
 | `landing.prisma` | `LandingEvent` | server |
-| `lodge.prisma` | `Lodge` (plan, status, trial, theme, template and hero text, one per owner), `Room`, `Photo` (gallery when `roomId` is null), `ChangeRequest` | server |
+| `lodge.prisma` | `Lodge` (plan, status, `demoEndsAt`, `paidUntil`, own domain, theme, template and hero text, one per owner), `Room`, `Photo` (gallery when `roomId` is null), `ChangeRequest` | server |
+| `billing.prisma` | `Invoice`, `Payment`, `BillingNotice` (emails sent), `BillingCounter` (running numbers) | server |
 | `site.prisma` | `SiteEvent` (lodge site page views and booking chats) | server |
 | `outreach.prisma` | `WhatsappSession`, `Contact`, `OutreachMessage`, `InboundMessage` | outreach |
 
@@ -188,7 +234,7 @@ Both databases get the whole schema; each app only uses its own tables. Changes 
 
 | App | File | Key settings |
 | --- | --- | --- |
-| server | `apps/server/.env` | `DATABASE_URL`, `CORS_ORIGIN` (comma-separated), `SITES_DOMAIN`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `WEB_URL`, `COOKIE_DOMAIN`, `GOOGLE_*`, `R2_*`, `SMTP_*`. See [.env.example](../apps/server/.env.example). |
+| server | `apps/server/.env` | `DATABASE_URL`, `CORS_ORIGIN` (comma-separated), `SITES_DOMAIN`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `WEB_URL`, `COOKIE_DOMAIN`, `GOOGLE_*`, `R2_*`, `SMTP_*`, `PAYNOW_*`. See [.env.example](../apps/server/.env.example). |
 | web | `apps/web/.env` | `NEXT_PUBLIC_SERVER_URL`, `NEXT_PUBLIC_SITES_DOMAIN`, `NEXT_PUBLIC_WHATSAPP_NUMBER`. See [.env.example](../apps/web/.env.example). |
 | outreach | `apps/outreach/.env` | `DATABASE_URL`, `OUTREACH_PASSWORD`, `WHATSAPP_*`. See [.env.example](../apps/outreach/.env.example). |
 

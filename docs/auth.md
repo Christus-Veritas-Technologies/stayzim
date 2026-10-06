@@ -4,7 +4,9 @@ Owner accounts use [better-auth](https://www.better-auth.com) on `apps/server`, 
 
 ## How owners get an account
 
-There is **no public sign-up**. StayZim creates every account:
+**Owners sign up themselves** at `/signup` (name, email, password or Google, and a plan), then make their lodge at `/start`. It goes live straight away as a 2-day demo (see [architecture.md](architecture.md#sign-up-and-the-demo)). There's no email check first, so sign-up stays quick; invoices and receipts go to that address. Sign-ups are limited to 5 per IP per 10 minutes.
+
+StayZim can also create an account for an owner, for example after a walk-in:
 
 ```bash
 pnpm --filter @stayzim/auth create-owner --email owner@lodge.co.zw --name "Tendai Moyo"
@@ -32,9 +34,9 @@ This prints a **temporary password**; send it to the owner on WhatsApp with the 
 
 "Continue with Google" on `/login` is optional. It shows when the server has `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` (setup steps are in `apps/server/.env.example`); `GET /api/account/sign-in-options` tells the login screen.
 
-- **Existing accounts only:** Google signs in the account with the same (verified) email, linking it on first use. It never creates an account (`disableSignUp`); an unknown email comes back as `/login?error=signup_disabled`.
+- **Sign in or sign up:** Google signs in the account with the same (verified) email, linking it on first use, or creates a new one, which goes on to `/start` (`newUserCallbackURL`).
 - **Temporary passwords:** if an owner links Google while still on the temporary password StayZim sent, that password is replaced with a random one and the dashboard opens. They can set their own later with Forgot password.
-- **Errors** return to `/login?error=…`, shown in plain words by `oauthErrorMessage` (`signup_disabled`, `account_not_linked`, `access_denied`).
+- **Errors** return to `/login?error=…`, shown in plain words by `oauthErrorMessage` (`account_not_linked`, `access_denied`); from the sign-up page they return to `/signup?error=…`.
 - **Not yet tested** with a real Google OAuth client.
 
 ## Rules

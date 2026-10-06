@@ -39,7 +39,8 @@ StayZim gives Zimbabwean lodges, guesthouses, cottages and Airbnbs their own web
 - **Facebook click-to-WhatsApp ads** aimed at lodge, guesthouse and Airbnb owners, from about $5 a day.
 - **Walking into lodges** with a demo of their own site already built.
 - **WhatsApp outreach** to leads who opted in or replied to the ads, sent from 3 StayZim numbers with daily limits (`apps/outreach`).
-- **Pre-bought .co.zw domains** offered free with hosting.
+- **Facebook ads** to `/signup`: owners make their own live demo in about 5 minutes.
+- **Free .co.zw domains** on Growth and Pro, registered by StayZim.
 
 ## Plans
 
@@ -48,12 +49,18 @@ StayZim gives Zimbabwean lodges, guesthouses, cottages and Airbnbs their own web
 | Price | $20/month | $40/month | $75/month |
 | Tagline | Get found | Get booked | Get full |
 | For | New Airbnbs and small guesthouses | About 80% of lodges; the plan to sell | Busy lodges with 5+ rooms, diaspora owners |
-| Includes | Site on {slug}.stayzim.co.zw (hero, rooms, gallery, map), Book on WhatsApp button, Google Business setup | Starter + visitor analytics. Coming: own .co.zw domain, booking calendar, Paynow/InnBucks deposits, Instagram feed, local SEO | Growth + StayZim manages Booking.com and Airbnb photos and text, channel sync, 2 SEO blog posts a month, priority WhatsApp support |
+| Includes | Site on {slug}.stayzim.co.zw (hero, rooms, gallery, map), Book on WhatsApp button, Google Business setup, connect a domain they have | Starter + visitor analytics + a free .co.zw domain. Coming: booking calendar, Paynow/InnBucks deposits, Instagram feed, local SEO | Growth + StayZim manages Booking.com and Airbnb photos and text, channel sync, 2 SEO blog posts a month, priority WhatsApp support |
 
-- Every lodge starts with a **14-day Growth trial**, with the site already built.
+- **Three plans, no free plan.** Owners sign up and pick a plan. Their site is live straight away as a **free 2-day demo** on that plan, with "demo" badges.
+- **Unpaid demos:** the site goes offline when the demo ends, and the demo is deleted 30 days later.
 - **No commission** on any plan.
-- **Payment is manual:** owners pay monthly by Paynow, EcoCash or InnBucks, send proof on WhatsApp, and Kin marks them paid.
-- **Missed payment:** Trial → Overdue (site stays up 3 more days) → Suspended (site shows "temporarily unavailable"; dashboard still works so they can pay) → Active once paid.
+- **Paying:**
+  - Owners pay online through Paynow: EcoCash, InnBucks or OneMoney (a prompt on the phone or a code), or card. They can pay for 1, 3 or 12 months.
+  - They can also pay to the EcoCash or InnBucks merchant code; StayZim records it with `mark-paid`.
+  - Invoices are emailed 3 days before, the day before and on the day the paid time ends; receipts on payment.
+- **Missed payment:** Active → Overdue when the paid time ends (the site stays up 3 more days) → Suspended (the site shows "temporarily unavailable"; the dashboard still works so they can pay) → Active once paid. This all happens automatically.
+- **Own domains** on every plan, once paid. Growth and Pro include a free `.co.zw`.
+- **Booking calendar:** Growth and Pro, when it's built.
 
 ## Decisions so far
 
@@ -95,13 +102,14 @@ The brief is a few weeks old. Where it disagrees with what's built, the build wi
 | Hono and Prisma on Cloudflare Workers | Hono on Bun with Prisma and PostgreSQL, intended for a small VPS. |
 | Very little motion, no scroll animations | The landing page has subtle scroll and entrance animations, and the owner app has light ones (screens rising in, sliding tabs and nav, numbers counting up, charts drawing in). All use framer-motion and switch off with the OS "reduce motion" setting. |
 | Landing "Log in" sends people to WhatsApp | The owner login exists now (`/login`). |
+| A 14-day Growth trial, with StayZim building every site | No trial. Owners sign up and make their own site as a free 2-day demo on the plan they pick; StayZim still helps on WhatsApp. |
+| Payments recorded by hand only | Paynow online (phone prompt or card), invoices and receipts by email, automatic overdue and suspension; `mark-paid` for payments made another way. |
+| Custom domains later, plan undecided | Any plan once paid; Growth and Pro include a free .co.zw. Cloudflare for SaaS while it's free, Coolify otherwise. |
 
 ## Open questions
 
 - Which lodge gets the first real demo, so the site uses its real photos?
 - How should pricing show features that aren't built yet (list only what exists, or mark "Coming soon")? The landing page currently shows a "Coming to Growth" box.
-- Which plan includes the free .co.zw domain?
-- Is the trial on Growth for everyone, or does the owner pick a plan first?
 - Is 3 days the right grace period before suspension?
 - Offer an annual prepay discount (for example, 10 months' price for 12)?
 - English only, or Shona and Ndebele on lodge sites later?

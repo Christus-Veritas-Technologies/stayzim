@@ -121,6 +121,8 @@ Lodge sites open at `http://{slug}.localhost:9999` (Chrome and Firefox resolve `
 | `pnpm db:studio` | Browse the database |
 | `pnpm --filter @stayzim/auth create-owner …` | Create an owner login or give one a new temporary password ([docs/auth.md](docs/auth.md)) |
 | `pnpm --filter @stayzim/db create-lodge …` | Create the lodge for an owner login: a 2-day demo, or `--paid-months N` |
+| `pnpm --filter server mark-paid --slug … [--months 3] [--plan pro] [--channel cash]` | Record a payment made outside Paynow; emails the receipt. `--status overdue\|suspended\|active` sets a status by hand, `--list` shows every lodge and what it owes |
+| `pnpm --filter server run-billing [--now 2026-11-03T08:00:00Z]` | Run the hourly billing job now (invoices and reminders, overdue and offline sites, deleting old demos); `--now` pretends it's another time, for testing |
 | `pnpm --filter @stayzim/db set-domain --slug … --domain …` | Give a lodge its own domain (`--remove`, `--list`); DNS and certificates in [docs/deployment.md](docs/deployment.md#custom-domains) |
 | `pnpm --filter @stayzim/auth seed-demos --whatsapp 2637…` | Create the landing page's demo lodges (mistvalley, msasaridge, lakeview) with rooms and copy, each with a demo owner login; skips any that exist. Sign in as the demo owner to add photos |
 | `pnpm --filter @stayzim/db resolve-request …` | List open change requests (`--list`) or answer one (`--ref R-XXXX --status done --reply "…"`); the team screen does the same |
