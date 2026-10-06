@@ -94,7 +94,7 @@ Story IDs refer to the designer brief.
 - [x] N5 Owner visits excluded (server skips events from the owner's or an admin's session; works in production where cookies are shared on .stayzim.co.zw)
 - [x] B1–B5 Plan, status pill and due date, how to pay, "I have paid" and plan-change WhatsApp buttons
 - [x] B6 Overdue and suspended warnings
-- [ ] Real Paynow link and EcoCash/InnBucks merchant codes (`apps/web/src/lib/billing.ts`)
+- [ ] Real Paynow credentials and EcoCash/InnBucks merchant codes (`PAYNOW_*`, `ECOCASH_MERCHANT_CODE`, `INNBUCKS_MERCHANT_CODE`; the code is ready)
 
 ### Shared states
 
@@ -114,7 +114,7 @@ Everything that could be done without the user is done. What's left needs them (
    - emails over SMTP (welcome, invoices, receipts, resets);
    - visits behind Cloudflare (countries).
 2. **Deploy** with [deployment.md](deployment.md): VPS, Coolify, Cloudflare DNS and the origin certificate.
-3. **Business details on invoices:** `STAYZIM_BUSINESS` in `apps/web/src/lib/billing.ts`.
+3. **Business details on invoices:** set `BUSINESS_NAME`, `BUSINESS_ADDRESS` and `BUSINESS_TAX_NUMBER` on the server.
 4. **Demo lodges:** run `seed-demos` with the sales number, then add real photos as each demo owner.
 5. **Real template designs** for the 8 placeholders, when the designer delivers. Leave `basic.tsx` and `looks.ts` alone until then.
 6. **Booking calendar** (skipped for now; Growth and Pro).
@@ -271,18 +271,18 @@ Built (web):
 ## Blocked on / needs a decision
 
 - **Paynow:** the integration ID and key (test mode first), then live approval from Paynow.
-- **Business details for invoices and receipts:** registered name and address (`STAYZIM_BUSINESS`).
+- **Business details for invoices and receipts:** registered name, address and tax number. Set them as `BUSINESS_*` on the server; the code is ready.
 - **SMTP credentials** for hello@stayzim.co.zw (Spacemail). Welcome emails, invoices, receipts and resets all need them.
 - **Cloudflare R2:** a bucket, API token and public domain for lodge photos.
 - **Google OAuth client** (ID and secret), to switch on and test Google sign-in and sign-up.
-- **Merchant codes:** EcoCash and InnBucks, for owners who pay outside Paynow (`apps/web/src/lib/billing.ts`).
+- **Merchant codes:** EcoCash and InnBucks, for owners who pay outside Paynow. Set them as `ECOCASH_MERCHANT_CODE` and `INNBUCKS_MERCHANT_CODE`; the cards stay hidden until then.
 - **Sales WhatsApp number,** for the landing page and the demo lodges (`seed-demos --whatsapp`).
 - **Demo lodge photos,** and a check of the demo copy in `packages/auth/scripts/seed-demos.ts`.
 - **Hosting:** the VPS, Coolify, the Cloudflare zone, and the origin certificate ([deployment.md](deployment.md)).
 - **Template designs** for the 8 placeholders, from the designer.
 - **Real-device check** on iOS Safari and Android Chrome, especially the sign-up flow and photo picking.
 - **A review of the Privacy and Terms drafts** (`apps/web/src/app/privacy`, `apps/web/src/app/terms`), now covering the demo, payments and deletion.
-- **Facebook ads:** a Meta Pixel or conversion tracking isn't added. If wanted, decide what's tracked and update the privacy notice.
+- **Facebook ads:** the Meta Pixel is built and off. Set `NEXT_PUBLIC_META_PIXEL_ID` and rebuild web to switch it on; the privacy notice then mentions it. Server-side Conversions API isn't added (it needs a Meta access token).
 - The open questions in [project.md](project.md#open-questions).
 
 ## Log

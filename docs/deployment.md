@@ -91,7 +91,9 @@ Without Paynow set up, Billing shows only the merchant codes and "I have paid", 
 
 **Invoices and receipts:**
 
-- The emails carry the issuer details from `STAYZIM_BUSINESS` in `apps/web/src/lib/billing.ts`. Fill in the registered business name and address before launch.
+- Invoices, receipts and their emails carry the issuer details from `BUSINESS_NAME`, `BUSINESS_ADDRESS` (lines separated by `|`), `BUSINESS_EMAIL` and `BUSINESS_TAX_NUMBER`. Set the registered details before launch.
+- `ECOCASH_MERCHANT_CODE` and `INNBUCKS_MERCHANT_CODE` add the pay-by-merchant-code cards on Billing. Leave them empty to hide the cards; owners then see "Message us".
+- These are server settings: change them and restart the server, with no rebuild.
 - The billing job runs inside the server container every hour, so there's nothing to schedule.
 
 ## 3. Coolify
@@ -129,6 +131,7 @@ Install Coolify on the VPS (Ubuntu 24.04, 2 vCPU, 4 GB RAM is plenty to start). 
    - Required: `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET` (`openssl rand -base64 32`), the `R2_*` settings, and `NEXT_PUBLIC_WHATSAPP_NUMBER`.
    - For online payments: `PAYNOW_INTEGRATION_ID` and `PAYNOW_INTEGRATION_KEY` (above). SMTP matters more now: welcome emails, invoices and receipts go through it.
    - SMTP and Google are needed for reset emails and Google sign-in.
+   - Optional: `NEXT_PUBLIC_META_PIXEL_ID` for the Facebook ads (a build variable). It reports sign-ups, demos and payments, and the privacy notice then mentions it.
    - `NEXT_PUBLIC_*` values are baked in when the web image builds, so mark them as build variables, and redeploy after changing them.
 
 5. **Deploy.** The server waits for Postgres, applies the migrations, then starts. Web waits for the server's health check (`/health`, which also checks the database).

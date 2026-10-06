@@ -189,13 +189,25 @@ The `resolve-request` script does the same from a terminal (`pnpm --filter @stay
   - Paynow also posts to `POST /api/paynow/result`. The hash is checked, then we poll Paynow ourselves with the stored poll URL and check the amount before applying.
   - `applyPayment()` (`lib/billing.ts`) is idempotent: it moves the lodge to the plan paid for, `ACTIVE`, extends `paidUntil` from whichever is later (now or the current `paidUntil`), closes open invoices, and emails the receipt.
   - Without `PAYNOW_INTEGRATION_*`, the Paynow buttons are hidden and the merchant codes remain.
+- **Merchant codes:** `ECOCASH_MERCHANT_CODE` and `INNBUCKS_MERCHANT_CODE` on the server. `GET /api/lodge/billing` returns the ones that are set, and Billing shows a card for each. With none, it shows "Message us" instead. They're runtime settings, so changing them needs no rebuild.
 - **Manual payments:** `pnpm --filter server mark-paid --slug … [--months 3] [--plan pro] [--channel cash]` records one with the same `applyPayment` (receipt included). `--status` sets a status by hand; `--list` shows everyone.
 - **The job** (`apps/server/src/jobs/billing.ts`) runs a minute after the server starts and then hourly, under a lease, so only one server runs it. `pnpm --filter server run-billing [--now …]` runs it by hand. Each run:
   1. **Invoices:** for paying lodges within 3 days of `paidUntil`, it makes the next invoice and sends the reminder for the current window (3 days before, the day before, on the day, in Harare dates). Demos get their reminders the day before and on the day.
   2. **Status:** `ACTIVE` → `OVERDUE` → `SUSPENDED`, with the "site offline" email, plus the "demo ended" email.
   3. **Missed callbacks:** it re-checks Paynow payments still pending.
   4. **Clean-up:** it deletes demos never paid for 30 days after they ended (photos, lodge, account).
-- **Documents:** `/dashboard/billing/[number]` shows an invoice or receipt, laid out to print or save as PDF (no PDF library). The issuer details are `STAYZIM_BUSINESS` in `apps/web/src/lib/billing.ts`.
+- **Documents:** `/dashboard/billing/[number]` shows an invoice or receipt, laid out to print or save as PDF (no PDF library). The issuer details (`BUSINESS_NAME`, `BUSINESS_ADDRESS` with lines split by `|`, `BUSINESS_EMAIL`, `BUSINESS_TAX_NUMBER`) are server settings (`apps/server/src/lib/business.ts`). They're sent with each document and printed in invoice and receipt emails.
+
+## Meta Pixel (ads)
+
+- Off unless `NEXT_PUBLIC_META_PIXEL_ID` is set (build-time). With it set, `components/meta-pixel.tsx` loads Meta's snippet only on StayZim's own pages: the landing page, `/signup`, `/start` and the dashboard. Lodge sites never load it.
+- `metaEvent()` (`lib/meta-pixel.ts`) reports:
+  - `PageView`, on each route change;
+  - `Contact`, on WhatsApp buttons;
+  - `CompleteRegistration`, on email sign-up;
+  - `StartTrial`, when a demo is made;
+  - `InitiateCheckout` and `Purchase`, with value and currency, on Billing.
+- The privacy notice describes the Pixel only on builds where it's on.
 
 ## Sign-in
 
@@ -234,8 +246,8 @@ Both databases get the whole schema; each app only uses its own tables. Changes 
 
 | App | File | Key settings |
 | --- | --- | --- |
-| server | `apps/server/.env` | `DATABASE_URL`, `CORS_ORIGIN` (comma-separated), `SITES_DOMAIN`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `WEB_URL`, `COOKIE_DOMAIN`, `GOOGLE_*`, `R2_*`, `SMTP_*`, `PAYNOW_*`. See [.env.example](../apps/server/.env.example). |
-| web | `apps/web/.env` | `NEXT_PUBLIC_SERVER_URL`, `NEXT_PUBLIC_SITES_DOMAIN`, `NEXT_PUBLIC_WHATSAPP_NUMBER`. See [.env.example](../apps/web/.env.example). |
+| server | `apps/server/.env` | `DATABASE_URL`, `CORS_ORIGIN` (comma-separated), `SITES_DOMAIN`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `WEB_URL`, `COOKIE_DOMAIN`, `GOOGLE_*`, `R2_*`, `SMTP_*`, `PAYNOW_*`, `ECOCASH_MERCHANT_CODE`, `INNBUCKS_MERCHANT_CODE`, `BUSINESS_*`. See [.env.example](../apps/server/.env.example). |
+| web | `apps/web/.env` | `NEXT_PUBLIC_SERVER_URL`, `NEXT_PUBLIC_SITES_DOMAIN`, `NEXT_PUBLIC_WHATSAPP_NUMBER`, `NEXT_PUBLIC_META_PIXEL_ID` (optional). See [.env.example](../apps/web/.env.example). |
 | outreach | `apps/outreach/.env` | `DATABASE_URL`, `OUTREACH_PASSWORD`, `WHATSAPP_*`. See [.env.example](../apps/outreach/.env.example). |
 
 Every `.env` file is gitignored; only the `.env.example` files are committed.
