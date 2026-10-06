@@ -65,6 +65,7 @@ StayZim gives Zimbabwean lodges, guesthouses, cottages and Airbnbs their own web
 | Analytics | Basic visit tracking (date, IP, page, country). Shown on Growth and Pro only, as the reason to upgrade. |
 | Admin | No admin screens in the MVP; Kin works in the database and with internal scripts. |
 | Email | Nodemailer over SMTP with a Spacemail address. |
+| Photos | Stored in Cloudflare R2, resized on the owner's phone before upload. |
 | Lodge sites | Belong to the lodge: the lodge's photos, name and theme colour lead; StayZim shrinks to a "Made with StayZim" footer link. |
 
 ## The MVP
@@ -93,7 +94,6 @@ The brief is a few weeks old. Where it disagrees with what's built, the build wi
 | Highland green (`#1E4A3B`) as the brand colour, Hanken Grotesk headings | StayZim blue (`#007DA2`) brand with Familjen Grotesk headings and Instrument Sans body, from the final landing page design. Highland, Msasa bronze and Kariba blue remain lodge theme colours. |
 | Hono and Prisma on Cloudflare Workers | Hono on Bun with Prisma and PostgreSQL, intended for a small VPS. |
 | Very little motion, no scroll animations | The landing page has subtle scroll and entrance animations, and the owner app has light ones (screens rising in, sliding tabs and nav, numbers counting up, charts drawing in). All use framer-motion and switch off with the OS "reduce motion" setting. |
-| Photos stored by the VPS | Lodge photos go to Cloudflare R2, resized on the owner's phone first. |
 | Landing "Log in" sends people to WhatsApp | The owner login exists now (`/login`). |
 
 ## Open questions
