@@ -52,6 +52,19 @@ Routes:
 | `/sites/[slug]` | A lodge site (reached through its subdomain) |
 | `/preview/[slug]/[template]` | A lodge site in any template, for the Design screen. `noindex`, tracking off |
 
+Search engines and the browser:
+
+- **Security headers** (`next.config.ts`) on every page:
+  - `X-Content-Type-Options: nosniff` and `Referrer-Policy: strict-origin-when-cross-origin`.
+  - Same-origin framing only (`X-Frame-Options: SAMEORIGIN`, CSP `frame-ancestors 'self'`). The Design screen frames `/preview/…`.
+  - A `Permissions-Policy` that turns off the camera, microphone, location and payment APIs. Photo inputs use the file picker, which isn't affected.
+  - HSTS, except on localhost.
+  - A small CSP (`base-uri`, `object-src`, `form-action`). A full script policy needs per-request nonces, which would make every page dynamic.
+  - `X-Powered-By` is off.
+- **`robots.txt` and `sitemap.xml`** (`src/app/robots.ts`, `sitemap.ts`) depend on the host:
+  - On StayZim's domain, they list the landing page, Privacy and Terms, and disallow the dashboard, team screen, sign-in pages, `/preview` and `/sites`. Those pages are also `noindex`.
+  - On a lodge site, everything is allowed and the sitemap is its one page.
+
 How the dashboard works:
 
 - `DashboardShell` (`src/components/dashboard/shell.tsx`) checks the session, loads the lodge through `LodgeProvider`, and lays out the sidebar and white panel (desktop) or header and bottom bar (phones). The My site pages share one bottom tab on phones, with pills (`SitePagesNav`) and a "‹ My site" back link (`back-link.tsx`).
@@ -96,6 +109,8 @@ Shared UX pieces, so every screen behaves the same:
 
 - **CORS:** allows the `CORS_ORIGIN` list (comma-separated web origins) and any `{slug}.SITES_DOMAIN` origin (lodge sites report visits), with credentials, so the session cookie is sent.
 - **Mail check at boot:** if SMTP is configured, the server checks the connection on startup and logs the result.
+- **Health:** `GET /health` answers `{"status":"ok"}` when the database replies to `SELECT 1` within 2 seconds, and 503 otherwise (the reason is logged). The Docker health check uses it; `GET /` stays a plain `OK`.
+- **Client IP:** read from `CLIENT_IP_HEADER` (`cf-connecting-ip` behind Cloudflare), for visit records and sign-in rate limits ([auth.md](auth.md#rules)).
 - **Lodge routes** need a signed-in owner with their own password and a lodge (`requireLodge` in `src/lib/lodge.ts`, 404 until StayZim creates it). Each answers with the whole lodge (`lodgeJson`).
 - **Team routes** (`src/routes/admin.ts`) need a signed-in user with `role` `ADMIN`.
 - **Photos** (`src/lib/uploads.ts`): JPG, PNG or WebP (checked by file signature), 5 MB at most, stored in Cloudflare R2 through Bun's built-in S3 client and served from the bucket's public URL. Without the `R2_*` settings (development), they go to `UPLOAD_DIR` and this server serves them at `/uploads`; production refuses to start without R2. The storage in use is logged at boot. `R2_ENDPOINT` overrides the endpoint, for buckets in R2's EU jurisdiction or any S3-compatible store (the upload, content type and delete paths were tested against an S3 test server).
@@ -192,7 +207,8 @@ How they're built:
 - **Install:** every workspace `package.json` is copied so the lockfile matches, then `pnpm install --frozen-lockfile --filter "<app>..."` installs only that app and its workspace packages. For server and outreach, `packages/db`'s postinstall runs `prisma generate`; nothing connects at build time.
 - **Runtime:** Node is the base because pnpm and the Prisma CLI need it; Bun is copied in from `oven/bun:1` and runs the TypeScript entry directly, as in development, so there's no separate bundling step. OpenSSL is installed for Prisma's schema engine.
 - **Start:** `docker/start.sh` runs `prisma migrate deploy`, which applies only committed migrations, so nothing changes the database that wasn't reviewed in a migration file. When server and outreach start together, Prisma's lock makes one wait. A database made with `db push` stops the container with P3005 and the baselining command. Set `SKIP_DB_MIGRATE=1` to skip it.
-- **Users and health:** every container runs as the unprivileged `node` user and has a `HEALTHCHECK` (server `/`, web `/`, outreach `/health`).
+- **Users and health:** every container runs as the unprivileged `node` user and has a `HEALTHCHECK` (server `/health`, which also checks the database; web `/`; outreach `/health`).
+- **Backups:** `docker/backup.sh` writes a compressed `pg_dump` (custom format) and keeps the newest `KEEP` (14); it prints the `pg_restore` command. A backup and restore of the dev database were checked to give the same row counts. In production, Coolify's scheduled backups to R2 come first ([deployment.md](deployment.md)).
 - **Outreach:**
   - Puppeteer's Chromium download is skipped; Debian's `chromium` is used via `PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium`.
   - Give it `--shm-size=1g` and about 300 MB of memory per number.

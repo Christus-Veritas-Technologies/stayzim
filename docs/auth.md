@@ -50,7 +50,13 @@ This prints a **temporary password**; send it to the owner on WhatsApp with the 
 | After a password reset | All sessions ended, temporary-password flag cleared, "password changed" email sent | `onPasswordReset` |
 | After a password change | Other devices signed out, this one stays signed in, "password changed" email sent | `POST /api/account/set-password` |
 
-The rate limiter keeps counts in memory, so it resets when the server restarts and only works for a single server process. It reads the client IP from `X-Forwarded-For`, so the server must sit behind a proxy that sets that header (don't expose it directly).
+The rate limiter keeps its counts in Postgres (`rate_limit` table, `rateLimit.storage: "database"`), so they survive restarts and hold across server processes. It counts per visitor IP, read from the header named by `CLIENT_IP_HEADER`:
+
+- Behind Cloudflare, set `CLIENT_IP_HEADER=cf-connecting-ip`. Cloudflare sets it to the visitor's address, and visitors can't fake it.
+- The default, `x-forwarded-for`, is only trusted when it holds a single address (better-auth's rule). Behind two proxies it holds two, and better-auth then can't tell visitors apart, so everyone would share one limit.
+- Visit records on lodge sites (`clientIp` in `apps/server/src/lib/ip.ts`) read the same header.
+
+In development, without the header, every request counts as 127.0.0.1.
 
 ## Flows
 
