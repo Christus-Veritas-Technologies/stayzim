@@ -117,14 +117,26 @@ export function BackToLogin() {
   );
 }
 
-/** "New to StayZim?" line: every lodge is set up by us, over WhatsApp. */
+/** "New to StayZim?" line under the login form: sign up for a free demo. */
 export function NewToStayZim() {
   return (
     <p className="text-[13.5px] leading-5 text-muted">
-      New to StayZim? We set up every lodge.{" "}
-      <a href={whatsappUrl("general")} target="_blank" rel="noreferrer" className="font-semibold text-brand hover:text-brand-dark">
-        Chat on WhatsApp
-      </a>
+      New to StayZim?{" "}
+      <Link href="/signup" className="-my-2.5 py-2.5 font-semibold text-brand hover:text-brand-dark">
+        Try it free for 2 days
+      </Link>
+    </p>
+  );
+}
+
+/** "Already have an account? Log in", under the sign-up form. */
+export function HaveAnAccount() {
+  return (
+    <p className="text-[13.5px] leading-5 text-muted">
+      Already have an account?{" "}
+      <Link href="/login" className="-my-2.5 py-2.5 font-semibold text-brand hover:text-brand-dark">
+        Log in
+      </Link>
     </p>
   );
 }

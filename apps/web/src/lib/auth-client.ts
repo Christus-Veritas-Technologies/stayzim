@@ -31,6 +31,11 @@ export function authErrorMessage(error: { code?: string; status?: number; messag
       return "This link has expired or was already used. Ask for a new one.";
     case "PASSWORD_TOO_SHORT":
       return `Use at least ${MIN_PASSWORD_LENGTH} characters.`;
+    case "USER_ALREADY_EXISTS":
+    case "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL":
+      return "There's already an account with this email. Log in instead, or use Forgot password.";
+    case "INVALID_EMAIL":
+      return "Check your email address.";
     default:
       return error.message || "Something went wrong. Try again.";
   }
@@ -40,8 +45,6 @@ export function authErrorMessage(error: { code?: string; status?: number; messag
 export function oauthErrorMessage(code: string | null) {
   if (!code) return null;
   switch (code) {
-    case "signup_disabled":
-      return "No StayZim account uses that Google email. Log in with your email and password, or message us on WhatsApp.";
     case "account_not_linked":
       return "That Google account can't be linked to your login. Log in with your email and password.";
     case "access_denied":

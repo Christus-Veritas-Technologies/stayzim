@@ -23,10 +23,21 @@ let cachedEnabled: boolean | null = null;
 
 /**
  * "Continue with Google", shown only when the server has Google set up. It
- * signs in owners whose StayZim email is their Google email; it never makes
- * new accounts. Errors come back to /login as `?error=…`.
+ * signs in the owner with that Google email, or creates their account (a new
+ * owner goes on to `newUserPath`, the start screen). Errors come back to
+ * `errorPath` as `?error=…`.
  */
-export function GoogleSignIn({ disabled = false, onStart }: { disabled?: boolean; onStart?: () => void }) {
+export function GoogleSignIn({
+  disabled = false,
+  onStart,
+  newUserPath = "/start",
+  errorPath = "/login",
+}: {
+  disabled?: boolean;
+  onStart?: () => void;
+  newUserPath?: string;
+  errorPath?: string;
+}) {
   const [enabled, setEnabled] = useState(cachedEnabled);
   const [pending, setPending] = useState(false);
 
@@ -47,12 +58,13 @@ export function GoogleSignIn({ disabled = false, onStart }: { disabled?: boolean
     const { error } = await authClient.signIn.social({
       provider: "google",
       callbackURL: `${origin}/dashboard`,
-      errorCallbackURL: `${origin}/login`,
+      newUserCallbackURL: `${origin}${newUserPath}`,
+      errorCallbackURL: `${origin}${errorPath}`,
     });
     // On success the browser is already on its way to Google
     if (error) {
       setPending(false);
-      window.location.assign(`/login?error=${encodeURIComponent(error.code ?? "google")}`);
+      window.location.assign(`${errorPath}${errorPath.includes("?") ? "&" : "?"}error=${encodeURIComponent(error.code ?? "google")}`);
     }
   }
 
