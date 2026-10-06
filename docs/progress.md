@@ -10,20 +10,21 @@ _What's built, what's next, and what's blocking. Update this file whenever a pie
 | --- | --- |
 | Marketing landing page | ✅ Built |
 | Landing page analytics (CTA clicks, page views) | ✅ Built |
+| Privacy and Terms pages | ✅ Drafted in plain language; need a review before launch |
 | WhatsApp outreach tool (internal) | ✅ Built |
 | Owner sign-in (login, reset, first-login password) | ✅ Built, matches the app screens design |
 | Sign in with Google | ✅ Built (links to existing owners only), needs a Google OAuth client to test for real |
 | Email (SMTP via Nodemailer) | ✅ Built, needs SMTP credentials |
-| Owner dashboard (overview, lodge info, rooms, gallery) | ✅ Built |
+| Owner dashboard (overview, lodge info, rooms, gallery, design, requests) | ✅ Built |
 | Photo storage (Cloudflare R2) | ✅ Built, needs R2 credentials |
 | Shared UI components (packages/ui) | ✅ Built |
-| Lodge sites ({slug}.stayzim.co.zw) | 🟡 Rendering, subdomain routing, tracking, suspended and 404 pages built. Templates: catalog, schema and API done; dashboard Design screen and preview route not started |
-| Site templates (9, 3 per plan) | 🟡 In progress, see [Handoff](#handoff-6-october-2026) |
-| Change requests | 🟡 API and script done; dashboard screen not started |
-| Owner analytics | 🟡 Tracking and stats API built; dashboard still shows zeros until wired to the API |
+| Lodge sites ({slug}.stayzim.co.zw) | ✅ Rendering, subdomain routing, tracking, suspended and 404 pages, template preview route |
+| Site templates (9, 3 per plan) | 🟡 Catalog, plan rules, Design screen and preview done. Only Classic has a real design; 8 placeholders wait for the design files |
+| Change requests | ✅ Owner screen, team screen (`/admin/requests`), API and script |
+| Owner analytics | 🟡 Live numbers, chart, countries, latest visits and activity. The visits table still needs filters, pages and a 90-day period |
 | Billing screen | ✅ Built, payment details are placeholders |
-| Shared states (suspended, 404, locked features) | ✅ Suspended and unknown-lodge pages on sites; dashboard errors, loading, locked analytics |
-| UX pass (back, loading, disabled states) | ⬜ Planned, see Handoff |
+| Shared states (suspended, 404, errors, locked features, offline) | ✅ Built |
+| UX pass (back, loading, pending, disabled, unsaved changes, offline) | ✅ Built |
 | Mobile app (apps/native) | ⬜ Scaffold only. Out of scope for now: work on web and server only |
 | Docker images (server, web, outreach) | ✅ Written, not yet built in Docker |
 | Deployment | ⬜ Not started |
@@ -40,9 +41,9 @@ Story IDs refer to the designer brief.
 - [x] L4 WhatsApp button always in reach (floating button), pre-filled messages per button
 - [x] L5 14-day trial and "built before you pay" stated
 - [x] L6 Page views record UTM source (`landing_event` table)
+- [x] Privacy and Terms pages (`/privacy`, `/terms`), linked from the footer and every lodge site. Drafts: review before launch
 - [ ] Demo lodge sites live at mistvalley., msasaridge. and lakeview.stayzim.co.zw
 - [ ] Sales WhatsApp number set (`NEXT_PUBLIC_WHATSAPP_NUMBER`)
-- [ ] Privacy and Terms pages
 
 ### Login (Screen 3)
 
@@ -53,6 +54,7 @@ Story IDs refer to the designer brief.
 - [x] A5 Log out
 - [x] A6 5 failed sign-ins in 10 minutes pauses sign-in for 10 minutes
 - [x] Accounts created by StayZim only (`create-owner` script); public sign-up disabled
+- [x] Owners already logged in skip the login screen; team accounts land on `/admin/requests`
 - [ ] Real SMTP credentials (Spacemail) configured and tested
 
 ### Dashboard (Screen 4)
@@ -67,18 +69,22 @@ Story IDs refer to the designer brief.
 - [x] D10 Copy link and share on WhatsApp (ticks off the setup checklist)
 - [x] Setup checklist: rooms, 5 gallery photos, WhatsApp number, link shared
 - [x] Responsive: sidebar on desktop (collapsible), header and bottom bar on phones
+- [x] Design: hero text, template gallery by plan, preview (Phone and Desktop), apply with Undo, downgrade notice
+- [x] Change requests: send, WhatsApp hand-off, status and replies
 
 ### Lodge site (Screen 2)
 
 - [x] S1–S7 Hero, rooms with a pre-filled Book on WhatsApp per room, gallery with lightbox, map embed, contact, sticky booking button on phones ("Classic" template)
 - [x] S8 Visit tracking: page views and Book on WhatsApp taps (`site_event`), owner and staff visits skipped
 - [ ] S9 Under 1.5 MB: not measured yet (server-rendered; photos are lazy and resized to 1600px)
-- [ ] Templates: see Handoff
+- [x] Templates: 9 in the catalog, plan rules, preview route, Starter templates completely still
+- [ ] Real designs for the 8 placeholder templates (waiting on the design files)
 
 ### Analytics (Screen 5) and Billing (Screen 6)
 
-- [ ] N1–N2 Visits table and totals: API done (`/api/lodge/stats`, `/visits`, `/activity`); dashboard not wired yet
-- [x] N3 Locked preview for Starter, with an upgrade button
+- [x] N1–N2 Totals, chart, countries and the latest 10 visits (`/api/lodge/stats`, `/visits`, `/activity`)
+- [ ] Visits table: filters (Zimbabwe, outside Zimbabwe, device, booking chat), Previous/Next pages, a list on phones, a 90-day period
+- [x] N3 Locked preview for Starter, with an upgrade button (and an upgrade card on the overview)
 - [x] N4 Empty state with Copy link and Share on WhatsApp
 - [x] N5 Owner visits excluded (server skips events from the owner's or an admin's session; works in production where cookies are shared on .stayzim.co.zw)
 - [x] B1–B5 Plan, status pill and due date, how to pay, "I have paid" and plan-change WhatsApp buttons
@@ -88,28 +94,30 @@ Story IDs refer to the designer brief.
 ### Shared states
 
 - [x] X1 Suspended site page
-- [x] X2 Unknown lodge 404 (and unknown paths on a lodge site)
+- [x] X2 Unknown lodge 404 (and unknown paths on a lodge site), and a StayZim-branded 404 for the main site
 - [x] X3–X5 Save errors, loading skeletons and spinners, locked features (dashboard)
+- [x] Error screens with Try again (app, root layout, dashboard), offline banner
 
 ## Next up
 
-The order to work in. Details for each are in the Handoff below.
+Tiers 1–3 of the remaining work are done. What's left, roughly easiest first:
 
-1. **Templates, dashboard side:** Design screen (pick, preview, apply, hero text) and the preview route.
-2. **Change requests screen** in the dashboard.
-3. **Wire real visit stats** into the overview, Analytics (visits table) and the activity card.
-4. **UX pass** across the app: back, loading, pending and disabled states, unsaved-changes guard, offline banner, error and not-found pages.
-5. **Docs:** architecture.md and README for templates, change requests, Google sign-in and the sites domain.
-6. **Deployment on Coolify:** the user wants to discuss subdomain provisioning once the features are done. Notes below.
+1. **Analytics visits table:** filters, Previous/Next pages ("Total N visits"), a list on phones, and a 90-day period (the API already supports all of it).
+2. **Test with the real services** once the credentials arrive: R2 uploads, Google sign-in, reset emails over SMTP, and visit tracking behind Cloudflare (countries).
+3. **Demo lodge sites** with real photos and content, the sales WhatsApp number and the payment details.
+4. **Page weight (S9):** measure a lodge site against 1.5 MB.
+5. **Tests:** unit tests for `@stayzim/sites` and the server routes, and a Playwright smoke test (login → dashboard → lodge site).
+6. **Real devices:** iOS Safari and Android Chrome.
 7. **Real template designs,** when the user adds the design files to `designs/`.
+8. **Deployment on Coolify,** migrations instead of `db push`, backups and monitoring. Notes below.
 
-## Handoff (6 October 2026)
+## Handoff (6 October 2026, evening)
 
-Written at the end of a session so the next agent can continue. Everything listed as done is committed on `main` and type-checks (`pnpm check-types`).
+Written at the end of a session so the next agent can continue. Everything listed as done is committed and pushed on `main`, and type-checks (`tsc` in apps/web, `pnpm --filter server check-types`).
 
 The user's rules:
 
-- Work on `main`, one commit per small task, and never add a Co-Authored-By line.
+- Work on `main` (no separate branches), one commit per small task, and never add a Co-Authored-By line, even when a tool suggests one.
 - Add subtle framer-motion animations wherever they fit, all off with "reduce motion".
 - Web and server only; ignore apps/native.
 
@@ -118,62 +126,47 @@ The user's rules:
 - **Sites domain:**
   - `apps/server/.env` has `SITES_DOMAIN=localhost:9999` and `apps/web/.env` has `NEXT_PUBLIC_SITES_DOMAIN=localhost:9999`.
   - Lodge sites open at `http://{slug}.localhost:9999` (Chrome resolves `*.localhost`).
-- **Test owner:** `rudo@mistvalley.test`, with lodge `mistvalley` (Growth trial, 4 rooms, 5 gallery photos). Reset its password with `pnpm --filter @stayzim/auth create-owner --email rudo@mistvalley.test --reset`.
+- **Test owner:** `rudo@mistvalley.test`, with lodge `mistvalley`. Reset its password with `pnpm --filter @stayzim/auth create-owner --email rudo@mistvalley.test --reset`.
+- **Team account:** make one with `create-owner … --admin` to use `/admin/requests`.
 - **Photos** are on local disk (`apps/server/uploads`), because R2 isn't configured locally.
-- **`AGENTS.md`** at the repo root is written by turbo. It's untracked on purpose; ask the user before committing it.
+- **Agent files:** the root `AGENTS.md` (written by turbo) is committed. `next dev` also writes `apps/web/AGENTS.md` and `CLAUDE.md`; they're untracked, so leave them out of commits unless the user asks.
 
-### Done this session (beyond the log below)
+### Built this session
 
-#### Google sign-in (`packages/auth/src/index.ts`)
+Each of these is its own commit on `main`; the architecture doc has the details.
 
-- better-auth's Google provider with `disableSignUp: true`, and account linking with Google as a trusted provider. It signs in the existing owner with the same (verified) email and never creates users.
-- A database hook: when an owner still on a temporary password first links Google, the temporary password is replaced with a random one and `mustChangePassword` is cleared. Tested with a throwaway user.
-- `GET /api/account/sign-in-options` tells the login screen whether to show "Continue with Google" (`apps/web/src/components/auth/google-button.tsx`).
-- Errors come back to `/login?error=…`; `oauthErrorMessage` in `auth-client.ts` handles `signup_disabled`, `account_not_linked` and `access_denied`.
-- **Verified:** the button is hidden without config and shown with it; the authorization URL is correct (redirect `…/api/auth/callback/google`, `prompt=select_account`).
-- **Not verified:** a real Google round trip. That needs a real OAuth client; setup steps are in `apps/server/.env.example`.
+- **Tier 1:**
+  - `pnpm install` works without `DATABASE_URL`.
+  - Starter templates are completely still.
+  - Logged-in visitors skip `/login`.
+  - Branded 404, and error screens with Try again.
+  - Disabled controls explain themselves (`WhyDisabled`): "No changes to save" and the 30-photo gallery cap.
+  - Rows and photos fade with a spinner while they delete or move, with "Saving order…".
+- **Tier 2:**
+  - A Kariba progress bar during page changes.
+  - `useLinkStatus` spinners in the nav.
+  - "‹ My site" back links on phones.
+  - An offline banner, with Save disabled while offline.
+  - Forms lock while they submit.
+  - The template downgrade notice.
+  - Privacy and Terms.
+  - These docs.
+- **Tier 3:**
+  - The Design screen and the preview route.
+  - Change requests for owners, plus a team screen and API (`/admin/requests`, `/api/admin/requests`).
+  - Live visit stats on the overview and Analytics, with an upgrade card on Starter.
+  - Visits in the activity card.
+  - "Discard your changes?" on Lodge info, Design and the room sheet.
 
-#### CORS
+How it was checked: a local Postgres with seeded visits, both apps running, and Playwright screenshots of every new screen at 1280px and 375px (no horizontal overflow).
 
-- `CORS_ORIGIN` is now a comma-separated list.
-- Any `{slug}.SITES_DOMAIN` origin is also allowed (`apps/server/src/lib/sites.ts`), so lodge sites can post visits with cookies.
+Known gaps and choices worth knowing:
 
-#### Lodge sites
-
-- `apps/web/src/proxy.ts`:
-  - rewrites `{slug}.SITES_DOMAIN` to `/sites/{slug}`;
-  - sends `/sites/x` on the main domain to the subdomain;
-  - still guards `/dashboard`.
-- Reserved subdomains are listed in three places; keep them in sync:
-  - `apps/web/src/lib/site-host.ts`
-  - `apps/server/src/lib/sites.ts`
-  - `packages/db/scripts/create-lodge.ts`
-- Content comes from `GET /api/sites/:slug`: public, no plan or owner data, fresh on every request.
-- Suspended lodges get `SuspendedSite` and unknown ones `UnknownSite` (`components/site/site-states.tsx`).
-
-#### Tracking
-
-- `POST /api/sites/:slug/events` (rate-limited to 60/min per IP) records `PAGE_VIEW` and `BOOKING_CHAT` in `site_event`, with:
-  - device and browser from the user agent;
-  - the IP;
-  - the country from Cloudflare's `CF-IPCountry` header (null without Cloudflare).
-- It skips events from the owner's and admins' sessions.
-- Client: `components/site/tracking.tsx` (`SiteTracking` context, `PageViewTracker`, `BookLink`); the visitor id lives in localStorage.
-
-#### Owner stats API (`apps/server/src/routes/stats.ts`)
-
-Growth and Pro only; Starter gets a 403. Days are Zimbabwe time (UTC+2).
-
-- `GET /api/lodge/stats?period=today|7d|30d|90d`: visits today and yesterday, the period against the one before, booking chats, top countries, and chart buckets with an ISO `start`.
-- `GET /api/lodge/visits?page&pageSize&where=all|zw|abroad&device&type`
-- `GET /api/lodge/activity`: the latest 6 events.
-
-#### Templates and change requests, server side
-
-- **Templates** (spec below). Done: the `packages/sites` catalog, the schema fields, PATCH validation, `template` and `hero` in the public API, and the web registry rendering all 9.
-- **Change requests:**
-  - `GET/POST /api/lodge/requests`.
-  - `pnpm --filter @stayzim/db resolve-request --list`, or `--ref R-XXXX --status open|in-progress|done|declined [--reply "…"]`.
+- **Unsaved changes:** the guard catches links inside the app, reloads and closing the tab, but not the browser's own Back button.
+- **Change requests:** after sending, the WhatsApp hand-off is a button on the success card, not opened automatically, because browsers block pop-ups after a network request.
+- **Nav spinners** only show when the page wasn't prefetched yet (slow connections). In production, Next prefetches visible links.
+- **Template thumbnails** are sketches drawn from `components/site/templates/looks.ts`. Update them when the real designs arrive (or switch to iframe snapshots).
+- **Privacy and Terms** are plain-language drafts based on what the code collects. Review them (ideally with a lawyer) before launch.
 
 ### Spec: site templates
 
@@ -182,8 +175,8 @@ Agreed with the user:
 - **9 templates, 3 per plan.**
   - The plan sets design quality and motion: Starter is static (`none`), Growth `subtle`, Pro `rich`.
   - Catalog: `packages/sites/src/index.ts`. Keys: `starter-clear|simple|compact`, `growth-classic|panorama|journal`, `pro-signature|safari|horizon`.
-  - Only `growth-classic` has a real design so far (`apps/web/src/components/site/templates/classic.tsx`). The other 8 are plain placeholders from one configurable component (`templates/basic.tsx`, configs in `templates/index.tsx`).
-  - The user will add real design files later. When they arrive, give each template its own file and remove its `BASIC` entry.
+  - Only `growth-classic` has a real design so far (`apps/web/src/components/site/templates/classic.tsx`). The other 8 are plain placeholders from one configurable component (`templates/basic.tsx`, looks in `templates/looks.ts`).
+  - The user will add real design files later. When they arrive, give each template its own file and remove its `PLACEHOLDER_LOOKS` entry.
 - **Access is cumulative:** a plan can use its own templates and every lower plan's (`templateAllowed`).
   - Templates above the plan are shown locked, with an upgrade button (an upsell).
   - The server refuses them on PATCH (403, "Signature comes with the Pro plan").
@@ -202,86 +195,11 @@ Agreed with the user:
 - **Switching:** preview, then apply. It goes live straight away, and the "Template changed" toast needs an Undo action (PATCH back to the previous key).
 - **Everything else** goes through change requests.
 
-To do (web):
+Built (web):
 
-1. **Preview route** `apps/web/src/app/preview/[slug]/[template]/page.tsx`:
-   - A server component: `getSite(slug)`, then override `site.template` with the param. Allow any template, including locked ones, so owners can see what they'd get.
-   - Render `<SiteTemplate site={site} preview />`, which turns tracking off. `SiteTemplate` already supports `preview`.
-   - Set `robots: noindex`.
-   - Add a slim top banner, "Preview: {name} template" (dismissable is fine).
-   - Check `src/proxy.ts` leaves `/preview` alone (it only touches `/sites`).
-2. **Design screen** `apps/web/src/app/dashboard/design/page.tsx`, linked under My site. Add it to the `navLinks` children in `components/dashboard/nav.ts`, to `breadcrumb()`, and to the phone `SitePagesNav` pills.
-   - **Hero text card:**
-     - Two fields with counters (`Field` `count`), with placeholders showing the template's default (`fillCopy(template.defaults.*, …)`).
-     - "Reset to template text", and Save/Discard with `useLodge().save("", "PATCH", {...})`.
-     - A live hero mock as they type: reuse `components/dashboard/site-preview.tsx`, which takes name, place and description, and extend it with headline and subline.
-   - **Template gallery,** grouped by plan (Starter, Growth, Pro). Each card has:
-     - a coloured thumbnail (or an iframe snapshot later), the name, description and a plan badge;
-     - "Live" on the current template;
-     - a lock and "Upgrade to Pro" on templates above the plan (WhatsApp via `stayzimChatUrl`).
-   - **Preview:**
-     - A Sheet or Dialog with `<iframe src="/preview/{slug}/{key}">` and a Phone/Desktop width toggle (Tabs).
-     - "Use this template", disabled with a reason when the template is locked or already live.
-     - Apply with `save("", "PATCH", { template })`, then a toast with Undo.
-   - **Animations:** stagger the cards (`Appear`/`Item`) and slide a `layoutId` ring onto the live template.
-3. **Classic and basic templates:** the `Motion` wrapper in `basic.tsx` uses `Reveal`. Keep Starter templates free of motion.
-
-### Spec: change requests
-
-- **Model** `ChangeRequest`:
-  - `reference`, like `R-7K2Q`;
-  - `topic`: TEXT, PHOTOS, ROOMS, DESIGN or OTHER;
-  - `message`, 10–1000 characters;
-  - `status`: OPEN, IN_PROGRESS, DONE or DECLINED;
-  - `reply` and `resolvedAt`.
-  - At most 10 open per lodge (429).
-- **To do (web):** `apps/web/src/app/dashboard/requests/page.tsx`, in the nav under My site as "Change requests" (or top level).
-  - **Form:** topic as `Toggle` chips, a message `Textarea` with a count, and Send.
-  - **On success:** open WhatsApp to StayZim pre-filled with "Change request R-XXXX for {lodge}: {message}" (`stayzimChatUrl`), and show a toast.
-  - **List:**
-    - newest first;
-    - a status `Badge` (Open purple, In progress brand, Done success, Declined neutral);
-    - StayZim's reply under the message, and dates via `lib/format.ts`;
-    - an empty state.
-  - **Entry points:** point the sidebar's "Need a change? Message us" card and the Lodge info and Design screens at it ("Need something else changed? Request it").
-
-### Spec: wire real visit stats
-
-- **Data hook:** replace `visitStats()` in `apps/web/src/lib/stats.ts` with a hook (e.g. `useVisitStats(period)`) that calls `api("/api/lodge/stats?period=…")`.
-  - Turn `chart[].start` into labels the way `chartSlots()` does (`formatWeekday`, `formatClock`, `formatDate`).
-  - Keep `tracking: true` from the server, and show skeletons while loading.
-- **Starter:** the API answers 403. On the overview, replace the stat cards and chart with an upgrade card; Analytics already shows the locked preview.
-- **Countries:**
-  - The server sends codes, plus "Other"; show names with `Intl.DisplayNames(["en"], { type: "region" })`.
-  - Without Cloudflare in front, countries are empty: show "Not known".
-- **Analytics visits table** (from the design):
-  - Filters: All, Zimbabwe, Outside Zimbabwe; Device; Activity (booking chat).
-  - Columns: Date (`formatWhen`), Country, Page, Device, IP and an Activity badge.
-  - Previous/Next pagination, with "Total N visits".
-  - A list instead of the table on phones.
-  - A 90-day period (the API supports `90d`; add it to `PERIODS` or a local list).
-- **Overview activity card:** merge `/api/lodge/activity` ("Visit from {country}", "Booking chat started · {room}") with the content changes it shows today.
-
-### Spec: UX pass (asked for across the whole app)
-
-- **Back:**
-  - A back link at the top of sub-screens on phones: "‹ My site" on Lodge info, Rooms, Gallery, Design and Requests, as in the design.
-  - Use `router.back()` when there's history, otherwise the parent route.
-  - Auth screens already have "Back to log in".
-- **Signed in on /login:** visitors who already have a session go straight to `/dashboard` (check `authClient.useSession()`).
-- **Navigation feedback:**
-  - A thin Kariba progress bar at the top during route changes.
-  - Next's `useLinkStatus` for a spinner on the sidebar or bottom-nav item being opened.
-- **Unsaved changes:** on Lodge info, Design and the room sheet, intercept in-app link clicks while there are edits and confirm with an `AlertDialog` ("Discard your changes?"). `beforeunload` already covers Lodge info.
-- **Disabled states that explain themselves:**
-  - "Save changes" disabled → tooltip "No changes to save".
-  - Upload disabled at the limit → "The gallery holds up to 30 photos".
-  - Locked templates → "Comes with Pro".
-  - Rows busy deleting or reordering show a spinner and fade.
-  - "Saving order…" text while a reorder saves.
-- **Offline:** a banner when `navigator.onLine` is false ("You're offline. Changes won't save until you're back."), with Save buttons disabled while offline.
-- **Errors:** `app/not-found.tsx` (StayZim-branded), and `app/dashboard/error.tsx` and `app/global-error.tsx` with Try again.
-- **Forms:** disable the fieldset while a form submits, everywhere (login already does).
+- **Preview route** `apps/web/src/app/preview/[slug]/[template]/page.tsx`: any template, including locked ones; `noindex`; tracking off; a slim "Preview: {name} template" bar. Hero text that is the live template's default switches to the previewed template's (`withTemplate()` in `lib/site.ts`).
+- **Design screen** `apps/web/src/app/dashboard/design/page.tsx` (under My site): hero text with counters and a live phone preview; templates grouped by plan with thumbnails (`template-thumb.tsx`), a sliding "Live" ring, locked cards with "Upgrade to {plan}" on WhatsApp; a preview sheet (iframe, Phone and Desktop); "Use this template" (disabled with a reason when locked or live) applies straight away, with Undo in the toast.
+- **Starter templates** have no motion at all (`basic.tsx`).
 
 ### Deployment notes to discuss with the user (Coolify on a VPS)
 
@@ -310,11 +228,21 @@ To do (web):
 - **Template designs:** the user will add design files for the 9 templates to `designs/`.
 - **Sales WhatsApp number** for the landing page.
 - **First real demo lodge** (photos and content).
+- **A review of the Privacy and Terms drafts** (`apps/web/src/app/privacy`, `apps/web/src/app/terms`).
 - The open questions in [project.md](project.md#open-questions).
 
 ## Log
 
 Newest first. One line per piece of work that landed on `main`.
+
+### 6 October 2026 (evening)
+
+- Template preview route and the Design screen (hero text, templates by plan, preview, apply with Undo, downgrade notice).
+- Change requests screen for owners, and a team screen and API to answer them.
+- Live visit stats: overview and Analytics numbers, chart, countries, latest visits, activity card; upgrade card on Starter.
+- UX pass: progress bar, nav spinners, back links, offline banner, locked forms, explained disabled states, busy rows, unsaved-changes guard, branded 404 and error screens.
+- Privacy and Terms pages; logged-in visitors skip the login screen; `pnpm install` works without a database.
+- Docs: architecture, README, auth and project updated.
 
 ### 6 October 2026 (later)
 
