@@ -26,6 +26,16 @@ const PERIODS = {
 
 type Period = keyof typeof PERIODS;
 
+/** The 5 rooms guests asked about most; rooms deleted since are left out, ties keep the room order of `rooms`. */
+export function topRoomsFrom(taps: Map<string, number>, rooms: { id: string; name: string }[]) {
+  return rooms
+    .map((room, index) => ({ roomId: room.id, name: room.name, count: taps.get(room.id) ?? 0, index }))
+    .filter((room) => room.count > 0)
+    .sort((a, b) => b.count - a.count || a.index - b.index)
+    .slice(0, 5)
+    .map(({ roomId, name, count }) => ({ roomId, name, count }));
+}
+
 /** Visitor analytics come with Growth and Pro. */
 const requireAnalytics = createMiddleware<{ Variables: LodgeVariables }>(async (c, next) => {
   const lodge = await prisma.lodge.findUniqueOrThrow({ where: { id: c.var.lodgeId }, select: { plan: true } });
@@ -68,7 +78,7 @@ export const stats = new Hono<{ Variables: LodgeVariables }>()
 
     const events = await prisma.siteEvent.findMany({
       where: { lodgeId: c.var.lodgeId, createdAt: { gte: from } },
-      select: { type: true, createdAt: true, country: true },
+      select: { type: true, createdAt: true, country: true, roomId: true },
     });
 
     const current = Array.from({ length: shape.buckets }, () => 0);
@@ -80,6 +90,8 @@ export const stats = new Hono<{ Variables: LodgeVariables }>()
     let visitsToday = 0;
     let visitsYesterday = 0;
     const countries = new Map<string, number>();
+    /** Booking taps per room, this period */
+    const roomTaps = new Map<string, number>();
 
     for (const event of events) {
       const time = event.createdAt.getTime();
@@ -92,7 +104,10 @@ export const stats = new Hono<{ Variables: LodgeVariables }>()
           visits++;
           current[Math.min(shape.buckets - 1, Math.floor((time - start.getTime()) / shape.size))]!++;
           if (event.country) countries.set(event.country, (countries.get(event.country) ?? 0) + 1);
-        } else bookingChats++;
+        } else {
+          bookingChats++;
+          if (event.roomId) roomTaps.set(event.roomId, (roomTaps.get(event.roomId) ?? 0) + 1);
+        }
       } else if (time >= previousStart.getTime()) {
         if (view) {
           previousVisits++;
@@ -106,8 +121,16 @@ export const stats = new Hono<{ Variables: LodgeVariables }>()
     const top = ranked.slice(0, 2).map(([code, count]) => ({ code, share: Math.round((count / known) * 100) }));
     const other = ranked.length > 2 ? 100 - top.reduce((sum, country) => sum + country.share, 0) : 0;
 
+    const rooms = await prisma.room.findMany({
+      where: { lodgeId: c.var.lodgeId, id: { in: [...roomTaps.keys()] } },
+      orderBy: { position: "asc" },
+      select: { id: true, name: true },
+    });
+    const topRooms = topRoomsFrom(roomTaps, rooms);
+
     return c.json({
       tracking: true,
+      topRooms,
       period,
       visitsToday,
       visitsYesterday,

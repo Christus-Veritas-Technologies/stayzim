@@ -36,7 +36,11 @@ export type VisitStats = {
   /** The top two and "Other", by share of visits whose country is known */
   countries: Country[];
   chart: ChartPoint[];
+  /** The rooms guests tapped Book on most this period (up to 5) */
+  topRooms: TopRoom[];
 };
+
+export type TopRoom = { roomId: string; name: string; count: number };
 
 /** GET /api/lodge/stats (apps/server/src/routes/stats.ts) */
 type StatsResponse = Omit<VisitStats, "countries" | "chart"> & {
@@ -84,6 +88,7 @@ function fromResponse(period: Period, response: StatsResponse): VisitStats {
   const now = inZimbabwe(new Date());
   return {
     ...response,
+    topRooms: response.topRooms ?? [],
     countries: response.countries.map((country) => ({ ...country, name: countryName(country.code) })),
     chart: response.chart.map((point) => ({ ...chartLabels(period, point.start, now), current: point.current, previous: point.previous })),
   };

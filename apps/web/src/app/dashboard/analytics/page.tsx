@@ -8,6 +8,7 @@ import { Lock, Radar } from "lucide-react";
 import { useState } from "react";
 
 import { useLodge } from "@/components/dashboard/lodge-provider";
+import { TopRoomsCard } from "@/components/dashboard/top-rooms";
 import { Page, PageHeader, PageSection } from "@/components/dashboard/page";
 import { useShareLink } from "@/components/dashboard/share";
 import { VisitsTable } from "@/components/dashboard/visits-table";
@@ -106,6 +107,9 @@ export default function AnalyticsPage() {
                 </>
               }
             />
+          </PageSection>
+          <PageSection>
+            <TopRoomsCard stats={stats} period={period} loading={loading} />
           </PageSection>
           <PageSection>
             <VisitsTable

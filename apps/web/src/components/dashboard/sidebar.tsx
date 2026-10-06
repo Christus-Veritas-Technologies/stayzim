@@ -12,7 +12,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
-import { useSignOut } from "@/components/dashboard/account-menu";
+import { AccountMenu, useSignOut } from "@/components/dashboard/account-menu";
 import { NavIcon, NavTrailing } from "@/components/dashboard/link-pending";
 import { useLodge } from "@/components/dashboard/lodge-provider";
 import { isActive, isCurrent, lodgeStatus, navLinks, type NavLink } from "@/components/dashboard/nav";
@@ -227,13 +227,29 @@ export function Sidebar({
         )}
 
         <div className={cn("flex items-center gap-2.5 px-1", collapsed && "flex-col px-0")}>
-          <Avatar name={user.name} />
-          {collapsed ? null : (
-            <span className="flex min-w-0 flex-1 flex-col">
-              <span className="truncate text-[13.5px] font-semibold">{user.name}</span>
-              <span className="truncate text-xs text-muted">{user.email}</span>
-            </span>
-          )}
+          <AccountMenu
+            name={user.name}
+            email={user.email}
+            side={collapsed ? "right" : "top"}
+            align="start"
+            trigger={
+              <button
+                type="button"
+                className={cn(
+                  "-m-1 flex min-w-0 flex-1 items-center gap-2.5 rounded-xl p-1 text-left transition-colors outline-none hover:bg-white focus-visible:ring-3 focus-visible:ring-ring/30",
+                  collapsed && "flex-none",
+                )}
+              >
+                <Avatar name={user.name} />
+                {collapsed ? null : (
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="truncate text-[13.5px] font-semibold">{user.name}</span>
+                    <span className="truncate text-xs text-muted">{user.email}</span>
+                  </span>
+                )}
+              </button>
+            }
+          />
           <Tooltip>
             <TooltipTrigger
               render={
