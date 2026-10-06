@@ -1,7 +1,7 @@
 import { env } from "@/lib/public-env";
 
 /** Our own subdomains, never a lodge. Mirrored in apps/server/src/lib/sites.ts. */
-const RESERVED = new Set(["www", "app", "api", "admin", "mail", "media", "outreach", "help", "status", "demo"]);
+const RESERVED = new Set(["www", "app", "api", "admin", "mail", "media", "outreach", "help", "status", "demo", "sites"]);
 
 /** Lodge sites live at {slug}.stayzim.co.zw (localhost:9999 in development). */
 export const SITES_DOMAIN = env.NEXT_PUBLIC_SITES_DOMAIN.toLowerCase();

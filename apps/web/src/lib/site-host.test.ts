@@ -18,7 +18,7 @@ describe("lodgeSlugFromHost", () => {
   });
 
   test("leaves StayZim's own hosts and anything else alone", () => {
-    for (const host of ["stayzim.co.zw", "app.stayzim.co.zw", "www.stayzim.co.zw", "a.b.stayzim.co.zw", "-x.stayzim.co.zw", "mistvalley.example.com", null]) {
+    for (const host of ["stayzim.co.zw", "app.stayzim.co.zw", "www.stayzim.co.zw", "sites.stayzim.co.zw", "a.b.stayzim.co.zw", "-x.stayzim.co.zw", "mistvalley.example.com", null]) {
       expect(lodgeSlugFromHost(host)).toBeNull();
     }
   });

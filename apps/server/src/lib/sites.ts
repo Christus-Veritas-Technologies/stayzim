@@ -3,7 +3,7 @@ import { env } from "@stayzim/env/server";
 import { normalizeDomain } from "@stayzim/sites";
 
 /** Subdomains of SITES_DOMAIN that are StayZim's own, never a lodge. Mirrored in packages/db/scripts/create-lodge.ts. */
-export const RESERVED_SUBDOMAINS = new Set(["www", "app", "api", "admin", "mail", "media", "outreach", "help", "status", "demo"]);
+export const RESERVED_SUBDOMAINS = new Set(["www", "app", "api", "admin", "mail", "media", "outreach", "help", "status", "demo", "sites"]);
 
 const escaped = env.SITES_DOMAIN.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const SITE_ORIGIN = new RegExp(`^https?://([a-z0-9](?:[a-z0-9-]*[a-z0-9])?)\\.${escaped}$`, "i");

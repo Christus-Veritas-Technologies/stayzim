@@ -31,7 +31,7 @@ function fail(message: string): never {
 }
 
 /** Subdomains we use ourselves. Mirrored in apps/server/src/lib/sites.ts. */
-const RESERVED = new Set(["www", "app", "api", "admin", "mail", "media", "outreach", "help", "status", "demo"]);
+const RESERVED = new Set(["www", "app", "api", "admin", "mail", "media", "outreach", "help", "status", "demo", "sites"]);
 
 const email = values.owner?.trim().toLowerCase();
 if (!email) fail("Pass --owner with the owner's login email.");
