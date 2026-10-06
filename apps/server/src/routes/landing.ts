@@ -2,9 +2,10 @@ import { zValidator } from "@hono/zod-validator";
 import prisma from "@stayzim/db";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
-import { getConnInfo } from "hono/bun";
 import { rateLimiter } from "hono-rate-limiter";
 import { z } from "zod";
+
+import { clientIp } from "../lib/ip";
 
 /** Short slugs like "hero_whatsapp" or "pricing"; keeps junk out of the table. */
 const slug = z
@@ -43,17 +44,6 @@ const landingEventSchema = z.discriminatedUnion("type", [
     utmCampaign: optionalText(128),
   }),
 ]);
-
-/** Behind a proxy the client IP is the first X-Forwarded-For hop; locally it's the socket address. */
-function clientIp(c: Parameters<typeof getConnInfo>[0]) {
-  const forwarded = c.req.header("x-forwarded-for")?.split(",")[0]?.trim();
-  if (forwarded) return forwarded;
-  try {
-    return getConnInfo(c).remote.address ?? "unknown";
-  } catch {
-    return "unknown";
-  }
-}
 
 export const landing = new Hono()
   .use(
