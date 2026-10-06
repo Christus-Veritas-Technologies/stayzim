@@ -1,4 +1,5 @@
 import prisma from "@stayzim/db";
+import { CAPTION_LIMIT, GALLERY_LIMIT, ROOM_PHOTO_LIMIT } from "@stayzim/sites";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { HTTPException } from "hono/http-exception";
@@ -9,8 +10,8 @@ import { MAX_UPLOAD_BYTES, removeUploads, saveImage } from "../lib/uploads";
 import { validJson } from "../lib/validate";
 
 /** Each room card shows up to 5 photos; the gallery holds more. */
-export const MAX_ROOM_PHOTOS = 5;
-export const MAX_GALLERY_PHOTOS = 30;
+export const MAX_ROOM_PHOTOS = ROOM_PHOTO_LIMIT;
+export const MAX_GALLERY_PHOTOS = GALLERY_LIMIT;
 
 const dimension = z.coerce.number().int().min(1).max(10_000);
 
@@ -18,7 +19,7 @@ const uploadFields = z.object({
   width: dimension,
   height: dimension,
   roomId: z.string().min(1).optional(),
-  caption: z.string().trim().max(80).optional(),
+  caption: z.string().trim().max(CAPTION_LIMIT).optional(),
 });
 
 async function findPhoto(lodgeId: string, photoId: string) {
@@ -79,7 +80,7 @@ export const photos = new Hono<{ Variables: LodgeVariables }>()
     return c.json({ photo: photoJson(photo), lodge: await lodgeJson(lodgeId) }, 201);
   })
 
-  .patch("/:id", validJson(z.object({ caption: z.string().trim().max(80, "Keep the caption short") })), async (c) => {
+  .patch("/:id", validJson(z.object({ caption: z.string().trim().max(CAPTION_LIMIT, "Keep the caption short") })), async (c) => {
     const photo = await findPhoto(c.var.lodgeId, c.req.param("id"));
     await prisma.photo.update({ where: { id: photo.id }, data: c.req.valid("json") });
     return c.json(await lodgeJson(c.var.lodgeId));

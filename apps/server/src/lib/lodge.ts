@@ -1,7 +1,6 @@
 import prisma from "@stayzim/db";
-import { demoEnded, effectiveTemplate } from "@stayzim/sites";
+import { demoEnded, effectiveTemplate, isAmenity, type DashboardLodge, type DashboardPhoto, type DashboardRoom } from "@stayzim/sites";
 import { createMiddleware } from "hono/factory";
-import { z } from "zod";
 import { HTTPException } from "hono/http-exception";
 
 import type { AuthVariables } from "./session";
@@ -41,68 +40,10 @@ type StoredPhoto = {
   roomId: string | null;
 };
 
-export type PhotoJson = {
-  id: string;
-  url: string;
-  /** "small 640w, medium 1280w, full 1600w" when the photo has smaller copies, for <img srcset> */
-  srcSet: string | null;
-  width: number;
-  height: number;
-  size: number;
-  caption: string;
-  roomId: string | null;
-};
-
-export type RoomJson = {
-  id: string;
-  name: string;
-  price: number;
-  sleeps: number;
-  amenities: string[];
-  photos: PhotoJson[];
-  updatedAt: Date;
-};
-
-/** GET /api/lodge, and what every lodge edit returns. Mirrored in apps/web/src/lib/lodge.ts. */
-export type LodgeJson = {
-  id: string;
-  slug: string;
-  /** The lodge's own domain, e.g. "mistvalleylodge.co.zw", when StayZim has set one up */
-  customDomain: string | null;
-  name: string;
-  description: string;
-  town: string | null;
-  region: string | null;
-  whatsapp: string | null;
-  phone: string | null;
-  email: string | null;
-  mapsUrl: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  themeColor: string;
-  /** The owner's pick (null: the plan's default) */
-  template: string | null;
-  /** What the site shows: the pick if the plan allows it, else the plan's default */
-  siteTemplate: string;
-  heroHeadline: string | null;
-  heroSubline: string | null;
-  logoUrl: string | null;
-  heroPhotoId: string | null;
-  heroUrl: string | null;
-  heroSrcSet: string | null;
-  plan: "STARTER" | "GROWTH" | "PRO";
-  status: "DEMO" | "ACTIVE" | "OVERDUE" | "SUSPENDED";
-  /** When a demo's site goes offline (DEMO only) */
-  demoEndsAt: Date | null;
-  /** A demo whose time is up: its site is offline until it's paid for */
-  demoEnded: boolean;
-  paidUntil: Date | null;
-  linkSharedAt: Date | null;
-  updatedAt: Date;
-  rooms: RoomJson[];
-  /** Photos not on a room, in order */
-  gallery: PhotoJson[];
-};
+export type PhotoJson = DashboardPhoto;
+export type RoomJson = DashboardRoom;
+/** GET /api/lodge, and what every lodge edit returns: the DashboardLodge contract in @stayzim/sites. */
+export type LodgeJson = DashboardLodge;
 
 export function photoJson(photo: StoredPhoto): PhotoJson {
   return {
@@ -118,7 +59,7 @@ export function photoJson(photo: StoredPhoto): PhotoJson {
 }
 
 /** Everything the dashboard shows, in one response, so every edit can return it fresh. */
-export async function lodgeJson(lodgeId: string): Promise<LodgeJson> {
+export async function lodgeJson(lodgeId: string): Promise<DashboardLodge> {
   const lodge = await loadLodge(lodgeId);
   const gallery = lodge.photos.map(photoJson);
   const hero = gallery.find((photo) => photo.id === lodge.heroPhotoId) ?? gallery[0] ?? null;
@@ -148,35 +89,22 @@ export async function lodgeJson(lodgeId: string): Promise<LodgeJson> {
     heroSrcSet: hero?.srcSet ?? null,
     plan: lodge.plan,
     status: lodge.status,
-    demoEndsAt: lodge.demoEndsAt,
+    demoEndsAt: lodge.demoEndsAt?.toISOString() ?? null,
     demoEnded: demoEnded(lodge, new Date()),
-    paidUntil: lodge.paidUntil,
-    linkSharedAt: lodge.linkSharedAt,
-    updatedAt: lodge.updatedAt,
+    paidUntil: lodge.paidUntil?.toISOString() ?? null,
+    linkSharedAt: lodge.linkSharedAt?.toISOString() ?? null,
+    updatedAt: lodge.updatedAt.toISOString(),
     rooms: lodge.rooms.map((room) => ({
       id: room.id,
       name: room.name,
       price: room.price,
       sleeps: room.sleeps,
-      amenities: room.amenities,
+      amenities: room.amenities.filter(isAmenity),
       photos: room.photos.map(photoJson),
-      updatedAt: room.updatedAt,
+      updatedAt: room.updatedAt.toISOString(),
     })),
     gallery,
   };
 }
 
-/** Digits only, with the country code: "+263 77 123 4567" → "263771234567". */
-export function phoneDigits(value: string) {
-  return value.replace(/\D/g, "");
-}
-
-/** A phone number with its country code, stored as digits only. Used by Lodge info and the start screen. */
-export const phoneNumber = (label: string) =>
-  z
-    .string()
-    .trim()
-    .nullable()
-    .transform((value) => (value ? phoneDigits(value) : null))
-    .refine((value) => value === null || !value.startsWith("2630"), "Remove the 0 at the start. The +263 is already added.")
-    .refine((value) => value === null || /^\d{9,15}$/.test(value), `Check the ${label} number, with the country code`);
+export { phoneDigits, phoneNumber } from "@stayzim/sites/schemas";

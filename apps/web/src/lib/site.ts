@@ -1,61 +1,25 @@
 import { env } from "@stayzim/env/web";
-import { fillCopy, findTemplate, type Template } from "@stayzim/sites";
+import { fillCopy, findTemplate, type LiveSite, type PublicSite, type Template } from "@stayzim/sites";
+import { publicSiteSchema } from "@stayzim/sites/schemas";
 import { cache } from "react";
 
-import { lodgePlace, type AmenityKey } from "@/lib/lodge";
+import { lodgePlace } from "@/lib/lodge";
 
-/** GET /api/sites/:slug (mirrors PublicSite in apps/server/src/routes/sites.ts). */
-export type PublicSite =
-  | { status: "SUSPENDED" | "DEMO_ENDED"; slug: string; name: string }
-  | {
-      status: "LIVE";
-      /** Not paid for yet: the site shows "This is a demo" badges */
-      demo: boolean;
-      slug: string;
-      /** The lodge's own domain: its canonical address when set */
-      customDomain: string | null;
-      name: string;
-      /** Template key from @stayzim/sites, already checked against the plan */
-      template: string;
-      hero: { headline: string; subline: string };
-      description: string;
-      town: string | null;
-      region: string | null;
-      whatsapp: string | null;
-      phone: string | null;
-      email: string | null;
-      mapsUrl: string | null;
-      latitude: number | null;
-      longitude: number | null;
-      themeColor: string;
-      logoUrl: string | null;
-      heroUrl: string | null;
-      /** `srcset` for the hero, so phones get a smaller copy */
-      heroSrcSet: string | null;
-      rooms: {
-        id: string;
-        name: string;
-        price: number;
-        sleeps: number;
-        amenities: AmenityKey[];
-        photos: { url: string; srcSet: string | null; width: number; height: number }[];
-      }[];
-      gallery: { url: string; srcSet: string | null; width: number; height: number; caption: string }[];
-    };
-
-export type LiveSite = Extract<PublicSite, { status: "LIVE" }>;
+/** GET /api/sites/:slug: the contract shared with the server (packages/sites/src/content/types.ts). */
+export type { LiveSite, PublicSite } from "@stayzim/sites";
 
 /**
  * A lodge site's content, fresh on every request (owners' edits show "straight
  * away"). null for an unknown lodge. Cached per request, so the page and its
- * metadata share one fetch.
+ * metadata share one fetch. Server-side only: it parses with zod.
  */
 export const getSite = cache(async (slug: string): Promise<PublicSite | null> => {
   const api = env.SERVER_INTERNAL_URL ?? env.NEXT_PUBLIC_SERVER_URL;
   const response = await fetch(`${api}/api/sites/${encodeURIComponent(slug)}`, { cache: "no-store" });
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(`Site ${slug} didn't load (${response.status})`);
-  return (await response.json()) as PublicSite;
+  // Defaults fill fields an older API doesn't send yet; unknown ones are dropped
+  return publicSiteSchema.parse(await response.json());
 });
 
 /**

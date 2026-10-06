@@ -1,6 +1,6 @@
 import { zValidator } from "@hono/zod-validator";
 import prisma from "@stayzim/db";
-import { demoEnded, findTemplate, heroText } from "@stayzim/sites";
+import { demoEnded, findTemplate, heroText, type PublicSite } from "@stayzim/sites";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { rateLimiter } from "hono-rate-limiter";
@@ -11,44 +11,8 @@ import { lodgeJson } from "../lib/lodge";
 import { withSession, type AuthVariables } from "../lib/session";
 import { describeDevice, slugForCustomDomain } from "../lib/sites";
 
-/** What a lodge site shows. Nothing about the plan, billing or the owner. */
-export type PublicSite =
-  | { status: "SUSPENDED" | "DEMO_ENDED"; slug: string; name: string }
-  | {
-      status: "LIVE";
-      /** Not paid for yet: the site shows "This is a demo" badges */
-      demo: boolean;
-      slug: string;
-      /** The lodge's own domain: its canonical address when set */
-      customDomain: string | null;
-      name: string;
-      /** Template key from @stayzim/sites, already checked against the plan */
-      template: string;
-      hero: { headline: string; subline: string };
-      description: string;
-      town: string | null;
-      region: string | null;
-      whatsapp: string | null;
-      phone: string | null;
-      email: string | null;
-      mapsUrl: string | null;
-      latitude: number | null;
-      longitude: number | null;
-      themeColor: string;
-      logoUrl: string | null;
-      heroUrl: string | null;
-      /** `srcset` for the hero, so phones get the 1024px copy */
-      heroSrcSet: string | null;
-      rooms: {
-        id: string;
-        name: string;
-        price: number;
-        sleeps: number;
-        amenities: string[];
-        photos: { url: string; srcSet: string | null; width: number; height: number }[];
-      }[];
-      gallery: { url: string; srcSet: string | null; width: number; height: number; caption: string }[];
-    };
+/** What a lodge site shows (the PublicSite contract in @stayzim/sites). Nothing about the plan, billing or the owner. */
+export type { PublicSite } from "@stayzim/sites";
 
 const eventSchema = z.object({
   type: z.enum(["PAGE_VIEW", "BOOKING_CHAT"]),

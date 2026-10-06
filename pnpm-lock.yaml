@@ -441,6 +441,10 @@ importers:
         version: 6.0.3
 
   packages/sites:
+    dependencies:
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.5
     devDependencies:
       '@stayzim/config':
         specifier: workspace:*

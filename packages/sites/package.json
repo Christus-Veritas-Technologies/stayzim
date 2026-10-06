@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./schemas": "./src/content/schemas.ts"
   },
   "scripts": {
     "check-types": "tsc --noEmit",
@@ -14,5 +15,8 @@
     "@stayzim/config": "workspace:*",
     "@types/bun": "catalog:",
     "typescript": "^6"
+  },
+  "dependencies": {
+    "zod": "catalog:"
   }
 }

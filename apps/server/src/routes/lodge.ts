@@ -1,11 +1,12 @@
 import prisma from "@stayzim/db";
-import { findTemplate, HERO_LIMITS, PLANS_LABEL, templateAllowed } from "@stayzim/sites";
+import { findTemplate, PLANS_LABEL, templateAllowed } from "@stayzim/sites";
+import { lodgePatch } from "@stayzim/sites/schemas";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 
-import { lodgeJson, phoneNumber, requireLodge, type LodgeVariables } from "../lib/lodge";
+import { lodgeJson, requireLodge, type LodgeVariables } from "../lib/lodge";
 import { coordinatesFromMapsUrl } from "../lib/maps";
 import { requireAuth, withSession } from "../lib/session";
 import { MAX_UPLOAD_BYTES, removeUploads, saveImage } from "../lib/uploads";
@@ -16,40 +17,6 @@ import { requests } from "./requests";
 import { rooms } from "./rooms";
 import { stats } from "./stats";
 
-/** Empty text means "remove it". */
-const optionalText = (max: number, label: string) =>
-  z
-    .string()
-    .trim()
-    .max(max, `${label} is too long (${max} characters at most)`)
-    .nullable()
-    .transform((value) => value || null);
-
-const lodgeUpdateSchema = z
-  .object({
-    name: z.string().trim().min(2, "Add your lodge name").max(80, "Keep the name under 80 characters"),
-    description: z.string().trim().max(300, "Keep the description under 300 characters"),
-    town: optionalText(60, "Town"),
-    region: optionalText(60, "Province"),
-    whatsapp: phoneNumber("WhatsApp"),
-    phone: phoneNumber("phone"),
-    email: z
-      .string()
-      .trim()
-      .nullable()
-      .transform((value) => value || null)
-      .refine((value) => value === null || z.email().safeParse(value).success, "Check the email address"),
-    mapsUrl: optionalText(500, "The map link"),
-    latitude: z.number().min(-90).max(90).nullable(),
-    longitude: z.number().min(-180).max(180).nullable(),
-    themeColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Pick a colour"),
-    heroPhotoId: z.string().nullable(),
-    template: z.string().min(1).max(40),
-    heroHeadline: optionalText(HERO_LIMITS.headline, "The headline"),
-    heroSubline: optionalText(HERO_LIMITS.subline, "The line under the headline"),
-  })
-  .partial();
-
 /** /api/lodge: the signed-in owner's lodge, with its rooms and photos under it. */
 export const lodge = new Hono<{ Variables: LodgeVariables }>()
   .use(withSession, requireAuth(), requireLodge)
@@ -58,7 +25,7 @@ export const lodge = new Hono<{ Variables: LodgeVariables }>()
   .get("/", async (c) => c.json(await lodgeJson(c.var.lodgeId)))
 
   /** Lodge info: details, location and look. Send only what changed. */
-  .patch("/", validJson(lodgeUpdateSchema), async (c) => {
+  .patch("/", validJson(lodgePatch), async (c) => {
     const data = c.req.valid("json");
     if (data.heroPhotoId) {
       const photo = await prisma.photo.findFirst({

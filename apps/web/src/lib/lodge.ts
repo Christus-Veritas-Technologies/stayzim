@@ -11,75 +11,28 @@ import {
   Wifi,
   type LucideIcon,
 } from "lucide-react";
-import { GRACE_DAYS, includesAnalytics, PLAN_PRICES } from "@stayzim/sites";
+import {
+  AMENITY_KEYS,
+  AMENITY_LABELS,
+  GRACE_DAYS,
+  includesAnalytics,
+  PLAN_PRICES,
+  type AmenityKey,
+  type DashboardLodge,
+  type DashboardPhoto,
+  type DashboardRoom,
+  type LodgeStatus,
+  type Plan,
+} from "@stayzim/sites";
 
 import { siteHost } from "@/lib/site-host";
 
-/** GET /api/lodge (mirrors LodgeJson in apps/server/src/lib/lodge.ts; dates arrive as strings). */
-export type Photo = {
-  id: string;
-  url: string;
-  /** "small 640w, medium 1280w, full 1600w" when there are smaller copies, for <img srcset> */
-  srcSet: string | null;
-  width: number;
-  height: number;
-  size: number;
-  caption: string;
-  roomId: string | null;
-};
-
-export type Room = {
-  id: string;
-  name: string;
-  price: number;
-  sleeps: number;
-  amenities: AmenityKey[];
-  photos: Photo[];
-  updatedAt: string;
-};
-
-export type PlanKey = "STARTER" | "GROWTH" | "PRO";
-export type LodgeStatus = "DEMO" | "ACTIVE" | "OVERDUE" | "SUSPENDED";
-
-export type Lodge = {
-  id: string;
-  slug: string;
-  /** The lodge's own domain, e.g. "mistvalleylodge.co.zw", when StayZim has set one up */
-  customDomain: string | null;
-  name: string;
-  description: string;
-  town: string | null;
-  region: string | null;
-  whatsapp: string | null;
-  phone: string | null;
-  email: string | null;
-  mapsUrl: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  themeColor: string;
-  logoUrl: string | null;
-  /** The owner's pick from @stayzim/sites; null until they choose one */
-  template: string | null;
-  /** What the site shows: the pick, or the plan's default when the plan doesn't include it */
-  siteTemplate: string;
-  /** The owner's own hero text; null shows the template's */
-  heroHeadline: string | null;
-  heroSubline: string | null;
-  heroPhotoId: string | null;
-  heroUrl: string | null;
-  heroSrcSet: string | null;
-  plan: PlanKey;
-  status: LodgeStatus;
-  /** When a demo's site goes offline (DEMO only) */
-  demoEndsAt: string | null;
-  /** A demo whose time is up: its site is offline until it's paid for */
-  demoEnded: boolean;
-  paidUntil: string | null;
-  linkSharedAt: string | null;
-  updatedAt: string;
-  rooms: Room[];
-  gallery: Photo[];
-};
+/** GET /api/lodge: the dashboard's contract, shared with the server (packages/sites/src/content/types.ts). */
+export type Photo = DashboardPhoto;
+export type Room = DashboardRoom;
+export type Lodge = DashboardLodge;
+export type PlanKey = Plan;
+export type { AmenityKey, LodgeStatus };
 
 export { SITES_DOMAIN, siteHost, siteUrl } from "@/lib/site-host";
 
@@ -88,27 +41,27 @@ export function lodgePlace(lodge: Pick<Lodge, "town" | "region">) {
   return [lodge.town, lodge.region].filter(Boolean).join(", ") || null;
 }
 
-export const ROOM_PHOTO_LIMIT = 5;
+export { AMENITIES_ON_CARD, AMENITY_KEYS, ROOM_PHOTO_LIMIT } from "@stayzim/sites";
 /** The setup checklist asks for this many gallery photos. */
 export const GALLERY_GOAL = 5;
 
-export const AMENITIES = {
-  wifi: { label: "Wi-Fi", icon: Wifi },
-  braai: { label: "Braai", icon: Flame },
-  fireplace: { label: "Fireplace", icon: FlameKindling },
-  parking: { label: "Parking", icon: Car },
-  kitchen: { label: "Kitchen", icon: CookingPot },
-  breakfast: { label: "Breakfast", icon: Coffee },
-  bath: { label: "Bath", icon: Bath },
-  aircon: { label: "Air con", icon: Snowflake },
-  pool: { label: "Pool", icon: Waves },
-  tv: { label: "TV", icon: Tv },
-} satisfies Record<string, { label: string; icon: LucideIcon }>;
+const AMENITY_ICONS = {
+  wifi: Wifi,
+  braai: Flame,
+  fireplace: FlameKindling,
+  parking: Car,
+  kitchen: CookingPot,
+  breakfast: Coffee,
+  bath: Bath,
+  aircon: Snowflake,
+  pool: Waves,
+  tv: Tv,
+} satisfies Record<AmenityKey, LucideIcon>;
 
-export type AmenityKey = keyof typeof AMENITIES;
-export const AMENITY_KEYS = Object.keys(AMENITIES) as AmenityKey[];
-/** Room cards on the site show this many amenity icons. */
-export const AMENITIES_ON_CARD = 4;
+/** Each amenity's label (shared with the server) and icon. */
+export const AMENITIES = Object.fromEntries(
+  AMENITY_KEYS.map((key) => [key, { label: AMENITY_LABELS[key], icon: AMENITY_ICONS[key] }]),
+) as Record<AmenityKey, { label: string; icon: LucideIcon }>;
 
 /** Theme colours that read well on white with white text on top. */
 export const THEME_COLORS = [
