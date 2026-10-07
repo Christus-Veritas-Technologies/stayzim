@@ -8,7 +8,7 @@ How the pieces of the StayZim monorepo fit together. For setup, see the [README]
  Browser (phone first)
    │
    ├── stayzim.co.zw ─────────────┐
-   ├── app.stayzim.co.zw ─────────┤  apps/web (Next.js 16)
+   ├── (www. → stayzim.co.zw) ────┤  apps/web (Next.js 16)
    ├── {slug}.stayzim.co.zw ──────┤    landing page, /login, /dashboard, /admin,
    │                              │    lodge sites (rewritten to /sites/{slug})
    │                              │
@@ -36,7 +36,7 @@ How the pieces of the StayZim monorepo fit together. For setup, see the [README]
 One app serves three kinds of host, told apart in `src/proxy.ts`:
 
 - **Lodge sites** at `{slug}.SITES_DOMAIN` are rewritten to `/sites/{slug}`. Anything else on a lodge host is that site's own 404. `/sites/x` opened on the main domain is redirected to the subdomain.
-- **The main domain** (`stayzim.co.zw`, `app.stayzim.co.zw`) serves the landing page, login, dashboard and team screens. Requests without a session cookie are sent to `/login` before any `/dashboard`, `/set-password` or `/admin` code loads; the pages check the session again.
+- **The main domain** (`stayzim.co.zw`; `www.` and `app.` redirect there with a 308) serves the landing page, login, dashboard and team screens. Requests without a session cookie are sent to `/login` before any `/dashboard`, `/set-password` or `/admin` code loads; the pages check the session again.
 
 Routes:
 
@@ -311,8 +311,8 @@ How they're built:
 
 Step by step in [deployment.md](deployment.md).
 
-- `stayzim.co.zw` and `app.stayzim.co.zw`: apps/web
+- `stayzim.co.zw`: apps/web (`www.` and `app.` redirect to it)
 - `{slug}.stayzim.co.zw`: lodge sites, also apps/web, via a wildcard DNS record and certificate (see [deployment.md](deployment.md))
-- `api.stayzim.co.zw`: apps/server, with `COOKIE_DOMAIN=.stayzim.co.zw` so web and API share the session cookie, and `CORS_ORIGIN=https://app.stayzim.co.zw,https://stayzim.co.zw`
+- `api.stayzim.co.zw`: apps/server, with `COOKIE_DOMAIN=.stayzim.co.zw` so web and API share the session cookie, and `CORS_ORIGIN=https://stayzim.co.zw`
 - `media.stayzim.co.zw`: the R2 bucket's public domain, for lodge photos
 - Outreach runs on the same VPS but isn't exposed publicly beyond its password-protected pages

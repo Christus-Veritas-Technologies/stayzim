@@ -2,7 +2,7 @@ import { getSessionCookie } from "better-auth/cookies";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { slugForCustomDomain } from "@/lib/custom-domains";
-import { isStayZimHost, lodgeSlugFromHost, siteUrl } from "@/lib/site-host";
+import { isStayZimHost, lodgeSlugFromHost, mainSiteRedirect, siteUrl } from "@/lib/site-host";
 
 const SIGNED_IN_ONLY = ["/dashboard", "/set-password", "/admin", "/start"];
 
@@ -20,7 +20,7 @@ function lodgeSite(request: NextRequest, slug: string) {
  * - A lodge's own domain (mistvalleylodge.co.zw, set with set-domain.ts): the
  *   same, after asking the API which lodge it belongs to. Unknown domains get
  *   the not-found page.
- * - stayzim.co.zw and app.stayzim.co.zw: the landing page, login and dashboard.
+ * - stayzim.co.zw: the landing page, login and dashboard. www. and app. redirect there.
  *   Visitors without a session cookie are sent to /login before any dashboard
  *   code loads (the pages and the API still check the session themselves).
  *
@@ -30,6 +30,9 @@ function lodgeSite(request: NextRequest, slug: string) {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const host = request.headers.get("host");
+
+  const main = mainSiteRedirect(host, `${pathname}${request.nextUrl.search}`);
+  if (main) return NextResponse.redirect(main, 308);
 
   const slug = lodgeSlugFromHost(host);
   if (slug) return lodgeSite(request, slug);

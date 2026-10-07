@@ -6,7 +6,7 @@ StayZim runs on one VPS with [Coolify](https://coolify.io), behind Cloudflare. C
 
 | Service | What | Address |
 | --- | --- | --- |
-| `web` | Landing page, login and dashboard, and every lodge site | `stayzim.co.zw`, `app.stayzim.co.zw`, `*.stayzim.co.zw` |
+| `web` | Landing page, login and dashboard, and every lodge site | `stayzim.co.zw` (`www.` and `app.` redirect there), `*.stayzim.co.zw` |
 | `server` | The API (Hono on Bun). Applies new database migrations each time it starts | `api.stayzim.co.zw` |
 | `db` | Postgres 16, data in the `postgres` volume | internal only |
 
@@ -36,7 +36,7 @@ Add `stayzim.co.zw` to Cloudflare and point the registrar's nameservers at it.
 | Type | Name | Content |
 | --- | --- | --- |
 | A | `stayzim.co.zw` (`@`) | VPS IP |
-| A | `app` | VPS IP |
+| A | `www` | VPS IP (redirects to the bare domain) |
 | A | `api` | VPS IP |
 | A | `*` | VPS IP (every lodge site) |
 
@@ -120,7 +120,7 @@ Install Coolify on the VPS (Ubuntu 24.04, 2 vCPU, 4 GB RAM is plenty to start). 
    - Branch: `main`.
 
 3. **Domains:**
-   - service `web`: `https://stayzim.co.zw,https://app.stayzim.co.zw`;
+   - service `web`: `https://stayzim.co.zw,https://www.stayzim.co.zw`;
    - service `server`: `https://api.stayzim.co.zw`;
    - `db`: none.
 
@@ -150,7 +150,7 @@ bun scripts/seed-demos.ts --whatsapp 2637XXXXXXXX
 
 The scripts print temporary passwords.
 
-- Sign in at `https://app.stayzim.co.zw`, choose a password, and add photos to each demo lodge as its demo owner.
+- Sign in at `https://stayzim.co.zw/login`, choose a password, and add photos to each demo lodge as its demo owner.
 - New lodges mostly sign up themselves at `https://stayzim.co.zw/signup`. For one you set up yourself: `create-owner`, then `cd /app/packages/db && bun scripts/create-lodge.ts …` (see the [README](../README.md)).
 - **Payments made outside Paynow:** `cd /app/apps/server && bun scripts/mark-paid.ts --slug mistvalley --months 1 --channel ecocash` records one and emails the receipt. Use `--list` to see every lodge and what it owes. `bun scripts/run-billing.ts` runs the hourly billing job straight away.
 - With the wildcard in place, a new lodge's site is live straight away. Nothing changes in DNS or Coolify.
@@ -159,7 +159,7 @@ The scripts print temporary passwords.
 
 - `https://api.stayzim.co.zw/health` → `{"status":"ok"}`.
 - `https://stayzim.co.zw` shows the landing page, and `https://mistvalley.stayzim.co.zw` shows a demo lodge.
-- Signing in on `app.` reaches the dashboard. If it bounces back to the login page, check `COOKIE_DOMAIN=.stayzim.co.zw` and `CORS_ORIGIN`.
+- Signing in on `stayzim.co.zw` reaches the dashboard. If it bounces back to the login page, check `COOKIE_DOMAIN=.stayzim.co.zw` and `CORS_ORIGIN`.
 - Five wrong passwords in a row give "Too many attempts". If one person's mistakes lock everyone out, `CLIENT_IP_HEADER` doesn't match the proxy.
 
 ## Updates and rollbacks

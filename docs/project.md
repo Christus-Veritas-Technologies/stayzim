@@ -27,7 +27,7 @@ StayZim gives Zimbabwean lodges, guesthouses, cottages and Airbnbs their own web
 
 | Person | Who they are | Where they use StayZim |
 | --- | --- | --- |
-| Lodge owner or manager | Runs a lodge, guesthouse or Airbnb. Busy, sometimes in the diaspora, mostly on a phone. | Owner dashboard (app.stayzim.co.zw) |
+| Lodge owner or manager | Runs a lodge, guesthouse or Airbnb. Busy, sometimes in the diaspora, mostly on a phone. | Owner dashboard (stayzim.co.zw/dashboard) |
 | Guest | Local or regional traveller, tourist or diaspora visitor, often on slow or expensive data. | The lodge's own site ({slug}.stayzim.co.zw) |
 | Prospect | A lodge owner who hasn't signed up. Arrives from a Facebook ad, a link or an in-person demo. | Marketing site (stayzim.co.zw) |
 | Kin (admin) | Founder. Sells, onboards and supports every lodge. | Team screen for change requests (`/admin/requests`), scripts and the database |
@@ -87,7 +87,7 @@ StayZim gives Zimbabwean lodges, guesthouses, cottages and Airbnbs their own web
 | --- | --- | --- |
 | Marketing site | Landing page (how it works, demo lodges, the maths, pricing, questions) | stayzim.co.zw/ |
 | Lodge site | One-page lodge site (hero, rooms, gallery, map, contact, sticky WhatsApp button) | {slug}.stayzim.co.zw/ |
-| Owner app | Login, forgot password, set new password | app.stayzim.co.zw/login |
+| Owner app | Login, forgot password, set new password | stayzim.co.zw/login |
 | Owner app | Dashboard: overview (with today's arrivals and Coming up), Lodge info, Rooms, Gallery, Guest info, Design, Requests | /dashboard |
 | Owner app | Bookings: requests, calendar, upcoming and past (Growth and Pro; locked preview on Starter) | /dashboard/bookings |
 | Owner app | Analytics (locked preview on Starter) | /dashboard/analytics |

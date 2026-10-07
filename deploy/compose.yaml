@@ -29,7 +29,7 @@ services:
         condition: service_healthy
     labels:
       # Lodge sites: every {slug}.stayzim.co.zw goes to web. Coolify routes the
-      # domains you give the service (stayzim.co.zw, app.stayzim.co.zw); these
+      # domains you give the service (stayzim.co.zw, www.stayzim.co.zw); these
       # catch-alls come last (priorities 2 and 1), so api. and app. keep their own routes.
       # Change the domain in the rule if SITES_DOMAIN differs.
       - traefik.enable=true
@@ -56,11 +56,11 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://stayzim:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@db:5432/stayzim
-      CORS_ORIGIN: ${CORS_ORIGIN:-https://app.stayzim.co.zw,https://stayzim.co.zw}
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://stayzim.co.zw}
       SITES_DOMAIN: ${SITES_DOMAIN:-stayzim.co.zw}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET (openssl rand -base64 32)}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-https://api.stayzim.co.zw}
-      WEB_URL: ${WEB_URL:-https://app.stayzim.co.zw}
+      WEB_URL: ${WEB_URL:-https://stayzim.co.zw}
       COOKIE_DOMAIN: ${COOKIE_DOMAIN:-.stayzim.co.zw}
       CLIENT_IP_HEADER: ${CLIENT_IP_HEADER:-cf-connecting-ip}
       R2_ACCOUNT_ID: ${R2_ACCOUNT_ID:-}

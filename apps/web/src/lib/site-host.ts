@@ -25,8 +25,21 @@ export function siteHost(lodge: SiteAddress) {
   return lodge.customDomain ? `${lodge.customDomain}${DEV_PORT}` : subdomainHost(lodge);
 }
 
+const MAIN_HOSTNAME_IS_LOCALHOST = /^localhost(:\d+)?$/.test(SITES_DOMAIN);
+
 /** StayZim's own site: https://stayzim.co.zw (http://localhost:9999 in development). */
 export const MAIN_URL = `${PROTOCOL}://${SITES_DOMAIN}`;
+
+/**
+ * Other names for the main site, sent on to it: StayZim lives on the bare domain only.
+ * Not on plain localhost, where Next.js would turn the redirect into a relative one (a loop).
+ */
+const MAIN_ALIASES = new Set(MAIN_HOSTNAME_IS_LOCALHOST ? [] : ["www", "app"].map((name) => `${name}${SUFFIX}`));
+
+/** "www.stayzim.co.zw/login?x=1" → "https://stayzim.co.zw/login?x=1"; any other host → null. */
+export function mainSiteRedirect(host: string | null, pathAndQuery: string) {
+  return MAIN_ALIASES.has((host ?? "").toLowerCase()) ? `${MAIN_URL}${pathAndQuery}` : null;
+}
 
 export function siteUrl(lodge: SiteAddress) {
   return `${PROTOCOL}://${siteHost(lodge)}`;

@@ -128,7 +128,7 @@ export const auth = betterAuth({
     // Rate limits count per visitor IP, read from the header our proxy sets (see CLIENT_IP_HEADER)
     ipAddress: { ipAddressHeaders: [env.CLIENT_IP_HEADER] },
     // In production the API and the web app live on different subdomains
-    // (api. and app.stayzim.co.zw), which must share the session cookie
+    // (api.stayzim.co.zw and stayzim.co.zw), which must share the session cookie
     ...(env.COOKIE_DOMAIN && {
       crossSubDomainCookies: { enabled: true, domain: env.COOKIE_DOMAIN },
     }),

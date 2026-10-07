@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { isStayZimHost, lodgeSlugFromHost, MAIN_URL, siteHost, siteUrl, subdomainHost } from "./site-host";
+import { isStayZimHost, lodgeSlugFromHost, MAIN_URL, mainSiteRedirect, siteHost, siteUrl, subdomainHost } from "./site-host";
 
 // NEXT_PUBLIC_SITES_DOMAIN is stayzim.co.zw in tests (test/setup.ts)
 describe("lodge site addresses", () => {
@@ -8,6 +8,19 @@ describe("lodge site addresses", () => {
     expect(siteHost({ slug: "mistvalley" })).toBe("mistvalley.stayzim.co.zw");
     expect(siteUrl({ slug: "mistvalley" })).toBe("https://mistvalley.stayzim.co.zw");
     expect(MAIN_URL).toBe("https://stayzim.co.zw");
+  });
+});
+
+describe("mainSiteRedirect", () => {
+  test("sends www. and app. to the bare domain, keeping the path", () => {
+    expect(mainSiteRedirect("www.stayzim.co.zw", "/login?next=%2Fdashboard")).toBe("https://stayzim.co.zw/login?next=%2Fdashboard");
+    expect(mainSiteRedirect("App.StayZim.co.zw", "/dashboard")).toBe("https://stayzim.co.zw/dashboard");
+  });
+
+  test("leaves the main site, lodge sites and other domains alone", () => {
+    for (const host of ["stayzim.co.zw", "api.stayzim.co.zw", "mistvalley.stayzim.co.zw", "www.mistvalleylodge.co.zw", null]) {
+      expect(mainSiteRedirect(host, "/")).toBeNull();
+    }
   });
 });
 

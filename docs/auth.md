@@ -100,7 +100,7 @@ In development, without the header, every request counts as 127.0.0.1.
 ## Production settings
 
 - `BETTER_AUTH_URL=https://api.stayzim.co.zw`
-- `WEB_URL=https://app.stayzim.co.zw`
-- `CORS_ORIGIN=https://app.stayzim.co.zw,https://stayzim.co.zw` (a list; lodge subdomains are allowed on top of it)
+- `WEB_URL=https://stayzim.co.zw`
+- `CORS_ORIGIN=https://stayzim.co.zw` (a list; lodge subdomains are allowed on top of it)
 - `COOKIE_DOMAIN=.stayzim.co.zw`, so the cookie set by `api.` is readable on `app.`, where the route guard checks it
 - A new random `BETTER_AUTH_SECRET` of 32+ characters. Changing it signs everyone out.

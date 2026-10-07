@@ -6,7 +6,7 @@ export const env = createEnv({
   server: {
     DATABASE_URL: z.string().min(1),
     // Web app origins allowed to call the API with cookies, comma-separated,
-    // e.g. "https://app.stayzim.co.zw,https://stayzim.co.zw" (not the API's own address).
+    // e.g. "https://stayzim.co.zw" (not the API's own address).
     // WEB_URL's origin is always allowed too.
     CORS_ORIGIN: z
       .string()
@@ -28,7 +28,7 @@ export const env = createEnv({
     BETTER_AUTH_SECRET: z.string().min(32).optional(),
     // Public URL of this API, e.g. https://api.stayzim.co.zw
     BETTER_AUTH_URL: z.url().optional(),
-    // Public URL of the web app (login, reset password pages), e.g. https://app.stayzim.co.zw
+    // Public URL of the web app (login, reset password pages), e.g. https://stayzim.co.zw
     WEB_URL: z.url().optional(),
     // Share the session cookie across subdomains in production, e.g. ".stayzim.co.zw".
     // Leave unset on localhost.
