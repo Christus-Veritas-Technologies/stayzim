@@ -8,13 +8,13 @@ import { NumberField } from "@stayzim/ui/components/number-field";
 import { addMonths, monthOf, RangeCalendar, type DateRange } from "@stayzim/ui/components/range-calendar";
 import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@stayzim/ui/components/sheet";
 import { Textarea } from "@stayzim/ui/components/textarea";
-import { BOOKING_LIMITS, dateAddMonths, formatStay, nightsBetween, todayInHarare, type SiteAvailability } from "@stayzim/sites";
+import { BOOKING_LIMITS, dateAdd, dateAddMonths, formatStay, nightsBetween, todayInHarare, type SiteAvailability } from "@stayzim/sites";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { CalendarDays, Check, LogIn, LogOut } from "lucide-react";
 import { useEffect, useRef, useState, type CSSProperties, type FormEvent } from "react";
 
 import { WhatsAppIcon } from "@/components/landing/brand";
-import type { BookingSite } from "@/components/site/tracking";
+import type { BookingSite, BookingStart } from "@/components/site/tracking";
 import { guestPhone } from "@/lib/guest-phone";
 import { env } from "@/lib/public-env";
 import { useMediaQuery } from "@/lib/use-media-query";
@@ -56,12 +56,15 @@ function useAvailability(slug: string, month: string) {
 export function BookingRequest({
   site,
   roomId: startRoom,
+  start,
   open,
   onOpenChange,
   onWhatsApp,
 }: {
   site: BookingSite;
   roomId?: string;
+  /** Dates and guests already picked (an enquiry bar), shown selected */
+  start?: BookingStart;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** The guest chose WhatsApp: counted as a booking chat */
@@ -72,9 +75,11 @@ export function BookingRequest({
   const reduceMotion = useReducedMotion();
   const [step, setStep] = useState<Step>("dates");
   const [roomId, setRoomId] = useState(startRoom ?? site.rooms[0]?.id ?? "");
-  const [dates, setDates] = useState<DateRange>({ start: null, end: null });
-  const [month, setMonth] = useState(() => monthOf(today));
-  const [guests, setGuests] = useState(2);
+  const [dates, setDates] = useState<DateRange>(() =>
+    start?.checkIn && start.checkIn >= today ? { start: start.checkIn, end: start.checkOut && start.checkOut > start.checkIn ? start.checkOut : null } : { start: null, end: null },
+  );
+  const [month, setMonth] = useState(() => monthOf(start?.checkIn && start.checkIn >= today ? start.checkIn : today));
+  const [guests, setGuests] = useState(start?.guests ?? 2);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -108,6 +113,14 @@ export function BookingRequest({
       if (!dates.start || !dates.end) {
         setErrors({ dates: dates.start ? "Now tap the day you leave" : "Tap the day you arrive, then the day you leave" });
         return;
+      }
+      // Dates brought in from an enquiry bar may cross nights that are already full
+      const taken = full[room.id];
+      for (let night = dates.start; taken && night < dates.end; night = dateAdd(night, 1)) {
+        if (taken.has(night)) {
+          setErrors({ dates: `${room.name} is full on some of these nights. Pick other dates or another room.` });
+          return;
+        }
       }
       setErrors({});
       setStep("details");

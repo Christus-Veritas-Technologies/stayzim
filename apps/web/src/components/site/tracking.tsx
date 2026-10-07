@@ -21,7 +21,10 @@ export type BookingSite = {
 const loadSheet = () => import("@/components/site/booking-request");
 const BookingRequest = dynamic(() => loadSheet().then((module) => module.BookingRequest), { ssr: false });
 
-type BookingState = { site: BookingSite | null; open: (roomId?: string) => void };
+/** Dates and guests the guest already chose, e.g. in an enquiry bar */
+export type BookingStart = { checkIn?: string; checkOut?: string; guests?: number };
+
+type BookingState = { site: BookingSite | null; open: (roomId?: string, start?: BookingStart) => void };
 const BookingContext = createContext<BookingState>({ site: null, open: () => {} });
 
 const VISITOR_KEY = "stayzim.visitor";
@@ -41,8 +44,11 @@ export function SiteTracking({
   booking?: BookingSite | null;
   children: ReactNode;
 }) {
-  const [request, setRequest] = useState<{ open: boolean; roomId?: string; key: number } | null>(null);
-  const open = useCallback((roomId?: string) => setRequest((current) => ({ open: true, roomId, key: (current?.key ?? 0) + 1 })), []);
+  const [request, setRequest] = useState<{ open: boolean; roomId?: string; start?: BookingStart; key: number } | null>(null);
+  const open = useCallback(
+    (roomId?: string, start?: BookingStart) => setRequest((current) => ({ open: true, roomId, start, key: (current?.key ?? 0) + 1 })),
+    [],
+  );
   const tracking = useMemo(() => ({ slug, enabled }), [slug, enabled]);
   const bookingState = useMemo(() => ({ site: booking, open }), [booking, open]);
   return (
@@ -54,6 +60,7 @@ export function SiteTracking({
             key={request.key}
             site={booking}
             roomId={request.roomId}
+            start={request.start}
             open={request.open}
             onOpenChange={(next) => setRequest((current) => (current ? { ...current, open: next } : current))}
             onWhatsApp={(roomId) => {
@@ -64,6 +71,23 @@ export function SiteTracking({
       </BookingContext.Provider>
     </TrackingContext.Provider>
   );
+}
+
+/**
+ * For enquiry bars: whether the site takes bookings, a way to open the sheet,
+ * and a way to count a WhatsApp enquiry (off in previews).
+ */
+export function useBooking() {
+  const { slug, enabled } = useContext(TrackingContext);
+  const { site, open } = useContext(BookingContext);
+  return {
+    online: site !== null,
+    open,
+    preload: () => void loadSheet(),
+    trackChat: (roomId?: string) => {
+      if (enabled && slug) track(slug, "BOOKING_CHAT", roomId);
+    },
+  };
 }
 
 /** A version 4 UUID. crypto.randomUUID only exists on HTTPS pages; getRandomValues works on any. */

@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "@stayzim/ui/lib/utils";
 import { Dialog, DialogContent, DialogTitle } from "@stayzim/ui/components/dialog";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -7,8 +8,58 @@ import { useEffect, useState } from "react";
 
 type GalleryPhoto = { url: string; srcSet?: string | null; width: number; height: number; caption: string };
 
+/**
+ * How a template lays out its gallery:
+ * - feature: the first photo large, the rest beside it
+ * - grid3, grid4: even tiles in three or four columns
+ * - strip: one row that scrolls sideways (a filmstrip)
+ * - ovals: tall rounded shapes, four across
+ * - panels: tall photos side by side
+ */
+export type GalleryLayout = "feature" | "grid3" | "grid4" | "strip" | "ovals" | "panels";
+
+const LAYOUTS: Record<GalleryLayout, { list: string; item: (index: number) => string | undefined; image: string; sizes: (index: number) => string }> = {
+  feature: {
+    list: "grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4",
+    item: (index) => (index === 0 ? "col-span-2 row-span-2" : undefined),
+    image: "aspect-[4/3]",
+    sizes: (index) => (index === 0 ? "(min-width: 768px) 50vw, calc(100vw - 32px)" : "(min-width: 768px) 25vw, 50vw"),
+  },
+  grid3: { list: "grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3", item: () => undefined, image: "aspect-[4/3]", sizes: () => "(min-width: 768px) 33vw, 50vw" },
+  grid4: { list: "grid grid-cols-2 gap-1.5 md:grid-cols-4", item: () => undefined, image: "aspect-[5/4]", sizes: () => "(min-width: 768px) 25vw, 50vw" },
+  strip: {
+    list: "-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:-mx-6 sm:px-6",
+    item: () => "w-[78%] shrink-0 snap-start sm:w-[44%] lg:w-[31%]",
+    image: "aspect-[3/4]",
+    sizes: () => "(min-width: 1024px) 31vw, (min-width: 640px) 44vw, 78vw",
+  },
+  ovals: { list: "grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4", item: () => undefined, image: "aspect-[3/4]", sizes: () => "(min-width: 768px) 25vw, 50vw" },
+  panels: {
+    list: "grid grid-cols-2 gap-3 md:grid-cols-3",
+    item: (index) => (index === 0 ? "col-span-2 md:col-span-1" : undefined),
+    image: "aspect-[4/5]",
+    sizes: () => "(min-width: 768px) 33vw, 50vw",
+  },
+};
+
 /** Photo grid; a tap opens the photo large, with arrows (and arrow keys) to move through them. */
-export function SiteGallery({ photos, name }: { photos: GalleryPhoto[]; name: string }) {
+export function SiteGallery({
+  photos,
+  name,
+  layout = "feature",
+  rounded = "rounded-2xl",
+  limit,
+}: {
+  photos: GalleryPhoto[];
+  name: string;
+  layout?: GalleryLayout;
+  /** Corner shape of each tile ("rounded-none", "rounded-full" for ovals) */
+  rounded?: string;
+  /** Show only the first few in the grid; the large view still has all of them */
+  limit?: number;
+}) {
+  const shape = LAYOUTS[layout];
+  const shown = limit ? photos.slice(0, limit) : photos;
   const [open, setOpen] = useState<number | null>(null);
   const current = open === null ? null : photos[open];
   const step = (by: number) => setOpen((index) => (index === null ? null : (index + by + photos.length) % photos.length));
@@ -25,28 +76,31 @@ export function SiteGallery({ photos, name }: { photos: GalleryPhoto[]; name: st
 
   return (
     <>
-      <ul className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3">
-        {photos.map((photo, index) => (
-          <li key={photo.url} className={index === 0 ? "col-span-2 row-span-2 md:col-span-2" : undefined}>
+      <ul className={shape.list}>
+        {shown.map((photo, index) => (
+          <li key={photo.url} className={shape.item(index)}>
             <button
               type="button"
               onClick={() => setOpen(index)}
-              className="group relative block size-full overflow-hidden rounded-2xl bg-[#EEF1F3] outline-none focus-visible:ring-3 focus-visible:ring-[var(--theme)]/40"
+              className={cn(
+                "group relative block size-full overflow-hidden bg-[#EEF1F3] outline-none focus-visible:ring-3 focus-visible:ring-[var(--theme)]/40",
+                layout === "ovals" ? "rounded-full" : rounded,
+              )}
               aria-label={photo.caption ? `Open photo: ${photo.caption}` : `Open photo ${index + 1}`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element -- already resized on upload */}
               <img
                 src={photo.url}
                 srcSet={photo.srcSet ?? undefined}
-                sizes={index === 0 ? "(min-width: 768px) 66vw, calc(100vw - 32px)" : "(min-width: 768px) 33vw, 50vw"}
+                sizes={shape.sizes(index)}
                 alt={photo.caption || `${name}, photo ${index + 1}`}
                 width={photo.width}
                 height={photo.height}
                 loading="lazy"
                 decoding="async"
-                className="aspect-[4/3] size-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                className={cn("size-full object-cover transition-transform duration-500 group-hover:scale-[1.03] motion-reduce:transition-none", shape.image)}
               />
-              {photo.caption ? (
+              {photo.caption && layout !== "ovals" ? (
                 <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent px-3 pt-6 pb-2 text-left text-xs font-semibold text-white">
                   {photo.caption}
                 </span>
@@ -104,26 +158,35 @@ export function SiteGallery({ photos, name }: { photos: GalleryPhoto[]; name: st
   );
 }
 
+/** Where a photo is missing: a soft wash of the lodge's colour (templates set --theme). */
+export const PHOTO_FALLBACK =
+  "bg-[linear-gradient(160deg,color-mix(in_oklab,var(--theme,#1E4A3B)_18%,#F4EFE6)_0%,color-mix(in_oklab,var(--theme,#1E4A3B)_55%,#8A7A66)_100%)]";
+
 /** A room's photos, swiped sideways, with dots. */
 export function RoomPhotos({
   photos,
   name,
   theme,
+  className = "aspect-[4/3]",
+  sizes = "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, calc(100vw - 32px)",
 }: {
   photos: { url: string; srcSet?: string | null; width: number; height: number }[];
   name: string;
   theme: string;
+  /** The frame's shape (and corners); 4:3 by default */
+  className?: string;
+  sizes?: string;
 }) {
   const [index, setIndex] = useState(0);
   // Photos further along load only as the guest swipes towards them (data is precious)
   const [reached, setReached] = useState(0);
   if (photos.length === 0) {
-    return <div className="aspect-[4/3] bg-[linear-gradient(135deg,#EEE6DA,#D7C3A6)]" aria-hidden="true" />;
+    return <div className={cn(PHOTO_FALLBACK, className)} aria-hidden="true" />;
   }
   return (
-    <div className="relative">
+    <div className={cn("relative overflow-hidden", className)}>
       <div
-        className="flex aspect-[4/3] snap-x snap-mandatory overflow-x-auto bg-[#EEE6DA] [scrollbar-width:none]"
+        className="flex size-full snap-x snap-mandatory overflow-x-auto bg-[#EEE6DA] [scrollbar-width:none]"
         onScroll={(event) => {
           const element = event.currentTarget;
           const next = Math.round(element.scrollLeft / element.clientWidth);
@@ -139,7 +202,7 @@ export function RoomPhotos({
             key={photo.url}
             src={position <= reached ? photo.url : undefined}
             srcSet={position <= reached ? (photo.srcSet ?? undefined) : undefined}
-            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, calc(100vw - 32px)"
+            sizes={sizes}
             alt={`${name}, photo ${position + 1}`}
             width={photo.width}
             height={photo.height}
