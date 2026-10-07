@@ -14,7 +14,7 @@ import { Spinner } from "@stayzim/ui/components/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@stayzim/ui/components/tooltip";
 import { cn } from "@stayzim/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, GripVertical, ImagePlus, Images, Star, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, GripVertical, ImagePlus, Images, Pencil, Star, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -95,10 +95,18 @@ function CaptionEditor({ photo, fallback }: { photo: Photo; fallback: string }) 
     <button
       type="button"
       onClick={() => setEditing(true)}
-      className="-my-2 truncate py-2 text-left text-[13.5px] font-semibold hover:text-brand"
-      title="Edit caption"
+      className="group/caption -my-2 flex min-w-0 items-center gap-1.5 py-2 text-left text-[13.5px] font-semibold hover:text-brand"
+      title={photo.caption ? "Edit caption" : "Add a caption (optional)"}
+      aria-label={photo.caption ? `Edit caption: ${photo.caption}` : `Add a caption to ${fallback.toLowerCase()} (optional)`}
     >
-      {photo.caption || <span className="text-muted-2">{fallback}</span>}
+      {photo.caption ? (
+        <span className="truncate">{photo.caption}</span>
+      ) : (
+        <span className="inline-flex items-center gap-1.5 text-muted-2 group-hover/caption:text-brand">
+          <Pencil className="size-3.5 shrink-0" />
+          Add a caption
+        </span>
+      )}
     </button>
   );
 }
@@ -164,7 +172,7 @@ export default function GalleryPage() {
         back={{ label: "My site", href: "/dashboard/site" }}
         title="Gallery"
         count={lodge.gallery.length}
-        description="Drag to reorder. The first photo is your hero unless you pick another."
+        description="Drag to reorder. The first photo is your hero unless you pick another. Captions are optional."
         actions={
           <>
             <AnimatePresence>
