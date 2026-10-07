@@ -110,6 +110,9 @@ jobs:
           pnpm --filter @stayzim/auth create-owner --email "$E2E_EMAIL" --name "Rudo Moyo" --password "$E2E_PASSWORD"
           pnpm --filter @stayzim/db create-lodge --owner "$E2E_EMAIL" --name "Mist Valley Lodge" --slug "$E2E_LODGE" \
             --town Nyanga --region Manicaland --whatsapp 263771234567 --sample-rooms --paid-months 1
+          pnpm --filter @stayzim/auth create-owner --email starter@e2e.test --name "Tariro Dube" --password "$E2E_PASSWORD"
+          pnpm --filter @stayzim/db create-lodge --owner starter@e2e.test --name "Cliff View Cottages" --slug cliffview \
+            --town Chimanimani --region Manicaland --whatsapp 263772345678 --sample-rooms --plan starter --paid-months 1
 
       - name: Build web
         run: pnpm --filter web build

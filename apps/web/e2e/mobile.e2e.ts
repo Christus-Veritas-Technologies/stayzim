@@ -62,7 +62,19 @@ test("a lodge site fits a 360px phone", async ({ page }) => {
 test.describe("dashboard", () => {
   test.use({ storageState: OWNER_STATE });
 
-  for (const path of ["/dashboard", "/dashboard/site", "/dashboard/rooms", "/dashboard/gallery", "/dashboard/design", "/dashboard/requests", "/dashboard/analytics", "/dashboard/billing"]) {
+  for (const path of [
+    "/dashboard",
+    "/dashboard/bookings",
+    "/dashboard/bookings?tab=calendar",
+    "/dashboard/site",
+    "/dashboard/rooms",
+    "/dashboard/gallery",
+    "/dashboard/guest-info",
+    "/dashboard/design",
+    "/dashboard/requests",
+    "/dashboard/analytics",
+    "/dashboard/billing",
+  ]) {
     test(`${path} fits a 360px phone`, async ({ page }) => {
       await page.goto(path);
       await scrollThrough(page);
