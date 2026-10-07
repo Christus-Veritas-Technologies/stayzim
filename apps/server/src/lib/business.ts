@@ -1,17 +1,16 @@
 import { env } from "@stayzim/env/server";
 
-/** Who issues StayZim's invoices and receipts, from BUSINESS_* (packages/env). */
+/** Who issues StayZim's invoices and receipts. No street address yet. */
 export const issuer = {
-  name: env.BUSINESS_NAME,
-  lines: env.BUSINESS_ADDRESS.split("|").map((line) => line.trim()).filter(Boolean),
-  email: env.BUSINESS_EMAIL,
-  taxNumber: env.BUSINESS_TAX_NUMBER ?? null,
+  name: "StayZim Platform Inc",
   website: "stayzim.co.zw",
+  email: "hello@stayzim.co.zw",
+  phone: "+263 77 510 1506",
 };
 
-/** One line for emails: "StayZim · 12 Main Street, Mutare · BP 200012345" */
+/** One line for emails: "StayZim Platform Inc · stayzim.co.zw · hello@stayzim.co.zw · +263 77 510 1506" */
 export function issuerLine() {
-  return [issuer.name, issuer.lines.join(", "), issuer.taxNumber ? `Tax no. ${issuer.taxNumber}` : null].filter(Boolean).join(" · ");
+  return [issuer.name, issuer.website, issuer.email, issuer.phone].join(" · ");
 }
 
 /** Merchant codes for paying outside Paynow; only the ones that are set. */

@@ -78,11 +78,9 @@ export default function BillingDocumentPage() {
                 <LogoMark size={36} />
                 <div className="text-[13px] leading-5 text-muted">
                   <p className="font-display text-[17px] font-bold text-ink">{doc.issuer.name}</p>
-                  {doc.issuer.lines.map((line) => (
-                    <p key={line}>{line}</p>
-                  ))}
+                  <p>{doc.issuer.website}</p>
                   <p>{doc.issuer.email}</p>
-                  {doc.issuer.taxNumber ? <p>Tax no. {doc.issuer.taxNumber}</p> : null}
+                  <p>{doc.issuer.phone}</p>
                 </div>
               </div>
               <div className="sm:text-right">

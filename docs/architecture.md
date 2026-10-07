@@ -228,7 +228,7 @@ The `resolve-request` script does the same from a terminal (`pnpm --filter @stay
   2. **Status:** `ACTIVE` → `OVERDUE` → `SUSPENDED`, with the "site offline" email, plus the "demo ended" email.
   3. **Missed callbacks:** it re-checks Paynow payments still pending.
   4. **Clean-up:** it deletes demos never paid for 30 days after they ended (photos, lodge, account).
-- **Documents:** `/dashboard/billing/[number]` shows an invoice or receipt, laid out to print or save as PDF (no PDF library). The issuer details (`BUSINESS_NAME`, `BUSINESS_ADDRESS` with lines split by `|`, `BUSINESS_EMAIL`, `BUSINESS_TAX_NUMBER`) are server settings (`apps/server/src/lib/business.ts`). They're sent with each document and printed in invoice and receipt emails.
+- **Documents:** `/dashboard/billing/[number]` shows an invoice or receipt, laid out to print or save as PDF (no PDF library). The issuer details (StayZim Platform Inc, stayzim.co.zw, hello@stayzim.co.zw, +263 77 510 1506; no street address yet) are hard-coded in `apps/server/src/lib/business.ts`. They're sent with each document and printed in invoice and receipt emails.
 
 ## Meta Pixel (ads)
 
@@ -280,7 +280,7 @@ Both databases get the whole schema; each app only uses its own tables. Changes 
 
 | App | File | Key settings |
 | --- | --- | --- |
-| server | `apps/server/.env` | `DATABASE_URL`, `CORS_ORIGIN` (comma-separated), `SITES_DOMAIN`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `WEB_URL`, `COOKIE_DOMAIN`, `GOOGLE_*`, `R2_*`, `SMTP_*`, `PAYNOW_*`, `ECOCASH_MERCHANT_CODE`, `INNBUCKS_MERCHANT_CODE`, `BUSINESS_*`. See [.env.example](../apps/server/.env.example). |
+| server | `apps/server/.env` | `DATABASE_URL`, `CORS_ORIGIN` (comma-separated), `SITES_DOMAIN`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `WEB_URL`, `COOKIE_DOMAIN`, `GOOGLE_*`, `R2_*`, `SMTP_*`, `PAYNOW_*`, `ECOCASH_MERCHANT_CODE`, `INNBUCKS_MERCHANT_CODE`. See [.env.example](../apps/server/.env.example). |
 | web | `apps/web/.env` | `NEXT_PUBLIC_SERVER_URL`, `NEXT_PUBLIC_SITES_DOMAIN`, `NEXT_PUBLIC_WHATSAPP_NUMBER`, `NEXT_PUBLIC_META_PIXEL` (optional, `off` to leave the Pixel out). See [.env.example](../apps/web/.env.example). |
 | outreach | `apps/outreach/.env` | `DATABASE_URL`, `OUTREACH_PASSWORD`, `WHATSAPP_*`. See [.env.example](../apps/outreach/.env.example). |
 

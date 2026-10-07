@@ -91,7 +91,7 @@ Without Paynow set up, Billing shows only the merchant codes and "I have paid", 
 
 **Invoices and receipts:**
 
-- Invoices, receipts and their emails carry the issuer details from `BUSINESS_NAME`, `BUSINESS_ADDRESS` (lines separated by `|`), `BUSINESS_EMAIL` and `BUSINESS_TAX_NUMBER`. Set the registered details before launch.
+- Invoices, receipts and their emails carry the issuer details hard-coded in `apps/server/src/lib/business.ts`: StayZim Platform Inc, stayzim.co.zw, hello@stayzim.co.zw, +263 77 510 1506. Add a street address or tax number there when there is one.
 - `ECOCASH_MERCHANT_CODE` and `INNBUCKS_MERCHANT_CODE` add the pay-by-merchant-code cards on Billing. Leave them empty to hide the cards; owners then see "Message us".
 - These are server settings: change them and restart the server, with no rebuild.
 - The billing job runs inside the server container every hour, so there's nothing to schedule.

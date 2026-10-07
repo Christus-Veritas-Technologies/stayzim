@@ -176,9 +176,8 @@ Everything that could be done without the user is done (the CMS and bookings too
    - emails over SMTP (welcome, invoices, receipts, resets, and booking emails to owners and guests);
    - visits behind Cloudflare (countries).
 2. **Deploy** with [deployment.md](deployment.md): VPS, Coolify, Cloudflare DNS and the origin certificate.
-3. **Business details on invoices:** set `BUSINESS_NAME`, `BUSINESS_ADDRESS` and `BUSINESS_TAX_NUMBER` on the server.
-4. **Demo lodges:** run `seed-demos` with the sales number, then add real photos as each demo owner.
-5. **Real devices:** iOS Safari and Android Chrome, especially the booking sheet's date picker and the dashboard calendar.
+3. **Demo lodges:** run `seed-demos` with the sales number, then add real photos as each demo owner.
+4. **Real devices:** iOS Safari and Android Chrome, especially the booking sheet's date picker and the dashboard calendar.
 
 ## Handoff (7 October 2026)
 
@@ -358,7 +357,6 @@ Built (web):
 ## Blocked on / needs a decision
 
 - **Paynow:** the integration ID and key (test mode first), then live approval from Paynow.
-- **Business details for invoices and receipts:** registered name, address and tax number. Set them as `BUSINESS_*` on the server; the code is ready.
 - **SMTP credentials** for hello@stayzim.co.zw (Spacemail). Welcome emails, invoices, receipts and resets all need them.
 - **Cloudflare R2:** a bucket, API token and public domain for lodge photos.
 - **Google OAuth client** (ID and secret), to switch on and test Google sign-in and sign-up.

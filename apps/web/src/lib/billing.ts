@@ -41,8 +41,8 @@ export type MerchantCode = { key: keyof typeof MERCHANT_TONES; name: string; cod
 
 export type BillingOverview = { paynow: boolean; merchantCodes: MerchantCode[]; invoices: Invoice[]; payments: Payment[] };
 
-/** Who issues invoices and receipts (BUSINESS_* on the server). */
-export type Issuer = { name: string; lines: string[]; email: string; taxNumber: string | null; website: string };
+/** Who issues invoices and receipts (apps/server/src/lib/business.ts). */
+export type Issuer = { name: string; website: string; email: string; phone: string };
 
 /** POST /api/lodge/billing/pay */
 export type StartedPayment = { payment: Payment; redirectUrl: string | null; instructions: string | null; innbucksCode: string | null };
