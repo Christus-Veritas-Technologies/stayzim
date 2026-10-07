@@ -371,7 +371,7 @@ Built (web):
 - **Real photos and copy for the Pro extras:** each Pro lodge's Booking.com score, a few guest quotes and the first journal posts, entered at `/admin/lodges` (team accounts).
 - **Real-device check** on iOS Safari and Android Chrome, especially the sign-up flow and photo picking.
 - **A review of the Privacy and Terms drafts** (`apps/web/src/app/privacy`, `apps/web/src/app/terms`), now covering the demo, payments and deletion.
-- **Facebook ads:** the Meta Pixel is built and off. Set `NEXT_PUBLIC_META_PIXEL_ID` and rebuild web to switch it on; the privacy notice then mentions it. Server-side Conversions API isn't added (it needs a Meta access token).
+- **Facebook ads:** the Meta Pixel (`1632288361926055`) is hard-coded and on in production. Check in Meta's Events Manager that PageView, CompleteRegistration, StartTrial and Purchase arrive after the deploy. Server-side Conversions API isn't added (it needs a Meta access token).
 - The open questions in [project.md](project.md#open-questions).
 
 ## Log

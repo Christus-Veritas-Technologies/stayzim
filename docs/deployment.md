@@ -131,7 +131,7 @@ Install Coolify on the VPS (Ubuntu 24.04, 2 vCPU, 4 GB RAM is plenty to start). 
    - Required: `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET` (`openssl rand -base64 32`), the `R2_*` settings, and `NEXT_PUBLIC_WHATSAPP_NUMBER`.
    - For online payments: `PAYNOW_INTEGRATION_ID` and `PAYNOW_INTEGRATION_KEY` (above). SMTP matters more now: welcome emails, invoices and receipts go through it.
    - SMTP and Google are needed for reset emails and Google sign-in.
-   - Optional: `NEXT_PUBLIC_META_PIXEL_ID` for the Facebook ads (a build variable). It reports sign-ups, demos and payments, and the privacy notice then mentions it.
+   - The Meta Pixel for the Facebook ads is built in (its ID is in `apps/web/src/lib/meta-pixel.ts`) and reports sign-ups, demos and payments. Nothing to set.
    - `NEXT_PUBLIC_*` values are baked in when the web image builds, so mark them as build variables, and redeploy after changing them.
 
 5. **Deploy.** The server waits for Postgres, applies the migrations, then starts. Web waits for the server's health check (`/health`, which also checks the database).

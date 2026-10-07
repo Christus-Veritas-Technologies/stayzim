@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
 import { LegalPage, type LegalSection } from "@/components/legal-page";
-import { META_PIXEL_ID } from "@/lib/meta-pixel";
 import { CONTACT_EMAIL } from "@/lib/whatsapp";
 
 export const metadata: Metadata = {
@@ -83,9 +82,9 @@ const SECTIONS: LegalSection[] = [
         On our own site we count page views and which buttons are tapped, with the page, the website or advert that sent you, your browser,
         and the same kind of random number in your browser. We use it to see which adverts and parts of the page work. We don&apos;t keep IP
         addresses for these visits.
-        {META_PIXEL_ID
-          ? " We also use the Meta (Facebook) Pixel on stayzim.co.zw, sign-up and the owner dashboard, so we can tell which Facebook and Instagram adverts work: it tells Meta when you view a page, sign up, make your demo or pay (the plan and amount, never card or mobile money details). Lodge sites never use it."
-          : null}
+        We also use the Meta (Facebook) Pixel on stayzim.co.zw, sign-up and the owner dashboard, so we can tell which Facebook and Instagram
+        adverts work: it tells Meta when you view a page, sign up, make your demo or pay (the plan and amount, never card or mobile money
+        details). Lodge sites never use it.
       </p>
     ),
   },
@@ -94,7 +93,7 @@ const SECTIONS: LegalSection[] = [
     body: (
       <>
         <p>
-          We don&apos;t sell personal information.{META_PIXEL_ID ? " Apart from the Meta Pixel described above, we" : " We"} don&apos;t share it for
+          We don&apos;t sell personal information. Apart from the Meta Pixel described above, we don&apos;t share it for
           advertising. A few services help us run StayZim:
         </p>
         <ul>
@@ -103,7 +102,7 @@ const SECTIONS: LegalSection[] = [
           <li>our email provider (Spacemail) sends password reset emails, invoices and receipts;</li>
           <li>Paynow takes payments, and receives the amount, a reference, your email address and, for a phone prompt, your mobile money number;</li>
           <li>Google, only if you choose to sign in with Google;</li>
-          {META_PIXEL_ID ? <li>Meta, through the Pixel on our own pages, under Meta&apos;s own privacy policy;</li> : null}
+          <li>Meta, through the Pixel on our own pages, under Meta&apos;s own privacy policy;</li>
           <li>WhatsApp, which carries the chats you start from our buttons, under WhatsApp&apos;s own privacy policy.</li>
         </ul>
       </>
@@ -115,9 +114,7 @@ const SECTIONS: LegalSection[] = [
       <p>
         The dashboard uses cookies to keep you logged in on your device, for up to 30 days. Lodge sites and stayzim.co.zw save the random
         visitor number described above in your browser&apos;s storage.
-        {META_PIXEL_ID
-          ? " The Meta Pixel sets Meta's own cookies on stayzim.co.zw, sign-up and the dashboard; lodge sites have no advertising cookies."
-          : " We don't use advertising cookies."}
+        The Meta Pixel sets Meta&apos;s own cookies on stayzim.co.zw, sign-up and the dashboard; lodge sites have no advertising cookies.
       </p>
     ),
   },

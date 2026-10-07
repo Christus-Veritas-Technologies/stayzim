@@ -39,6 +39,7 @@ jobs:
           cat > apps/web/.env <<'EOF'
           NEXT_PUBLIC_SERVER_URL=http://localhost:9998
           NEXT_PUBLIC_SITES_DOMAIN=localhost:9999
+          NEXT_PUBLIC_META_PIXEL=off
           EOF
 
       - name: Type-check
@@ -100,6 +101,7 @@ jobs:
           cat > apps/web/.env <<'EOF'
           NEXT_PUBLIC_SERVER_URL=http://localhost:9998
           NEXT_PUBLIC_SITES_DOMAIN=localhost:9999
+          NEXT_PUBLIC_META_PIXEL=off
           EOF
 
       - name: Database

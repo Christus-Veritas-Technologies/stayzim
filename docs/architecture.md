@@ -230,14 +230,15 @@ The `resolve-request` script does the same from a terminal (`pnpm --filter @stay
 
 ## Meta Pixel (ads)
 
-- Off unless `NEXT_PUBLIC_META_PIXEL_ID` is set (build-time). With it set, `components/meta-pixel.tsx` loads Meta's snippet only on StayZim's own pages: the landing page, `/signup`, `/start` and the dashboard. Lodge sites never load it.
+- The Pixel ID (`1632288361926055`) is hard-coded in `lib/meta-pixel.ts`. In production builds, `components/meta-pixel.tsx` loads Meta's snippet (and its `<noscript>` image) only on StayZim's own pages: the landing page, `/signup`, `/start` and the dashboard. Lodge sites never load it.
+- Dev servers never load it, and `NEXT_PUBLIC_META_PIXEL=off` leaves it out of a production build: CI sets that, so browser tests don't report to Meta.
 - `metaEvent()` (`lib/meta-pixel.ts`) reports:
   - `PageView`, on each route change;
   - `Contact`, on WhatsApp buttons;
   - `CompleteRegistration`, on email sign-up;
   - `StartTrial`, when a demo is made;
   - `InitiateCheckout` and `Purchase`, with value and currency, on Billing.
-- The privacy notice describes the Pixel only on builds where it's on.
+- The privacy notice always describes the Pixel.
 
 ## Sign-in
 
@@ -278,7 +279,7 @@ Both databases get the whole schema; each app only uses its own tables. Changes 
 | App | File | Key settings |
 | --- | --- | --- |
 | server | `apps/server/.env` | `DATABASE_URL`, `CORS_ORIGIN` (comma-separated), `SITES_DOMAIN`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `WEB_URL`, `COOKIE_DOMAIN`, `GOOGLE_*`, `R2_*`, `SMTP_*`, `PAYNOW_*`, `ECOCASH_MERCHANT_CODE`, `INNBUCKS_MERCHANT_CODE`, `BUSINESS_*`. See [.env.example](../apps/server/.env.example). |
-| web | `apps/web/.env` | `NEXT_PUBLIC_SERVER_URL`, `NEXT_PUBLIC_SITES_DOMAIN`, `NEXT_PUBLIC_WHATSAPP_NUMBER`, `NEXT_PUBLIC_META_PIXEL_ID` (optional). See [.env.example](../apps/web/.env.example). |
+| web | `apps/web/.env` | `NEXT_PUBLIC_SERVER_URL`, `NEXT_PUBLIC_SITES_DOMAIN`, `NEXT_PUBLIC_WHATSAPP_NUMBER`, `NEXT_PUBLIC_META_PIXEL` (optional, `off` to leave the Pixel out). See [.env.example](../apps/web/.env.example). |
 | outreach | `apps/outreach/.env` | `DATABASE_URL`, `OUTREACH_PASSWORD`, `WHATSAPP_*`. See [.env.example](../apps/outreach/.env.example). |
 
 Every `.env` file is gitignored; only the `.env.example` files are committed.
