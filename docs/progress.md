@@ -2,7 +2,7 @@
 
 _What's built, what's next, and what's blocking. Update this file whenever a piece of work lands. For what StayZim is and why, see [project.md](project.md)._
 
-**Last updated:** 7 October 2026 (designed templates, yearly discounts, plan-change carry-over)
+**Last updated:** 7 October 2026 (`/create` led by the look, one photo dropzone; see [create-redesign.md](create-redesign.md))
 
 ## At a glance
 
@@ -12,12 +12,13 @@ _What's built, what's next, and what's blocking. Update this file whenever a pie
 | Landing page analytics (CTA clicks, page views) | ✅ Built |
 | Privacy and Terms pages | ✅ Drafted in plain language; need a review before launch |
 | WhatsApp outreach tool (internal) | ✅ Built |
-| Self sign-up and the 2-day demo (`/create`) | ✅ Lodge name + WhatsApp + 3 photos to a live demo in about 90 seconds (6 s automated), no email until Claim my site, ad tags saved, drop-off tracked per step, demo badges, offline when it ends, deleted 30 days later |
+| Self sign-up and the 2-day demo (`/create`) | ✅ Pick a look (the nine designs, price shown small) + lodge name and WhatsApp + 3 photos to a live demo in about 90 seconds (7 s automated), in a step-by-step frame built from the design system ([create-redesign.md](create-redesign.md)), no email until Claim my site, ad tags saved, drop-off tracked per step, demo badges, offline when it ends, deleted 30 days later |
 | Owner sign-in (login, reset, first-login password) | ✅ Built, matches the app screens design |
 | Sign in with Google | ✅ Built (signs in or signs up), needs a Google OAuth client to test for real |
 | Email (SMTP via Nodemailer) | ✅ Built, needs SMTP credentials |
 | Owner dashboard (overview, lodge info, rooms, gallery, design, requests) | ✅ Built |
 | Photo storage (Cloudflare R2) | ✅ Built, needs R2 credentials |
+| Photo uploads | ✅ One dropzone everywhere (`PhotoDropzone`): drag and drop or Upload photos, on `/create`, Gallery, the room sheet and the logo |
 | Shared UI components (packages/ui) | ✅ Built |
 | Lodge sites ({slug}.stayzim.co.zw) | ✅ Rendering, subdomain routing, tracking, suspended and 404 pages, template preview route, robots and sitemap |
 | Custom domains per lodge | ✅ Any plan once paid (free .co.zw on Growth and Pro): `set-domain`, routing, CORS, canonical URLs, the dashboard address card and a catch-all Traefik route |
@@ -167,7 +168,9 @@ The rule behind all of it: every lodge and every template has the same data shap
 
 ## Next up
 
-Everything that could be done without the user is done (the CMS and bookings too). What's left needs them (see [Blocked on](#blocked-on--needs-a-decision)):
+**Start with [create-redesign.md](create-redesign.md#whats-left):** the production "no available server" on lodge subdomains (needs the VPS), a Preview on each design tile once the demo lodges are seeded, and a funnel event for the look step.
+
+Everything else that could be done without the user is done (the CMS and bookings too). What's left needs them (see [Blocked on](#blocked-on--needs-a-decision)):
 
 1. **Credentials,** then test with the real services:
    - Paynow (test mode first);
@@ -178,6 +181,22 @@ Everything that could be done without the user is done (the CMS and bookings too
 2. **Deploy** with [deployment.md](deployment.md): VPS, Coolify, Cloudflare DNS and the origin certificate.
 3. **Demo lodges:** run `seed-demos` with the sales number, then add real photos as each demo owner.
 4. **Real devices:** iOS Safari and Android Chrome, especially the booking sheet's date picker and the dashboard calendar.
+
+## Handoff (7 October 2026, late)
+
+The last session redesigned `/create` and photo uploads from the user's reference screenshots, using the existing design system. Read [create-redesign.md](create-redesign.md) first. It has:
+
+- what the user asked, and how each reference was used;
+- the three steps (Pick a look → the lodge → photos → live);
+- `PhotoDropzone` and where it's used;
+- the open production bug ("no available server" on `{slug}.stayzim.co.zw`), with commands to run on the VPS;
+- the list of what's left.
+
+The user's latest rules, on top of those below:
+
+- **Use the design system** that's already set up (`packages/ui` and its tokens, the dashboard's patterns, `designs/StayZim App Screens.html`). No one-off designs.
+- **Builds:** don't run a local production build; CI builds.
+- **Production `.env` values** were pasted into an earlier chat. Never copy them into the repo, docs or logs. The user was advised to rotate the SMTP password and the R2 key.
 
 ## Handoff (7 October 2026)
 
@@ -376,6 +395,9 @@ Newest first. One line per piece of work that landed on `main`.
 
 ### 7 October 2026
 
+- `/create` in three steps, led by the look: the nine designs first (the plan comes with the design, its price shown small), then the lodge's name and WhatsApp, then photos. The step frame follows the user's references and the design system: steps down the side, dots on phones, Step N of 3 with a bar, one big question per screen, Back, sticky Next. The API takes the picked `template`.
+- One photo dropzone for the whole app (`PhotoDropzone`): `/create`, Gallery, the room sheet and the logo. Photos on `/create` come off with ✕.
+- Docs: [create-redesign.md](create-redesign.md) (plan, what's left, the "no available server" diagnosis) and a Troubleshooting section in deployment.md.
 - One sign-up flow for ads and everyone else: `/create` (name + WhatsApp, then 3 photos, live in about 90 seconds), guest accounts until Claim my site, ad tags on each lodge, drop-off events per step, lighter retries for photos on weak lines, lodges-only wording. Deploys onto an empty db-push database recover by themselves.
 - Tier 1 and the small gaps: a foreign phone number no longer shows "+263 +44…"; the "Coming to Growth" box is gone; 12 months cost 10%, 17% or 30% less (Starter $216, Growth $398, Pro $630, rounded down); Guest info no longer opens as edited; Back asks before losing edits; owner visits on their own domain aren't counted; previews open the booking sheet; plan changes carry the time left over; the Meta Pixel is hard-coded.
 - Guests book on Growth and Pro sites (date picker, full nights greyed out); the owner confirms, or turns on Confirm bookings automatically. Classic leads with Book now, WhatsApp second; Starter stays on WhatsApp.

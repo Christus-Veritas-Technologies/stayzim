@@ -4,7 +4,7 @@ Owner accounts use [better-auth](https://www.better-auth.com) on `apps/server`, 
 
 ## How owners get an account
 
-**Owners make their site first, and sign up after.** At `/create` they give the lodge's name and WhatsApp and add photos; a guest account (better-auth's anonymous plugin) owns that demo. On the live screen, or from the dashboard banner, **Claim my site** adds a name, email and password (or Google): better-auth links the guest to the new account, `onLinkAccount` moves the lodge across, and the guest is deleted. Guest emails are placeholders at `guest.stayzim.co.zw` that are never mailed; guests can't pay or log out until they claim. There's no email check, so it stays quick; invoices and receipts go to that address. See [architecture.md](architecture.md#sign-up-and-the-demo).
+**Owners make their site first, and sign up after.** At `/create` they pick a look, give the lodge's name and WhatsApp, and add photos; a guest account (better-auth's anonymous plugin) owns that demo. On the live screen, or from the dashboard banner, **Claim my site** adds a name, email and password (or Google): better-auth links the guest to the new account, `onLinkAccount` moves the lodge across, and the guest is deleted. Guest emails are placeholders at `guest.stayzim.co.zw` that are never mailed; guests can't pay or log out until they claim. There's no email check, so it stays quick; invoices and receipts go to that address. See [architecture.md](architecture.md#sign-up-and-the-demo).
 
 StayZim can also create an account for an owner, for example after a walk-in:
 

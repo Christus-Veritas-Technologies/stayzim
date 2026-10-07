@@ -247,3 +247,29 @@ How it works:
 - The web app's proxy sees a host that isn't StayZim's and asks the API, `GET /api/sites/domain/:host`, which lodge it belongs to. Answers are cached for 5 minutes, and unknown domains for 1 minute. An unknown domain gets the "Lodge not found" page.
 - The API accepts visit reports from those domains (CORS).
 - **Owner visits:** the session cookie belongs to `stayzim.co.zw` and isn't sent from another site, so on a custom domain the owner's visits are skipped by the owner key their dashboard's View site link carries (`apps/server/src/lib/owner-key.ts`).
+
+## Troubleshooting
+
+### A lodge site shows "no available server"
+
+That's Traefik's 503:
+
+- A route matched the host, but the service behind it has no container to send to.
+- A host that matched nothing would show `404 page not found` instead.
+- DNS, Cloudflare and the certificate are usually fine when you see this.
+
+What to check:
+
+1. **The web container's health.**
+   - `docker ps` must show `(healthy)`. Traefik leaves out containers that are unhealthy or still starting.
+   - The image's `HEALTHCHECK` fetches `/` on port 9999.
+2. **One resource only.**
+   - Only one running container may carry the `stayzim-sites` and `stayzim-custom-domains` labels.
+   - Stop any older or separate web application.
+3. **Web deployed from `deploy/compose.yaml`.**
+   - The lodge-site labels live there.
+   - If web runs as its own Coolify application, copy the `traefik.*` labels from the compose file's `web` service into its Container Labels, and remove any `*.stayzim.co.zw` domain typed into Coolify.
+4. **The network.**
+   - If web sits on more than one Docker network, add `traefik.docker.network=coolify` (or whichever network the proxy shares with it).
+
+The commands, and why each cause fits, are in [create-redesign.md](create-redesign.md#the-production-bug-no-available-server).
