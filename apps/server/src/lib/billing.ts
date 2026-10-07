@@ -98,11 +98,17 @@ export async function createInvoice(lodgeId: string, plan: Plan, dueAt: Date) {
 
 /** Right after an owner makes their demo at /start: its first invoice, due when the demo ends, and the welcome email. */
 export async function onDemoCreated(lodgeId: string) {
+  const lodge = await prisma.lodge.findUniqueOrThrow({ where: { id: lodgeId }, select: { plan: true, demoEndsAt: true } });
+  if (lodge.demoEndsAt) await createInvoice(lodgeId, lodge.plan, lodge.demoEndsAt);
+  await sendDemoWelcome(lodgeId);
+}
+
+/** "Your site is live": on sign-up, or once a guest from /create claims the site (guest addresses get nothing). */
+export async function sendDemoWelcome(lodgeId: string) {
   const lodge = await prisma.lodge.findUniqueOrThrow({
     where: { id: lodgeId },
     select: { name: true, slug: true, customDomain: true, plan: true, demoEndsAt: true, owner: { select: { name: true, email: true } } },
   });
-  if (lodge.demoEndsAt) await createInvoice(lodgeId, lodge.plan, lodge.demoEndsAt);
   await sendQuietly(
     demoWelcomeEmail({
       to: lodge.owner.email,

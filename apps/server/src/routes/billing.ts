@@ -64,6 +64,7 @@ export const billing = new Hono<{ Variables: LodgeVariables }>()
     rateLimiter({ windowMs: 10 * 60 * 1000, limit: 10, standardHeaders: "draft-7", keyGenerator: clientIp }),
     validJson(paySchema),
     async (c) => {
+      if (c.get("user")?.isAnonymous) throw new HTTPException(403, { message: "Claim your site first: add your email, so your receipt has somewhere to go." });
       if (!paynowEnabled) throw new HTTPException(503, { message: "Paying online isn't switched on yet. Use EcoCash or InnBucks below, then tap I have paid." });
       const input = c.req.valid("json");
       const plan = input.plan as Parameters<typeof planPriceCents>[0];

@@ -5,16 +5,35 @@ import { HTTPException } from "hono/http-exception";
 import { rateLimiter } from "hono-rate-limiter";
 import { z } from "zod";
 
-import { onDemoCreated } from "../lib/billing";
+import { onDemoCreated, sendDemoWelcome } from "../lib/billing";
 import { clientIp } from "../lib/ip";
 import { lodgeJson, phoneNumber } from "../lib/lodge";
 import { requireAuth, type AuthVariables } from "../lib/session";
 import { validJson } from "../lib/validate";
 
+/** A utm_* value or the referrer, as the link carried it: short, or nothing. */
+const source = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .nullable()
+    .optional()
+    .transform((value) => value || null)
+    .catch(null);
+
 const lodgeSchema = z.object({
-  plan: z.string().refine(isPlan, "Pick a plan"),
+  // /create starts every demo on Growth (the plan most lodges take) unless the link named one
+  plan: z.string().refine(isPlan, "Pick a plan").default("GROWTH"),
   name: z.string().trim().min(2, "Add your lodge name").max(80, "Keep the name under 80 characters"),
-  town: z.string().trim().min(2, "Add the town").max(60, "Town is too long (60 characters at most)"),
+  // The town and the address can come later, from the dashboard
+  town: z
+    .string()
+    .trim()
+    .max(60, "Town is too long (60 characters at most)")
+    .nullable()
+    .optional()
+    .transform((value) => value || null),
   region: z
     .string()
     .trim()
@@ -23,7 +42,13 @@ const lodgeSchema = z.object({
     .optional()
     .transform((value) => value || null),
   whatsapp: phoneNumber("WhatsApp").refine((value) => value !== null, "Add the WhatsApp number guests should message"),
-  slug: z.string().trim().toLowerCase(),
+  // Left out by /create: the address is made from the name
+  slug: z.string().trim().toLowerCase().optional(),
+  utmSource: source(100),
+  utmMedium: source(100),
+  utmCampaign: source(150),
+  utmContent: source(150),
+  referrer: source(500),
 });
 
 async function slugTaken(slug: string) {
@@ -78,14 +103,22 @@ export const onboarding = new Hono<{ Variables: AuthVariables }>()
       if (await prisma.lodge.findUnique({ where: { ownerId: user.id }, select: { id: true } })) {
         throw new HTTPException(409, { message: "You already have a lodge. Open your dashboard to edit it." });
       }
-      const problem = slugProblem(input.slug);
-      if (problem) throw new HTTPException(400, { message: problem });
-      if (await slugTaken(input.slug)) throw new HTTPException(409, { message: "That address was just taken. Try another." });
+      let slug = input.slug;
+      if (slug) {
+        const problem = slugProblem(slug);
+        if (problem) throw new HTTPException(400, { message: problem });
+        if (await slugTaken(slug)) throw new HTTPException(409, { message: "That address was just taken. Try another." });
+      } else {
+        // "Mist Valley Lodge" → mist-valley-lodge (or the nearest free one)
+        const base = slugFromName(input.name);
+        slug = (base.length >= 3 ? await freeSlug(base, input.town) : null) ?? (await freeSlug(`${base || "lodge"}-stay`, null)) ?? undefined;
+        if (!slug) throw new HTTPException(409, { message: "Try a slightly different lodge name." });
+      }
 
       const plan = input.plan as keyof typeof DEFAULT_TEMPLATE;
       const lodge = await prisma.lodge.create({
         data: {
-          slug: input.slug,
+          slug,
           name: input.name,
           town: input.town,
           region: input.region,
@@ -95,10 +128,28 @@ export const onboarding = new Hono<{ Variables: AuthVariables }>()
           status: "DEMO",
           demoEndsAt: addDays(new Date(), DEMO_DAYS),
           ownerId: user.id,
+          utmSource: input.utmSource,
+          utmMedium: input.utmMedium,
+          utmCampaign: input.utmCampaign,
+          utmContent: input.utmContent,
+          signupReferrer: input.referrer,
         },
         select: { id: true },
       });
       await onDemoCreated(lodge.id);
       return c.json(await lodgeJson(lodge.id), 201);
+    },
+  )
+
+  /** After "Claim my site": the welcome email goes to the address they just gave. */
+  .post(
+    "/claimed",
+    rateLimiter({ windowMs: 60 * 60 * 1000, limit: 3, standardHeaders: "draft-7", keyGenerator: clientIp }),
+    async (c) => {
+      const user = c.get("user")!;
+      if (user.isAnonymous) throw new HTTPException(400, { message: "Add your email first." });
+      const lodge = await prisma.lodge.findUnique({ where: { ownerId: user.id }, select: { id: true } });
+      if (lodge) await sendDemoWelcome(lodge.id);
+      return c.body(null, 204);
     },
   );
