@@ -100,6 +100,11 @@ export function SiteGallery({
                 decoding="async"
                 className={cn("size-full object-cover transition-transform duration-500 group-hover:scale-[1.03] motion-reduce:transition-none", shape.image)}
               />
+              {index === shown.length - 1 && shown.length < photos.length ? (
+                <span className="absolute inset-0 flex items-center justify-center bg-black/45 text-lg font-semibold text-white">
+                  +{photos.length - shown.length} photos
+                </span>
+              ) : null}
               {photo.caption && layout !== "ovals" ? (
                 <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent px-3 pt-6 pb-2 text-left text-xs font-semibold text-white">
                   {photo.caption}

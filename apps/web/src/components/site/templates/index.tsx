@@ -4,8 +4,14 @@ import { DemoBand, DemoPill, DemoRibbon } from "@/components/site/demo-badges";
 import { BasicTemplate } from "@/components/site/templates/basic";
 import { ClassicTemplate } from "@/components/site/templates/classic";
 import { PLACEHOLDER_LOOKS } from "@/components/site/templates/looks";
+import { VerandaTemplate } from "@/components/site/templates/veranda";
 import { PageViewTracker, SiteTracking } from "@/components/site/tracking";
 import type { LiveSite } from "@/lib/site";
+
+/** Each template's design (designs/StayZim Lodge Templates.html). */
+const DESIGNS: Partial<Record<TemplateKey, (props: { site: LiveSite }) => React.ReactNode>> = {
+  "starter-veranda": VerandaTemplate,
+};
 
 /**
  * Renders a lodge site in its template. `preview` turns tracking off, so owners
@@ -14,7 +20,8 @@ import type { LiveSite } from "@/lib/site";
  */
 export function SiteTemplate({ site, preview = false }: { site: LiveSite; preview?: boolean }) {
   const template = findTemplate(site.template) ?? findTemplate("growth-shoreline")!;
-  const basic = PLACEHOLDER_LOOKS[template.key as TemplateKey];
+  const Design = DESIGNS[template.key as TemplateKey];
+  const basic = Design ? undefined : PLACEHOLDER_LOOKS[template.key as TemplateKey];
   // Previews never take requests: Book stays a WhatsApp link there
   const booking =
     !preview && site.booking.mode === "request" && site.whatsapp
@@ -32,7 +39,13 @@ export function SiteTemplate({ site, preview = false }: { site: LiveSite; previe
     <SiteTracking slug={site.slug} enabled={!preview} booking={booking}>
       <PageViewTracker />
       {site.demo ? <DemoRibbon /> : null}
-      {basic ? <BasicTemplate site={site} config={{ ...basic, name: template.name, motion: template.motion }} /> : <ClassicTemplate site={site} />}
+      {Design ? (
+        <Design site={site} />
+      ) : basic ? (
+        <BasicTemplate site={site} config={{ ...basic, name: template.name, motion: template.motion }} />
+      ) : (
+        <ClassicTemplate site={site} />
+      )}
       {site.demo ? (
         <>
           <DemoBand />
