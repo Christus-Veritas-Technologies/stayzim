@@ -11,7 +11,7 @@ import { Tabs, TabsList, TabsTab } from "@stayzim/ui/components/tabs";
 import { dateAdd, formatStay, includesBookingCalendar, todayInHarare } from "@stayzim/sites";
 import { cn } from "@stayzim/ui/lib/utils";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { CalendarDays, ChevronLeft, ChevronRight, Inbox, Lock, MessageSquareText, Plus, Search, Users } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Inbox, Lock, Plus, Search } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -20,24 +20,23 @@ import { toast } from "sonner";
 
 import { BookingRow } from "@/components/dashboard/booking-row";
 import { BookingSettings } from "@/components/dashboard/booking-settings";
+import { BookingsOverview } from "@/components/dashboard/bookings-overview";
 import { BookingSheet, type BookingSheetTarget } from "@/components/dashboard/booking-sheet";
 import { BookingsMonth } from "@/components/dashboard/bookings-month";
 import { BookingsTimeline } from "@/components/dashboard/bookings-timeline";
 import { useLodge } from "@/components/dashboard/lodge-provider";
-import { TodayStrip } from "@/components/dashboard/today-strip";
 import { Page, PageHeader, PageSection } from "@/components/dashboard/page";
+import { RequestCard } from "@/components/dashboard/request-card";
 import { api } from "@/lib/api";
 import {
   bookingMessages,
   confirmWarning,
   guestChatUrl,
   holdsOf,
-  stayLine,
   weekStart,
   type BookingsWindow,
   type DashboardBooking,
 } from "@/lib/bookings";
-import { formatWhen } from "@/lib/format";
 import { PLANS, type Lodge } from "@/lib/lodge";
 import { useMediaQuery } from "@/lib/use-media-query";
 
@@ -168,10 +167,8 @@ function Bookings() {
         }
       />
 
-      <TodayStrip lodge={lodge} onRequests={() => setTab("requests")} />
-
       <PageSection>
-        <BookingSettings />
+        <BookingsOverview lodge={lodge} onRequests={() => setTab("requests")} onCalendar={() => setTab("calendar")} />
       </PageSection>
 
       <PageSection>
@@ -346,16 +343,16 @@ function Requests({
     onChanged();
   }
 
+  let body: React.ReactNode;
   if (!result) {
-    return (
+    body = (
       <div className="flex flex-col gap-3" aria-busy="true">
-        <Skeleton className="h-36 w-full rounded-2xl" />
-        <Skeleton className="h-36 w-full rounded-2xl" />
+        <Skeleton className="h-44 w-full rounded-2xl" />
+        <Skeleton className="h-44 w-full rounded-2xl" />
       </div>
     );
-  }
-  if (result.bookings.length === 0) {
-    return (
+  } else if (result.bookings.length === 0) {
+    body = (
       <Card>
         <EmptyState
           icon={<Inbox />}
@@ -368,78 +365,43 @@ function Requests({
         />
       </Card>
     );
+  } else {
+    body = (
+      <ul className={cn("flex flex-col gap-3 transition-opacity", loading && "opacity-60")}>
+        <AnimatePresence initial={false}>
+          {result.bookings.map((booking, index) => {
+            const room = window?.rooms.find((entry) => entry.id === booking.roomId);
+            const warning = room && window ? confirmWarning(room.units, holdsOf(window.bookings, room.id, booking.id), booking) : undefined;
+            return (
+              <motion.li
+                key={booking.id}
+                layout={!reduceMotion}
+                initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, height: 0, marginTop: -12 }}
+                transition={{ duration: 0.2 }}
+              >
+                <RequestCard
+                  booking={booking}
+                  position={(result.page - 1) * result.pageSize + index + 1}
+                  warning={warning}
+                  busy={busy === booking.id}
+                  onOpen={() => onOpen(booking)}
+                  onConfirm={() => confirm(booking)}
+                />
+              </motion.li>
+            );
+          })}
+        </AnimatePresence>
+      </ul>
+    );
   }
 
   return (
-    <ul className={cn("flex flex-col gap-3 transition-opacity", loading && "opacity-60")}>
-      <AnimatePresence initial={false}>
-        {result.bookings.map((booking) => {
-          const room = window?.rooms.find((entry) => entry.id === booking.roomId);
-          const warning = room && window ? confirmWarning(room.units, holdsOf(window.bookings, room.id, booking.id), booking) : null;
-          return (
-            <motion.li
-              key={booking.id}
-              layout={!reduceMotion}
-              initial={reduceMotion ? false : { opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, height: 0, marginTop: -12 }}
-              transition={{ duration: 0.2 }}
-            >
-              <Card className="gap-4 p-4 sm:p-5">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="flex min-w-0 flex-col gap-1">
-                    <span className="flex flex-wrap items-center gap-2">
-                      <span className="text-[16px] font-semibold">{booking.guestName ?? "Guest"}</span>
-                      <Badge status variant="purple">
-                        Request
-                      </Badge>
-                    </span>
-                    <span className="text-[13.5px] text-ink-2">
-                      {booking.roomName} · {stayLine(booking)}
-                    </span>
-                    <span className="flex flex-wrap items-center gap-x-3 text-[12.5px] text-muted">
-                      {booking.guests ? (
-                        <span className="inline-flex items-center gap-1">
-                          <Users className="size-3.5" />
-                          {booking.guests} {booking.guests === 1 ? "guest" : "guests"}
-                        </span>
-                      ) : null}
-                      <span>Sent {formatWhen(booking.createdAt).toLowerCase()}</span>
-                      <span>{booking.reference}</span>
-                    </span>
-                  </div>
-                  <span className="text-right">
-                    <span className="block font-display text-[22px] leading-7 font-semibold">${booking.total}</span>
-                    <span className="text-xs text-muted">
-                      {booking.nights} × ${booking.nightlyPrice}
-                    </span>
-                  </span>
-                </div>
-                {booking.message ? (
-                  <p className="flex gap-2 rounded-xl bg-surface px-3.5 py-2.5 text-[13.5px] leading-5 text-ink-2">
-                    <MessageSquareText className="mt-0.5 size-4 shrink-0 text-muted-2" />
-                    {booking.message}
-                  </p>
-                ) : null}
-                {warning ? (
-                  <p className={cn("text-[13px]", warning.kind === "full" ? "font-semibold text-danger" : "text-muted")}>{warning.text}</p>
-                ) : null}
-                <div className="flex flex-wrap justify-end gap-2">
-                  <Button variant="outline" onClick={() => onOpen(booking)}>
-                    {warning?.kind === "full" ? "Change or decline" : "Review"}
-                  </Button>
-                  {warning?.kind === "full" ? null : (
-                    <Button onClick={() => confirm(booking)} loading={busy === booking.id}>
-                      Confirm
-                    </Button>
-                  )}
-                </div>
-              </Card>
-            </motion.li>
-          );
-        })}
-      </AnimatePresence>
-    </ul>
+    <div className="flex flex-col gap-3">
+      <BookingSettings />
+      {body}
+    </div>
   );
 }
 
