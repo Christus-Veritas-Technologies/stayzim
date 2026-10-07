@@ -4,7 +4,7 @@ Owner accounts use [better-auth](https://www.better-auth.com) on `apps/server`, 
 
 ## How owners get an account
 
-**Owners sign up themselves** at `/signup` (name, email, password or Google, and a plan), then make their lodge at `/start`. It goes live straight away as a 2-day demo (see [architecture.md](architecture.md#sign-up-and-the-demo)). There's no email check first, so sign-up stays quick; invoices and receipts go to that address. Sign-ups are limited to 5 per IP per 10 minutes.
+**Owners make their site first, and sign up after.** At `/create` they give the lodge's name and WhatsApp and add photos; a guest account (better-auth's anonymous plugin) owns that demo. On the live screen, or from the dashboard banner, **Claim my site** adds a name, email and password (or Google): better-auth links the guest to the new account, `onLinkAccount` moves the lodge across, and the guest is deleted. Guest emails are placeholders at `guest.stayzim.co.zw` that are never mailed; guests can't pay or log out until they claim. There's no email check, so it stays quick; invoices and receipts go to that address. See [architecture.md](architecture.md#sign-up-and-the-demo).
 
 StayZim can also create an account for an owner, for example after a walk-in:
 
@@ -32,11 +32,11 @@ This prints a **temporary password**; send it to the owner on WhatsApp with the 
 
 ## Sign in with Google
 
-"Continue with Google" on `/login` and `/signup` is optional. It shows when the server has `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` (setup steps are in `apps/server/.env.example`); `GET /api/account/sign-in-options` tells the login screen.
+"Continue with Google" on `/login` and in Claim my site is optional. It shows when the server has `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` (setup steps are in `apps/server/.env.example`); `GET /api/account/sign-in-options` tells the login screen.
 
-- **Sign in or sign up, from either screen:** Google signs in the account with the same (verified) email, linking it on first use, or creates a new one when there isn't one, which goes on to `/start` (`newUserCallbackURL`). Sign-up is spelled out in the config (`disableSignUp: false`, `disableImplicitSignUp: false`) and the button sends `requestSignUp: true`, so it doesn't rest on Better Auth's defaults.
+- **Sign in or sign up, from either screen:** Google signs in the account with the same (verified) email, linking it on first use, or creates a new one when there isn't one, which goes on to `/create` (`newUserCallbackURL`); from a guest account it claims the guest's site. Sign-up is spelled out in the config (`disableSignUp: false`, `disableImplicitSignUp: false`) and the button sends `requestSignUp: true`, so it doesn't rest on Better Auth's defaults.
 - **Temporary passwords:** if an owner links Google while still on the temporary password StayZim sent, that password is replaced with a random one and the dashboard opens. They can set their own later with Forgot password.
-- **Errors** return to `/login?error=…`, shown in plain words by `oauthErrorMessage` (`account_not_linked`, `access_denied`); from the sign-up page they return to `/signup?error=…`.
+- **Errors** return to `/login?error=…`, shown in plain words by `oauthErrorMessage` (`account_not_linked`, `access_denied`).
 - **Not yet tested** with a real Google OAuth client.
 
 ## Rules

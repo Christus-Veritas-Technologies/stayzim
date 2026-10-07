@@ -185,14 +185,16 @@ The `resolve-request` script does the same from a terminal (`pnpm --filter @stay
 
 ## Sign-up and the demo
 
-- **`/signup?plan=growth`:** name, email and password (or Google), with the plan as chips. There's no email check first, because sign-up to a live site has to take minutes (the ads). A rate limit allows 5 sign-ups per IP per 10 minutes.
-- **`/start`** (`app/start/page.tsx`, steps in `components/start/`):
-  1. The lodge: name, town, WhatsApp, and a web address suggested live by `GET /api/onboarding/slug`.
-  2. Photos.
-  3. Quick rooms.
-  4. "You're live".
+- **`/create`** (`app/create/page.tsx`, steps in `components/create/`) is the one way in, for ads and organic visitors alike: `stayzim.co.zw/create?utm_source=meta&utm_campaign=…`. About 90 seconds from Get started to a live site:
+  1. **Step 1 of 2 (about 60 seconds):** lodge name and WhatsApp number, nothing else. On Next, a guest account is made (better-auth's anonymous plugin, `POST /api/auth/sign-in/anonymous`) and `POST /api/onboarding/lodge` creates the lodge as a Growth `DEMO` (or the plan on the link), with an address made from the name, `demoEndsAt` 2 days ahead, its first invoice, and the link's utm_* and referrer.
+  2. **Step 2 of 2 (about 30 seconds):** 3 photos (1 is enough; "go live without them" is there as a way out). Resized on the phone; one that drops on a weak line retries once by itself, smaller.
+  3. **Live:** open, share, and **Claim my site**: name, email and password (or Google). Signing up from the guest account moves the lodge to the new account (`onLinkAccount` in `packages/auth`) and deletes the guest; `POST /api/onboarding/claimed` then sends the welcome email.
 
-  Step 1 calls `POST /api/onboarding/lodge`, which creates the lodge as `DEMO` with `demoEndsAt` set 2 days ahead, its first invoice, and the welcome email. Each step is in the URL, so a reload carries on. A signed-in owner without a lodge is sent here from the dashboard.
+  The site takes shape beside the form as they type and upload (`components/create/preview.tsx`; a strip above the form on phones). Town, rooms, logo and guest info come after, from the dashboard checklist. Each step is in the URL, so a reload carries on. `/signup` and `/start` redirect here with their query (plan, utm_*).
+- **Guest accounts** (`user.is_anonymous`): their email is a placeholder at `guest.stayzim.co.zw`, which `sendEmail` never sends to. Until they claim, the dashboard shows a "Claim my site" banner, the account menu has Claim instead of Log out, and Billing asks them to claim before paying (the pay route refuses guests). Logging in to an existing account from a guest session also moves the demo across, if that account has no lodge.
+- **Where lodges come from:** `lodge.utm_source`, `utm_medium`, `utm_campaign`, `utm_content` and `signup_referrer`, from the first page of the visit (`signupSource()` in `lib/track.ts`). The team's lodge list (`/admin/lodges`) shows "via meta · registration_test".
+- **The funnel:** each step is a `CTA_CLICK` landing event in the `create` section (`create_open`, `create_lodge`, `create_photo`, `create_live`, `create_claim`) and a custom Pixel event (`CreateStep`, with `step`), plus Meta's `StartTrial` when the demo is made and `CompleteRegistration` on claim. Drop-off between steps reads straight off `landing_event`.
+- **Per-IP limits** are generous (30 guest sign-ins per 10 minutes, 30 demos an hour), because many phones on one mobile network share an IP address.
 - **Demo sites:**
   - They carry badges, added around any template in `components/site/templates/index.tsx` (`demo-badges.tsx`).
   - They're `noindex`, and robots and the sitemap leave them out.
@@ -232,7 +234,7 @@ The `resolve-request` script does the same from a terminal (`pnpm --filter @stay
 
 ## Meta Pixel (ads)
 
-- The Pixel ID (`1632288361926055`) is hard-coded in `lib/meta-pixel.ts`. In production builds, `components/meta-pixel.tsx` loads Meta's snippet (and its `<noscript>` image) only on StayZim's own pages: the landing page, `/signup`, `/start` and the dashboard. Lodge sites never load it.
+- The Pixel ID (`1632288361926055`) is hard-coded in `lib/meta-pixel.ts`. In production builds, `components/meta-pixel.tsx` loads Meta's snippet (and its `<noscript>` image) only on StayZim's own pages: the landing page, `/create` and the dashboard. Lodge sites never load it.
 - Dev servers never load it, and `NEXT_PUBLIC_META_PIXEL=off` leaves it out of a production build: CI sets that, so browser tests don't report to Meta.
 - `metaEvent()` (`lib/meta-pixel.ts`) reports:
   - `PageView`, on each route change;
@@ -245,8 +247,8 @@ The `resolve-request` script does the same from a terminal (`pnpm --filter @stay
 ## Sign-in
 
 - Email and password through better-auth. Owners sign up themselves (above); StayZim can still create accounts with `create-owner`. Details, rules and flows: [auth.md](auth.md).
-- **Google:** "Continue with Google" shows when `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set. It signs in the account with the same email, or creates one (then `/start`). Errors come back to `/login?error=…` (or `/signup`).
-- **After login:** team accounts (`--admin`) land on `/admin/requests`, owners on `/dashboard`, anyone on a temporary password on `/set-password` first, and an owner without a lodge on `/start`.
+- **Google:** "Continue with Google" shows when `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set. It signs in the account with the same email, or creates one (then `/create`). From a guest account it claims the guest's site (back on `/dashboard?claimed=1`). Errors come back to `/login?error=…`.
+- **After login:** team accounts (`--admin`) land on `/admin/requests`, owners on `/dashboard`, anyone on a temporary password on `/set-password` first, and an owner without a lodge on `/create`.
 
 ## Packages
 
@@ -299,7 +301,7 @@ How they're built:
 - **Build context:** the repo root. `.dockerignore` keeps out `node_modules`, `.env` files, designs, docs and WhatsApp scratch folders.
 - **Install:** every workspace `package.json` is copied so the lockfile matches, then `pnpm install --frozen-lockfile --filter "<app>..."` installs only that app and its workspace packages. For server and outreach, `packages/db`'s postinstall runs `prisma generate`; nothing connects at build time.
 - **Runtime:** Node is the base because pnpm and the Prisma CLI need it; Bun is copied in from `oven/bun:1` and runs the TypeScript entry directly, as in development, so there's no separate bundling step. OpenSSL is installed for Prisma's schema engine.
-- **Start:** `docker/start.sh` runs `prisma migrate deploy`, which applies only committed migrations, so nothing changes the database that wasn't reviewed in a migration file. When server and outreach start together, Prisma's lock makes one wait. A database made with `db push` stops the container with P3005 and the baselining command. Set `SKIP_DB_MIGRATE=1` to skip it.
+- **Start:** `docker/start.sh` runs `prisma migrate deploy`, which applies only committed migrations, so nothing changes the database that wasn't reviewed in a migration file. When server and outreach start together, Prisma's lock makes one wait. A database made with `db push` gives P3005: with no accounts or lodges in it, `packages/db/scripts/reset-if-empty.ts` drops its tables and the migrations run from scratch; with data, the container stops with the baselining command. Set `SKIP_DB_MIGRATE=1` to skip it.
 - **Users and health:** every container runs as the unprivileged `node` user and has a `HEALTHCHECK` (server `/health`, which also checks the database; web `/`; outreach `/health`).
 - **Backups:** `docker/backup.sh` writes a compressed `pg_dump` (custom format) and keeps the newest `KEEP` (14); it prints the `pg_restore` command. A backup and restore of the dev database were checked to give the same row counts. In production, Coolify's scheduled backups to R2 come first ([deployment.md](deployment.md)).
 - **Outreach:**

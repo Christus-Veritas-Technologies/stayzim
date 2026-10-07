@@ -39,7 +39,7 @@ StayZim gives Zimbabwean lodges, guesthouses, cottages and Airbnbs their own web
 - **Facebook click-to-WhatsApp ads** aimed at lodge, guesthouse and Airbnb owners, from about $5 a day.
 - **Walking into lodges** with a demo of their own site already built.
 - **WhatsApp outreach** to leads who opted in or replied to the ads, sent from 3 StayZim numbers with daily limits (`apps/outreach`).
-- **Facebook ads** to `/signup`: owners make their own live demo in about 5 minutes.
+- **Facebook ads** to `/create?utm_source=meta&…`: owners make their own live demo in about 90 seconds (name, WhatsApp, 3 photos), the same flow as everyone else, with the ad's tags saved on the lodge.
 - **Free .co.zw domains** on Growth and Pro, registered by StayZim.
 
 ## Plans
@@ -74,7 +74,7 @@ StayZim gives Zimbabwean lodges, guesthouses, cottages and Airbnbs their own web
 | Niche | Lodges, guesthouses and Airbnbs only. Restaurants were considered and rejected (may be taken on by referral, not marketed to). |
 | Booking | WhatsApp first. No card payments by guests in the MVP. On Growth and Pro, guests book on the site first (dates, then their details) and WhatsApp is the second way; the owner confirms each booking, or lets free nights confirm automatically. |
 | Content (CMS) | One fixed data shape for every lodge and template; only the rendering differs. Owners edit rooms, guest info and bookings themselves. Rooms are room types with a count ("Standard Room × 6"). |
-| Sign-up | Self sign-up (`/signup`, email or Google) straight into a 2-day demo on the plan the owner picks. StayZim can still create accounts with a temporary password (`create-owner`). |
+| Sign-up | One flow for everyone (`/create`): lodge name and WhatsApp, then 3 photos, and the 2-day demo is live; the email comes after (Claim my site). No separate funnel for ads: the utm_* tags tell them apart. The copy says it's for lodges, guesthouses, B&Bs and holiday homes, to keep others out. StayZim can still create accounts with a temporary password (`create-owner`). |
 | Analytics | Basic visit tracking (date, IP, page, country). Shown on Growth and Pro only, as the reason to upgrade. |
 | Admin | One team screen, for answering owners' change requests (`/admin/requests`). Everything else (creating owners and lodges, domains, payments made outside Paynow) stays in scripts and the database. |
 | Email | Nodemailer over SMTP with a Spacemail address. |

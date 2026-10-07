@@ -12,7 +12,7 @@ _What's built, what's next, and what's blocking. Update this file whenever a pie
 | Landing page analytics (CTA clicks, page views) | ✅ Built |
 | Privacy and Terms pages | ✅ Drafted in plain language; need a review before launch |
 | WhatsApp outreach tool (internal) | ✅ Built |
-| Self sign-up and the 2-day demo (`/signup`, `/start`) | ✅ Sign-up to a live demo site in about 5 minutes (6 s automated), demo badges, offline when it ends, deleted 30 days later |
+| Self sign-up and the 2-day demo (`/create`) | ✅ Lodge name + WhatsApp + 3 photos to a live demo in about 90 seconds (6 s automated), no email until Claim my site, ad tags saved, drop-off tracked per step, demo badges, offline when it ends, deleted 30 days later |
 | Owner sign-in (login, reset, first-login password) | ✅ Built, matches the app screens design |
 | Sign in with Google | ✅ Built (signs in or signs up), needs a Google OAuth client to test for real |
 | Email (SMTP via Nodemailer) | ✅ Built, needs SMTP credentials |
@@ -191,7 +191,7 @@ The user's rules:
 - **Templates** follow `designs/StayZim Lodge Templates.html`, one file each under `components/site/templates/`.
 - **The CMS is built** ([docs/cms/](cms/README.md)). Same data for every template; only the rendering differs; the shapes live once in `packages/sites/src/content/`. Rooms are room types with a count.
 - **Bookings are Growth and Pro only:** guests book on the site first, WhatsApp second; the owner confirms (or turns on Confirm bookings automatically). Starter sites keep Book on WhatsApp. Anything under the CMS docs' "Later" list (seasonal prices, deposits, iCal sync, custom sections) needs the user first.
-- **There is no trial.** Owners sign up for a free 2-day demo on the plan they pick (`/signup`, `/start`), and pay through Paynow.
+- **There is no trial.** Owners make a free 2-day demo at `/create` (one flow for ads and organic), claim it with an email, and pay through Paynow.
 
 ### Local setup that differs from the examples
 
@@ -376,6 +376,7 @@ Newest first. One line per piece of work that landed on `main`.
 
 ### 7 October 2026
 
+- One sign-up flow for ads and everyone else: `/create` (name + WhatsApp, then 3 photos, live in about 90 seconds), guest accounts until Claim my site, ad tags on each lodge, drop-off events per step, lighter retries for photos on weak lines, lodges-only wording. Deploys onto an empty db-push database recover by themselves.
 - Tier 1 and the small gaps: a foreign phone number no longer shows "+263 +44…"; the "Coming to Growth" box is gone; 12 months cost 10%, 17% or 30% less (Starter $216, Growth $398, Pro $630, rounded down); Guest info no longer opens as edited; Back asks before losing edits; owner visits on their own domain aren't counted; previews open the booking sheet; plan changes carry the time left over; the Meta Pixel is hard-coded.
 - Guests book on Growth and Pro sites (date picker, full nights greyed out); the owner confirms, or turns on Confirm bookings automatically. Classic leads with Book now, WhatsApp second; Starter stays on WhatsApp.
 - Booking data on the dashboard: Coming up, Today, the stats tile split, upcoming bookings on Rooms, a downgrade note on Billing; direct-booking copy on the landing page, sign-in and `/start`.
