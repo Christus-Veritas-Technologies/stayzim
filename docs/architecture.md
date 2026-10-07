@@ -135,11 +135,18 @@ Scaffold from the starter template. Not part of the MVP yet.
 
 ### Templates
 
-- **Catalog** (`packages/sites`): 9 templates, 3 per plan (`starter-clear|simple|compact`, `growth-classic|panorama|journal`, `pro-signature|safari|horizon`). The plan sets the motion level: Starter `none`, Growth `subtle`, Pro `rich`.
+- **Catalog** (`packages/sites`): 9 designed templates, 3 per plan, from `designs/StayZim Lodge Templates.html`: `starter-veranda|rondavel|shade`, `growth-shoreline|wordmark|overlap`, `pro-escarpment|courtyard|canopy`. The plan sets the motion level: Starter `none`, Growth `subtle` (fades and rises), Pro `rich` (also a parallax hero).
+- **Retired keys:** the first nine (Clear, Classic, Signature…) map to the design that replaced each in the same plan (`RETIRED_TEMPLATES`); migration `20261007130000_designed_templates` moved stored keys, and `findTemplate` still reads an old key.
 - **Access is cumulative** (`templateAllowed`): a plan can use its own templates and every lower plan's. `PATCH /api/lodge` refuses higher ones (403, "Signature comes with the Pro plan").
 - **Downgrades:** `LodgeJson.template` is the owner's pick; `siteTemplate` is what's live (`effectiveTemplate()`: the pick if the plan allows it, else the plan's `DEFAULT_TEMPLATE`). The Design screen says so and offers the upgrade.
 - **Hero text:** owners can set the headline (60 characters) and the line under it (140). Stored once on the lodge (`heroHeadline`, `heroSubline`), so switching templates keeps them; empty means the template's default copy, with `{name}` and `{place}` filled in (`heroText()`, `fillCopy()`).
-- **Web registry** (`components/site/templates/index.tsx`): `growth-classic` has its own design (`classic.tsx`); the other 8 are placeholders from one configurable component (`basic.tsx`, looks in `looks.ts`, which the Design screen's thumbnails also read). When real designs arrive, give each template its own file and remove its placeholder look.
+- **Web registry** (`components/site/templates/index.tsx`): one file per template, typed `Record<TemplateKey, …>` so a key without a design doesn't compile. Shared pieces live beside them:
+  - `components/site/parts.tsx`: `siteBasics`, `BookLabel`, `HeroPhoto`, `Photo`, `StayDetails`, `Questions`, `SocialLinks`, `MapView` (Google's embed, or a drawn map), `FindUsLinks`, `MessageUs`, `WhatsAppFab`, `MobileBookBar`, `MadeWith`;
+  - `enquiry-bar.tsx` (Growth and Pro): room, dates and guests; opens the booking sheet filled in, or WhatsApp with a message;
+  - `carousel.tsx`, `quote-rotator.tsx`, `parallax.tsx`, and gallery layouts in `gallery.tsx`;
+  - `template-fonts.ts`: each design's typeface, not preloaded, so a site downloads only its own;
+  - `lib/site-content.ts`: shared wording (`splitIntro`, `amenitySummary`, `roomStats`, `highlightWords`, `scoreWord`, `countWords`), and `*stars*` in hero text for words a design sets apart.
+- **Pro content:** reviews (the listing's score and guests' quotes) and journal posts, which the StayZim team keeps at `/admin/lodges`. Pro sites get them in `LiveSite.reviews` and `journal`; the journal has its own pages, `/journal` and `/journal/{post}`, and is in the lodge's sitemap.
 - **Every template reads the same data.** Templates differ only in rendering. The CMS makes this a written contract ([docs/cms/README.md](cms/README.md#the-template-contract)):
   - the sections every template renders when they have content;
   - `BookLink` for every Book button;
@@ -151,7 +158,7 @@ Scaffold from the starter template. Not part of the MVP yet.
 The design is in [docs/cms/](cms/README.md); what was built is in [progress.md](progress.md#cms).
 
 - **One content contract** in `packages/sites/src/content/`: limits, the amenity list, zod input schemas (`@stayzim/sites/schemas`, for the server and server-side web only, so zod stays out of browser bundles), the `publicSiteSchema` output schema, and the `LiveSite` / `DashboardLodge` types. The server's serializers `satisfies` them; the web app imports them (`apps/web/src/lib/lodge.ts` and `site.ts` re-export them).
-- **Additive only:** new fields arrive with defaults, so old rows, old clients and the placeholder templates keep working.
+- **Additive only:** new fields arrive with defaults, so old rows and old clients keep working.
 - **Rooms** are room types with a count:
   - `units`, how many the lodge has;
   - `visible`;

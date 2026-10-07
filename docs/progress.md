@@ -329,9 +329,9 @@ Agreed with the user:
 
 - **9 templates, 3 per plan.**
   - The plan sets design quality and motion: Starter is static (`none`), Growth `subtle`, Pro `rich`.
-  - Catalog: `packages/sites/src/index.ts`. Keys: `starter-clear|simple|compact`, `growth-classic|panorama|journal`, `pro-signature|safari|horizon`.
-  - Only `growth-classic` has a real design so far (`apps/web/src/components/site/templates/classic.tsx`). The other 8 are plain placeholders from one configurable component (`templates/basic.tsx`, looks in `templates/looks.ts`).
-  - The user will add real design files later. When they arrive, give each template its own file and remove its `PLACEHOLDER_LOOKS` entry.
+  - Catalog: `packages/sites/src/index.ts`. Keys: `starter-veranda|rondavel|shade`, `growth-shoreline|wordmark|overlap`, `pro-escarpment|courtyard|canopy`, each built from `designs/StayZim Lodge Templates.html` in its own file under `apps/web/src/components/site/templates/`.
+  - The first nine keys (Clear … Classic … Horizon) are retired: a migration moved each lodge to the design that replaced its template in the same plan, and `RETIRED_TEMPLATES` still reads an old key.
+  - Pro designs show reviews and a journal, which the StayZim team keeps (`/admin/lodges`).
 - **Access is cumulative:** a plan can use its own templates and every lower plan's (`templateAllowed`).
   - Templates above the plan are shown locked, with an upgrade button (an upsell).
   - The server refuses them on PATCH (403, "Signature comes with the Pro plan").
@@ -368,7 +368,7 @@ Built (web):
 - **Sales WhatsApp number,** for the landing page and the demo lodges (`seed-demos --whatsapp`).
 - **Demo lodge photos,** and a check of the demo copy in `packages/auth/scripts/seed-demos.ts`.
 - **Hosting:** the VPS, Coolify, the Cloudflare zone, and the origin certificate ([deployment.md](deployment.md)).
-- **Template designs** for the 8 placeholders, from the designer. As of 7 October, only the landing page and app screens are in `designs/`; the template files haven't been pushed yet.
+- **Real photos and copy for the Pro extras:** each Pro lodge's Booking.com score, a few guest quotes and the first journal posts, entered at `/admin/lodges` (team accounts).
 - **Real-device check** on iOS Safari and Android Chrome, especially the sign-up flow and photo picking.
 - **A review of the Privacy and Terms drafts** (`apps/web/src/app/privacy`, `apps/web/src/app/terms`), now covering the demo, payments and deletion.
 - **Facebook ads:** the Meta Pixel is built and off. Set `NEXT_PUBLIC_META_PIXEL_ID` and rebuild web to switch it on; the privacy notice then mentions it. Server-side Conversions API isn't added (it needs a Meta access token).
@@ -385,6 +385,9 @@ Newest first. One line per piece of work that landed on `main`.
 - `.env.example` files list every setting; browser tests for the CMS and bookings; a Starter lodge in CI.
 - Bookings page redesign: four tiles for today, queue-style request cards (clashes outlined), an agenda-style desktop calendar, tinted days on the phone month, and calendar-leaf dates in booking lists.
 - Auth screens on phones checked against `designs/StayZim App Screens.html`: the logo sits in a ringed tile and the Kariba header is a little taller.
+- The nine designed templates from `designs/StayZim Lodge Templates.html` replace the placeholders and Classic: Veranda, Rondavel, Shade (Starter); Shoreline, Wordmark, Overlap (Growth, with an enquiry bar); Escarpment, Courtyard, Canopy (Pro, with reviews, a journal and a parallax hero). Stored keys migrated; new Design screen sketches.
+- Reviews and a journal for Pro sites: data, team screens at `/admin/lodges`, `/journal` pages and the sitemap.
+- Browser tests for every template at 360px, the enquiry bar, and the team's reviews and journal; CI seeds a Pro lodge and a team account.
 
 ### 6 October 2026 (CMS)
 

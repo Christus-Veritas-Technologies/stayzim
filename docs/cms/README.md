@@ -4,7 +4,7 @@ _Status: **built** (6 and 7 October 2026), in the order under [Build order](#bui
 
 Owners manage their own site content: rooms, guest info and, on Growth and Pro, bookings. It works like a website builder's CMS (Framer's, for example) with one fixed content type per thing:
 
-- **The data has one shape for every lodge and every template.** A Room is a Room whether the site uses Classic, Clear or a future Pro design.
+- **The data has one shape for every lodge and every template.** A Room is a Room whichever of the nine designs the site uses.
 - **Only the rendering changes.** Templates decide how a room looks, never what a room is.
 - **Owners edit everything in the dashboard.** Change requests stay for what can't be self-serve: design changes, domains, custom sections.
 
@@ -69,7 +69,7 @@ How it's used:
 1. **Changes are additive.**
    - A field is never renamed or removed, and its meaning never changes.
    - A new field arrives with a default (`null`, `[]`, `false`, `1`) in the database, the serializer and `publicSiteSchema`.
-   - So old rows, old clients and the placeholder templates keep working.
+   - So old rows and old clients keep working.
 2. **Strict or optional is part of the type.**
    - Strict fields are always present and valid.
    - Optional fields are `string | null`, `number | null` or a possibly empty array, never `undefined` and never `""`. The serializer turns empty strings into `null`.
@@ -84,7 +84,7 @@ How it's used:
      - `roomFacts(room)` gives "Sleeps 4 · 1 queen + 2 singles · 32 m²";
      - `stayFacts(site)` gives "Check-in from 14:00 · Check-out by 10:00";
      - `sectionsOf(site)` says which sections have content.
-   - Classic and the designer's coming templates read the same wording.
+   - Every template reads the same wording.
 5. **Lists edited as a whole are JSON; anything queried is a table.**
    - House rules, FAQ and social links are `Json` columns on `Lodge`. They save in one PATCH and need no reorder endpoints.
    - They're validated with zod on the way in, and parsed with `.catch(default)` on the way out, so a bad row can't break a site.
@@ -158,7 +158,7 @@ booking: { mode: "whatsapp" | "request" };
 
 ### The template contract
 
-Every template, today's and the designer's, receives `{ site: LiveSite; preview?: boolean }` and:
+Every template receives `{ site: LiveSite; preview?: boolean }` and:
 
 - **Renders the sections that have content:**
   - hero
@@ -173,12 +173,7 @@ Every template, today's and the designer's, receives `{ site: LiveSite; preview?
 - **Uses `BookLink`** (`apps/web/src/components/site/tracking.tsx`) for every Book button, passing `roomId` on room buttons. `BookLink` decides between WhatsApp and the booking sheet, so templates never branch on the booking mode.
 - **Copes with every optional field missing**, and with no rooms, photos, WhatsApp or map. That's already a rule in [architecture.md](../architecture.md#templates).
 
-The 8 placeholders (`templates/basic.tsx`, `looks.ts`) **are not edited** until the designer delivers. They still get these through the server and `BookLink`:
-
-- hidden rooms dropped;
-- the booking sheet.
-
-They don't show the new sections; the real designs will. The spec for the designer lists every section above.
+All nine designed templates (October 2026) follow it; the shared pieces in `components/site/parts.tsx` render the sections whose content is the same everywhere (good to know, FAQ, social links, the map). Each template also has an `id` on `#rooms` and `#location`, which the browser tests check.
 
 ## 2. Bookings data model (summary)
 
