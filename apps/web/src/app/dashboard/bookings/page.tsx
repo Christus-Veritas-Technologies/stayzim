@@ -208,19 +208,24 @@ function Bookings() {
           calendar.window ? (
             <div className={cn("transition-opacity duration-200", calendar.loading && "opacity-60")} aria-busy={calendar.loading || undefined}>
               {wide ? (
-                <div className="flex flex-col gap-3">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-center gap-1.5">
-                      <Button variant="outline" size="icon-sm" aria-label="Earlier" onClick={() => setTimelineStart(dateAdd(timelineStart, -7))}>
-                        <ChevronLeft />
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => setTimelineStart(weekStart(today))}>
-                        Today
-                      </Button>
-                      <Button variant="outline" size="icon-sm" aria-label="Later" onClick={() => setTimelineStart(dateAdd(timelineStart, 7))}>
-                        <ChevronRight />
-                      </Button>
-                      <span className="ml-2 text-[14px] font-semibold">{formatStay(timelineStart, dateAdd(timelineStart, timelineDays - 1))}</span>
+                <div className="overflow-hidden rounded-2xl border border-line bg-white shadow-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3.5">
+                    <div className="flex items-center gap-3">
+                      <span className="flex flex-col">
+                        <span className="font-display text-[18px] leading-6 font-semibold tracking-[-0.01em]">{monthTitle(timelineStart, dateAdd(timelineStart, timelineDays - 1))}</span>
+                        <span className="text-[12.5px] text-muted">{formatStay(timelineStart, dateAdd(timelineStart, timelineDays - 1))}</span>
+                      </span>
+                      <span className="ml-1 flex items-center gap-1.5">
+                        <Button variant="outline" size="icon-sm" aria-label="Earlier" onClick={() => setTimelineStart(dateAdd(timelineStart, -7))}>
+                          <ChevronLeft />
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => setTimelineStart(weekStart(today))}>
+                          Today
+                        </Button>
+                        <Button variant="outline" size="icon-sm" aria-label="Later" onClick={() => setTimelineStart(dateAdd(timelineStart, 7))}>
+                          <ChevronRight />
+                        </Button>
+                      </span>
                     </div>
                     <Tabs value={String(timelineDays)} onValueChange={(value) => setTimelineDays(Number(value) as 14 | 28)}>
                       <TabsList aria-label="Days shown">
@@ -237,7 +242,9 @@ function Bookings() {
                     onOpen={(booking) => openSheet({ kind: "existing", booking })}
                     onAdd={(room, date) => openSheet({ kind: "new", roomId: room, date })}
                   />
-                  <Legend />
+                  <div className="border-t border-line bg-surface/60 px-4 py-2.5">
+                    <Legend />
+                  </div>
                 </div>
               ) : (
                 <BookingsMonth
@@ -288,19 +295,29 @@ function Bookings() {
   );
 }
 
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+/** "October 2026", or "October – November 2026" when the days cross a month */
+function monthTitle(from: string, to: string) {
+  const name = (date: string) => MONTHS[Number(date.slice(5, 7)) - 1]!;
+  if (from.slice(0, 7) === to.slice(0, 7)) return `${name(from)} ${from.slice(0, 4)}`;
+  if (from.slice(0, 4) === to.slice(0, 4)) return `${name(from)} – ${name(to)} ${to.slice(0, 4)}`;
+  return `${name(from)} ${from.slice(0, 4)} – ${name(to)} ${to.slice(0, 4)}`;
+}
+
 function Legend() {
   return (
     <div className="flex flex-wrap gap-x-5 gap-y-1 text-[12px] text-muted">
       <span className="inline-flex items-center gap-1.5">
-        <span className="h-2.5 w-5 rounded-sm bg-primary" />
+        <span className="h-3 w-6 rounded-[4px] border-l-[3px] border-l-primary bg-brand-wash" />
         Booked
       </span>
       <span className="inline-flex items-center gap-1.5">
-        <span className="h-2.5 w-5 rounded-sm border border-dashed border-purple bg-purple-tint" />
+        <span className="h-3 w-6 rounded-[4px] border border-l-[3px] border-dashed border-purple-line border-l-purple bg-purple-tint" />
         Request, waiting for you
       </span>
       <span className="inline-flex items-center gap-1.5">
-        <span className="h-2.5 w-5 rounded-sm bg-[repeating-linear-gradient(135deg,#E4E9EC_0,#E4E9EC_3px,#F4F7F9_3px,#F4F7F9_6px)]" />
+        <span className="h-3 w-6 rounded-[4px] bg-[repeating-linear-gradient(135deg,#E4E9EC_0,#E4E9EC_3px,#F4F7F9_3px,#F4F7F9_6px)]" />
         Closed
       </span>
       <span>Tap a day to add a booking there.</span>

@@ -12,6 +12,17 @@ function weekday(date: string) {
   return WEEKDAY[(new Date(`${date}T00:00:00Z`).getUTCDay() + 6) % 7]!;
 }
 
+function weekend(date: string) {
+  const day = new Date(`${date}T00:00:00Z`).getUTCDay();
+  return day === 0 || day === 6;
+}
+
+/** "Sarah Banda" → "SB" */
+function initials(name: string | null) {
+  const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
+  return parts.length === 0 ? "?" : ((parts[0]![0] ?? "") + (parts.length > 1 ? (parts.at(-1)![0] ?? "") : "")).toUpperCase();
+}
+
 /** Bookings in rows that don't overlap, so bars never sit on top of each other. */
 function lanes(bookings: DashboardBooking[]) {
   const ends: string[] = [];
@@ -48,20 +59,27 @@ export function BookingsTimeline({
   const columns = { gridTemplateColumns: `repeat(${days}, minmax(0, 1fr))` };
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-line">
-      <div className="grid grid-cols-[180px_minmax(0,1fr)] border-b border-line bg-surface">
-        <span className="px-4 py-2 text-xs font-semibold text-muted">Room</span>
+    <div className="overflow-hidden">
+      <div className="grid grid-cols-[180px_minmax(0,1fr)] border-y border-line bg-surface">
+        <span className="flex items-end px-4 py-2 text-xs font-semibold text-muted">Room</span>
         <div className="grid" style={columns}>
           {dates.map((date) => (
             <span
               key={date}
               className={cn(
-                "flex flex-col items-center border-l border-line-3 py-1.5 text-[11px] leading-4",
-                date === today ? "font-semibold text-brand" : "text-muted-2",
+                "flex flex-col items-center gap-0.5 border-l border-line-3 py-1.5 text-[11px] leading-4",
+                date === today ? "font-semibold text-brand" : weekend(date) ? "text-muted" : "text-muted-2",
               )}
             >
               <span>{weekday(date)}</span>
-              <span className={cn("text-[12.5px] tabular-nums", date === today ? "text-brand" : "text-ink")}>{Number(date.slice(8))}</span>
+              <span
+                className={cn(
+                  "flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-[12.5px] font-semibold tabular-nums",
+                  date === today ? "bg-primary text-primary-foreground shadow-brand" : "text-ink",
+                )}
+              >
+                {Number(date.slice(8))}
+              </span>
             </span>
           ))}
         </div>
@@ -85,7 +103,7 @@ export function BookingsTimeline({
                   {room.visible ? "" : " · Hidden"}
                 </span>
               </span>
-              <div className="relative grid" style={{ ...columns, gridTemplateRows: `repeat(${laneCount}, 30px) 18px` }}>
+              <div className="relative grid" style={{ ...columns, gridTemplateRows: `repeat(${laneCount}, 36px) 18px` }}>
                 {dates.map((date, index) => {
                   const count = taken.get(date) ?? 0;
                   const full = count >= room.units;
@@ -99,7 +117,8 @@ export function BookingsTimeline({
                       style={{ gridColumn: index + 1, gridRow: "1 / -1" }}
                       className={cn(
                         "flex items-end justify-center border-l border-line-3 pb-0.5 text-[10.5px] tabular-nums transition-colors outline-none hover:bg-brand-wash focus-visible:bg-brand-wash disabled:hover:bg-transparent",
-                        date === today && "bg-brand-wash/50",
+                        weekend(date) && "bg-surface/70",
+                        date === today && "bg-brand-wash/60",
                         full ? "font-semibold text-danger" : "text-muted-2",
                       )}
                     >
@@ -123,16 +142,27 @@ export function BookingsTimeline({
                             onClick={() => onOpen(booking)}
                             style={{ gridColumn: `${start + 1} / ${end + 1}`, gridRow: lane + 1 }}
                             className={cn(
-                              "relative z-10 mx-0.5 my-[3px] flex min-w-0 items-center gap-1 truncate rounded-lg px-2 text-left text-[12px] font-semibold shadow-xs transition-transform outline-none hover:-translate-y-px focus-visible:ring-3 focus-visible:ring-ring/30 motion-reduce:transform-none",
-                              block && "bg-[repeating-linear-gradient(135deg,#E4E9EC_0,#E4E9EC_6px,#F4F7F9_6px,#F4F7F9_12px)] text-muted",
-                              request && "border border-dashed border-purple bg-purple-tint text-purple-ink",
-                              !block && !request && "bg-primary text-primary-foreground",
+                              "relative z-10 mx-0.5 my-[3px] flex min-w-0 items-center gap-1.5 truncate rounded-lg border-l-[3px] pr-2 pl-1.5 text-left text-[12px] font-semibold shadow-xs transition-[transform,box-shadow] outline-none hover:-translate-y-px hover:shadow-sm focus-visible:ring-3 focus-visible:ring-ring/30 motion-reduce:transform-none",
+                              block && "border-l-soft bg-[repeating-linear-gradient(135deg,#E4E9EC_0,#E4E9EC_6px,#F4F7F9_6px,#F4F7F9_12px)] text-muted",
+                              request && "border border-l-[3px] border-dashed border-purple-line border-l-purple bg-purple-tint text-purple-ink",
+                              !block && !request && "border-l-primary bg-brand-wash text-brand-dark",
                               booking.checkIn < from && "rounded-l-none",
                               booking.checkOut > to && "rounded-r-none",
                             )}
                           />
                         }
                       >
+                        {block || (days > 14 && end - start < 3) ? null : (
+                          <span
+                            className={cn(
+                              "flex size-5 shrink-0 items-center justify-center rounded-full text-[9.5px] font-bold",
+                              request ? "bg-white text-purple" : "bg-primary text-primary-foreground",
+                            )}
+                            aria-hidden="true"
+                          >
+                            {initials(booking.guestName)}
+                          </span>
+                        )}
                         <span className="truncate">
                           {label}
                           {booking.quantity > 1 ? ` ×${booking.quantity}` : ""}
