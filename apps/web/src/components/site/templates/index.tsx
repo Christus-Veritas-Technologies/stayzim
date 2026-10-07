@@ -1,9 +1,6 @@
 import { findTemplate, type TemplateKey } from "@stayzim/sites";
 
 import { DemoBand, DemoPill, DemoRibbon } from "@/components/site/demo-badges";
-import { BasicTemplate } from "@/components/site/templates/basic";
-import { ClassicTemplate } from "@/components/site/templates/classic";
-import { PLACEHOLDER_LOOKS } from "@/components/site/templates/looks";
 import { CanopyTemplate } from "@/components/site/templates/canopy";
 import { CourtyardTemplate } from "@/components/site/templates/courtyard";
 import { EscarpmentTemplate } from "@/components/site/templates/escarpment";
@@ -17,7 +14,7 @@ import { PageViewTracker, SiteTracking, type BookingSite } from "@/components/si
 import type { LiveSite } from "@/lib/site";
 
 /** Each template's design (designs/StayZim Lodge Templates.html). */
-const DESIGNS: Partial<Record<TemplateKey, (props: { site: LiveSite }) => React.ReactNode>> = {
+const DESIGNS: Record<TemplateKey, (props: { site: LiveSite }) => React.ReactNode> = {
   "starter-veranda": VerandaTemplate,
   "starter-rondavel": RondavelTemplate,
   "starter-shade": ShadeTemplate,
@@ -52,19 +49,12 @@ export function bookingSite(site: LiveSite, preview = false): BookingSite | null
 export function SiteTemplate({ site, preview = false }: { site: LiveSite; preview?: boolean }) {
   const template = findTemplate(site.template) ?? findTemplate("growth-shoreline")!;
   const Design = DESIGNS[template.key as TemplateKey];
-  const basic = Design ? undefined : PLACEHOLDER_LOOKS[template.key as TemplateKey];
   const booking = bookingSite(site, preview);
   return (
     <SiteTracking slug={site.slug} enabled={!preview} booking={booking}>
       <PageViewTracker />
       {site.demo ? <DemoRibbon /> : null}
-      {Design ? (
-        <Design site={site} />
-      ) : basic ? (
-        <BasicTemplate site={site} config={{ ...basic, name: template.name, motion: template.motion }} />
-      ) : (
-        <ClassicTemplate site={site} />
-      )}
+      <Design site={site} />
       {site.demo ? (
         <>
           <DemoBand />
