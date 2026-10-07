@@ -25,8 +25,27 @@ export function isPlan(value: unknown): value is Plan {
   return value === "STARTER" || value === "GROWTH" || value === "PRO";
 }
 
+/** Percent off when paying for 12 months at once. */
+export const ANNUAL_DISCOUNT: Record<Plan, number> = { STARTER: 10, GROWTH: 17, PRO: 30 };
+
+/** What `months` cost, in whole dollars: 12 months take the plan's discount, rounded down. */
+export function planPrice(plan: Plan, months = 1) {
+  const full = PLAN_PRICES[plan] * months;
+  return months === 12 ? Math.floor((full * (100 - ANNUAL_DISCOUNT[plan])) / 100) : full;
+}
+
 export function planPriceCents(plan: Plan, months = 1) {
-  return PLAN_PRICES[plan] * 100 * months;
+  return planPrice(plan, months) * 100;
+}
+
+/** A year's price per month, rounded down ($216 a year is $18 a month). */
+export function annualMonthlyPrice(plan: Plan) {
+  return Math.floor(planPrice(plan, 12) / 12);
+}
+
+/** Dollars saved by paying for 12 months at once instead of month by month. */
+export function annualSaving(plan: Plan) {
+  return PLAN_PRICES[plan] * 12 - planPrice(plan, 12);
 }
 
 /** Growth and Pro come with a free .co.zw domain (StayZim registers it). Every paid plan can connect its own. */

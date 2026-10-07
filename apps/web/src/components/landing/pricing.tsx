@@ -1,5 +1,6 @@
 "use client";
 
+import { annualSaving, planPrice, type Plan as PlanKey } from "@stayzim/sites";
 import { motion, type Variants } from "framer-motion";
 import { ArrowRight, BadgePercent, CircleCheck, CreditCard, Globe, Star } from "lucide-react";
 
@@ -7,6 +8,8 @@ import { Eyebrow } from "./brand";
 import { PLANS, type Plan } from "./content";
 import { TrackedLink } from "./cta";
 import { EASE_OUT, Item, Stagger } from "@/components/motion";
+
+const PLAN_KEYS: Record<Plan["id"], PlanKey> = { starter: "STARTER", growth: "GROWTH", pro: "PRO" };
 
 const planCard: Variants = {
   hidden: { opacity: 0, y: 40 },
@@ -20,6 +23,7 @@ const feature: Variants = {
 
 function PlanCard({ plan }: { plan: Plan }) {
   const featured = plan.featured === true;
+  const key = PLAN_KEYS[plan.id];
   return (
     <motion.div
       variants={planCard}
@@ -58,6 +62,9 @@ function PlanCard({ plan }: { plan: Plan }) {
         </span>
         <span className="text-[15px] text-muted">/month</span>
       </div>
+      <p className="-mt-3 text-[14px] leading-5 text-muted">
+        Or ${planPrice(key, 12)} for a year: <strong className="font-semibold text-success">save ${annualSaving(key)}</strong>
+      </p>
 
       <TrackedLink
         href={`/signup?plan=${plan.id}`}

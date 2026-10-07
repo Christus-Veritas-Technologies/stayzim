@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { LegalPage, type LegalSection } from "@/components/legal-page";
-import { DEMO_DAYS, DEMO_KEEP_DAYS } from "@stayzim/sites";
+import { ANNUAL_DISCOUNT, DEMO_DAYS, DEMO_KEEP_DAYS } from "@stayzim/sites";
 
 import { GRACE_DAYS, PLANS } from "@/lib/lodge";
 
@@ -41,7 +41,8 @@ const SECTIONS: LegalSection[] = [
             delete the demo, its photos and your account {DEMO_KEEP_DAYS} days later.
           </li>
           <li>
-            You pay in advance, for 1, 3 or 12 months, online through Paynow (EcoCash, InnBucks, OneMoney or card), or to our EcoCash or
+            You pay in advance, for 1, 3 or 12 months (12 months cost {ANNUAL_DISCOUNT.STARTER}% less on Starter, {ANNUAL_DISCOUNT.GROWTH}% on Growth
+            and {ANNUAL_DISCOUNT.PRO}% on Pro), online through Paynow (EcoCash, InnBucks, OneMoney or card), or to our EcoCash or
             InnBucks merchant code. We email an invoice 3 days before your paid time ends, the day before and on the day, and a receipt
             when you pay.
           </li>

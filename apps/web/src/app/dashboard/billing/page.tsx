@@ -3,7 +3,7 @@
 import { Badge } from "@stayzim/ui/components/badge";
 import { Card } from "@stayzim/ui/components/card";
 import { CopyButton } from "@stayzim/ui/components/copy-button";
-import { DEMO_DAYS, includesBookingCalendar } from "@stayzim/sites";
+import { annualSaving, DEMO_DAYS, includesBookingCalendar, planPrice } from "@stayzim/sites";
 import { cn } from "@stayzim/ui/lib/utils";
 import { motion } from "framer-motion";
 import { Button, buttonVariants } from "@stayzim/ui/components/button";
@@ -299,7 +299,10 @@ function Plans({ lodge, onPick, canPay }: { lodge: Lodge; onPick: (plan: PlanKey
                   <span className="font-display text-[28px] font-semibold tracking-[-0.02em]">${plan.price}</span>
                   <span className="text-[13px] text-muted">/month</span>
                 </p>
-                <p className="text-[13px] text-muted">{plan.pitch}</p>
+                <p className="text-[13px] text-muted">
+                  Or ${planPrice(key, 12)} a year, <span className="font-semibold text-success">save ${annualSaving(key)}</span>
+                </p>
+                <p className="mt-1 text-[13px] text-muted">{plan.pitch}</p>
               </div>
               <ul className="flex flex-col gap-2 border-t border-line-3 pt-4 text-[13.5px]">
                 {plan.features.map((feature) => (

@@ -2,12 +2,15 @@ import { describe, expect, test } from "bun:test";
 
 import {
   addMonths,
+  annualMonthlyPrice,
+  annualSaving,
   calendarDaysUntil,
   demoEnded,
   extendPaidUntil,
   includesFreeDomain,
   isValidSlug,
   noticeFor,
+  planPrice,
   planPriceCents,
   slugFromName,
   slugProblem,
@@ -19,7 +22,16 @@ const at = (iso: string) => new Date(iso);
 describe("plans", () => {
   test("prices in cents, for several months", () => {
     expect(planPriceCents("GROWTH")).toBe(4000);
-    expect(planPriceCents("PRO", 12)).toBe(90000);
+    expect(planPriceCents("GROWTH", 3)).toBe(12000);
+    expect(planPriceCents("PRO", 12)).toBe(63000);
+  });
+
+  test("12 months take 10, 17 and 30% off, rounded down", () => {
+    expect(planPrice("STARTER", 12)).toBe(216);
+    expect(planPrice("GROWTH", 12)).toBe(398);
+    expect(planPrice("PRO", 12)).toBe(630);
+    expect([annualMonthlyPrice("STARTER"), annualMonthlyPrice("GROWTH"), annualMonthlyPrice("PRO")]).toEqual([18, 33, 52]);
+    expect([annualSaving("STARTER"), annualSaving("GROWTH"), annualSaving("PRO")]).toEqual([24, 82, 270]);
   });
 
   test("free .co.zw domain on Growth and Pro", () => {

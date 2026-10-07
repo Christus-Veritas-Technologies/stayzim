@@ -8,6 +8,7 @@ import { cn } from "@stayzim/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUpRight, CircleCheck, CircleX, Smartphone } from "lucide-react";
 import Link from "next/link";
+import { ANNUAL_DISCOUNT, planPriceCents } from "@stayzim/sites";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 
 import { useLodge } from "@/components/dashboard/lodge-provider";
@@ -55,7 +56,7 @@ export function PayCard({
   const [error, setError] = useState<string | null>(null);
   const [state, setState] = useState<State>({ kind: "idle" });
   const [now, setNow] = useState(() => Date.now());
-  const total = PLANS[plan].price * 100 * months;
+  const total = planPriceCents(plan, months);
   const prompt = PAY_CHANNELS.find((item) => item.key === channel)!.prompt;
 
   const watch = useCallback((payment: Payment, extra: { instructions?: string | null; innbucksCode?: string | null } = {}) => {
@@ -216,7 +217,8 @@ export function PayCard({
                       <span className="text-[13.5px] font-semibold">
                         {count} {count === 1 ? "month" : "months"}
                       </span>
-                      <span className="text-[12.5px] text-muted">{formatCents(PLANS[plan].price * 100 * count)}</span>
+                      <span className="text-[12.5px] text-muted">{formatCents(planPriceCents(plan, count))}</span>
+                      {count === 12 ? <span className="text-[11.5px] font-semibold text-success">{ANNUAL_DISCOUNT[plan]}% off</span> : null}
                     </button>
                   ))}
                 </div>
