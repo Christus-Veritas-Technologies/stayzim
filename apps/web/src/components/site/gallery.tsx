@@ -16,8 +16,9 @@ type GalleryPhoto = { url: string; srcSet?: string | null; width: number; height
  * - ovals: tall rounded shapes, four across
  * - panels: tall photos side by side
  * - row: four tall photos of different widths in one line
+ * - captioned: a wide photo then three tall ones, captions large on them
  */
-export type GalleryLayout = "feature" | "grid3" | "grid4" | "strip" | "ovals" | "panels" | "row";
+export type GalleryLayout = "feature" | "grid3" | "grid4" | "strip" | "ovals" | "panels" | "row" | "captioned";
 
 const LAYOUTS: Record<GalleryLayout, { list: string; item: (index: number) => string | undefined; image: string; sizes: (index: number) => string }> = {
   feature: {
@@ -41,6 +42,12 @@ const LAYOUTS: Record<GalleryLayout, { list: string; item: (index: number) => st
     image: "h-[200px] w-full sm:h-[260px] md:h-[320px]",
     sizes: () => "(min-width: 768px) 30vw, 50vw",
   },
+  captioned: {
+    list: "grid grid-cols-2 gap-3 md:grid-cols-[1.75fr_1fr_1fr_1fr]",
+    item: (index) => (index === 0 ? "col-span-2 md:col-span-1" : undefined),
+    image: "h-[260px] w-full sm:h-[340px] md:h-[440px]",
+    sizes: (index) => (index === 0 ? "(min-width: 768px) 36vw, 100vw" : "(min-width: 768px) 20vw, 50vw"),
+  },
   panels: {
     list: "grid grid-cols-2 gap-3 md:grid-cols-3",
     item: (index) => (index === 0 ? "col-span-2 md:col-span-1" : undefined),
@@ -56,6 +63,7 @@ export function SiteGallery({
   layout = "feature",
   rounded = "rounded-2xl",
   limit,
+  captionClassName,
 }: {
   photos: GalleryPhoto[];
   name: string;
@@ -64,6 +72,8 @@ export function SiteGallery({
   rounded?: string;
   /** Show only the first few in the grid; the large view still has all of them */
   limit?: number;
+  /** How captions look on the tiles (the template's display type) */
+  captionClassName?: string;
 }) {
   const shape = LAYOUTS[layout];
   const shown = limit ? photos.slice(0, limit) : photos;
@@ -113,7 +123,12 @@ export function SiteGallery({
                 </span>
               ) : null}
               {photo.caption && layout !== "ovals" ? (
-                <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent px-3 pt-6 pb-2 text-left text-xs font-semibold text-white">
+                <span
+                  className={cn(
+                    "absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent px-3 pt-6 pb-2 text-left text-xs font-semibold text-white",
+                    captionClassName,
+                  )}
+                >
                   {photo.caption}
                 </span>
               ) : null}

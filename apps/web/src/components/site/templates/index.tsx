@@ -4,6 +4,7 @@ import { DemoBand, DemoPill, DemoRibbon } from "@/components/site/demo-badges";
 import { BasicTemplate } from "@/components/site/templates/basic";
 import { ClassicTemplate } from "@/components/site/templates/classic";
 import { PLACEHOLDER_LOOKS } from "@/components/site/templates/looks";
+import { OverlapTemplate } from "@/components/site/templates/overlap";
 import { RondavelTemplate } from "@/components/site/templates/rondavel";
 import { ShadeTemplate } from "@/components/site/templates/shade";
 import { ShorelineTemplate } from "@/components/site/templates/shoreline";
@@ -19,6 +20,7 @@ const DESIGNS: Partial<Record<TemplateKey, (props: { site: LiveSite }) => React.
   "starter-shade": ShadeTemplate,
   "growth-shoreline": ShorelineTemplate,
   "growth-wordmark": WordmarkTemplate,
+  "growth-overlap": OverlapTemplate,
 };
 
 /**
