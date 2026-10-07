@@ -10,7 +10,7 @@ const site: LiveSite = {
   customDomain: null,
   name: "Mist Valley Lodge",
   template: "growth-classic",
-  hero: { headline: "Mist Valley Lodge", subline: "A place to rest in Nyanga, Manicaland. Book direct on WhatsApp." },
+  hero: { headline: "Mist Valley Lodge", subline: "A place to rest in Nyanga, Manicaland. Book direct with us." },
   description: "",
   town: "Nyanga",
   region: "Manicaland",

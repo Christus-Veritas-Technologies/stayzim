@@ -54,7 +54,7 @@ const DEMOS: DemoLodge[] = [
     description:
       "Stone cottages in the pine forest above Nyanga, with log fires, quiet mornings in the mist and the trout dams a short walk away. A family-run lodge for slow weekends in the Eastern Highlands.",
     heroHeadline: null,
-    heroSubline: "Log fires, misty mornings and trout dams in the Nyanga hills. Book direct on WhatsApp.",
+    heroSubline: "Log fires, misty mornings and trout dams in the Nyanga hills. Book direct with us.",
     owner: "Rudo Moyo",
     rooms: [
       { name: "Garden Cottage", price: 85, sleeps: 2, amenities: ["fireplace", "breakfast", "wifi", "parking"] },

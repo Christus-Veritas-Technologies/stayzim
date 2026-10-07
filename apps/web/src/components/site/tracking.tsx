@@ -139,18 +139,22 @@ export function PageViewTracker() {
 export function BookLink({
   href,
   roomId,
+  channel,
   className,
   children,
   ...props
 }: {
   href: string;
   roomId?: string;
+  /** "whatsapp": always opens the chat, even where the site takes bookings (the second way to book) */
+  channel?: "whatsapp";
   className?: string;
   children: ReactNode;
   "aria-label"?: string;
 }) {
   const { slug, enabled } = useContext(TrackingContext);
-  const booking = useContext(BookingContext);
+  const context = useContext(BookingContext);
+  const booking = channel === "whatsapp" ? { site: null, open: context.open } : context;
   return (
     <a
       href={href}

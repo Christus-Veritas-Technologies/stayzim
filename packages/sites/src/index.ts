@@ -60,7 +60,7 @@ export const TEMPLATES = [
     plan: "GROWTH",
     description: "Full-width hero, room cards with photos, gallery, map and contact.",
     motion: "subtle",
-    defaults: { headline: "{name}", subline: "A place to rest in {place}. Book direct on WhatsApp." },
+    defaults: { headline: "{name}", subline: "A place to rest in {place}. Book direct with us." },
   },
   {
     key: "growth-panorama",

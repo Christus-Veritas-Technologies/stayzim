@@ -1,5 +1,5 @@
 import { Avatar } from "@stayzim/ui/components/avatar";
-import { ArrowUpRight, BedDouble, Check, ChevronDown, LogIn, LogOut, Mail, MapPin, Phone, Users } from "lucide-react";
+import { ArrowUpRight, BedDouble, CalendarDays, Check, ChevronDown, LogIn, LogOut, Mail, MapPin, Phone, Users } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
 
 import { WhatsAppIcon } from "@/components/landing/brand";
@@ -15,6 +15,25 @@ import { MAIN_URL } from "@/lib/site-host";
 
 const whatsappButton =
   "inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[#25D366] px-6 text-[15px] font-semibold text-[#0C181F] shadow-[0_8px_20px_-8px_rgba(37,211,102,0.7)] transition-transform hover:scale-[1.02] active:scale-[0.98] motion-reduce:transform-none";
+
+/** Book now: the lodge's own colour, where guests book on the site (Growth and Pro). */
+const bookButton =
+  "inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--theme)] px-6 text-[15px] font-semibold text-white shadow-[0_10px_24px_-12px_var(--theme)] transition-transform hover:scale-[1.02] active:scale-[0.98] motion-reduce:transform-none";
+
+/** What a Book button says: Book now (on the site), or Book on WhatsApp. */
+function BookLabel({ online, size = 18 }: { online: boolean; size?: number }) {
+  return online ? (
+    <>
+      <CalendarDays style={{ width: size, height: size }} />
+      Book now
+    </>
+  ) : (
+    <>
+      <WhatsAppIcon size={size} />
+      Book on WhatsApp
+    </>
+  );
+}
 
 function SectionTitle({ eyebrow, children }: { eyebrow: string; children: string }) {
   return (
@@ -45,6 +64,9 @@ function StayTime({ icon, label, value }: { icon: ReactNode; label: string; valu
 export function ClassicTemplate({ site }: { site: LiveSite }) {
   const place = lodgePlace(site);
   const book = bookingUrl(site);
+  // Growth and Pro: guests book on the site first; WhatsApp is the second way
+  const online = site.booking.mode === "request";
+  const primary = online ? bookButton : whatsappButton;
   const cheapest = site.rooms.length > 0 ? Math.min(...site.rooms.map((room) => room.price)) : null;
   const mostGuests = site.rooms.length > 0 ? Math.max(...site.rooms.map((room) => room.sleeps)) : null;
   const located = site.latitude !== null && site.longitude !== null;
@@ -82,9 +104,8 @@ export function ClassicTemplate({ site }: { site: LiveSite }) {
             </a>
           </nav>
           {book ? (
-            <BookLink href={book} className={`${whatsappButton} hidden h-10 px-4 text-sm lg:inline-flex`}>
-              <WhatsAppIcon size={16} />
-              Book on WhatsApp
+            <BookLink href={book} className={`${primary} hidden h-10 px-4 text-sm lg:inline-flex`}>
+              <BookLabel online={online} size={16} />
             </BookLink>
           ) : null}
         </div>
@@ -120,9 +141,8 @@ export function ClassicTemplate({ site }: { site: LiveSite }) {
               <p className="max-w-xl text-[17px] leading-7 text-white/90">{site.hero.subline}</p>
               <div className="flex flex-wrap gap-3">
                 {book ? (
-                  <BookLink href={book} className={whatsappButton}>
-                    <WhatsAppIcon size={18} />
-                    Book on WhatsApp
+                  <BookLink href={book} className={primary}>
+                    <BookLabel online={online} />
                   </BookLink>
                 ) : null}
                 <a
@@ -214,9 +234,8 @@ export function ClassicTemplate({ site }: { site: LiveSite }) {
                         ) : null}
                         {room.description ? <ClampedText text={room.description} className="text-[14px] leading-6 text-[#4F5A60]" /> : null}
                         {roomBook ? (
-                          <BookLink roomId={room.id} href={roomBook} className={`${whatsappButton} mt-auto w-full`}>
-                            <WhatsAppIcon size={17} />
-                            Book on WhatsApp
+                          <BookLink roomId={room.id} href={roomBook} className={`${primary} mt-auto w-full`}>
+                            <BookLabel online={online} size={17} />
                           </BookLink>
                         ) : null}
                       </div>
@@ -336,14 +355,27 @@ export function ClassicTemplate({ site }: { site: LiveSite }) {
         <section id="contact" className="scroll-mt-20">
           <SectionTitle eyebrow="Book direct">Contact us</SectionTitle>
           <Reveal className="flex flex-col gap-5 rounded-3xl bg-[var(--theme)] p-6 text-white sm:flex-row sm:items-center sm:justify-between sm:p-8">
-            <p className="max-w-md font-serif text-2xl leading-8">Message us on WhatsApp with your dates. We reply quickly.</p>
+            <p className="max-w-md font-serif text-2xl leading-8">
+              {online ? "Pick your dates and book online, or message us on WhatsApp." : "Message us on WhatsApp with your dates. We reply quickly."}
+            </p>
             <div className="flex flex-col gap-2 sm:items-end">
-              {book ? (
-                <BookLink href={book} className={whatsappButton}>
-                  <WhatsAppIcon size={18} />
-                  {formatPhone(site.whatsapp)}
-                </BookLink>
-              ) : null}
+              <div className="flex flex-wrap gap-2 sm:justify-end">
+                {book && online ? (
+                  <BookLink
+                    href={book}
+                    className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-white px-6 text-[15px] font-semibold text-[var(--theme)] transition-transform hover:scale-[1.02] active:scale-[0.98] motion-reduce:transform-none"
+                  >
+                    <CalendarDays className="size-[18px]" />
+                    Book now
+                  </BookLink>
+                ) : null}
+                {book ? (
+                  <BookLink href={book} channel="whatsapp" className={whatsappButton}>
+                    <WhatsAppIcon size={18} />
+                    {formatPhone(site.whatsapp)}
+                  </BookLink>
+                ) : null}
+              </div>
               <div className="flex flex-wrap gap-4 text-sm text-white/90">
                 {site.phone ? (
                   <a href={`tel:+${site.phone}`} className="inline-flex items-center gap-1.5 hover:underline">
@@ -399,10 +431,25 @@ export function ClassicTemplate({ site }: { site: LiveSite }) {
       {/* Phones: booking always in reach */}
       {book ? (
         <div className="fixed inset-x-0 bottom-0 z-30 border-t border-black/5 bg-[#FAF9F6]/90 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur lg:hidden">
-          <BookLink href={book} className={`${whatsappButton} w-full`}>
-            <WhatsAppIcon size={18} />
-            Book on WhatsApp
-          </BookLink>
+          {online ? (
+            <div className="flex gap-2">
+              <BookLink href={book} className={`${bookButton} flex-1`}>
+                <BookLabel online />
+              </BookLink>
+              <BookLink
+                href={book}
+                channel="whatsapp"
+                aria-label="Message us on WhatsApp"
+                className="inline-flex size-12 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-[#0C181F]"
+              >
+                <WhatsAppIcon size={20} />
+              </BookLink>
+            </div>
+          ) : (
+            <BookLink href={book} className={`${whatsappButton} w-full`}>
+              <BookLabel online={false} />
+            </BookLink>
+          )}
         </div>
       ) : null}
     </div>

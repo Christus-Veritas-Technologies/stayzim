@@ -15,7 +15,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!site) return { title: { absolute: "Lodge not found" }, robots: { index: false } };
   if (site.status !== "LIVE") return { title: { absolute: site.name }, robots: { index: false } };
   const place = lodgePlace(site);
-  const description = site.description || `${site.name}${place ? ` in ${place}` : ""}. Book direct on WhatsApp.`;
+  const description =
+    site.description || `${site.name}${place ? ` in ${place}` : ""}. ${site.booking.mode === "request" ? "Book direct, online or on WhatsApp." : "Book direct on WhatsApp."}`;
   return {
     title: { absolute: place ? `${site.name} · ${place}` : site.name },
     description,
