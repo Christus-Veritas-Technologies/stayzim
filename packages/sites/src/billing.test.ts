@@ -5,11 +5,13 @@ import {
   annualMonthlyPrice,
   annualSaving,
   calendarDaysUntil,
+  carriedOverMs,
   demoEnded,
   extendPaidUntil,
   includesFreeDomain,
   isValidSlug,
   noticeFor,
+  paidUntilAfterPayment,
   planPrice,
   planPriceCents,
   slugFromName,
@@ -78,6 +80,22 @@ describe("billing dates", () => {
     expect(extendPaidUntil(at("2026-10-20T00:00:00Z"), now, 1).toISOString()).toBe("2026-11-20T00:00:00.000Z");
     expect(extendPaidUntil(at("2026-09-01T00:00:00Z"), now, 1).toISOString()).toBe("2026-11-06T09:00:00.000Z");
     expect(extendPaidUntil(null, now, 3).toISOString()).toBe("2027-01-06T09:00:00.000Z");
+  });
+
+  test("changing plan carries the time left over at the two prices, in whole days", () => {
+    const now = at("2026-10-06T09:00:00Z");
+    const twelveDays = at("2026-10-18T09:00:00Z");
+    const day = 86_400_000;
+    expect(carriedOverMs(twelveDays, now, "GROWTH", "GROWTH")).toBe(12 * day);
+    expect(carriedOverMs(twelveDays, now, "STARTER", "GROWTH")).toBe(6 * day);
+    expect(carriedOverMs(twelveDays, now, "GROWTH", "PRO")).toBe(6 * day); // 12 × 40 / 75 = 6.4
+    expect(carriedOverMs(twelveDays, now, "PRO", "STARTER")).toBe(45 * day);
+    expect(carriedOverMs(at("2026-10-01T00:00:00Z"), now, "GROWTH", "PRO")).toBe(0);
+    expect(carriedOverMs(null, now, "GROWTH", "PRO")).toBe(0);
+    // Upgrading with 12 days of Growth left: 6 days of Pro, then the month
+    expect(paidUntilAfterPayment({ paidUntil: twelveDays, plan: "GROWTH" }, "PRO", 1, now).toISOString()).toBe("2026-11-12T09:00:00.000Z");
+    // The same plan extends from paid-until, as before
+    expect(paidUntilAfterPayment({ paidUntil: twelveDays, plan: "GROWTH" }, "GROWTH", 1, now).toISOString()).toBe("2026-11-18T09:00:00.000Z");
   });
 
   test("invoice reminders: 3 days before, the day before and the day itself", () => {

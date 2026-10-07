@@ -8,7 +8,7 @@ import { cn } from "@stayzim/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUpRight, CircleCheck, CircleX, Smartphone } from "lucide-react";
 import Link from "next/link";
-import { ANNUAL_DISCOUNT, planPriceCents } from "@stayzim/sites";
+import { ANNUAL_DISCOUNT, carriedOverMs, paidUntilAfterPayment, planPriceCents } from "@stayzim/sites";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 
 import { useLodge } from "@/components/dashboard/lodge-provider";
@@ -31,6 +31,22 @@ type State =
   | { kind: "waiting"; payment: Payment; instructions: string | null; innbucksCode: string | null; since: number }
   | { kind: "paid"; payment: Payment }
   | { kind: "failed"; message: string };
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const days = (count: number) => `${count} ${count === 1 ? "day" : "days"}`;
+
+/** What a plan change does to the time already paid for: it moves over at the new plan's price. */
+function planChangeHint(lodge: Lodge, plan: PlanKey, months: number, now: number) {
+  if (plan === lodge.plan) return undefined;
+  const moves = `Your site moves to ${PLANS[plan].name} when this is paid.`;
+  const paidUntil = lodge.status === "DEMO" || !lodge.paidUntil ? null : new Date(lodge.paidUntil);
+  const at = new Date(now);
+  const left = paidUntil ? Math.floor((paidUntil.getTime() - now) / DAY_MS) : 0;
+  if (left < 1) return moves;
+  const carried = Math.round(carriedOverMs(paidUntil, at, lodge.plan, plan) / DAY_MS);
+  const until = formatLongDate(paidUntilAfterPayment({ paidUntil, plan: lodge.plan }, plan, months, at));
+  return `${moves} Your ${days(left)} left on ${PLANS[lodge.plan].name} become ${days(carried)} of ${PLANS[plan].name}, then the ${months === 1 ? "month" : `${months} months`} you pay for: live until ${until}.`;
+}
 
 /**
  * Pay on Paynow without leaving the dashboard: pick the plan and months, then
@@ -197,7 +213,7 @@ export function PayCard({
                 </FormMessage>
               ) : null}
               <FormMessage>{error}</FormMessage>
-              <Field label="Plan" hint={plan === lodge.plan ? undefined : `Your site moves to ${PLANS[plan].name} when this is paid.`}>
+              <Field label="Plan" hint={planChangeHint(lodge, plan, months, now)}>
                 <PlanPicker value={plan} onChange={onPlanChange} disabled={starting} />
               </Field>
               <Field label="How long">

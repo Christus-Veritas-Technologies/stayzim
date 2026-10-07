@@ -3,11 +3,11 @@ import { sendEmail } from "@stayzim/mail";
 import { demoWelcomeEmail, receiptEmail } from "@stayzim/mail/templates";
 import {
   addMonths,
-  extendPaidUntil,
   formatCents,
   formatHarareDate,
   formatHarareDateTime,
   formatHarareDay,
+  paidUntilAfterPayment,
   planPriceCents,
   PLANS_LABEL,
   type Plan,
@@ -143,8 +143,9 @@ export async function applyPayment(paymentId: string, extra: { paynowReference?:
       where: { id: paymentId },
       data: { receiptNumber: await nextNumber(tx, "receipt", now) },
     });
-    const lodge = await tx.lodge.findUniqueOrThrow({ where: { id: payment.lodgeId }, select: { paidUntil: true, status: true } });
-    const paidUntil = extendPaidUntil(lodge.status === "DEMO" ? null : lodge.paidUntil, now, payment.months);
+    const lodge = await tx.lodge.findUniqueOrThrow({ where: { id: payment.lodgeId }, select: { paidUntil: true, status: true, plan: true } });
+    // Time already paid for moves to the new plan at its price (12 days of Growth are 6 of Pro)
+    const paidUntil = paidUntilAfterPayment({ paidUntil: lodge.status === "DEMO" ? null : lodge.paidUntil, plan: lodge.plan }, payment.plan, payment.months, now);
     await tx.lodge.update({
       where: { id: payment.lodgeId },
       data: { plan: payment.plan, status: "ACTIVE", demoEndsAt: null, paidUntil },
