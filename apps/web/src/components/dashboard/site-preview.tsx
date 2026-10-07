@@ -7,6 +7,7 @@ import { MapPin } from "lucide-react";
 
 import { WhatsAppIcon } from "@/components/landing/brand";
 import { formatPrice, type Room } from "@/lib/lodge";
+import { emphasis } from "@/lib/site-content";
 
 export type PreviewLodge = {
   name: string;
@@ -54,7 +55,15 @@ export function SitePreview({ lodge, className }: { lodge: PreviewLodge; classNa
             animate={{ opacity: 1 }}
             className="font-serif text-[22px] leading-7 font-semibold break-words"
           >
-            {headline}
+            {emphasis(headline).map((part, index) =>
+              part.em ? (
+                <em key={index} className="font-bold not-italic">
+                  {part.text}
+                </em>
+              ) : (
+                <span key={index}>{part.text}</span>
+              ),
+            )}
           </motion.p>
           {lodge.subline ? (
             <p className="mt-0.5 line-clamp-3 text-xs leading-4 text-white/90">{lodge.subline}</p>

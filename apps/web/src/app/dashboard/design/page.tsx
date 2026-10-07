@@ -330,7 +330,7 @@ function HeroText({ lodge, live }: { lodge: Lodge; live: Template }) {
                 </motion.div>
               ) : null}
             </AnimatePresence>
-            <Field label="Headline" count={{ value: headline.length, max: HERO_LIMITS.headline }}>
+            <Field label="Headline" count={{ value: headline.length, max: HERO_LIMITS.headline }} hint="Put *stars* around a word or two to make them stand out.">
               <Input value={headline} onChange={(event) => setHeadline(event.target.value)} maxLength={HERO_LIMITS.headline} placeholder={defaults.headline} />
             </Field>
             <Field
