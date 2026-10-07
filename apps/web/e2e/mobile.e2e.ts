@@ -6,7 +6,7 @@ import { scrollThrough, sideways } from "./layout";
 // The narrowest phones in common use in Zimbabwe are 360px wide
 test.use({ ...devices["Galaxy S9+"], viewport: { width: 360, height: 740 } });
 
-const publicPages = ["/", "/signup", "/login", "/forgot-password", "/privacy", "/terms"];
+const publicPages = ["/", "/create", "/login", "/forgot-password", "/privacy", "/terms"];
 
 for (const path of publicPages) {
   test(`${path} fits a 360px phone`, async ({ page }) => {

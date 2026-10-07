@@ -6,47 +6,53 @@ import { lodgeSiteUrl } from "./env";
 const PHOTO = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAEAAAAAwCAIAAAAuKetIAAAAVElEQVR4nO3PQQ3AIADAQEANmhCB/+dE8Lgs6Slo575n/NnSAa8a0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQPtp2AVDWp0u0AAAAAElFTkSuQmCC", "base64");
 
 /**
- * The path from an advert: sign up, make the lodge, add a photo and rooms, and
- * the site is live with its demo badges. The real target is under 5 minutes
- * for a person; automated it must take well under 2.
+ * The path from an advert: /create with the ad's tags, the lodge's name and
+ * WhatsApp, a photo, and the site is live with its demo badges, before any
+ * email. Then Claim my site. Automated, the live site comes well inside the
+ * 90 seconds a person has.
  */
-test("a new owner signs up and has a live demo site within minutes", async ({ page }) => {
+test("a lodge goes live from an advert in two steps, then the owner claims it", async ({ page }) => {
   test.setTimeout(120_000);
   const started = Date.now();
   const stamp = Date.now().toString(36);
 
-  await page.goto("/signup?plan=growth");
-  await page.getByLabel("Your name").fill("Farai Test");
-  await page.getByRole("textbox", { name: "Email" }).fill(`farai-${stamp}@signup.test`);
-  await page.getByRole("textbox", { name: "Password" }).fill("farai-pass-123");
-  await page.getByRole("button", { name: "Create my free demo" }).click();
-
-  await expect(page).toHaveURL(/\/start/);
+  await page.goto("/create?utm_source=meta&utm_campaign=registration_test");
+  await expect(page.getByText(/Step 1 of 2/)).toBeVisible();
   await page.getByLabel("Lodge name").fill(`Farai Rest ${stamp}`);
-  await page.getByLabel("Town").fill("Kariba");
   await page.getByLabel("WhatsApp number").fill("077 444 5555");
-  await expect(page.getByText("It's yours")).toBeVisible();
-  await page.getByRole("button", { name: "Create my site" }).click();
+  await page.getByRole("button", { name: /Next: add photos/ }).click();
 
-  await expect(page.getByRole("heading", { name: "Add some photos" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Add 3 photos" })).toBeVisible();
+  await expect(page.getByText(/Step 2 of 2/)).toBeVisible();
   await page.locator('input[type="file"]').first().setInputFiles({ name: "lodge.png", mimeType: "image/png", buffer: PHOTO });
-  await expect(page.getByText("Top photo")).toBeVisible({ timeout: 30_000 });
-  await page.getByRole("button", { name: "Continue" }).click();
-
-  await expect(page.getByRole("heading", { name: "Add your rooms" })).toBeVisible();
-  await page.getByLabel("Name").first().fill("Lake Room");
-  await page.getByLabel("Price a night").first().fill("70");
-  await page.getByRole("button", { name: "Save and continue" }).click();
+  await expect(page.getByText("Top", { exact: true })).toBeVisible({ timeout: 30_000 });
+  await page.getByRole("button", { name: /Go live/ }).click();
 
   await expect(page.getByRole("heading", { name: /is live/ })).toBeVisible();
+  expect(Date.now() - started).toBeLessThan(90_000);
   const slug = `farai-rest-${stamp}`;
-  expect(Date.now() - started).toBeLessThan(120_000);
 
-  await page.goto(lodgeSiteUrl(slug));
-  await expect(page.getByText("Demo site.")).toBeVisible();
-  await expect(page.locator('a[href^="https://wa.me/"]').filter({ hasText: /book/i }).first()).toBeVisible();
-  await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+  const guest = await page.context().newPage();
+  await guest.goto(lodgeSiteUrl(slug));
+  await expect(guest.getByText("Demo site.")).toBeVisible();
+  await expect(guest.locator('a[href^="https://wa.me/"]').first()).toBeAttached();
+  await expect(guest.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+  await guest.close();
+
+  // Claim my site: an email and password for the guest account, and the site stays
+  const email = `farai-${stamp}@signup.test`;
+  await page.getByLabel("Your name").fill("Farai Test");
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password", { exact: true }).fill("farai-pass-123");
+  await page.getByRole("button", { name: "Claim my site" }).click();
+  await expect(page.getByText(`Log in with ${email} from now on`)).toBeVisible();
 
   await page.goto("/dashboard/billing");
   await expect(page.getByText("Your site is live as a free demo")).toBeVisible();
+  await expect(page.getByText("Your site isn't saved to an email yet.")).toHaveCount(0);
+});
+
+test("old sign-up links land on /create, keeping the plan and the ad's tags", async ({ page }) => {
+  await page.goto("/signup?plan=pro&utm_source=meta");
+  await expect(page).toHaveURL(/\/create\?plan=pro&utm_source=meta/);
 });
