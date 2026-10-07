@@ -6,6 +6,7 @@ import { ClassicTemplate } from "@/components/site/templates/classic";
 import { PLACEHOLDER_LOOKS } from "@/components/site/templates/looks";
 import { RondavelTemplate } from "@/components/site/templates/rondavel";
 import { ShadeTemplate } from "@/components/site/templates/shade";
+import { ShorelineTemplate } from "@/components/site/templates/shoreline";
 import { VerandaTemplate } from "@/components/site/templates/veranda";
 import { PageViewTracker, SiteTracking } from "@/components/site/tracking";
 import type { LiveSite } from "@/lib/site";
@@ -15,6 +16,7 @@ const DESIGNS: Partial<Record<TemplateKey, (props: { site: LiveSite }) => React.
   "starter-veranda": VerandaTemplate,
   "starter-rondavel": RondavelTemplate,
   "starter-shade": ShadeTemplate,
+  "growth-shoreline": ShorelineTemplate,
 };
 
 /**

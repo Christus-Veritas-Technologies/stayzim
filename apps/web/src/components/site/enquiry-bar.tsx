@@ -80,10 +80,10 @@ export function EnquiryBar({
           send();
         }}
         onPointerDown={booking.online ? booking.preload : undefined}
-        className={cn("grid gap-2 sm:grid-cols-2 lg:grid-cols-[repeat(4,minmax(0,1fr))_auto] lg:items-end", look.className)}
+        className={cn("grid grid-cols-2 gap-2 lg:grid-cols-[repeat(4,minmax(0,1fr))_auto] lg:items-end", look.className)}
         aria-label="Check your dates"
       >
-        <Field label={roomWord} look={look} layout={layout}>
+        <Field label={roomWord} look={look} layout={layout} className="col-span-2 sm:col-span-1">
           <Select value={room.id} onChange={setRoomId} label={roomWord} options={rooms.map((entry) => ({ value: entry.id, label: entry.name }))} />
         </Field>
         <Field label="Arrive" look={look} layout={layout}>
@@ -100,7 +100,7 @@ export function EnquiryBar({
         <Field label="Leave" look={look} layout={layout}>
           <DateInput value={checkOut} min={checkIn ? dateAdd(checkIn, 1) : dateAdd(today, 1)} label="Leave" onChange={setCheckOut} />
         </Field>
-        <Field label="Guests" look={look} layout={layout}>
+        <Field label="Guests" look={look} layout={layout} className="col-span-2 sm:col-span-1">
           <Select
             value={String(shownGuests)}
             onChange={(value) => setGuests(Number(value))}
@@ -111,7 +111,7 @@ export function EnquiryBar({
         <button
           type="submit"
           className={cn(
-            "inline-flex h-12 items-center justify-center gap-2 rounded-full px-6 text-[15px] font-semibold whitespace-nowrap transition-transform active:scale-[0.98] motion-reduce:transform-none sm:col-span-2 lg:col-span-1",
+            "col-span-2 inline-flex h-12 items-center justify-center gap-2 rounded-full px-6 text-[15px] font-semibold whitespace-nowrap transition-transform active:scale-[0.98] motion-reduce:transform-none lg:col-span-1",
             booking.online ? "bg-[var(--theme)] text-white" : "bg-[#25D366] text-[#0C181F]",
             look.button,
           )}
@@ -131,10 +131,22 @@ export function EnquiryBar({
   );
 }
 
-function Field({ label, look, layout, children }: { label: string; look: EnquiryLook; layout: "stacked" | "inline"; children: ReactNode }) {
+function Field({
+  label,
+  look,
+  layout,
+  className,
+  children,
+}: {
+  label: string;
+  look: EnquiryLook;
+  layout: "stacked" | "inline";
+  className?: string;
+  children: ReactNode;
+}) {
   if (layout === "inline") {
     return (
-      <div className={cn("relative flex h-14 flex-col justify-center rounded-full border border-black/10 bg-white px-5", look.field)}>
+      <div className={cn("relative flex h-14 flex-col justify-center rounded-full border border-black/10 bg-white px-5", look.field, className)}>
         <span aria-hidden="true" className={cn("text-[11px] leading-4 font-semibold text-[#6C767D]", look.label)}>
           {label}
         </span>
@@ -143,7 +155,7 @@ function Field({ label, look, layout, children }: { label: string; look: Enquiry
     );
   }
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className={cn("flex min-w-0 flex-col gap-1.5", className)}>
       <span aria-hidden="true" className={cn("px-1 text-xs font-medium text-[#4F5A60]", look.label)}>
         {label}
       </span>

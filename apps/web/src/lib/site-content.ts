@@ -93,3 +93,23 @@ export function roomStats(rooms: Pick<SiteRoom, "price" | "sleeps">[]) {
     from: Math.min(...rooms.map((room) => room.price)),
   };
 }
+
+/**
+ * The description with the given words picked out ("a private deck, air con
+ * and a braai"), for intros that set the lodge's amenities apart.
+ */
+export function highlightWords(text: string, words: string[]): TextPart[] {
+  const wanted = words.map((word) => word.trim()).filter((word) => word.length > 2);
+  if (wanted.length === 0) return [{ text, em: false }];
+  const escaped = wanted.sort((a, b) => b.length - a.length).map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const pattern = new RegExp(`\\b(${escaped.join("|")})\\b`, "gi");
+  const parts: TextPart[] = [];
+  let last = 0;
+  for (const match of text.matchAll(pattern)) {
+    if (match.index > last) parts.push({ text: text.slice(last, match.index), em: false });
+    parts.push({ text: match[0], em: true });
+    last = match.index + match[0].length;
+  }
+  if (last < text.length) parts.push({ text: text.slice(last), em: false });
+  return parts.length > 0 ? parts : [{ text, em: false }];
+}

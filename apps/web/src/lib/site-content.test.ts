@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { amenitySummary, emphasis, hasStayInfo, plainText, roomFacts, roomStats, splitIntro, stayFacts } from "./site-content";
+import { amenitySummary, emphasis, hasStayInfo, highlightWords, plainText, roomFacts, roomStats, splitIntro, stayFacts } from "./site-content";
 
 describe("roomFacts", () => {
   test("lists what the owner filled in, in order", () => {
@@ -72,5 +72,21 @@ describe("roomStats", () => {
   test("is null without rooms", () => {
     expect(roomStats([])).toBeNull();
     expect(roomStats([{ price: 120, sleeps: 2 }, { price: 95, sleeps: 4 }])).toEqual({ count: 2, fewest: 2, most: 4, from: 95 });
+  });
+});
+
+describe("highlightWords", () => {
+  test("picks out the words wherever they are, ignoring case", () => {
+    expect(highlightWords("Cabins with a private deck and Air con.", ["Air con", "Private deck"])).toEqual([
+      { text: "Cabins with a ", em: false },
+      { text: "private deck", em: true },
+      { text: " and ", em: false },
+      { text: "Air con", em: true },
+      { text: ".", em: false },
+    ]);
+  });
+
+  test("matches whole words only", () => {
+    expect(highlightWords("Embraai", ["Braai"])).toEqual([{ text: "Embraai", em: false }]);
   });
 });
