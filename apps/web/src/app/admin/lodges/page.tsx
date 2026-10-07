@@ -17,7 +17,17 @@ import { Appear, Item, riseIn } from "@/components/motion";
 import { api } from "@/lib/api";
 
 /** GET /api/admin/lodges (apps/server/src/routes/admin.ts) */
-type AdminLodge = { name: string; slug: string; plan: Plan; status: string; reviewScore: number | null; quotes: number; posts: number };
+type AdminLodge = {
+  name: string;
+  slug: string;
+  plan: Plan;
+  status: string;
+  reviewScore: number | null;
+  /** Where the owner came from at /create ("meta · registration_test"), when known */
+  source: string | null;
+  quotes: number;
+  posts: number;
+};
 
 /** The team's list of lodges, to pick one whose reviews and journal to edit. Pro lodges first. */
 export default function AdminLodgesPage() {
@@ -95,7 +105,10 @@ export default function AdminLodgesPage() {
                         <span className="truncate text-[14.5px] font-semibold">{lodge.name}</span>
                         <Badge variant={lodge.plan === "PRO" ? "purple" : "neutral"}>{PLANS_LABEL[lodge.plan]}</Badge>
                       </span>
-                      <span className="text-[12.5px] text-muted">{lodge.slug}</span>
+                      <span className="text-[12.5px] text-muted">
+                        {lodge.slug}
+                        {lodge.source ? <span className="text-muted-2"> · via {lodge.source}</span> : null}
+                      </span>
                     </span>
                     <span className={cn("hidden items-center gap-4 text-[13px] text-muted sm:flex", lodge.plan !== "PRO" && "opacity-60")}>
                       <span className="inline-flex items-center gap-1.5" title="Score">

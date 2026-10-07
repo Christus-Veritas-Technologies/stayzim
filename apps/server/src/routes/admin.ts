@@ -181,12 +181,28 @@ export const admin = new Hono<{ Variables: AuthVariables }>()
     const q = query.success ? query.data.q : "";
     const lodges = await prisma.lodge.findMany({
       where: q ? { OR: [{ name: { contains: q, mode: "insensitive" } }, { slug: { contains: q.toLowerCase() } }] } : {},
-      select: { name: true, slug: true, plan: true, status: true, reviewScore: true, _count: { select: { reviews: true, posts: true } } },
+      select: {
+        name: true,
+        slug: true,
+        plan: true,
+        status: true,
+        reviewScore: true,
+        // Where the owner came from at /create: "meta · registration_test", or the referring site
+        utmSource: true,
+        utmCampaign: true,
+        signupReferrer: true,
+        _count: { select: { reviews: true, posts: true } },
+      },
       orderBy: [{ plan: "desc" }, { name: "asc" }],
       take: 100,
     });
     return c.json({
-      lodges: lodges.map(({ _count, ...lodge }) => ({ ...lodge, quotes: _count.reviews, posts: _count.posts })),
+      lodges: lodges.map(({ _count, utmSource, utmCampaign, signupReferrer, ...lodge }) => ({
+        ...lodge,
+        source: utmSource ? [utmSource, utmCampaign].filter(Boolean).join(" · ") : signupReferrer ? (URL.parse(signupReferrer)?.hostname ?? null) : null,
+        quotes: _count.reviews,
+        posts: _count.posts,
+      })),
     });
   })
 
