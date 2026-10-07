@@ -15,6 +15,11 @@ function dayFromNow(days: number) {
   return new Date(Date.now() + 2 * 3600_000 + days * DAY).toISOString().slice(0, 10);
 }
 
+/** The date `days` after a YYYY-MM-DD date (not from now: that depends on the time of day). */
+function dayAfter(date: string, days: number) {
+  return new Date(Date.parse(date) + days * DAY).toISOString().slice(0, 10);
+}
+
 /** Picks check-in and check-out in an open range calendar, paging months forward until each day shows. */
 async function pickDates(scope: Locator, checkIn: string, checkOut: string) {
   for (const date of [checkIn, checkOut]) {
@@ -105,7 +110,7 @@ test.describe("owner", () => {
 
   test("a booking taken on WhatsApp goes in the calendar, and cancelling frees it", async ({ page }) => {
     const checkIn = dayFromNow(offset());
-    const checkOut = dayFromNow(Math.round((Date.parse(checkIn) - Date.now()) / DAY) + 2);
+    const checkOut = dayAfter(checkIn, 2);
     await page.goto("/dashboard/bookings?tab=calendar");
     await page.getByRole("button", { name: "Add booking" }).first().click();
     const sheet = page.getByRole("dialog");
@@ -155,7 +160,7 @@ test.describe("guests book on a Growth site", () => {
     await setAutoConfirm(owner, false);
 
     const checkIn = dayFromNow(offset());
-    const checkOut = dayFromNow(Math.round((Date.parse(checkIn) - Date.now()) / DAY) + 2);
+    const checkOut = dayAfter(checkIn, 2);
     const guest = await browser.newPage();
     const reference = await guestBooks(guest, checkIn, checkOut, /Request sent/);
     await expect(guest.getByRole("link", { name: "Send on WhatsApp too" })).toHaveAttribute("href", new RegExp(`wa\\.me/.*${reference}`));
@@ -177,7 +182,7 @@ test.describe("guests book on a Growth site", () => {
     const owner = await browser.newPage({ storageState: OWNER_STATE });
     await setAutoConfirm(owner, true);
     const checkIn = dayFromNow(offset());
-    const checkOut = dayFromNow(Math.round((Date.parse(checkIn) - Date.now()) / DAY) + 1);
+    const checkOut = dayAfter(checkIn, 1);
     const guest = await browser.newPage();
     const reference = await guestBooks(guest, checkIn, checkOut, /You're booked/);
 
