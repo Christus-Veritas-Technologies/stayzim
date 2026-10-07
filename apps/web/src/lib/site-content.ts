@@ -120,3 +120,20 @@ export function highlightWords(text: string, words: string[]): TextPart[] {
   if (last < text.length) parts.push({ text: text.slice(last), em: false });
   return parts.length > 0 ? parts : [{ text, em: false }];
 }
+
+/** Booking.com's words for a score out of 10. */
+export function scoreWord(score: number) {
+  if (score >= 9.5) return "Exceptional";
+  if (score >= 9) return "Superb";
+  if (score >= 8.6) return "Fabulous";
+  if (score >= 8) return "Very good";
+  if (score >= 7) return "Good";
+  return "Rated";
+}
+
+const COUNT_WORDS = ["No", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve"];
+
+/** "Four rooms", "One room", "14 rooms" */
+export function countWords(count: number, noun: string, plural = `${noun}s`) {
+  return `${COUNT_WORDS[count] ?? count} ${count === 1 ? noun : plural}`;
+}

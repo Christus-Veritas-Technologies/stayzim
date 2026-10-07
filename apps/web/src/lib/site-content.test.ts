@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { amenitySummary, emphasis, hasStayInfo, highlightWords, plainText, roomFacts, roomStats, splitIntro, stayFacts } from "./site-content";
+import { amenitySummary, countWords, emphasis, hasStayInfo, highlightWords, plainText, roomFacts, roomStats, scoreWord, splitIntro, stayFacts } from "./site-content";
 
 describe("roomFacts", () => {
   test("lists what the owner filled in, in order", () => {
@@ -88,5 +88,12 @@ describe("highlightWords", () => {
 
   test("matches whole words only", () => {
     expect(highlightWords("Embraai", ["Braai"])).toEqual([{ text: "Embraai", em: false }]);
+  });
+});
+
+describe("scoreWord and countWords", () => {
+  test("read like Booking.com and a person", () => {
+    expect([scoreWord(9.6), scoreWord(9.4), scoreWord(8.7), scoreWord(8.1), scoreWord(7.2), scoreWord(5)]).toEqual(["Exceptional", "Superb", "Fabulous", "Very good", "Good", "Rated"]);
+    expect([countWords(4, "room"), countWords(1, "tent"), countWords(14, "room")]).toEqual(["Four rooms", "One tent", "14 rooms"]);
   });
 });
