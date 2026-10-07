@@ -76,13 +76,13 @@ export function CourtyardTemplate({ site }: { site: LiveSite }) {
       className={cn(tenorSans.variable, "min-h-svh bg-[#1C1B19] font-sans pb-24 text-[#E8E1D5] lg:pb-0")}
     >
       {/* Split hero */}
-      <section id="top" className="grid gap-2 p-2 sm:p-3 lg:min-h-[760px] lg:grid-cols-2">
-        <div className="flex flex-col rounded-[24px] bg-[#262420] px-5 pt-5 pb-8 sm:rounded-[28px] sm:px-10 sm:pt-8">
+      <section id="top" className="grid grid-cols-[minmax(0,1fr)] gap-2 p-2 sm:p-3 lg:min-h-[760px] lg:grid-cols-2">
+        <div className="flex min-w-0 flex-col rounded-[24px] bg-[#262420] px-5 pt-5 pb-8 sm:rounded-[28px] sm:px-10 sm:pt-8">
           <header className="flex items-center gap-3">
             <a href="#top" aria-label={site.name} className={cn(DISPLAY, "flex size-11 shrink-0 items-center justify-center text-[30px]")}>
               {footerWord(site.name).slice(0, 1)}
             </a>
-            <nav className="-mr-5 flex gap-1.5 overflow-x-auto pr-5 [scrollbar-width:none] sm:mr-0 sm:pr-0" aria-label="Sections">
+            <nav className="-mr-5 flex min-w-0 gap-1.5 overflow-x-auto pr-5 [scrollbar-width:none] sm:mr-0 sm:pr-0" aria-label="Sections">
               {nav.map((link) => (
                 <a key={link.href} href={link.href} className="shrink-0 rounded-full bg-white/[0.07] px-3.5 py-2 text-[11.5px] tracking-[0.16em] whitespace-nowrap uppercase hover:bg-white/15">
                   {link.label}

@@ -7,6 +7,10 @@ export const E2E = {
   lodge: process.env.E2E_LODGE ?? "mistvalley",
   /** A Starter lodge with rooms and WhatsApp: its Book buttons stay WhatsApp links */
   starterLodge: process.env.E2E_STARTER_LODGE ?? "cliffview",
+  /** A Pro lodge with rooms and WhatsApp, for reviews and the journal */
+  proLodge: process.env.E2E_PRO_LODGE ?? "ridgeview",
+  /** A StayZim team account (create-owner --admin), for the team's screens */
+  teamEmail: process.env.E2E_TEAM_EMAIL ?? "team@e2e.test",
   /** The API, for checks a guest's browser would make (availability) */
   apiURL: process.env.E2E_API_URL ?? "http://localhost:9998",
 };
@@ -20,3 +24,6 @@ export function lodgeSiteUrl(slug = E2E.lodge) {
   url.hostname = `${slug}.${url.hostname}`;
   return url.origin;
 }
+
+/** The team account's session, saved by auth.setup.ts */
+export const TEAM_STATE = "e2e/.auth/team.json";

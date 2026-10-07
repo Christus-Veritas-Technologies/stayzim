@@ -117,7 +117,7 @@ test.describe("guests book on a Growth site", () => {
   /** A guest books the first room on the site; returns the reference shown at the end. */
   async function guestBooks(page: Page, checkIn: string, checkOut: string, done: RegExp) {
     await page.goto(lodgeSiteUrl());
-    await page.locator("#rooms > ul > li").first().getByRole("link", { name: /Book now/ }).click();
+    await page.locator("#rooms").getByRole("link", { name: /Book now/ }).first().click();
     const sheet = page.getByRole("dialog");
     await expect(sheet).toBeVisible();
     await pickDates(sheet, checkIn, checkOut);

@@ -105,7 +105,7 @@ jobs:
       - name: Database
         run: pnpm --filter @stayzim/db db:deploy
 
-      - name: Test owner and lodge
+      - name: Test owners, lodges and the team account
         run: |
           pnpm --filter @stayzim/auth create-owner --email "$E2E_EMAIL" --name "Rudo Moyo" --password "$E2E_PASSWORD"
           pnpm --filter @stayzim/db create-lodge --owner "$E2E_EMAIL" --name "Mist Valley Lodge" --slug "$E2E_LODGE" \
@@ -113,6 +113,10 @@ jobs:
           pnpm --filter @stayzim/auth create-owner --email starter@e2e.test --name "Tariro Dube" --password "$E2E_PASSWORD"
           pnpm --filter @stayzim/db create-lodge --owner starter@e2e.test --name "Cliff View Cottages" --slug cliffview \
             --town Chimanimani --region Manicaland --whatsapp 263772345678 --sample-rooms --plan starter --paid-months 1
+          pnpm --filter @stayzim/auth create-owner --email pro@e2e.test --name "Nyasha Moyo" --password "$E2E_PASSWORD"
+          pnpm --filter @stayzim/db create-lodge --owner pro@e2e.test --name "Ridge View House" --slug ridgeview \
+            --town Chimanimani --region Manicaland --whatsapp 263773456789 --sample-rooms --plan pro --paid-months 1
+          pnpm --filter @stayzim/auth create-owner --email team@e2e.test --name "StayZim Team" --password "$E2E_PASSWORD" --admin
 
       - name: Build web
         run: pnpm --filter web build

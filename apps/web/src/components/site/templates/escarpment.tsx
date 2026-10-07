@@ -226,7 +226,7 @@ export function EscarpmentTemplate({ site }: { site: LiveSite }) {
             );
           })}
           {others.length > 0 ? (
-            <ul className="grid gap-4 md:grid-cols-2">
+            <ul className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
               {others.map((room, position) => {
                 const roomBook = bookingUrl(site, room.name);
                 return (
