@@ -58,6 +58,13 @@ function draftFrom(lodge: Lodge): Draft {
 
 type Errors = Partial<Record<string, string>>;
 
+/** JSON with object keys sorted: Postgres keeps FAQ entries as {a, q}, the form builds {q, a}. */
+function sameJson(left: unknown, right: unknown) {
+  const sorted = (_key: string, value: unknown) =>
+    value && typeof value === "object" && !Array.isArray(value) ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b))) : value;
+  return JSON.stringify(left, sorted) === JSON.stringify(right, sorted);
+}
+
 /** What PATCH /api/lodge needs: only what changed, and the problems found first (keyed "faq.2.a", "social.instagram"). */
 function changesFrom(draft: Draft, lodge: Lodge) {
   const errors: Errors = {};
@@ -86,7 +93,7 @@ function changesFrom(draft: Draft, lodge: Lodge) {
     socialLinks,
   };
   const changes = Object.fromEntries(
-    Object.entries(next).filter(([key, value]) => JSON.stringify(value) !== JSON.stringify(lodge[key as keyof typeof next])),
+    Object.entries(next).filter(([key, value]) => !sameJson(value, lodge[key as keyof typeof next])),
   ) as Partial<typeof next>;
   return { changes, errors };
 }
@@ -106,7 +113,7 @@ export default function GuestInfoPage() {
   const [faqStartsOpen] = useState(() => lodge.faq.length === 0);
   const online = useOnline();
   const { changes } = useMemo(() => changesFrom(draft, lodge), [draft, lodge]);
-  const dirty = Object.keys(changes).length > 0 || JSON.stringify(draft) !== JSON.stringify(draftFrom(lodge));
+  const dirty = Object.keys(changes).length > 0 || !sameJson(draft, draftFrom(lodge));
 
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) => setDraft((current) => ({ ...current, [key]: value }));
 
