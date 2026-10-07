@@ -1,11 +1,12 @@
 "use client";
 
-import { Button } from "@stayzim/ui/components/button";
+import { Button, buttonVariants } from "@stayzim/ui/components/button";
 import { ProgressRing } from "@stayzim/ui/components/progress";
+import { Spinner } from "@stayzim/ui/components/spinner";
 import { cn } from "@stayzim/ui/lib/utils";
 import { motion } from "framer-motion";
-import { CircleAlert, CircleCheck, Clock, ImagePlus, RotateCcw, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { CircleAlert, CircleCheck, Clock, ImagePlus, RotateCcw, Sparkles, Upload, X } from "lucide-react";
+import { useId, useState, type ReactNode } from "react";
 
 import type { UploadItem } from "@/components/dashboard/use-photo-uploads";
 import { formatBytes } from "@/lib/format";
@@ -104,95 +105,138 @@ export function UploadTile({
   );
 }
 
-/** Dashed tile that opens the photo picker, and takes photos dropped on it from a computer. */
-export function AddPhotosTile({
+/**
+ * Where photos go in, everywhere in the app: a dashed area to drop photos on
+ * from a computer, with Upload photos in it (the whole area opens the picker
+ * on a phone). `lg` stands on its own above a grid; `sm` is a row, for sheets
+ * and the logo. `full` says why no more can go in.
+ */
+export function PhotoDropzone({
   onFiles,
-  title = "Add photos",
-  hint = "Pick several at once",
-  note = "JPG or PNG",
-  compact = false,
+  size = "lg",
+  multiple = true,
+  title = multiple ? "Drag photos here" : "Drag your photo here",
+  touchTitle = multiple ? "Add photos from your phone" : "Add a photo from your phone",
+  note = "JPG, PNG or WebP. Resized on your device first, so they go up on slow data.",
+  action = multiple ? "Upload photos" : "Upload photo",
+  tip,
+  media,
+  full,
   disabled = false,
+  busy = false,
+  children,
 }: {
   onFiles: (files: FileList) => void;
+  size?: "lg" | "sm";
+  multiple?: boolean;
   title?: string;
-  hint?: string;
-  note?: string;
-  compact?: boolean;
+  /** The title on touch screens, where nothing is dragged */
+  touchTitle?: string;
+  note?: ReactNode;
+  action?: string;
+  /** A small green line to nudge people on: "The outside, a room and the view work best" */
+  tip?: ReactNode;
+  /** In place of the icon, e.g. the logo as it is now */
+  media?: ReactNode;
+  /** No room left: { limit, what } */
+  full?: { limit: number; what: string };
   disabled?: boolean;
+  busy?: boolean;
+  /** Extra buttons beside Upload, e.g. Remove */
+  children?: ReactNode;
 }) {
-  const input = useRef<HTMLInputElement>(null);
+  const id = useId();
   const [over, setOver] = useState(false);
+  const large = size === "lg";
 
-  return (
-    <motion.div layout className="flex flex-col gap-2">
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => input.current?.click()}
-        onDragOver={(event) => {
-          event.preventDefault();
-          setOver(true);
-        }}
-        onDragLeave={() => setOver(false)}
-        onDrop={(event) => {
-          event.preventDefault();
-          setOver(false);
-          if (event.dataTransfer.files.length > 0) onFiles(event.dataTransfer.files);
-        }}
+  if (full) {
+    return (
+      <motion.div
+        layout
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         className={cn(
-          "group flex aspect-[4/3] flex-col items-center justify-center gap-2 rounded-xl border-[1.5px] border-dashed text-brand transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/30 disabled:pointer-events-none disabled:opacity-50",
-          over ? "border-brand bg-brand-wash" : "border-[#B9DCEA] bg-[#F7FBFD] hover:border-brand hover:bg-brand-wash",
+          "flex items-center gap-3 rounded-[18px] border-[1.5px] border-dashed border-line-2 bg-surface",
+          large ? "flex-col px-5 py-7 text-center" : "px-3.5 py-3",
         )}
       >
-        <span className="flex size-10 items-center justify-center rounded-xl bg-white shadow-xs transition-transform group-hover:scale-110">
-          <ImagePlus className="size-5" />
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white text-success shadow-xs">
+          <CircleCheck className="size-5" />
         </span>
-        {compact ? null : <span className="text-[13.5px] font-semibold">{title}</span>}
-      </button>
-      {compact ? null : (
-        <span className="flex flex-col">
-          <span className="text-[13.5px] font-semibold">{hint}</span>
-          <span className="text-xs text-muted">{note}</span>
+        <span className="flex min-w-0 flex-col">
+          <span className="text-[14px] font-semibold text-ink-2">
+            {full.what} is full · <span className="tabular-nums">{full.limit} of {full.limit}</span>
+          </span>
+          <span className="text-[12.5px] text-muted">Delete a photo to add another.</span>
         </span>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.label
+      layout
+      htmlFor={id}
+      onDragOver={(event) => {
+        if (disabled) return;
+        event.preventDefault();
+        setOver(true);
+      }}
+      onDragLeave={() => setOver(false)}
+      onDrop={(event) => {
+        event.preventDefault();
+        setOver(false);
+        if (!disabled && event.dataTransfer.files.length > 0) onFiles(event.dataTransfer.files);
+      }}
+      aria-disabled={disabled || undefined}
+      className={cn(
+        "group/drop relative flex cursor-pointer gap-3 rounded-[18px] border-[1.5px] border-dashed transition-colors duration-200 has-[input:focus-visible]:ring-3 has-[input:focus-visible]:ring-ring/30 aria-disabled:pointer-events-none aria-disabled:opacity-55",
+        large ? "flex-col items-center px-5 py-8 text-center sm:py-10" : "flex-wrap items-center px-3.5 py-3 sm:flex-nowrap",
+        over ? "border-brand bg-brand-wash" : "border-[#B9DCEA] bg-[#F7FBFD] hover:border-brand hover:bg-brand-wash/70",
       )}
+    >
+      {media ?? (
+        <motion.span
+          animate={{ y: over ? -3 : 0, scale: over ? 1.08 : 1 }}
+          transition={{ type: "spring", stiffness: 400, damping: 24 }}
+          className={cn("flex shrink-0 items-center justify-center rounded-2xl bg-white text-brand shadow-xs", large ? "size-14" : "size-10 rounded-xl")}
+        >
+          <ImagePlus className={large ? "size-6" : "size-5"} />
+        </motion.span>
+      )}
+      <span className={cn("flex min-w-0 flex-col", large ? "items-center gap-1" : "flex-1 gap-0.5")}>
+        <span className={cn("font-semibold text-ink", large ? "text-[16px]" : "text-[14px]")}>
+          <span className="pointer-coarse:hidden">{over ? "Drop to upload" : title}</span>
+          <span className="hidden pointer-coarse:inline">{touchTitle}</span>
+        </span>
+        {note ? <span className={cn("text-muted", large ? "max-w-[340px] text-[13px] leading-[19px]" : "text-[12.5px] leading-[17px]")}>{note}</span> : null}
+      </span>
+      <span className={cn("flex shrink-0 items-center gap-2", large ? "mt-2 flex-col" : "max-sm:w-full")}>
+        <span className={buttonVariants({ size: large ? "lg" : "sm", className: cn("pointer-events-none", !large && "max-sm:flex-1") })} data-loading={busy || undefined}>
+          {busy ? <Spinner /> : <Upload />}
+          {action}
+        </span>
+        {tip && large ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-success-wash px-2.5 py-1 text-[12px] font-semibold text-success">
+            <Sparkles className="size-3.5" />
+            {tip}
+          </span>
+        ) : null}
+        {children}
+      </span>
       <input
-        ref={input}
+        id={id}
         type="file"
         accept="image/jpeg,image/png,image/webp"
-        multiple
+        multiple={multiple}
+        disabled={disabled || busy}
         className="sr-only"
-        tabIndex={-1}
-        aria-label={title}
+        aria-label={action}
         onChange={(event) => {
           if (event.target.files?.length) onFiles(event.target.files);
           event.target.value = "";
         }}
       />
-    </motion.div>
-  );
-}
-
-/** Takes the Add tile's place once there's no room for more photos, and says why. */
-export function FullTile({ limit, what = "The gallery", compact = false }: { limit: number; what?: string; compact?: boolean }) {
-  return (
-    <motion.div layout initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col gap-2">
-      <div
-        className="flex aspect-[4/3] flex-col items-center justify-center gap-1.5 rounded-xl border-[1.5px] border-dashed border-line-2 bg-surface px-3 text-center"
-        title={compact ? `${what} holds up to ${limit} photos` : undefined}
-      >
-        <CircleCheck className="size-5 text-success" />
-        <span className={cn("font-semibold text-ink-2 tabular-nums", compact ? "text-[11.5px]" : "text-[13.5px]")}>
-          {limit} of {limit}
-        </span>
-      </div>
-      {compact ? null : (
-        <span className="flex flex-col">
-          <span className="text-[13.5px] font-semibold">{what} is full</span>
-          <span className="text-xs text-muted">
-            It holds up to {limit} photos. Delete one to add another.
-          </span>
-        </span>
-      )}
-    </motion.div>
+    </motion.label>
   );
 }

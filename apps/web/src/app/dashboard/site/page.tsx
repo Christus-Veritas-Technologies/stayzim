@@ -33,6 +33,7 @@ import { useLodge } from "@/components/dashboard/lodge-provider";
 import { MapPreview } from "@/components/dashboard/map-preview";
 import { WebAddress } from "@/components/dashboard/web-address";
 import { Page, PageHeader, PageSection } from "@/components/dashboard/page";
+import { PhotoDropzone } from "@/components/dashboard/photo-tiles";
 import { RequestChangeHint } from "@/components/dashboard/request-change-hint";
 import { SitePreview } from "@/components/dashboard/site-preview";
 import { UnsavedChangesGuard } from "@/components/dashboard/unsaved-changes";
@@ -623,7 +624,6 @@ function LogoSection({
   onUploaded: (lodge: Lodge) => void;
   onRemove: () => Promise<string | null>;
 }) {
-  const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState<"upload" | "remove" | null>(null);
 
   async function upload(file: File) {
@@ -656,32 +656,24 @@ function LogoSection({
       summary={lodge.logoUrl ? "Shown in the corner of your site" : "Your initials show until you add one"}
       state={lodge.logoUrl ? "set" : "empty"}
     >
-      <div className="flex items-center gap-4">
-        <Avatar shape="lodge" size="lg" name={lodge.name} src={lodge.logoUrl} color={lodge.themeColor} />
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={() => input.current?.click()} loading={busy === "upload"}>
-            {lodge.logoUrl ? "Replace logo" : "Upload logo"}
+      <PhotoDropzone
+        size="sm"
+        multiple={false}
+        onFiles={(files) => void upload(files[0]!)}
+        busy={busy === "upload"}
+        disabled={busy === "remove"}
+        media={<Avatar shape="lodge" size="lg" name={lodge.name} src={lodge.logoUrl} color={lodge.themeColor} />}
+        title={lodge.logoUrl ? "Drag a new logo here" : "Drag your logo here"}
+        touchTitle={lodge.logoUrl ? "Replace your logo" : "Add your logo"}
+        note="A square PNG with a clear background looks best. Saved straight away."
+        action={lodge.logoUrl ? "Replace" : "Upload logo"}
+      >
+        {lodge.logoUrl ? (
+          <Button variant="ghost" size="sm" onClick={remove} loading={busy === "remove"}>
+            Remove
           </Button>
-          {lodge.logoUrl ? (
-            <Button variant="ghost" size="sm" onClick={remove} loading={busy === "remove"}>
-              Remove
-            </Button>
-          ) : null}
-        </div>
-        <input
-          ref={input}
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          className="sr-only"
-          tabIndex={-1}
-          onChange={(event) => {
-            const file = event.target.files?.[0];
-            event.target.value = "";
-            if (file) void upload(file);
-          }}
-        />
-      </div>
-      <p className="text-[13px] text-muted-2">A square PNG with a clear background looks best. Saved straight away.</p>
+        ) : null}
+      </PhotoDropzone>
     </FormSection>
   );
 }

@@ -6,24 +6,33 @@ import { lodgeSiteUrl } from "./env";
 const PHOTO = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAEAAAAAwCAIAAAAuKetIAAAAVElEQVR4nO3PQQ3AIADAQEANmhCB/+dE8Lgs6Slo575n/NnSAa8a0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQGtAa0BrQPtp2AVDWp0u0AAAAAElFTkSuQmCC", "base64");
 
 /**
- * The path from an advert: /create with the ad's tags, the lodge's name and
- * WhatsApp, a photo, and the site is live with its demo badges, before any
- * email. Then Claim my site. Automated, the live site comes well inside the
- * 90 seconds a person has.
+ * The path from an advert: /create with the ad's tags, a look, the lodge's
+ * name and WhatsApp, a photo, and the site is live in that look with its demo
+ * badges, before any email. Then Claim my site. Automated, the live site
+ * comes well inside the 90 seconds a person has.
  */
-test("a lodge goes live from an advert in two steps, then the owner claims it", async ({ page }) => {
+test("a lodge goes live from an advert in three steps, then the owner claims it", async ({ page }) => {
   test.setTimeout(120_000);
   const started = Date.now();
   const stamp = Date.now().toString(36);
 
   await page.goto("/create?utm_source=meta&utm_campaign=registration_test");
-  await expect(page.getByText(/Step 1 of 2/)).toBeVisible();
+  await expect(page.getByText(/Step 1 of 3/)).toBeVisible();
+  await expect(page.getByRole("radio", { name: /Shoreline/ })).toHaveAttribute("aria-checked", "true");
+  await page.getByRole("radio", { name: /Rondavel/ }).click();
+  await page.getByRole("button", { name: /Next: your lodge/ }).click();
+
+  await expect(page.getByText(/Step 2 of 3/)).toBeVisible();
+  // Back keeps the look picked, then on again
+  await page.getByRole("button", { name: "Back" }).first().click();
+  await expect(page.getByRole("radio", { name: /Rondavel/ })).toHaveAttribute("aria-checked", "true");
+  await page.getByRole("button", { name: /Next: your lodge/ }).click();
   await page.getByLabel("Lodge name").fill(`Farai Rest ${stamp}`);
   await page.getByLabel("WhatsApp number").fill("077 444 5555");
   await page.getByRole("button", { name: /Next: add photos/ }).click();
 
   await expect(page.getByRole("heading", { name: "Add 3 photos" })).toBeVisible();
-  await expect(page.getByText(/Step 2 of 2/)).toBeVisible();
+  await expect(page.getByText(/Step 3 of 3/)).toBeVisible();
   await page.locator('input[type="file"]').first().setInputFiles({ name: "lodge.png", mimeType: "image/png", buffer: PHOTO });
   await expect(page.getByText("Top", { exact: true })).toBeVisible({ timeout: 30_000 });
   await page.getByRole("button", { name: /Go live/ }).click();
@@ -46,6 +55,10 @@ test("a lodge goes live from an advert in two steps, then the owner claims it", 
   await page.getByLabel("Password", { exact: true }).fill("farai-pass-123");
   await page.getByRole("button", { name: "Claim my site" }).click();
   await expect(page.getByText(`Log in with ${email} from now on`)).toBeVisible();
+
+  // The site went live in the look picked first
+  await page.goto("/dashboard/design");
+  await expect(page.getByLabel("Starter templates").locator("div").filter({ hasText: /^Rondavel/ }).getByText("Live", { exact: true })).toBeVisible();
 
   await page.goto("/dashboard/billing");
   await expect(page.getByText("Your site is live as a free demo")).toBeVisible();

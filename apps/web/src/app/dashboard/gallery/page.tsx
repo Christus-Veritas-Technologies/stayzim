@@ -14,15 +14,14 @@ import { Spinner } from "@stayzim/ui/components/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@stayzim/ui/components/tooltip";
 import { cn } from "@stayzim/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, GripVertical, ImagePlus, Images, Star, Trash2, Upload } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ArrowLeft, ArrowRight, GripVertical, ImagePlus, Images, Star, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { useLodge } from "@/components/dashboard/lodge-provider";
 import { Page, PageHeader, PageSection } from "@/components/dashboard/page";
-import { AddPhotosTile, FullTile, UploadTile } from "@/components/dashboard/photo-tiles";
+import { PhotoDropzone, UploadTile } from "@/components/dashboard/photo-tiles";
 import { usePhotoUploads } from "@/components/dashboard/use-photo-uploads";
-import { WhyDisabled } from "@/components/why-disabled";
 import { GALLERY_GOAL, type Photo } from "@/lib/lodge";
 
 const GALLERY_LIMIT = 30;
@@ -113,7 +112,6 @@ export default function GalleryPage() {
   const [busyDelete, setBusyDelete] = useState(false);
   /** The photo whose move is saving */
   const [moving, setMoving] = useState<string | null>(null);
-  const picker = useRef<HTMLInputElement>(null);
 
   // Follow the saved order (uploads, deletes, another tab)
   useEffect(() => setOrder(lodge.gallery.map((photo) => photo.id)), [lodge.gallery]);
@@ -183,32 +181,26 @@ export default function GalleryPage() {
                 </motion.span>
               ) : null}
             </AnimatePresence>
-            <WhyDisabled reason={full ? `The gallery holds up to ${GALLERY_LIMIT} photos` : null}>
-              <Button onClick={() => picker.current?.click()} disabled={full}>
-                <Upload />
-                <span className="hidden sm:inline">Upload photos</span>
-                <span className="sm:hidden">Upload</span>
-              </Button>
-            </WhyDisabled>
           </>
         }
-      />
-      <input
-        ref={picker}
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        multiple
-        className="sr-only"
-        tabIndex={-1}
-        aria-label="Upload photos"
-        onChange={(event) => {
-          if (event.target.files?.length) uploads.add(event.target.files);
-          event.target.value = "";
-        }}
       />
 
       <PageSection>
         <GoalBanner count={lodge.gallery.length} />
+      </PageSection>
+
+      <PageSection>
+        <PhotoDropzone
+          onFiles={uploads.add}
+          size={lodge.gallery.length < GALLERY_GOAL ? "lg" : "sm"}
+          full={full ? { limit: GALLERY_LIMIT, what: "The gallery" } : undefined}
+          tip={lodge.gallery.length === 0 ? "Rooms, the view and breakfast work well" : undefined}
+          note={
+            lodge.gallery.length < GALLERY_GOAL
+              ? "JPG, PNG or WebP, several at once. Resized on your device first, so they go up on slow data."
+              : `Up to ${GALLERY_LIMIT} photos. Resized on your device first.`
+          }
+        />
       </PageSection>
 
       <PageSection>
@@ -355,7 +347,6 @@ export default function GalleryPage() {
             ))}
           </AnimatePresence>
 
-          <li>{full ? <FullTile limit={GALLERY_LIMIT} /> : <AddPhotosTile onFiles={uploads.add} />}</li>
         </motion.ul>
         <p className="mt-5 hidden text-center text-[12.5px] text-muted-2 max-sm:block">
           <ImagePlus className="mr-1 inline size-3.5" />

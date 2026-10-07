@@ -17,7 +17,7 @@ export type CreatePreviewProps = {
   photos: string[];
 };
 
-const DEFAULT_THEME = "#1E4A3B";
+export const DEFAULT_THEME = "#1E4A3B";
 
 function previewHost(name: string, host?: string) {
   return host ?? `${slugFromName(name) || "yourlodge"}.${SITES_DOMAIN}`;
@@ -66,7 +66,7 @@ export function CreatePreview({ name, host, themeColor = DEFAULT_THEME, photos }
 /** The same on a phone, small enough to sit above the form: the top photo, the name and the address. */
 export function MiniPreview({ name, host, themeColor = DEFAULT_THEME, photos, className }: CreatePreviewProps & { className?: string }) {
   return (
-    <div className={cn("relative mb-5 h-[118px] overflow-hidden rounded-2xl lg:hidden", className)} style={{ backgroundColor: themeColor }} aria-label="Preview of your site">
+    <div className={cn("relative mb-5 h-[118px] overflow-hidden rounded-2xl xl:hidden", className)} style={{ backgroundColor: themeColor }} aria-label="Preview of your site">
       <AnimatePresence>
         {photos[0] ? (
           <motion.img

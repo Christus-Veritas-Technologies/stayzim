@@ -3,11 +3,12 @@
 import { Button } from "@stayzim/ui/components/button";
 import { Field, FormMessage } from "@stayzim/ui/components/field";
 import { Input, InputGroup, InputGroupAddon, InputGroupInput } from "@stayzim/ui/components/input";
+import type { TemplateKey } from "@stayzim/sites";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 
-import { CreateHeading } from "@/components/create/frame";
+import { CreateActions, CreateHeading } from "@/components/create/frame";
 import { MiniPreview } from "@/components/create/preview";
 import { WhatsAppIcon } from "@/components/landing/brand";
 import { api } from "@/lib/api";
@@ -23,23 +24,28 @@ function whatsappDigits(text: string) {
 }
 
 /**
- * Step 1 of 2: the lodge's name and WhatsApp number, nothing else. No email
- * yet: a guest account is made on Next, and the demo goes live straight away.
- * The town, rooms, logo and the rest come later, from the dashboard.
+ * Step 2 of 3: the lodge's name and WhatsApp number, nothing else. No email
+ * yet: a guest account is made on Next, and the demo goes live straight away
+ * in the look picked on step 1. The town, rooms, logo and the rest come
+ * later, from the dashboard.
  */
 export function LodgeStep({
   plan,
+  template,
   name,
   onName,
   signedIn,
   onCreated,
+  onBack,
 }: {
   plan: PlanKey;
+  template: TemplateKey;
   name: string;
   onName: (name: string) => void;
   /** Already has an account (a guest one or a real one) */
   signedIn: boolean;
   onCreated: (lodge: Lodge | null) => void;
+  onBack: () => void;
 }) {
   const [whatsapp, setWhatsapp] = useState("");
   const [errors, setErrors] = useState<{ name?: string; whatsapp?: string }>({});
@@ -68,7 +74,7 @@ export function LodgeStep({
     }
     const result = await api<Lodge>("/api/onboarding/lodge", {
       method: "POST",
-      json: { plan, name: name.trim(), whatsapp: phone.digits, ...signupSource() },
+      json: { plan, template, name: name.trim(), whatsapp: phone.digits, ...signupSource() },
     });
     if (result.data) {
       metaEvent("StartTrial", { value: 0, currency: "USD", predicted_ltv: PLANS[plan].price * 12, content_name: plan.toLowerCase() });
@@ -89,11 +95,11 @@ export function LodgeStep({
   return (
     <>
       <MiniPreview name={name} photos={[]} />
-      <CreateHeading title="Let's make your lodge's website">
-        For lodges, guesthouses, B&amp;Bs and holiday homes in Zimbabwe. Two quick steps, and it&apos;s live.
+      <CreateHeading title="What's your lodge called?">
+        For lodges, guesthouses, B&amp;Bs and holiday homes in Zimbabwe. Your web address is made from the name.
       </CreateHeading>
       <form onSubmit={onSubmit} noValidate>
-        <fieldset disabled={saving} className="flex flex-col gap-4">
+        <fieldset disabled={saving} className="flex flex-col gap-5">
           <FormMessage>{error}</FormMessage>
           <Field label="Lodge name" error={errors.name}>
             <Input
@@ -103,13 +109,13 @@ export function LodgeStep({
               autoComplete="organization"
               maxLength={80}
               autoFocus
-              className="sm:h-11"
+              className="h-12 text-[16px] sm:h-12 sm:text-[15px]"
             />
           </Field>
           <Field label="WhatsApp number" error={errors.whatsapp} hint="Guests tap Book and message you here.">
-            <InputGroup className="sm:h-11">
+            <InputGroup className="h-12 sm:h-12">
               <InputGroupAddon>
-                <WhatsAppIcon size={15} color="#1F7A4D" />
+                <WhatsAppIcon size={16} color="#1F7A4D" />
                 {dialPrefix(whatsapp)}
               </InputGroupAddon>
               <InputGroupInput
@@ -118,23 +124,25 @@ export function LodgeStep({
                 inputMode="tel"
                 autoComplete="tel-national"
                 placeholder="77 123 4567"
+                className="text-[16px] sm:text-[15px]"
               />
             </InputGroup>
           </Field>
-          <Button type="submit" size="lg" className="mt-1 w-full" loading={saving}>
+        </fieldset>
+        <CreateActions onBack={saving ? undefined : onBack} note="Free for 2 days. No card, and no email needed yet.">
+          <Button type="submit" size="lg" className="w-full" loading={saving}>
             {saving ? "Making your site" : "Next: add photos"}
             {saving ? null : <ArrowRight />}
           </Button>
-          <p className="text-center text-[12.5px] leading-[18px] text-muted-2">Free for 2 days. No card, and no email needed yet.</p>
-          {signedIn ? null : (
-            <p className="text-center text-[13px] text-muted">
-              Already on StayZim?{" "}
-              <Link href="/login" className="font-semibold text-brand hover:text-brand-dark">
-                Log in
-              </Link>
-            </p>
-          )}
-        </fieldset>
+        </CreateActions>
+        {signedIn ? null : (
+          <p className="mt-4 text-center text-[13px] text-muted sm:text-left">
+            Already on StayZim?{" "}
+            <Link href="/login" className="font-semibold text-brand hover:text-brand-dark">
+              Log in
+            </Link>
+          </p>
+        )}
       </form>
     </>
   );
