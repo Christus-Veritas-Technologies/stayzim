@@ -58,7 +58,8 @@ export default function DashboardPage() {
   const { data: session } = authClient.useSession();
   const [period, setPeriod] = useState<Period>("7d");
   const { stats, loading, locked, error, retry } = useVisitStats(period, hasAnalytics(lodge));
-  const firstName = session?.user.name.split(" ")[0] ?? "";
+  // A guest account from /create has no real name yet ("Lodge owner")
+  const firstName = session?.user.isAnonymous ? "" : (session?.user.name.split(" ")[0] ?? "");
 
   return (
     <Page>

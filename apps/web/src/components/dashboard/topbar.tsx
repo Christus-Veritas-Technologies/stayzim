@@ -100,7 +100,7 @@ export function Topbar() {
 }
 
 /** Phone header: the lodge, a link to the site, the account menu, then the trial strip. */
-export function MobileHeader({ user }: { user: { name: string; email: string } }) {
+export function MobileHeader({ user }: { user: { name: string; email: string; guest?: boolean } }) {
   const { lodge } = useLodge();
   const status = lodgeStatus(lodge);
 
@@ -124,7 +124,7 @@ export function MobileHeader({ user }: { user: { name: string; email: string } }
         >
           <ArrowUpRight />
         </a>
-        <AccountMenu name={user.name} email={user.email} />
+        <AccountMenu name={user.name} email={user.email} guest={user.guest} />
       </div>
       {lodge.status === "ACTIVE" ? null : (
         <div

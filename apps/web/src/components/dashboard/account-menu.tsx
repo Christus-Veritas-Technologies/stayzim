@@ -14,12 +14,13 @@ import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, Dia
 import { Field } from "@stayzim/ui/components/field";
 import { Input } from "@stayzim/ui/components/input";
 import { cn } from "@stayzim/ui/lib/utils";
-import { KeyRound, LogOut, UserPen } from "lucide-react";
+import { KeyRound, LogOut, ShieldCheck, UserPen } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent, type ReactElement, type ReactNode } from "react";
 import { toast } from "sonner";
 
+import { ClaimSheet } from "@/components/dashboard/claim";
 import { authClient } from "@/lib/auth-client";
 
 export function useSignOut() {
@@ -96,22 +97,29 @@ function NameDialog({ open, onOpenChange, name }: { open: boolean; onOpenChange:
   );
 }
 
-/** Name and email, Your name, Change password, Log out. Opens from the owner's avatar. */
+/**
+ * Name and email, Your name, Change password, Log out. Opens from the owner's
+ * avatar. A guest account (from /create) gets Claim my site instead of the
+ * password and Log out: it has no way back in.
+ */
 export function AccountMenu({
   name,
   email,
+  guest = false,
   trigger,
   side = "bottom",
   align = "end",
 }: {
   name: string;
   email: string;
+  guest?: boolean;
   trigger?: ReactElement;
   side?: "top" | "bottom" | "right";
   align?: "start" | "end";
 }) {
   const signOut = useSignOut();
   const [editing, setEditing] = useState(false);
+  const [claiming, setClaiming] = useState(false);
   return (
     <>
       <DropdownMenu>
@@ -137,18 +145,28 @@ export function AccountMenu({
             <UserPen />
             Your name
           </DropdownMenuItem>
-          <DropdownMenuItem render={<Link href="/set-password" />}>
-            <KeyRound />
-            Change password
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={signOut}>
-            <LogOut />
-            Log out
-          </DropdownMenuItem>
+          {guest ? (
+            <DropdownMenuItem onClick={() => setClaiming(true)}>
+              <ShieldCheck />
+              Claim my site
+            </DropdownMenuItem>
+          ) : (
+            <>
+              <DropdownMenuItem render={<Link href="/set-password" />}>
+                <KeyRound />
+                Change password
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={signOut}>
+                <LogOut />
+                Log out
+              </DropdownMenuItem>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
       {/* A new key each time, so the field starts from the current name */}
       {editing ? <NameDialog key={name} open={editing} onOpenChange={setEditing} name={name} /> : null}
+      {guest ? <ClaimSheet open={claiming} onOpenChange={setClaiming} /> : null}
     </>
   );
 }

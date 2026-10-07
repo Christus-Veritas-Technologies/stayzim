@@ -3,9 +3,10 @@
 import { Skeleton } from "@stayzim/ui/components/skeleton";
 import { TooltipProvider } from "@stayzim/ui/components/tooltip";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useState, type ReactNode } from "react";
 
 import { NavigationTracker } from "@/components/dashboard/back-link";
+import { ClaimBanner } from "@/components/dashboard/claim";
 import { LodgeProvider } from "@/components/dashboard/lodge-provider";
 import { OfflineBanner } from "@/components/dashboard/offline-banner";
 import { Sidebar } from "@/components/dashboard/sidebar";
@@ -76,7 +77,9 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   }
 
   if (isPending || !session || session.user.mustChangePassword) return <DashboardSkeleton />;
-  const user = { name: session.user.name, email: session.user.email };
+  // A guest account from /create has a placeholder email: say so instead
+  const guest = session.user.isAnonymous === true;
+  const user = { name: session.user.name, email: guest ? "Site not claimed yet" : session.user.email, guest };
 
   return (
     <LodgeProvider loading={<DashboardSkeleton />}>
@@ -88,6 +91,9 @@ export function DashboardShell({ children }: { children: ReactNode }) {
             <MobileHeader user={user} />
             <Topbar />
             <OfflineBanner />
+            <Suspense fallback={null}>
+              <ClaimBanner />
+            </Suspense>
             <main className="flex-1 px-4 pt-5 pb-[calc(7rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-7 lg:pt-6 lg:pb-10">{children}</main>
           </div>
           <BottomNav />

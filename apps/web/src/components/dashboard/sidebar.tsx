@@ -40,9 +40,7 @@ function NavItem({ link, collapsed }: { link: NavLink; collapsed: boolean }) {
         collapsed && "w-[38px] justify-center px-0",
       )}
     >
-      {active ? (
-        <motion.span layoutId="sidebar-active" transition={SPRING} className="absolute inset-0 -z-10 rounded-[9px] bg-primary shadow-brand" />
-      ) : null}
+      {active ? <motion.span layoutId="sidebar-active" transition={SPRING} className="absolute inset-0 -z-10 rounded-[9px] bg-primary shadow-brand" /> : null}
       <span className="relative">
         <NavIcon icon={Icon} className="size-[18px]" />
         {collapsed && (link.attention || link.count) ? (
@@ -98,9 +96,7 @@ function NavItem({ link, collapsed }: { link: NavLink; collapsed: boolean }) {
                 )}
               >
                 {child.label}
-                {child.attention ? (
-                  <span className="size-1.5 rounded-full bg-purple" title={child.attention} aria-label={child.attention} />
-                ) : null}
+                {child.attention ? <span className="size-1.5 rounded-full bg-purple" title={child.attention} aria-label={child.attention} /> : null}
                 <NavTrailing>
                   {child.badge || child.count !== undefined ? (
                     <span className="ml-auto flex items-center gap-1.5">
@@ -119,15 +115,7 @@ function NavItem({ link, collapsed }: { link: NavLink; collapsed: boolean }) {
 }
 
 /** Desktop navigation on the grey canvas. Collapses to icons with tooltips. */
-export function Sidebar({
-  user,
-  collapsed,
-  onToggle,
-}: {
-  user: { name: string; email: string };
-  collapsed: boolean;
-  onToggle: () => void;
-}) {
+export function Sidebar({ user, collapsed, onToggle }: { user: { name: string; email: string; guest?: boolean }; collapsed: boolean; onToggle: () => void }) {
   const { lodge } = useLodge();
   const signOut = useSignOut();
   const status = lodgeStatus(lodge);
@@ -172,9 +160,7 @@ export function Sidebar({
       </div>
 
       <nav aria-label="Dashboard" className="flex flex-col gap-1">
-        {collapsed ? null : (
-          <span className="px-2.5 pb-1.5 text-[11px] font-semibold tracking-[0.08em] text-muted-2 uppercase">Menu</span>
-        )}
+        {collapsed ? null : <span className="px-2.5 pb-1.5 text-[11px] font-semibold tracking-[0.08em] text-muted-2 uppercase">Menu</span>}
         <div className={cn("isolate flex flex-col gap-1", collapsed && "items-center")}>
           {links.map((link) => (
             <NavItem key={link.href} link={link} collapsed={collapsed} />
@@ -230,6 +216,7 @@ export function Sidebar({
           <AccountMenu
             name={user.name}
             email={user.email}
+            guest={user.guest}
             side={collapsed ? "right" : "top"}
             align="start"
             trigger={
@@ -250,21 +237,24 @@ export function Sidebar({
               </button>
             }
           />
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <button
-                  type="button"
-                  onClick={signOut}
-                  aria-label="Log out"
-                  className="flex size-8 shrink-0 items-center justify-center rounded-[9px] text-muted-2 transition-colors outline-none hover:bg-white hover:text-ink focus-visible:ring-3 focus-visible:ring-ring/30"
-                />
-              }
-            >
-              <LogOut className="size-[17px]" strokeWidth={1.75} />
-            </TooltipTrigger>
-            <TooltipContent side="right">Log out</TooltipContent>
-          </Tooltip>
+          {/* A guest can't log back in: no logging out until the site is claimed */}
+          {user.guest ? null : (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <button
+                    type="button"
+                    onClick={signOut}
+                    aria-label="Log out"
+                    className="flex size-8 shrink-0 items-center justify-center rounded-[9px] text-muted-2 transition-colors outline-none hover:bg-white hover:text-ink focus-visible:ring-3 focus-visible:ring-ring/30"
+                  />
+                }
+              >
+                <LogOut className="size-[17px]" strokeWidth={1.75} />
+              </TooltipTrigger>
+              <TooltipContent side="right">Log out</TooltipContent>
+            </Tooltip>
+          )}
         </div>
       </div>
     </motion.aside>

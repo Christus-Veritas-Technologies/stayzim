@@ -17,7 +17,9 @@ import { Page, PageHeader, PageSection } from "@/components/dashboard/page";
 import { WhatsAppIcon } from "@/components/landing/brand";
 import { EASE_OUT } from "@/components/motion";
 import { PayCard } from "@/components/dashboard/pay-card";
+import { ClaimButton } from "@/components/dashboard/claim";
 import { api } from "@/lib/api";
+import { authClient } from "@/lib/auth-client";
 import { formatCents, formatMoney, MERCHANT_TONES, type BillingOverview, type MerchantCode } from "@/lib/billing";
 import { formatClock, formatDate, formatLongDate } from "@/lib/format";
 import { demoTimeLeft, dueDate, formatTimeLeft, offlineDate, PLAN_ORDER, PLANS, type Lodge, type PlanKey } from "@/lib/lodge";
@@ -352,6 +354,9 @@ function Plans({ lodge, onPick, canPay }: { lodge: Lodge; onPick: (plan: PlanKey
 
 export default function BillingPage() {
   const { lodge } = useLodge();
+  const { data: session } = authClient.useSession();
+  // A guest account from /create has no email for receipts yet
+  const guest = session?.user.isAnonymous === true;
   const offline = offlineDate(lodge);
   const [plan, setPlan] = useState<PlanKey>(lodge.plan);
   const [overview, setOverview] = useState<BillingOverview | null>(null);
@@ -393,6 +398,12 @@ export default function BillingPage() {
         <div ref={payRef} className="flex scroll-mt-24 flex-col gap-5">
           {overview === null ? (
             <Skeleton className="h-[420px] w-full rounded-[20px]" />
+          ) : guest ? (
+            <section className="flex flex-col items-start gap-3 rounded-[20px] bg-white p-5 shadow-card sm:p-6">
+              <h2 className="font-display text-xl font-semibold">Claim your site to pay</h2>
+              <p className="text-[14px] leading-5 text-muted">Add your email first, so your receipt and invoices have somewhere to go. Your site stays as it is.</p>
+              <ClaimButton size="lg" />
+            </section>
           ) : paynow ? (
             <PayCard plan={plan} onPlanChange={setPlan} onPaid={load} />
           ) : null}
