@@ -7,8 +7,8 @@ import { includesFreeDomain } from "@stayzim/sites";
 import { ArrowUpRight, Globe } from "lucide-react";
 import Link from "next/link";
 
-import type { Lodge } from "@/lib/lodge";
 import { Reveal } from "@/components/motion";
+import { ownerSiteUrl, type Lodge } from "@/lib/lodge";
 import { siteHost, siteUrl, subdomainHost } from "@/lib/site-host";
 
 /** The change requests an owner sends to ask for their own domain: the free .co.zw (Growth, Pro), or one they have. */
@@ -37,7 +37,7 @@ export function WebAddress({ lodge }: { lodge: Lodge }) {
             </Badge>
           ) : null}
         </span>
-        <a href={siteUrl(lodge)} target="_blank" rel="noreferrer" className="truncate text-[17px] font-semibold text-ink hover:text-brand">
+        <a href={ownerSiteUrl(lodge)} target="_blank" rel="noreferrer" className="truncate text-[17px] font-semibold text-ink hover:text-brand">
           {siteHost(lodge)}
         </a>
         {own ? (
@@ -78,7 +78,7 @@ export function WebAddress({ lodge }: { lodge: Lodge }) {
         <CopyButton value={siteUrl(lodge)} size="sm" copiedLabel="Copied">
           Copy link
         </CopyButton>
-        <a href={siteUrl(lodge)} target="_blank" rel="noreferrer" className={buttonVariants({ variant: "outline", size: "sm" })}>
+        <a href={ownerSiteUrl(lodge)} target="_blank" rel="noreferrer" className={buttonVariants({ variant: "outline", size: "sm" })}>
           Open
           <ArrowUpRight />
         </a>

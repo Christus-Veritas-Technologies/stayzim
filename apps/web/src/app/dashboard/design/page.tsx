@@ -36,7 +36,7 @@ import { UnsavedChangesGuard } from "@/components/dashboard/unsaved-changes";
 import { WhatsAppIcon } from "@/components/landing/brand";
 import { Appear, Item, riseIn } from "@/components/motion";
 import { WhyDisabled } from "@/components/why-disabled";
-import { lodgePlace, PLANS, siteHost, siteUrl, type Lodge } from "@/lib/lodge";
+import { lodgePlace, ownerSiteUrl, PLANS, siteHost, siteUrl, type Lodge } from "@/lib/lodge";
 import { OFFLINE_REASON, useOnline } from "@/lib/online";
 import { stayzimChatUrl } from "@/lib/whatsapp";
 
@@ -269,7 +269,7 @@ function HeroText({ lodge, live }: { lodge: Lodge; live: Template }) {
     }
     toast.success("Hero text saved", {
       description: `It's live on ${siteHost(lodge)}.`,
-      action: { label: "View site", onClick: () => window.open(siteUrl(lodge), "_blank", "noreferrer") },
+      action: { label: "View site", onClick: () => window.open(ownerSiteUrl(lodge), "_blank", "noreferrer") },
     });
   }
 

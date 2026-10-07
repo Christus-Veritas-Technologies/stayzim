@@ -14,7 +14,7 @@ import { AccountMenu } from "@/components/dashboard/account-menu";
 import { NavIcon } from "@/components/dashboard/link-pending";
 import { useLodge } from "@/components/dashboard/lodge-provider";
 import { breadcrumb, isActive, lodgeStatus, navLinks } from "@/components/dashboard/nav";
-import { demoTimeLeft, formatTimeLeft, PLANS, siteHost, siteUrl, type Lodge } from "@/lib/lodge";
+import { demoTimeLeft, formatTimeLeft, ownerSiteUrl, PLANS, siteHost, siteUrl, type Lodge } from "@/lib/lodge";
 import { useNow } from "@/lib/use-now";
 
 /** A demo that's still live: purple, with the time left. Everything else that isn't Active is a payment warning. */
@@ -90,7 +90,7 @@ export function Topbar() {
           {siteHost(lodge)}
           <CopyButton value={siteUrl(lodge)} variant="secondary" size="icon-xs" copiedLabel="Link copied" />
         </span>
-        <a href={siteUrl(lodge)} target="_blank" rel="noreferrer" className={buttonVariants({ variant: "outline", size: "sm" })}>
+        <a href={ownerSiteUrl(lodge)} target="_blank" rel="noreferrer" className={buttonVariants({ variant: "outline", size: "sm" })}>
           View site
           <ArrowUpRight />
         </a>
@@ -116,7 +116,7 @@ export function MobileHeader({ user }: { user: { name: string; email: string } }
           </span>
         </span>
         <a
-          href={siteUrl(lodge)}
+          href={ownerSiteUrl(lodge)}
           target="_blank"
           rel="noreferrer"
           aria-label="View your site"

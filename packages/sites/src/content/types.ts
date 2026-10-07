@@ -160,6 +160,8 @@ export type DashboardLodge = {
   slug: string;
   /** The lodge's own domain, e.g. "mistvalleylodge.co.zw", when StayZim has set one up */
   customDomain: string | null;
+  /** Sent along on the owner's View site links, so their own visits on their domain aren't counted */
+  ownerVisitKey: string;
   name: string;
   description: string;
   town: string | null;

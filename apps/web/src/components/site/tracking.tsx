@@ -28,6 +28,9 @@ type BookingState = { site: BookingSite | null; open: (roomId?: string, start?: 
 const BookingContext = createContext<BookingState>({ site: null, open: () => {} });
 
 const VISITOR_KEY = "stayzim.visitor";
+const OWNER_KEY = "stayzim.owner";
+/** The dashboard's View site links end in #stayzim-owner={key} (see ownerSiteUrl) */
+const OWNER_HASH = "#stayzim-owner=";
 
 /** Off in template previews, so owners trying designs don't count as visitors. */
 const TrackingContext = createContext({ slug: "", enabled: true });
@@ -115,12 +118,30 @@ function visitorId() {
 }
 
 /**
+ * The owner's key in this browser, so their own visits on their domain (where
+ * StayZim's cookie doesn't go) aren't counted. A View site link from the
+ * dashboard brings it in the #, which is kept and taken off the address.
+ */
+function ownerKey() {
+  try {
+    if (window.location.hash.startsWith(OWNER_HASH)) {
+      localStorage.setItem(OWNER_KEY, window.location.hash.slice(OWNER_HASH.length));
+      window.history.replaceState(window.history.state, "", `${window.location.pathname}${window.location.search}`);
+    }
+    return localStorage.getItem(OWNER_KEY) ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Tells StayZim about a page view or a Book on WhatsApp tap. `keepalive` lets
- * it finish while WhatsApp opens. Cookies go along so the owner's own visits
- * aren't counted. Never blocks or breaks the page.
+ * it finish while WhatsApp opens. Cookies (and the owner key) go along so the
+ * owner's own visits aren't counted. Never blocks or breaks the page.
  */
 export function track(slug: string, type: "PAGE_VIEW" | "BOOKING_CHAT", roomId?: string) {
   try {
+    const owner = ownerKey();
     void fetch(`${env.NEXT_PUBLIC_SERVER_URL}/api/sites/${slug}/events`, {
       method: "POST",
       credentials: "include",
@@ -132,6 +153,7 @@ export function track(slug: string, type: "PAGE_VIEW" | "BOOKING_CHAT", roomId?:
         path: `${window.location.pathname}${window.location.hash}`,
         roomId,
         referrer: document.referrer || undefined,
+        ownerKey: owner,
       }),
     }).catch(() => {});
   } catch {

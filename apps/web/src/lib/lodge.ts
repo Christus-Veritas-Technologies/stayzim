@@ -25,7 +25,7 @@ import {
   type Plan,
 } from "@stayzim/sites";
 
-import { siteHost } from "@/lib/site-host";
+import { siteHost, siteUrl } from "@/lib/site-host";
 
 /** GET /api/lodge: the dashboard's contract, shared with the server (packages/sites/src/content/types.ts). */
 export type Photo = DashboardPhoto;
@@ -169,6 +169,16 @@ export function formatPhone(digits: string | null) {
 
 export function formatPrice(dollars: number) {
   return `$${dollars.toLocaleString("en-ZW")}`;
+}
+
+/**
+ * The owner's own View site link: on their own domain it carries their key
+ * (after #), so the site knows not to count their visits there. Never for
+ * links they copy or share.
+ */
+export function ownerSiteUrl(lodge: Pick<Lodge, "slug" | "customDomain" | "ownerVisitKey">) {
+  const url = siteUrl(lodge);
+  return lodge.customDomain ? `${url}/#stayzim-owner=${lodge.ownerVisitKey}` : url;
 }
 
 /** The message owners send past guests, with their link in it. */

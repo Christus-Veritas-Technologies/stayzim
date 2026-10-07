@@ -14,6 +14,7 @@ import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 
 import { bookingsToday } from "./bookings";
+import { ownerVisitKey } from "./owner-key";
 import type { AuthVariables } from "./session";
 import { photoSrcSet, uploadUrl } from "./uploads";
 
@@ -80,6 +81,7 @@ export async function lodgeJson(lodgeId: string): Promise<DashboardLodge> {
     id: lodge.id,
     slug: lodge.slug,
     customDomain: lodge.customDomain,
+    ownerVisitKey: ownerVisitKey(lodge.id),
     name: lodge.name,
     description: lodge.description,
     town: lodge.town,

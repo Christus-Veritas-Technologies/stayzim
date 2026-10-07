@@ -35,6 +35,7 @@ import { clientIp } from "../lib/ip";
 import { proContent, publishedPost, publishedPosts } from "../lib/content";
 import { lodgeJson } from "../lib/lodge";
 import { withSession, type AuthVariables } from "../lib/session";
+import { isOwnerVisitKey } from "../lib/owner-key";
 import { newReference } from "../lib/reference";
 import { DASHBOARD_URL, describeDevice, slugForCustomDomain } from "../lib/sites";
 import { validJson } from "../lib/validate";
@@ -48,6 +49,8 @@ const eventSchema = z.object({
   path: z.string().max(512),
   roomId: z.string().max(64).optional(),
   referrer: z.string().max(1024).optional(),
+  /** The owner's browser on their own domain (lib/owner-key.ts) */
+  ownerKey: z.string().max(64).optional(),
 });
 
 /** Guests can send booking requests: the plan has the calendar, and there's a WhatsApp number and a room to book. */
@@ -344,7 +347,8 @@ export const sites = new Hono<{ Variables: AuthVariables }>()
 
   /**
    * A page view or a Book on WhatsApp tap. The owner's (and StayZim staff's)
-   * own visits are skipped, so their numbers are guests only.
+   * own visits are skipped, so their numbers are guests only: by the session
+   * cookie on stayzim.co.zw, by the owner key on the lodge's own domain.
    */
   .post(
     "/:slug/events",
@@ -362,6 +366,7 @@ export const sites = new Hono<{ Variables: AuthVariables }>()
 
       const user = c.get("user");
       if (user && (user.id === lodge.ownerId || user.role === "ADMIN")) return c.body(null, 204);
+      if (isOwnerVisitKey(lodge.id, event.ownerKey)) return c.body(null, 204);
 
       if (event.roomId) {
         const room = await prisma.room.findFirst({ where: { id: event.roomId, lodgeId: lodge.id }, select: { id: true } });
