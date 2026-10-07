@@ -37,7 +37,7 @@ export function DemoBand() {
   return (
     <aside className="bg-[#0C181F] px-4 pt-8 pb-[calc(7rem+env(safe-area-inset-bottom))] text-center text-white lg:pb-8">
       <p className="mx-auto max-w-md text-[15px] leading-6 text-white/80">
-        This is a free demo site, made with <strong className="font-semibold text-white">StayZim</strong> in 5 minutes.
+        This is a free demo site, made with <strong className="font-semibold text-white">StayZim</strong> in about a minute.
       </p>
       <a
         href={SIGNUP}

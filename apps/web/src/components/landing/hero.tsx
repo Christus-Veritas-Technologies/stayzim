@@ -186,6 +186,9 @@ export function Hero() {
         >
           Your own lodge website. Guests book on your site or on WhatsApp.
         </motion.p>
+        <motion.p variants={fadeUp} className="mt-1.5 text-center text-[13.5px] leading-5 text-muted lg:text-[14.5px]">
+          For lodges, guesthouses, B&amp;Bs and holiday homes. Live in about a minute, free for 2 days.
+        </motion.p>
 
         <motion.div
           variants={fadeUp}

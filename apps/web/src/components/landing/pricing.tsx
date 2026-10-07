@@ -115,7 +115,7 @@ export function Pricing() {
           </Item>
           <Item>
             <p className="text-base leading-relaxed text-pretty text-muted lg:text-center lg:text-lg lg:leading-7">
-              Sign up and your site is live in 5 minutes. Keep it live for the price of your plan. No commission on any plan.
+              Your site is live in about a minute. Keep it live for the price of your plan. No commission on any plan. For lodges, guesthouses and holiday homes only.
             </p>
           </Item>
         </Stagger>

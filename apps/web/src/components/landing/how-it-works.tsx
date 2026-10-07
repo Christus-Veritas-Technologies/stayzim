@@ -196,7 +196,7 @@ export function HowItWorks() {
           </div>
           <Item>
             <p className="text-base leading-relaxed text-pretty text-muted lg:text-lg lg:leading-7">
-              Make it yourself in 5 minutes from your phone, or send us your photos on WhatsApp and we'll do it. Guests book you direct. Free for 2 days.
+              Make it yourself in about a minute from your phone (your lodge's name, WhatsApp and 3 photos), or send us your photos on WhatsApp and we'll do it. Guests book you direct. Free for 2 days.
             </p>
           </Item>
         </Stagger>

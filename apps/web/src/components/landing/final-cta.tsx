@@ -38,7 +38,7 @@ export function FinalCta() {
                     <Sparkles size={13} strokeWidth={1.75} />
                   </motion.span>
                 </span>
-                Free for 2 days, live in 5 minutes
+                Free for 2 days, live in about a minute
               </span>
             </Item>
             <Item>
