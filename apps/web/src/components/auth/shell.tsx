@@ -122,8 +122,8 @@ export function NewToStayZim() {
   return (
     <p className="text-[13.5px] leading-5 text-muted">
       New to StayZim?{" "}
-      <Link href="/signup" className="-my-2.5 py-2.5 font-semibold text-brand hover:text-brand-dark">
-        Try it free for 2 days
+      <Link href="/create" className="-my-2.5 py-2.5 font-semibold text-brand hover:text-brand-dark">
+        Make your lodge's site free
       </Link>
     </p>
   );

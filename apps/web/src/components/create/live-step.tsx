@@ -4,15 +4,20 @@ import { includesBookingCalendar } from "@stayzim/sites";
 import { buttonVariants } from "@stayzim/ui/components/button";
 import { CopyButton } from "@stayzim/ui/components/copy-button";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowRight, ArrowUpRight, PartyPopper } from "lucide-react";
+import { ArrowRight, ArrowUpRight, CircleCheck, PartyPopper, ShieldCheck } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 
+import { ClaimForm } from "@/components/create/claim-form";
+import { CreateHeading } from "@/components/create/frame";
 import { useLodge } from "@/components/dashboard/lodge-provider";
 import { WhatsAppIcon } from "@/components/landing/brand";
 import { EASE_OUT } from "@/components/motion";
-import { StepHeading } from "@/components/start/frame";
+import { authClient } from "@/lib/auth-client";
 import { formatClock, formatLongDate } from "@/lib/format";
 import { shareMessage, siteHost, siteUrl } from "@/lib/lodge";
+import { metaCreateStep } from "@/lib/meta-pixel";
+import { trackCreateStep } from "@/lib/track";
 import { whatsappTextUrl } from "@/lib/whatsapp";
 
 const BURST = ["#0096BE", "#25D366", "#755EAF", "#F2A65A", "#78CBE7", "#0096BE", "#25D366", "#F2A65A"];
@@ -40,10 +45,26 @@ function Burst() {
   );
 }
 
-/** Step 4: the site is live. Open it, share it, then on to the dashboard. */
+/**
+ * The site is live: open it, share it, and "Claim my site" (an email and
+ * password, or Google) so it's theirs to log in to from any phone. Rooms,
+ * the logo and the rest are on the dashboard's checklist.
+ */
 export function LiveStep() {
   const { lodge } = useLodge();
+  const { data: session } = authClient.useSession();
+  const [claimedAs, setClaimedAs] = useState<string | null>(null);
+  const tracked = useRef(false);
   const url = siteUrl(lodge);
+  const guest = session?.user.isAnonymous === true && claimedAs === null;
+
+  useEffect(() => {
+    if (tracked.current) return;
+    tracked.current = true;
+    trackCreateStep("live");
+    metaCreateStep("live");
+  }, []);
+
   return (
     <>
       <div className="relative mb-4 flex size-14 items-center justify-center">
@@ -57,12 +78,10 @@ export function LiveStep() {
         </motion.span>
         <Burst />
       </div>
-      <StepHeading title={`${lodge.name} is live`}>
-        {includesBookingCalendar(lodge.plan)
-          ? "Guests can see your rooms and book on your site or on WhatsApp right now."
-          : "Guests can see your rooms and book on WhatsApp right now."}
+      <CreateHeading title={`${lodge.name} is live`}>
+        {includesBookingCalendar(lodge.plan) ? "Guests can book on your site or on WhatsApp right now." : "Guests can book on WhatsApp right now."}
         {lodge.demoEndsAt ? ` It's a free demo until ${formatLongDate(lodge.demoEndsAt)} at ${formatClock(lodge.demoEndsAt)}.` : null}
-      </StepHeading>
+      </CreateHeading>
 
       <div className="flex items-center gap-2 rounded-2xl border border-line bg-surface-2 p-2 pl-4">
         <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-ink">{siteHost(lodge)}</span>
@@ -81,12 +100,33 @@ export function LiveStep() {
           Share on WhatsApp
         </a>
       </div>
-      <Link href="/dashboard" className={buttonVariants({ size: "lg", className: "mt-2.5 w-full" })}>
-        Go to my dashboard
+
+      {guest ? (
+        <section className="mt-6 rounded-2xl border border-brand/25 bg-brand-wash/40 p-4 sm:p-5" aria-labelledby="claim-title">
+          <div className="mb-4 flex gap-3">
+            <ShieldCheck className="mt-0.5 size-5 shrink-0 text-brand" />
+            <div>
+              <h2 id="claim-title" className="text-[16px] font-semibold text-ink">
+                Claim your site
+              </h2>
+              <p className="text-[13.5px] leading-5 text-muted">Add your email, so it&apos;s yours to log in to from any phone. Your site stays exactly as it is.</p>
+            </div>
+          </div>
+          <ClaimForm onClaimed={setClaimedAs} />
+        </section>
+      ) : claimedAs ? (
+        <p className="mt-5 flex items-center gap-2 rounded-xl bg-success-wash px-3.5 py-3 text-[13.5px] text-success">
+          <CircleCheck className="size-4 shrink-0" />
+          Saved. Log in with {claimedAs} from now on.
+        </p>
+      ) : null}
+
+      <Link href="/dashboard" className={buttonVariants({ size: "lg", variant: guest ? "ghost" : "default", className: "mt-4 w-full" })}>
+        {guest ? "Not now, open my dashboard" : "Go to my dashboard"}
         <ArrowRight />
       </Link>
-      <p className="mt-4 text-center text-[12.5px] leading-[18px] text-muted-2">
-        Your site shows small &quot;demo&quot; badges until you pay for a plan. Pay any time from Billing.
+      <p className="mt-3 text-center text-[12.5px] leading-[18px] text-muted-2">
+        Rooms, prices, your town and logo are next, on your dashboard. Small &quot;demo&quot; badges show until you pay for a plan.
       </p>
     </>
   );

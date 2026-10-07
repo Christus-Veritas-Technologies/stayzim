@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { slugForCustomDomain } from "@/lib/custom-domains";
 import { isStayZimHost, lodgeSlugFromHost, mainSiteRedirect, siteUrl } from "@/lib/site-host";
 
-const SIGNED_IN_ONLY = ["/dashboard", "/set-password", "/admin", "/start"];
+const SIGNED_IN_ONLY = ["/dashboard", "/set-password", "/admin"];
 
 /** Shows a lodge's site: /sites/{slug} (lodge sites are one page; other paths 404 there). */
 function lodgeSite(request: NextRequest, slug: string) {
@@ -48,9 +48,7 @@ export async function proxy(request: NextRequest) {
 
   if (SIGNED_IN_ONLY.some((path) => pathname === path || pathname.startsWith(`${path}/`))) {
     if (!getSessionCookie(request, { cookiePrefix: "stayzim" })) {
-      // The start screen comes after sign-up, so that's where someone without an account belongs
-      const to = pathname === "/start" ? `/signup${request.nextUrl.search}` : "/login";
-      return NextResponse.redirect(new URL(to, request.url));
+      return NextResponse.redirect(new URL("/login", request.url));
     }
   }
   return NextResponse.next();

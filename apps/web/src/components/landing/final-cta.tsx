@@ -48,13 +48,13 @@ export function FinalCta() {
             </Item>
             <Item>
               <p className="max-w-[400px] text-base leading-relaxed text-muted lg:text-lg lg:leading-7">
-                Sign up and make your site yourself in 5 minutes, or message us and we'll help. It's live before you pay anything.
+                Your lodge's name, WhatsApp number and 3 photos: your site is live in about a minute, before you pay anything. Made for lodges, guesthouses and holiday homes.
               </p>
             </Item>
           </div>
           <Item className="flex flex-col gap-2.5 sm:flex-row sm:gap-3">
             <TrackedLink
-              href="/signup"
+              href="/create"
               track={{ cta: "final_signup", section: "final_cta" }}
               className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-brand px-7 text-[17px] font-semibold whitespace-nowrap text-white no-underline shadow-[0_10px_24px_-10px_rgba(0,125,162,0.8)] hover:bg-brand-dark hover:text-white"
             >

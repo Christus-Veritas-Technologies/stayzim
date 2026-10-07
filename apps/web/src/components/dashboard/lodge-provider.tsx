@@ -42,7 +42,7 @@ export function LodgeProvider({
   children,
 }: {
   loading: ReactNode;
-  /** Shown when the owner has no lodge yet; by default they're sent to /start to make one */
+  /** Shown when the owner has no lodge yet; by default they're sent to /create to make one */
   missing?: ReactNode;
   children: ReactNode;
 }) {
@@ -83,7 +83,7 @@ export function LodgeProvider({
 
   if (state.kind === "loading") return loading;
 
-  if (state.kind === "missing") return missing ?? <SendToStart fallback={loading} router={router} />;
+  if (state.kind === "missing") return missing ?? <SendToCreate fallback={loading} router={router} />;
 
   if (state.kind === "error") {
     return (
@@ -116,9 +116,9 @@ export function LodgeProvider({
 }
 
 /** A signed-in owner without a lodge (they signed up, then left before making it): back to /start. */
-function SendToStart({ fallback, router }: { fallback: ReactNode; router: ReturnType<typeof useRouter> }) {
+function SendToCreate({ fallback, router }: { fallback: ReactNode; router: ReturnType<typeof useRouter> }) {
   useEffect(() => {
-    router.replace("/start");
+    router.replace("/create");
   }, [router]);
   return fallback;
 }

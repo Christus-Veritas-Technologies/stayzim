@@ -135,8 +135,8 @@ export const auth = betterAuth({
       "/sign-in/email": { window: 10 * 60, max: 5 },
       // Sign-ups from one IP: enough for a family sharing a phone, not for a script
       "/sign-up/email": { window: 10 * 60, max: 5 },
-      // Each /create visit that makes a demo starts with one
-      "/sign-in/anonymous": { window: 10 * 60, max: 5 },
+      // Each /create visit that makes a demo starts with one; many phones share a mobile network's IP
+      "/sign-in/anonymous": { window: 10 * 60, max: 30 },
       "/request-password-reset": { window: 10 * 60, max: 3 },
       "/change-password": { window: 10 * 60, max: 5 },
     },

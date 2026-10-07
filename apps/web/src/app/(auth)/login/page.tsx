@@ -27,9 +27,10 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(() => oauthErrorMessage(params.get("error")));
   const { data: session } = authClient.useSession();
 
-  // Already logged in on this device (e.g. a bookmarked login page): skip the form
+  // Already logged in on this device (e.g. a bookmarked login page): skip the form.
+  // Not a guest from /create: they're here to log in to their real account (which takes the site across).
   useEffect(() => {
-    if (session) router.replace(homeFor(session.user));
+    if (session && !session.user.isAnonymous) router.replace(homeFor(session.user));
   }, [router, session]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {

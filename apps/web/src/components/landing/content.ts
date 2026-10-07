@@ -164,7 +164,7 @@ export const FOOTER_COLUMNS = [
     title: "For owners",
     links: [
       { label: "Log in", href: "/login" },
-      { label: "Try it free", href: "/signup" },
+      { label: "Try it free", href: "/create" },
       { label: "Message us", whatsapp: "general" },
     ],
   },

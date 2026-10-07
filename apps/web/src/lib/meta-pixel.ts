@@ -21,6 +21,16 @@ type MetaEvent = "PageView" | "Contact" | "CompleteRegistration" | "StartTrial" 
 
 type Fbq = (command: "track" | "init", name: string, params?: Record<string, unknown>) => void;
 
+/** A /create step for Meta's funnel ("CreateStep", custom): where people stop. */
+export function metaCreateStep(step: string) {
+  if (!PIXEL_ON || typeof window === "undefined") return;
+  try {
+    (window as unknown as { fbq?: (command: "trackCustom", name: string, params?: Record<string, unknown>) => void }).fbq?.("trackCustom", "CreateStep", { step });
+  } catch {
+    // Ads tracking is never worth an error
+  }
+}
+
 /** Reports an event to the Pixel, when it's on. Never throws. */
 export function metaEvent(name: MetaEvent, params?: Record<string, unknown>) {
   if (!PIXEL_ON || typeof window === "undefined") return;

@@ -24,17 +24,22 @@ let cachedEnabled: boolean | null = null;
 /**
  * "Continue with Google", shown only when the server has Google set up. It
  * signs in the owner with that Google email, or creates their account (a new
- * owner goes on to `newUserPath`, the start screen). Errors come back to
+ * owner goes on to `newUserPath`, /create). From a guest account it claims the
+ * guest's site. Errors come back to
  * `errorPath` as `?error=…`.
  */
 export function GoogleSignIn({
   disabled = false,
   onStart,
-  newUserPath = "/start",
+  callbackPath = "/dashboard",
+  newUserPath = "/create",
   errorPath = "/login",
 }: {
   disabled?: boolean;
   onStart?: () => void;
+  /** Where an existing account lands */
+  callbackPath?: string;
+  /** Where a new account lands: /create makes its lodge */
   newUserPath?: string;
   errorPath?: string;
 }) {
@@ -59,7 +64,7 @@ export function GoogleSignIn({
       provider: "google",
       // No account for this Google email yet: make one (from the login screen too)
       requestSignUp: true,
-      callbackURL: `${origin}/dashboard`,
+      callbackURL: `${origin}${callbackPath}`,
       newUserCallbackURL: `${origin}${newUserPath}`,
       errorCallbackURL: `${origin}${errorPath}`,
     });

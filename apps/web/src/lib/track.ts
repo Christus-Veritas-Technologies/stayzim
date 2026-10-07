@@ -4,6 +4,9 @@ const VISITOR_KEY = "stayzim.visitor";
 const UTM_KEY = "stayzim.utm";
 
 type Utm = { utmSource?: string; utmMedium?: string; utmCampaign?: string };
+/** Where a sign-up came from, saved with the lodge: the ad's utm_* tags and the site that sent them. */
+export type SignupSource = Utm & { utmContent?: string; referrer?: string };
+const SOURCE_KEY = "stayzim.source";
 
 export type CtaEvent = {
   /** Which button, e.g. "hero_whatsapp" */
@@ -58,7 +61,44 @@ function send(body: Record<string, unknown>) {
   });
 }
 
+/**
+ * The first place this visitor came from in this session (an ad link's utm_*,
+ * or another site), so a lodge made at /create after browsing the landing page
+ * still knows it came from Meta.
+ */
+export function signupSource(): SignupSource {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const external = document.referrer && !document.referrer.startsWith(window.location.origin) ? document.referrer : undefined;
+    const fromUrl: SignupSource = {
+      utmSource: params.get("utm_source") ?? undefined,
+      utmMedium: params.get("utm_medium") ?? undefined,
+      utmCampaign: params.get("utm_campaign") ?? undefined,
+      utmContent: params.get("utm_content") ?? undefined,
+      referrer: external,
+    };
+    const saved = JSON.parse(sessionStorage.getItem(SOURCE_KEY) ?? "null") as SignupSource | null;
+    if (saved) return saved;
+    sessionStorage.setItem(SOURCE_KEY, JSON.stringify(fromUrl));
+    return fromUrl;
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * One step of /create, for the drop-off funnel: open → lodge (name and
+ * WhatsApp done, demo made) → photo (first photo up) → live → claim.
+ * Stored as CTA_CLICK events in the "create" section.
+ */
+export type CreateStep = "open" | "lodge" | "photo" | "live" | "claim";
+
+export function trackCreateStep(step: CreateStep) {
+  send({ type: "CTA_CLICK", visitorId: visitorId(), path: "/create", cta: `create_${step}`, section: "create", ...utm() });
+}
+
 export function trackPageView() {
+  signupSource();
   send({
     type: "PAGE_VIEW",
     visitorId: visitorId(),

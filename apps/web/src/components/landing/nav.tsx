@@ -114,7 +114,7 @@ export function Nav() {
             Log in
           </TrackedLink>
           <TrackedLink
-            href="/signup"
+            href="/create"
             track={{ cta: "nav_signup", section: "nav" }}
             className="inline-flex h-10 items-center rounded-full bg-brand px-4 text-[13.5px] font-semibold whitespace-nowrap text-white no-underline hover:bg-brand-dark hover:text-white lg:h-11 lg:px-5 lg:text-[15px]"
           >

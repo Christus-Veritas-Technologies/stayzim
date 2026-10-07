@@ -67,7 +67,7 @@ function PlanCard({ plan }: { plan: Plan }) {
       </p>
 
       <TrackedLink
-        href={`/signup?plan=${plan.id}`}
+        href={`/create?plan=${plan.id}`}
         track={{ cta: `pricing_${plan.id}`, section: "pricing", plan: plan.id }}
         className={`inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full px-[22px] py-2.5 text-center text-[15.5px] leading-5 font-semibold text-balance no-underline ${
           featured

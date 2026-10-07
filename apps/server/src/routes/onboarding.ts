@@ -94,8 +94,9 @@ export const onboarding = new Hono<{ Variables: AuthVariables }>()
   /** Creates the owner's lodge as a demo: live now, offline in DEMO_DAYS unless paid for. */
   .post(
     "/lodge",
-    // A real person makes one lodge; this only stops scripts
-    rateLimiter({ windowMs: 60 * 60 * 1000, limit: 5, standardHeaders: "draft-7", keyGenerator: clientIp }),
+    // A real person makes one lodge; this only stops scripts. Generous, because many
+    // phones on one mobile network share an IP address (carrier NAT).
+    rateLimiter({ windowMs: 60 * 60 * 1000, limit: 30, standardHeaders: "draft-7", keyGenerator: clientIp }),
     validJson(lodgeSchema),
     async (c) => {
       const user = c.get("user")!;
@@ -144,7 +145,7 @@ export const onboarding = new Hono<{ Variables: AuthVariables }>()
   /** After "Claim my site": the welcome email goes to the address they just gave. */
   .post(
     "/claimed",
-    rateLimiter({ windowMs: 60 * 60 * 1000, limit: 3, standardHeaders: "draft-7", keyGenerator: clientIp }),
+    rateLimiter({ windowMs: 60 * 60 * 1000, limit: 30, standardHeaders: "draft-7", keyGenerator: clientIp }),
     async (c) => {
       const user = c.get("user")!;
       if (user.isAnonymous) throw new HTTPException(400, { message: "Add your email first." });

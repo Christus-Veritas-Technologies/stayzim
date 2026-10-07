@@ -192,7 +192,7 @@ export function Hero() {
           className="mt-6 flex w-full flex-col gap-2.5 sm:w-auto sm:flex-row sm:items-center sm:gap-3 lg:mt-[30px]"
         >
           <TrackedLink
-            href="/signup"
+            href="/create"
             track={{ cta: "hero_signup", section: "hero" }}
             className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-brand px-7 text-[17px] font-semibold whitespace-nowrap text-white no-underline shadow-[0_10px_24px_-10px_rgba(0,125,162,0.8)] hover:bg-brand-dark hover:text-white"
           >
