@@ -5,6 +5,9 @@ import { smtpOptions } from "./config";
 
 export * from "./config";
 
+/** Guest accounts from /create get a placeholder email here until the owner claims the site; nothing is sent to it. */
+export const GUEST_EMAIL_DOMAIN = "guest.stayzim.co.zw";
+
 export type Email = {
   to: string;
   subject: string;
@@ -43,6 +46,7 @@ function getTransporter() {
  * Throws if the SMTP server rejects the message.
  */
 export async function sendEmail(email: Email): Promise<void> {
+  if (email.to.toLowerCase().endsWith(`@${GUEST_EMAIL_DOMAIN}`)) return;
   const smtp = getTransporter();
   if (!smtp) {
     console.log(

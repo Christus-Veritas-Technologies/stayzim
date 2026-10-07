@@ -18,6 +18,9 @@ model User {
   /// Set when an account is created with a temporary password; the dashboard
   /// stays closed until the owner picks their own.
   mustChangePassword Boolean   @default(false) @map("must_change_password")
+  /// A guest account from /create: it owns a demo before the owner gives an email
+  /// ("Claim my site"). Its email is a placeholder at GUEST_EMAIL_DOMAIN, never mailed.
+  isAnonymous        Boolean   @default(false) @map("is_anonymous")
   createdAt          DateTime  @default(now()) @map("created_at")
   updatedAt          DateTime  @updatedAt @map("updated_at")
   sessions           Session[]

@@ -1,5 +1,5 @@
 import { env } from "@/lib/public-env";
-import { inferAdditionalFields } from "better-auth/client/plugins";
+import { anonymousClient, inferAdditionalFields } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 
 /** Talks to better-auth on apps/server (`/api/auth/*`). The session lives in an httpOnly cookie. */
@@ -12,8 +12,11 @@ export const authClient = createAuthClient({
       user: {
         role: { type: "string", input: false },
         mustChangePassword: { type: "boolean", input: false },
+        isAnonymous: { type: "boolean", input: false },
       },
     }),
+    // Guest accounts for /create: the demo comes first, the email after ("Claim my site")
+    anonymousClient(),
   ],
 });
 

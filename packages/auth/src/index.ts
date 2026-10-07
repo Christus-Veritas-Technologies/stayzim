@@ -1,9 +1,10 @@
 import prisma from "@stayzim/db";
 import { env } from "@stayzim/env/server";
-import { sendEmail } from "@stayzim/mail";
+import { GUEST_EMAIL_DOMAIN, sendEmail } from "@stayzim/mail";
 import { passwordChangedEmail, resetPasswordEmail } from "@stayzim/mail/templates";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import { anonymous } from "better-auth/plugins";
 
 // Optional in the shared env schema (see packages/env/src/server.ts), required here
 if (!env.BETTER_AUTH_SECRET) {
@@ -94,6 +95,22 @@ export const auth = betterAuth({
     },
   },
 
+  plugins: [
+    // /create makes the demo first and asks who you are after ("Claim my site"): a guest
+    // account owns the lodge until then. Signing up or in from it moves the lodge across.
+    anonymous({
+      emailDomainName: GUEST_EMAIL_DOMAIN,
+      generateName: () => "Lodge owner",
+      onLinkAccount: async ({ anonymousUser, newUser }) => {
+        const lodge = await prisma.lodge.findUnique({ where: { ownerId: anonymousUser.user.id }, select: { id: true } });
+        if (!lodge) return;
+        // One lodge per owner: someone who has one already keeps theirs, and this demo stays with the guest account
+        if (await prisma.lodge.findUnique({ where: { ownerId: newUser.user.id }, select: { id: true } })) return;
+        await prisma.lodge.update({ where: { id: lodge.id }, data: { ownerId: newUser.user.id } });
+      },
+    }),
+  ],
+
   user: {
     additionalFields: {
       role: { type: "string", defaultValue: "OWNER", input: false },
@@ -118,6 +135,8 @@ export const auth = betterAuth({
       "/sign-in/email": { window: 10 * 60, max: 5 },
       // Sign-ups from one IP: enough for a family sharing a phone, not for a script
       "/sign-up/email": { window: 10 * 60, max: 5 },
+      // Each /create visit that makes a demo starts with one
+      "/sign-in/anonymous": { window: 10 * 60, max: 5 },
       "/request-password-reset": { window: 10 * 60, max: 3 },
       "/change-password": { window: 10 * 60, max: 5 },
     },

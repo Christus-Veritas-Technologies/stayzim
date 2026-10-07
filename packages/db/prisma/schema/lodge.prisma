@@ -92,6 +92,13 @@ model Lodge {
   /// Set the first time the owner copies or shares their link (setup checklist)
   linkSharedAt DateTime? @map("link_shared_at")
 
+  /// Where the owner came from when they made it at /create (utm_* on the link, and the referrer)
+  utmSource      String? @map("utm_source")
+  utmMedium      String? @map("utm_medium")
+  utmCampaign    String? @map("utm_campaign")
+  utmContent     String? @map("utm_content")
+  signupReferrer String? @map("signup_referrer")
+
   ownerId String @unique @map("owner_id")
   owner   User   @relation(fields: [ownerId], references: [id], onDelete: Restrict)
 
