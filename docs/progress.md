@@ -168,7 +168,10 @@ The rule behind all of it: every lodge and every template has the same data shap
 
 ## Next up
 
-**Start with [create-redesign.md](create-redesign.md#whats-left):** the production "no available server" on lodge subdomains (needs the VPS), a Preview on each design tile once the demo lodges are seeded, and a funnel event for the look step.
+**Start with [create-redesign.md](create-redesign.md#whats-left):**
+
+- Redeploy, then run `deploy/check-routing.sh` on the VPS for the "no available server" on lodge subdomains, and fix what it reports.
+- Seed the example lodges in production. The landing page's examples and the design previews on `/create` use them.
 
 Everything else that could be done without the user is done (the CMS and bookings too). What's left needs them (see [Blocked on](#blocked-on--needs-a-decision)):
 
@@ -398,6 +401,12 @@ Newest first. One line per piece of work that landed on `main`.
 - `/create` in three steps, led by the look: the nine designs first (the plan comes with the design, its price shown small), then the lodge's name and WhatsApp, then photos. The step frame follows the user's references and the design system: steps down the side, dots on phones, Step N of 3 with a bar, one big question per screen, Back, sticky Next. The API takes the picked `template`.
 - One photo dropzone for the whole app (`PhotoDropzone`): `/create`, Gallery, the room sheet and the logo. Photos on `/create` come off with ✕.
 - Docs: [create-redesign.md](create-redesign.md) (plan, what's left, the "no available server" diagnosis) and a Troubleshooting section in deployment.md.
+- Second pass:
+  - A Preview on each design at `/create`, on an example lodge, with Use {design}.
+  - The look step in the funnel, plus `pnpm --filter server funnel`.
+  - Add a caption on Gallery photos.
+  - Lodge-site routing that works on Traefik v2 and v3 (one `PathPrefix(`/`)` catch-all).
+  - `deploy/check-routing.sh`, tested against Traefik v2.11 and v3.6.
 - One sign-up flow for ads and everyone else: `/create` (name + WhatsApp, then 3 photos, live in about 90 seconds), guest accounts until Claim my site, ad tags on each lodge, drop-off events per step, lighter retries for photos on weak lines, lodges-only wording. Deploys onto an empty db-push database recover by themselves.
 - Tier 1 and the small gaps: a foreign phone number no longer shows "+263 +44…"; the "Coming to Growth" box is gone; 12 months cost 10%, 17% or 30% less (Starter $216, Growth $398, Pro $630, rounded down); Guest info no longer opens as edited; Back asks before losing edits; owner visits on their own domain aren't counted; previews open the booking sheet; plan changes carry the time left over; the Meta Pixel is hard-coded.
 - Guests book on Growth and Pro sites (date picker, full nights greyed out); the owner confirms, or turns on Confirm bookings automatically. Classic leads with Book now, WhatsApp second; Starter stays on WhatsApp.

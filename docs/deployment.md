@@ -126,7 +126,7 @@ Install Coolify on the VPS (Ubuntu 24.04, 2 vCPU, 4 GB RAM is plenty to start). 
    - service `server`: `https://api.stayzim.co.zw`;
    - `db`: none.
 
-   Lodge sites need no domain here: the `web` service's Traefik labels in the compose file send every other `*.stayzim.co.zw` host to it, with lower priority than the named domains. If Coolify adds Let's Encrypt to these routes, switch that off: Cloudflare and the origin certificate handle TLS.
+   Lodge sites need no domain here: the `web` service's Traefik labels in the compose file send every other host to it (`PathPrefix(`/`)` at priority 1, the same in Traefik v2 and v3), with lower priority than the named domains. Don't add `*.stayzim.co.zw` as a domain. If Coolify adds Let's Encrypt to these routes, switch that off: Cloudflare and the origin certificate handle TLS.
 
 4. **Environment variables:**
    - Paste [`deploy/.env.example`](../deploy/.env.example) and fill it in.
@@ -228,7 +228,7 @@ Try a restore now and then. One was tested here on the dev database, and the row
      - **Per lodge:** add the domain as a Custom Hostname.
      - **At the domain's DNS:** `CNAME @ → sites.stayzim.co.zw` (or ALIAS or flattening for the apex) and `CNAME www → sites.stayzim.co.zw`, plus the TXT record Cloudflare shows to prove ownership.
 
-     Cloudflare issues and renews the certificate. Visitors' countries and real IPs keep working. Traefik sends these hosts to `web` through the catch-all route in `deploy/compose.yaml` (`stayzim-custom-domains`).
+     Cloudflare issues and renews the certificate. Visitors' countries and real IPs keep working. Traefik sends these hosts to `web` through the catch-all route in `deploy/compose.yaml` (`stayzim-sites`).
 
      **Check on the first one:** Cloudflare connects to the server with the lodge's domain as the hostname, and the origin certificate only covers `stayzim.co.zw`. If the site shows a 526 error, set that Custom Hostname's SSL to Full (not strict), or issue an origin certificate that covers the domain.
    - **Coolify (fallback):** point `A @` and `A www` at the VPS IP, then add `https://mistvalleylodge.co.zw,https://www.mistvalleylodge.co.zw` to the `web` service's domains, so Traefik gets a Let's Encrypt certificate. With no Cloudflare in front, that domain shows no visitor countries.
@@ -250,26 +250,25 @@ How it works:
 
 ## Troubleshooting
 
-### A lodge site shows "no available server"
+### A lodge site shows "no available server", or a 404
 
-That's Traefik's 503:
+Run the check script on the VPS (Coolify → Servers → your server → Terminal):
 
-- A route matched the host, but the service behind it has no container to send to.
-- A host that matched nothing would show `404 page not found` instead.
-- DNS, Cloudflare and the certificate are usually fine when you see this.
+```bash
+bash check-routing.sh mistvalley stayzim.co.zw   # deploy/check-routing.sh from the repo
+```
 
-What to check:
+It only reads. It lists what's wrong and how to fix it.
 
-1. **The web container's health.**
-   - `docker ps` must show `(healthy)`. Traefik leaves out containers that are unhealthy or still starting.
-   - The image's `HEALTHCHECK` fetches `/` on port 9999.
-2. **One resource only.**
-   - Only one running container may carry the `stayzim-sites` and `stayzim-custom-domains` labels.
-   - Stop any older or separate web application.
-3. **Web deployed from `deploy/compose.yaml`.**
-   - The lodge-site labels live there.
-   - If web runs as its own Coolify application, copy the `traefik.*` labels from the compose file's `web` service into its Container Labels, and remove any `*.stayzim.co.zw` domain typed into Coolify.
-4. **The network.**
-   - If web sits on more than one Docker network, add `traefik.docker.network=coolify` (or whichever network the proxy shares with it).
+What Traefik's answers mean (tested on v2.11 and v3.6):
 
-The commands, and why each cause fits, are in [create-redesign.md](create-redesign.md#the-production-bug-no-available-server).
+- **`no available server` (503):** a route matched, but Traefik's own health check (a `loadbalancer.healthcheck` label, or a `healthCheck` in Coolify's dynamic configuration) marked web down. Remove that check: the image's Docker `HEALTHCHECK` is all that's needed.
+- **`404 page not found`:** no route matched. Causes, by how often they come up:
+  - **An old deploy.** Before 7 October the compose file used a `HostRegexp` rule that Traefik v2 never matches. Redeploy from `main`.
+  - **Web not healthy yet.** `docker ps` must show `(healthy)`.
+  - **Missing labels.** Web runs as a separate Coolify application without the compose file's labels. Copy the `traefik.*` labels of the `web` service into its Container Labels, or deploy from `deploy/compose.yaml`.
+  - **An old Traefik on a new Docker.** Traefik older than v3.6 can't read containers from Docker 29 or newer: update the proxy.
+- **`Gateway Timeout` (504):** Traefik picked a network it can't reach web on. Add `traefik.docker.network=coolify`, or whichever network the proxy shares with web.
+- **Only one web:** only one running container may carry the `stayzim-sites` labels. Stop older copies.
+
+The tests behind this are in [create-redesign.md](create-redesign.md#the-production-bug-no-available-server).

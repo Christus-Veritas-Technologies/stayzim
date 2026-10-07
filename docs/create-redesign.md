@@ -65,7 +65,7 @@ Commits on `main`: `ddea09e` (server) and `d04ee19` (web).
   - the check pops;
   - tiles lift on hover.
 - **API:** `POST /api/onboarding/lodge` takes an optional `template` (one of `TEMPLATE_KEYS`). It answers 400 "That design needs a bigger plan." if the plan sent doesn't include it, and falls back to the plan's default design when there's none (`apps/server/src/routes/onboarding.ts`).
-- **Funnel:** unchanged event names (`create_open`, `create_lodge`, `create_photo`, `create_live`, `create_claim`). There's no event for the look step yet; see [what's left](#whats-left).
+- **Funnel:** `create_open`, `create_look` (added in the second pass), `create_lodge`, `create_photo`, `create_live`, `create_claim`.
 
 ### One photo dropzone for the whole app
 
@@ -107,73 +107,72 @@ Used in:
 
 **Symptom:** on stayzim.co.zw, Open my site on the live screen (`https://{slug}.stayzim.co.zw`) shows Traefik's plain-text page `no available server`. The certificate is fine and the request reaches the VPS.
 
-**What the message means:** it's Traefik's 503.
+**What each Traefik answer means.** Tested on 7 October against Traefik v2.11 and v3.6 in Docker, with the same labels as `deploy/compose.yaml` and a stand-in web container:
 
-- A router **did** match the host (with no match you'd get `404 page not found`), but the service behind it has **no server to send to**.
-- So the DNS, Cloudflare and the `stayzim-sites` HostRegexp rule are probably fine. The service side is what's broken.
+| What you see | Cause seen in the tests |
+| --- | --- |
+| `no available server` (503) | A route matched, but Traefik's **own health check** on the service (`loadbalancer.healthcheck` labels, or a `healthCheck` in a dynamic configuration file) marked every server down. Nothing else gave exactly this text |
+| `404 page not found` | No route matched. Either the labels are missing; or web isn't `healthy` yet (Traefik leaves it out); or the rule is one this Traefik can't read: the old v3-only `HostRegexp` rule never matches on Traefik v2 or with `core.defaultRuleSyntax=v2`; or Traefik is older than v3.6 on Docker 29+ and can't read any container (`client version 1.24 is too old` in its log) |
+| `Gateway Timeout` (504) | Traefik picked a network it can't reach web on |
+| `Internal Server Error` (500) from Traefik | `allowEmptyServices=true` and web not healthy |
 
-**Likely causes, most likely first:**
+**What changed in the repo:**
 
-1. **The web container isn't healthy yet, or is unhealthy.**
-   - `apps/web/Dockerfile` has a `HEALTHCHECK`. Traefik's Docker provider leaves out containers whose health isn't `healthy`.
-   - If the root domain also fails at that moment, this is it. `docker ps` shows `(unhealthy)` or `(health: starting)`.
-   - The check fetches `/` on port 9999 inside the container. Look at `docker inspect --format '{{json .State.Health}}' <web container>`.
-2. **Two containers define the same router or service names** (`stayzim-sites`, `stayzim-custom-domains`).
-   - For example, an old web application left running beside the compose resource, or a staging copy of the compose file.
-   - Traefik merges or conflicts them, and the copy that wins can point at a container that's stopped or unhealthy.
-   - Rename the routers per environment, or stop the old resource.
-3. **Web was deployed as a separate Coolify application, not the compose resource,** with `*.stayzim.co.zw` typed in as a domain. Coolify then writes its own router for it, which may not work. The compose file's labels only apply when web is deployed from `deploy/compose.yaml`.
-4. **Traefik picks the wrong network for the container.**
-   - It's attached to the compose network and the `coolify` network. With more than one network, Traefik can choose an address it can't reach.
-   - That usually gives `Bad Gateway` or a timeout rather than "no available server", but it's worth ruling out.
-   - Coolify adds `traefik.docker.network` to the domains it manages, not to our hand-written labels.
+- **`deploy/compose.yaml` lodge-site route.**
+  - Now one catch-all `PathPrefix(`/`)` at priority 1, in place of the two `HostRegexp` routers.
+  - `PathPrefix` reads the same in Traefik v2 and v3, so lodge subdomains and lodges' own domains route on either.
+  - Coolify's routes for the named domains (`stayzim.co.zw`, `www.`, `api.`) have higher priority, and the tests show they keep them.
+- **`deploy/check-routing.sh`:** run on the VPS. It reads, and changes nothing:
+  - the Docker and Traefik versions, and the proxy's rule-syntax and empty-services settings;
+  - which containers carry the route, with their health, networks and rule;
+  - any Traefik health check, and Coolify's dynamic configuration;
+  - Traefik's own answer for the root and a lodge host;
+  - the proxy's recent errors.
 
-**How to check, on the VPS** (Coolify → Servers → Terminal, or SSH):
+  Each problem it finds comes with the fix. It was run against each case above.
 
-```bash
-# 1. Is web healthy?
-docker ps --format '{{.Names}}\t{{.Status}}' | grep -i web
+**What the user should do:**
 
-# 2. Which containers carry the lodge-site routes?
-docker ps -q | xargs docker inspect --format '{{.Name}} {{index .Config.Labels "traefik.http.routers.stayzim-sites.rule"}}' | grep -v ' $'
+1. Redeploy from the latest `main`, so the new route is live.
+2. In the server's terminal (Coolify → Servers → your server → Terminal), paste and run `deploy/check-routing.sh`, or run `bash check-routing.sh mistvalley stayzim.co.zw` after copying it over.
+3. Fix what it lists:
+   - **A Traefik health check:** remove it. Coolify's own health check for a resource is Docker's, which is fine.
+   - **Stale or duplicate web containers:** stop them.
+   - **An outdated proxy:** update it in Coolify → Servers → Proxy.
+   - **A `*.stayzim.co.zw` route in Coolify's dynamic configuration:** remove it.
+4. If it reports no problems but the browser still shows the error, purge Cloudflare's cache.
 
-# 3. Ask Traefik directly, from the server, with a lodge's host name
-curl -sk --resolve mistvalley.stayzim.co.zw:443:127.0.0.1 https://mistvalley.stayzim.co.zw/ -o /dev/null -w '%{http_code}\n'
+**Not yet confirmed on the real server:** it needs someone with access to the VPS. When the cause is found, note it in [deployment.md](deployment.md#troubleshooting).
 
-# 4. Traefik's view of the routers and services (Coolify's proxy container is coolify-proxy)
-docker logs coolify-proxy 2>&1 | grep -iE 'stayzim-sites|no available|error' | tail -30
-```
+## Added on 7 October (second pass)
 
-**Fixes, in order:**
-
-1. **Unhealthy web:** fix what the health check reports, then redeploy. While testing, removing the `HEALTHCHECK` from the web image tells you quickly whether it's the cause.
-2. **Duplicate routes:** keep one resource that serves web (the compose resource from `deploy/compose.yaml`), and stop or delete the others.
-3. **Separate application:**
-   - Either deploy from `deploy/compose.yaml` as [deployment.md](deployment.md#3-coolify) describes;
-   - or copy the `traefik.*` labels from the `web` service in `deploy/compose.yaml` into that application's Container Labels (Coolify → the application → General → Container Labels).
-   - Remove any `*.stayzim.co.zw` domain typed into Coolify.
-4. **Network:** add `traefik.docker.network=<the network both Traefik and web are on>` to the web labels. Coolify's proxy network is usually `coolify`; check with `docker inspect coolify-proxy`.
-
-**Not yet confirmed:** this needs someone with access to the VPS. When it's found, note the cause in [deployment.md](deployment.md#troubleshooting) and tick it off in the list below.
+- **Preview on each design** (`look-step.tsx`):
+  - An eye button on each tile opens a sheet with that design on one of the landing page's example lodges (`LODGES` in `components/landing/content.ts`).
+  - It uses a paid one first, so the preview has no demo badges, through `/preview/{slug}/{key}`. Phone or Desktop size, Open in a new tab, and **Use {design}**, which picks it and closes.
+  - The button shows on hover with a mouse, and always (icon only) on touch screens.
+  - If no example lodge is live (a fresh install before `seed-demos`), there's no Preview button at all.
+  - The frame is shared with the Design screen: `components/dashboard/template-preview-frame.tsx` (`TemplatePreviewFrame`, `PreviewWidthTabs`).
+- **The look step in the funnel:**
+  - Next on step 1 sends `create_look` (and Meta's `CreateStep` with `look`).
+  - `pnpm --filter server funnel [--days 30] [--source meta]`, or `bun scripts/funnel.ts` in the container, prints people per step (open, look, lodge, photo, live, claim) and their share of those who opened `/create`, per advert source.
+- **Captions:** a Gallery photo without a caption says **Add a caption** with a pencil, and the page header says captions are optional.
+- **Copy:** once photos are in, the small dropzone on `/create` no longer repeats "1 more for the best first look"; the note by Go live says it.
+- **Checked on an emulated phone** (Galaxy S9+, touch):
+  - the dropzone says "Add photos from your phone";
+  - a tap anywhere on it opens the picker;
+  - Next and Go live stay in view at the bottom;
+  - nothing scrolls sideways.
+- **Tests:** a new browser test opens Wordmark's preview and uses it. `create`, `mobile` and `templates` pass (36 tests), as do the unit tests and types.
 
 ## What's left
 
-In order of value:
-
-1. **Production "no available server"** (above). Needs VPS access; the user is the one who can run the commands, or give an agent a shell.
-2. **A Preview on each design tile** (step 1).
-   - `/preview/{slug}/{template}` already shows a lodge in any design.
-   - Once the demo lodges are seeded in production (`seed-demos`), add a Preview link on each tile pointing at a demo lodge, e.g. `/preview/msasaridge/{key}`, in a sheet or a new tab.
-   - Leave it out until those lodges exist, or it 404s.
-3. **A funnel event for the look step:**
-   - `trackCreateStep("look")` and `metaCreateStep("look")` when Next is pressed on step 1.
-   - Add `"look"` to the step union in `lib/track.ts` and `lib/meta-pixel.ts`, then the event to the funnel query.
-   - It shows how many people drop off at the designs.
-4. **Captions on new uploads** (99.co's "Manage photos" panel):
-   - Gallery already edits captions inline.
-   - If wanted: a caption field on each photo as it finishes uploading, saved with `PATCH /photos/:id`.
-5. **Real phones:** check the dropzone's touch title, the sticky Next on iOS Safari with the keyboard open, and the picker opening from a tap anywhere on the area.
-6. **Plan not tied to the design** (only if the user asks):
+1. **Run `deploy/check-routing.sh` on the VPS** and fix what it reports (above). Only the user, or an agent with a shell on the server, can.
+2. **Seed the example lodges in production** (`seed-demos`, then real photos as each demo owner). The landing page's example links and the Preview on each design both use them.
+3. **Real phones:**
+   - iOS Safari with the keyboard open on the lodge step (the sticky Next);
+   - the photo picker on Android Chrome.
+   - Everything else was checked on an emulated phone.
+4. **Plan not tied to the design** (only if the user asks):
    - Today the plan comes with the design (Canopy → Pro), which keeps step 1 about the look.
    - Someone who wants Pro with a Starter design picks the design here and changes plan on Billing later.
 
