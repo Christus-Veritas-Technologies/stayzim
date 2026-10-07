@@ -133,6 +133,11 @@ Install Coolify on the VPS (Ubuntu 24.04, 2 vCPU, 4 GB RAM is plenty to start). 
    - Required: `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET` (`openssl rand -base64 32`), the `R2_*` settings, and `NEXT_PUBLIC_WHATSAPP_NUMBER`.
    - For online payments: `PAYNOW_INTEGRATION_ID` and `PAYNOW_INTEGRATION_KEY` (above). SMTP matters more now: welcome emails, invoices and receipts go through it.
    - SMTP and Google are needed for reset emails and Google sign-in.
+   - **Email senders** (Spacemail, `mail.spacemail.com`, port 465):
+     - `SMTP_*` is `no-reply@stayzim.co.zw`: password resets, welcome emails, booking notices.
+     - `BILLING_SMTP_USER`, `BILLING_SMTP_PASS` and `BILLING_SMTP_FROM` are `billing@stayzim.co.zw`: invoices, payment reminders, receipts, "demo ended" and "site offline". Host and port default to `SMTP_HOST` and `SMTP_PORT`. Without them, these go from no-reply too.
+     - Replies to every StayZim email go to `hello@stayzim.co.zw` (hard-coded `REPLY_TO` in `packages/mail`); booking emails to guests reply to the lodge.
+     - The server log says `SMTP connection OK (no-reply)` and `Billing SMTP connection OK` at boot.
    - The Meta Pixel for the Facebook ads is built in (its ID is in `apps/web/src/lib/meta-pixel.ts`) and reports sign-ups, demos and payments. Nothing to set.
    - `NEXT_PUBLIC_*` values are baked in when the web image builds, so mark them as build variables, and redeploy after changing them.
 

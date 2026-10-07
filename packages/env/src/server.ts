@@ -73,8 +73,17 @@ export const env = createEnv({
     SMTP_PORT: z.coerce.number().int().positive().optional(),
     SMTP_USER: z.string().min(1).optional(),
     SMTP_PASS: z.string().min(1).optional(),
-    // e.g. "StayZim <hello@stayzim.co.zw>"; defaults to SMTP_USER
+    // e.g. "StayZim <no-reply@stayzim.co.zw>"; defaults to SMTP_USER. This main sender sends
+    // password resets, welcome emails and booking notices. Replies go to hello@stayzim.co.zw.
     SMTP_FROM: z.string().min(1).optional(),
+    // Invoices, payment reminders and receipts, from their own mailbox (billing@stayzim.co.zw).
+    // Without BILLING_SMTP_USER they go from the main sender. Host and port default to SMTP_HOST and SMTP_PORT.
+    BILLING_SMTP_HOST: z.string().min(1).optional(),
+    BILLING_SMTP_PORT: z.coerce.number().int().positive().optional(),
+    BILLING_SMTP_USER: z.string().min(1).optional(),
+    BILLING_SMTP_PASS: z.string().min(1).optional(),
+    // e.g. "StayZim Billing <billing@stayzim.co.zw>"; defaults to that, from BILLING_SMTP_USER
+    BILLING_SMTP_FROM: z.string().min(1).optional(),
 
     // Paynow (apps/server/src/lib/paynow.ts). Without both, owners pay the manual
     // way (EcoCash or InnBucks merchant codes, then "I have paid") and StayZim

@@ -43,6 +43,8 @@ describe("billing emails", () => {
     const email = invoiceEmail({ ...base, notice: "DUE_IN_1", demo: false });
     expect(email.text).toContain("Amount: $40.00");
     expect(email.html).toContain("Pay $40.00");
+    // Invoices go from billing@
+    expect(email.sender).toBe("billing");
   });
 
   test("invoices say who issued them, when that's set", () => {

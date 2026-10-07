@@ -107,8 +107,13 @@ if (env.NODE_ENV !== "test") startBillingJob();
 // Surface a broken SMTP setup at boot, not when an owner is waiting for a reset link
 if (isMailConfigured()) {
   void verifyMailConnection().then((check) => {
-    if (check.ok) console.log("[mail] SMTP connection OK");
+    if (check.ok) console.log("[mail] SMTP connection OK (no-reply)");
     else console.error(`[mail] SMTP connection failed: ${check.error}`);
+  });
+  // Invoices, reminders and receipts, from billing@ when it has its own login
+  void verifyMailConnection("billing").then((check) => {
+    if (check.ok) console.log("[mail] Billing SMTP connection OK");
+    else console.warn(`[mail] Billing SMTP: ${check.error}`);
   });
 } else {
   console.warn("[mail] SMTP not configured; emails will be printed to the console");

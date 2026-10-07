@@ -108,7 +108,7 @@ Shared UX pieces, so every screen behaves the same:
 | `GET /api/admin/requests?status=open\|done\|all`, `PATCH /api/admin/requests/:id` | Team only: list requests across lodges, set status and reply |
 
 - **CORS:** allows the `CORS_ORIGIN` list (comma-separated web origins) and any `{slug}.SITES_DOMAIN` origin (lodge sites report visits), with credentials, so the session cookie is sent.
-- **Mail check at boot:** if SMTP is configured, the server checks the connection on startup and logs the result.
+- **Mail check at boot:** if SMTP is configured, the server checks both logins (no-reply and billing) on startup and logs the result.
 - **Health:** `GET /health` answers `{"status":"ok"}` when the database replies to `SELECT 1` within 2 seconds, and 503 otherwise (the reason is logged). The Docker health check uses it; `GET /` stays a plain `OK`.
 - **Custom domains:** `Lodge.customDomain` (set with `packages/db/scripts/set-domain.ts`). `GET /api/sites/domain/:host` answers which lodge a domain belongs to (`slugForCustomDomain` in `src/lib/sites.ts`, cached). CORS accepts those origins as lodge sites. The web proxy uses the same lookup (`src/lib/custom-domains.ts`), and `siteHost`/`siteUrl` prefer the custom domain, so dashboard links and share messages use it. Setup is in [deployment.md](deployment.md#custom-domains).
 - **Client IP:** read from `CLIENT_IP_HEADER` (`cf-connecting-ip` behind Cloudflare), for visit records and sign-in rate limits ([auth.md](auth.md#rules)).
@@ -257,7 +257,7 @@ The `resolve-request` script does the same from a terminal (`pnpm --filter @stay
 | `@stayzim/db` | Prisma schema, split by area in `prisma/schema/`, the shared client (`import prisma from "@stayzim/db"`), and the `create-lodge` and `resolve-request` scripts |
 | `@stayzim/auth` | better-auth config (`auth`), `MIN_PASSWORD_LENGTH`, `googleSignInEnabled`, and `scripts/create-owner.ts` |
 | `@stayzim/sites` | The template catalog and its rules (`templateAllowed`, `effectiveTemplate`, `DEFAULT_TEMPLATE`, `HERO_LIMITS`, `heroText`), plan prices and inclusions (`plans.ts`), slug rules (`slugs.ts`), and billing dates in Zimbabwe time (`billing-dates.ts`). Shared by server, web and scripts. And the CMS content contract (`content/`: limits, amenities, guest-info rules, dates and availability, types; zod schemas at `@stayzim/sites/schemas`) |
-| `@stayzim/mail` | `sendEmail()` over SMTP with Nodemailer, `verifyMailConnection()`, and templates: account emails in `templates.ts`; welcome, invoice, receipt, demo ended and site offline in `billing.ts` |
+| `@stayzim/mail` | `sendEmail()` over SMTP with Nodemailer, `verifyMailConnection()`, and templates: account emails in `templates.ts`; welcome, invoice, receipt, demo ended and site offline in `billing.ts`. Two senders: the main one (`SMTP_*`, no-reply@) and billing@ (`BILLING_SMTP_*`) for emails marked `sender: "billing"`; every email replies to hello@ unless it sets its own `replyTo` |
 | `@stayzim/env` | Validated env per app: `server`, `web`, `outreach`, `native` |
 | `@stayzim/ui` | StayZim design tokens and shadcn-style components on Base UI (buttons, fields, dialogs, sheets, tabs, menus, …) |
 | `@stayzim/config` | Base `tsconfig` |
@@ -282,7 +282,7 @@ Both databases get the whole schema; each app only uses its own tables. Changes 
 
 | App | File | Key settings |
 | --- | --- | --- |
-| server | `apps/server/.env` | `DATABASE_URL`, `CORS_ORIGIN` (comma-separated), `SITES_DOMAIN`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `WEB_URL`, `COOKIE_DOMAIN`, `GOOGLE_*`, `R2_*`, `SMTP_*`, `PAYNOW_*`, `ECOCASH_MERCHANT_CODE`, `INNBUCKS_MERCHANT_CODE`. See [.env.example](../apps/server/.env.example). |
+| server | `apps/server/.env` | `DATABASE_URL`, `CORS_ORIGIN` (comma-separated), `SITES_DOMAIN`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `WEB_URL`, `COOKIE_DOMAIN`, `GOOGLE_*`, `R2_*`, `SMTP_*`, `BILLING_SMTP_*`, `PAYNOW_*`, `ECOCASH_MERCHANT_CODE`, `INNBUCKS_MERCHANT_CODE`. See [.env.example](../apps/server/.env.example). |
 | web | `apps/web/.env` | `NEXT_PUBLIC_SERVER_URL`, `NEXT_PUBLIC_SITES_DOMAIN`, `NEXT_PUBLIC_WHATSAPP_NUMBER`, `NEXT_PUBLIC_META_PIXEL` (optional, `off` to leave the Pixel out). See [.env.example](../apps/web/.env.example). |
 | outreach | `apps/outreach/.env` | `DATABASE_URL`, `OUTREACH_PASSWORD`, `WHATSAPP_*`. See [.env.example](../apps/outreach/.env.example). |
 

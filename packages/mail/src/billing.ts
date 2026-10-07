@@ -105,6 +105,7 @@ export function invoiceEmail(input: {
   ];
   return {
     to: input.to,
+    sender: "billing",
     subject,
     text: [
       `Hi ${input.name},`,
@@ -156,6 +157,7 @@ export function receiptEmail(input: {
   ];
   return {
     to: input.to,
+    sender: "billing",
     subject: `Receipt ${input.number}: ${input.amount} for ${input.lodgeName}`,
     text: [`Hi ${input.name},`, "", `Thank you. We've received ${input.amount} for ${input.lodgeName}.`, "", ...summaryText(rows), "", `Your receipt: ${input.receiptUrl}`, ...(input.issuedBy ? ["", `Issued by ${input.issuedBy}`] : [])].join("\n"),
     html: layout({
@@ -173,6 +175,7 @@ ${issuedBy(input.issuedBy)}`,
 export function demoEndedEmail(input: { to: string; name: string; lodgeName: string; payUrl: string; keptUntil: string }): Email {
   return {
     to: input.to,
+    sender: "billing",
     subject: `Your ${input.lodgeName} demo has ended`,
     text: [
       `Hi ${input.name},`,
@@ -195,6 +198,7 @@ ${link(input.payUrl)}`,
 export function siteOfflineEmail(input: { to: string; name: string; lodgeName: string; amount: string; payUrl: string }): Email {
   return {
     to: input.to,
+    sender: "billing",
     subject: `${input.lodgeName} is offline until it's paid for`,
     text: [
       `Hi ${input.name},`,
