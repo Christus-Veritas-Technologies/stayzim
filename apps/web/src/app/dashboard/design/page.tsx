@@ -18,12 +18,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@stay
 import { Field, FormMessage } from "@stayzim/ui/components/field";
 import { Input } from "@stayzim/ui/components/input";
 import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@stayzim/ui/components/sheet";
-import { Spinner } from "@stayzim/ui/components/spinner";
-import { Tabs, TabsList, TabsTab } from "@stayzim/ui/components/tabs";
 import { Textarea } from "@stayzim/ui/components/textarea";
 import { cn } from "@stayzim/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowUpRight, ChevronRight, Eye, Info, Lock, Monitor, RotateCcw, Smartphone, Sparkles, Type } from "lucide-react";
+import { ArrowUpRight, ChevronRight, Eye, Info, Lock, RotateCcw, Sparkles, Type } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -31,6 +29,7 @@ import { useLodge } from "@/components/dashboard/lodge-provider";
 import { Page, PageHeader, PageSection } from "@/components/dashboard/page";
 import { RequestChangeHint } from "@/components/dashboard/request-change-hint";
 import { SitePreview } from "@/components/dashboard/site-preview";
+import { PreviewWidthTabs, TemplatePreviewFrame, type PreviewWidth } from "@/components/dashboard/template-preview-frame";
 import { TemplateThumb } from "@/components/dashboard/template-thumb";
 import { UnsavedChangesGuard } from "@/components/dashboard/unsaved-changes";
 import { WhatsAppIcon } from "@/components/landing/brand";
@@ -450,16 +449,12 @@ function PreviewSheet({
 }) {
   const { save } = useLodge();
   const online = useOnline();
-  const [width, setWidth] = useState<"phone" | "desktop">("phone");
-  const [loaded, setLoaded] = useState(false);
+  const [width, setWidth] = useState<PreviewWidth>("phone");
   const [applying, setApplying] = useState(false);
   // Keep the last template while the sheet slides out
   const [shown, setShown] = useState<Template | null>(template);
   useEffect(() => {
-    if (template) {
-      setShown(template);
-      setLoaded(false);
-    }
+    if (template) setShown(template);
   }, [template]);
 
   const locked = shown ? !templateAllowed(shown, lodge.plan) : false;
@@ -522,53 +517,11 @@ function PreviewSheet({
 
         <SheetBody className="flex flex-col gap-3 bg-surface-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <Tabs value={width} onValueChange={(value) => setWidth(value as "phone" | "desktop")} className="hidden sm:flex">
-              <TabsList aria-label="Preview size">
-                <TabsTab value="phone">
-                  <Smartphone />
-                  Phone
-                </TabsTab>
-                <TabsTab value="desktop">
-                  <Monitor />
-                  Desktop
-                </TabsTab>
-              </TabsList>
-            </Tabs>
+            <PreviewWidthTabs value={width} onChange={setWidth} />
             <p className="text-xs text-muted-2">Your saved lodge info, rooms and photos. Visits here aren&apos;t counted.</p>
           </div>
 
-          <div className="relative flex min-h-[460px] flex-1 justify-center">
-            <motion.div
-              animate={{ width: width === "phone" ? 390 : "100%" }}
-              transition={{ type: "spring", stiffness: 260, damping: 32 }}
-              className={cn(
-                "relative h-full max-w-full overflow-hidden bg-white shadow-card",
-                width === "phone" ? "rounded-[30px] border-[6px] border-ink" : "rounded-[14px] border border-line",
-              )}
-            >
-              {src ? (
-                <iframe
-                  key={src}
-                  src={src}
-                  title={`${shown?.name} template preview`}
-                  onLoad={() => setLoaded(true)}
-                  className="size-full min-h-[448px] border-0"
-                />
-              ) : null}
-              <AnimatePresence>
-                {loaded ? null : (
-                  <motion.div
-                    initial={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white text-[13px] text-muted"
-                  >
-                    <Spinner className="size-5 text-brand" />
-                    Building the preview
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          </div>
+          <TemplatePreviewFrame src={src} title={`${shown?.name} template preview`} width={width} />
         </SheetBody>
 
         <SheetFooter className="flex-wrap justify-between">
