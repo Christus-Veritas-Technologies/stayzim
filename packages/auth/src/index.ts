@@ -55,14 +55,18 @@ export const auth = betterAuth({
     },
   },
 
-  // Sign in with Google links to the owner account with the same email, or
-  // creates one (sign-up with Google, then /start).
+  // Continue with Google, on the login and sign-up screens alike: signs in the
+  // account with that Google email (linking Google to it the first time), or
+  // creates the account when there isn't one, and the new owner goes on to /start.
   socialProviders: googleSignInEnabled
     ? {
         google: {
           clientId: env.GOOGLE_CLIENT_ID!,
           clientSecret: env.GOOGLE_CLIENT_SECRET!,
           prompt: "select_account",
+          // Better Auth's defaults, spelled out: a Google email with no account gets one
+          disableSignUp: false,
+          disableImplicitSignUp: false,
         },
       }
     : {},

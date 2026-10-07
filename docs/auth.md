@@ -32,9 +32,9 @@ This prints a **temporary password**; send it to the owner on WhatsApp with the 
 
 ## Sign in with Google
 
-"Continue with Google" on `/login` is optional. It shows when the server has `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` (setup steps are in `apps/server/.env.example`); `GET /api/account/sign-in-options` tells the login screen.
+"Continue with Google" on `/login` and `/signup` is optional. It shows when the server has `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` (setup steps are in `apps/server/.env.example`); `GET /api/account/sign-in-options` tells the login screen.
 
-- **Sign in or sign up:** Google signs in the account with the same (verified) email, linking it on first use, or creates a new one, which goes on to `/start` (`newUserCallbackURL`).
+- **Sign in or sign up, from either screen:** Google signs in the account with the same (verified) email, linking it on first use, or creates a new one when there isn't one, which goes on to `/start` (`newUserCallbackURL`). Sign-up is spelled out in the config (`disableSignUp: false`, `disableImplicitSignUp: false`) and the button sends `requestSignUp: true`, so it doesn't rest on Better Auth's defaults.
 - **Temporary passwords:** if an owner links Google while still on the temporary password StayZim sent, that password is replaced with a random one and the dashboard opens. They can set their own later with Forgot password.
 - **Errors** return to `/login?error=…`, shown in plain words by `oauthErrorMessage` (`account_not_linked`, `access_denied`); from the sign-up page they return to `/signup?error=…`.
 - **Not yet tested** with a real Google OAuth client.

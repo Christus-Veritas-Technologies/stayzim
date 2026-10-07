@@ -57,6 +57,8 @@ export function GoogleSignIn({
     const origin = window.location.origin;
     const { error } = await authClient.signIn.social({
       provider: "google",
+      // No account for this Google email yet: make one (from the login screen too)
+      requestSignUp: true,
       callbackURL: `${origin}/dashboard`,
       newUserCallbackURL: `${origin}${newUserPath}`,
       errorCallbackURL: `${origin}${errorPath}`,
