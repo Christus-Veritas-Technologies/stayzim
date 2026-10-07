@@ -1,5 +1,6 @@
 "use client";
 
+import { Badge } from "@stayzim/ui/components/badge";
 import { Button } from "@stayzim/ui/components/button";
 import { RangeCalendar } from "@stayzim/ui/components/range-calendar";
 import { dateAdd, formatDay, occupancy } from "@stayzim/sites";
@@ -46,12 +47,17 @@ export function BookingsMonth({
         return nights;
       }),
   );
+  // Booked days are tinted (red when full); a request waiting adds a purple dot
+  const tones: Record<string, string> = {};
   const marks: Record<string, React.ReactNode> = {};
   for (const [night, count] of taken) {
-    if (count > 0) marks[night] = <span className={cn("size-1.5 rounded-full", count >= room.units ? "bg-danger" : "bg-brand")} />;
-    else if (requested.has(night)) marks[night] = <span className="size-1.5 rounded-full border border-purple" />;
+    if (count >= room.units) tones[night] = "bg-danger-tint font-semibold text-danger hover:bg-danger-tint";
+    else if (count > 0) tones[night] = "bg-brand-wash font-semibold text-brand-dark hover:bg-brand-tint";
   }
-  for (const night of requested) if (!marks[night]) marks[night] = <span className="size-1.5 rounded-full border border-purple" />;
+  for (const night of requested) {
+    if (!tones[night]) tones[night] = "ring-1 ring-purple-line ring-inset";
+    marks[night] = <span className="size-1 rounded-full bg-purple" />;
+  }
 
   const onDay = window.bookings.filter(
     (booking) =>
@@ -91,6 +97,7 @@ export function BookingsMonth({
           month={month}
           onMonthChange={onMonthChange}
           marks={marks}
+          tones={tones}
           label={`${room.name} bookings`}
           describe={(date) => {
             const value = taken.get(date) ?? 0;
@@ -99,26 +106,26 @@ export function BookingsMonth({
         />
         <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 border-t border-line-3 pt-2.5 text-[11.5px] text-muted">
           <span className="inline-flex items-center gap-1.5">
-            <span className="size-1.5 rounded-full bg-brand" />
+            <span className="size-3 rounded-full bg-brand-wash ring-1 ring-[#cbe9f5]" />
             Some booked
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <span className="size-1.5 rounded-full bg-danger" />
+            <span className="size-3 rounded-full bg-danger-tint ring-1 ring-danger-line" />
             Full
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <span className="size-1.5 rounded-full border border-purple" />
-            Request
+            <span className="size-3 rounded-full ring-1 ring-purple-line" />
+            Request waiting
           </span>
         </div>
       </div>
 
       <div className="flex flex-col gap-2">
-        <div className="flex items-baseline justify-between">
-          <span className="text-[14px] font-semibold">{formatDay(day)}</span>
-          <span className="text-[12.5px] text-muted">
+        <div className="flex items-center justify-between gap-3">
+          <span className="font-display text-[16px] font-semibold">{formatDay(day)}</span>
+          <Badge variant={count >= room.units ? "danger" : count > 0 ? "brand" : "success"}>
             {count >= room.units ? "Full" : `${room.units - count} of ${room.units} free`}
-          </span>
+          </Badge>
         </div>
         {onDay.length === 0 ? (
           <p className="rounded-xl bg-surface px-4 py-4 text-[13px] text-muted">Nothing booked for {room.name} on this day.</p>

@@ -69,6 +69,8 @@ type Props = {
   unavailable?: ReadonlySet<string>;
   /** A small mark under a day's number (e.g. how booked it is) */
   marks?: Partial<Record<string, React.ReactNode>>;
+  /** Extra classes for a day that isn't picked (e.g. a tint for how booked it is) */
+  tones?: Partial<Record<string, string>>;
   className?: string;
   /** Label for screen readers, e.g. "Dates" */
   label?: string;
@@ -80,7 +82,7 @@ type Props = {
 );
 
 export function RangeCalendar(props: Props) {
-  const { month, onMonthChange, min, max, unavailable, marks, className, label = "Dates", describe } = props;
+  const { month, onMonthChange, min, max, unavailable, marks, tones, className, label = "Dates", describe } = props;
   const days = monthGrid(month);
   const [focused, setFocused] = React.useState<string | null>(null);
   const grid = React.useRef<HTMLDivElement>(null);
@@ -210,6 +212,7 @@ export function RangeCalendar(props: Props) {
                   !disabled && !isStart && !isEnd && "hover:bg-surface",
                   disabled && "cursor-not-allowed text-soft/60",
                   full && !isStart && !isEnd && "text-soft line-through decoration-soft",
+                  !isStart && !isEnd && inMonth && tones?.[date],
                   (isStart || isEnd) && "bg-primary text-primary-foreground shadow-brand",
                 )}
               >
