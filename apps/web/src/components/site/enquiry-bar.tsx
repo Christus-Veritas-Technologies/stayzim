@@ -26,6 +26,8 @@ export type EnquiryLook = {
   hint?: string | null;
   /** "stacked": label above the box (cards). "inline": label inside the box (pills). */
   layout?: "stacked" | "inline";
+  /** Added to every field but the last, e.g. a rule between them in a pill bar */
+  divider?: string;
 };
 
 /**
@@ -40,6 +42,7 @@ export function EnquiryBar({
   whatsapp,
   look = {},
   roomWord = "Room",
+  online: siteOnline,
 }: {
   lodge: string;
   rooms: { id: string; name: string; sleeps: number }[];
@@ -47,8 +50,11 @@ export function EnquiryBar({
   look?: EnquiryLook;
   /** "Cabin", "Tent": what the lodge calls its rooms */
   roomWord?: string;
+  /** The site takes bookings: the wording says so even in previews (where the bar opens WhatsApp) */
+  online?: boolean;
 }) {
   const booking = useBooking();
+  const bookable = siteOnline ?? booking.online;
   const today = todayInHarare();
   const [roomId, setRoomId] = useState(rooms[0]?.id ?? "");
   const [checkIn, setCheckIn] = useState("");
@@ -83,10 +89,10 @@ export function EnquiryBar({
         className={cn("grid grid-cols-2 gap-2 lg:grid-cols-[repeat(4,minmax(0,1fr))_auto] lg:items-end", look.className)}
         aria-label="Check your dates"
       >
-        <Field label={roomWord} look={look} layout={layout} className="col-span-2 sm:col-span-1">
+        <Field label={roomWord} look={look} layout={layout} className={cn("col-span-2 sm:col-span-1", look.divider)}>
           <Select value={room.id} onChange={setRoomId} label={roomWord} options={rooms.map((entry) => ({ value: entry.id, label: entry.name }))} />
         </Field>
-        <Field label="Arrive" look={look} layout={layout}>
+        <Field label="Arrive" look={look} layout={layout} className={look.divider}>
           <DateInput
             value={checkIn}
             min={today}
@@ -97,7 +103,7 @@ export function EnquiryBar({
             }}
           />
         </Field>
-        <Field label="Leave" look={look} layout={layout}>
+        <Field label="Leave" look={look} layout={layout} className={look.divider}>
           <DateInput value={checkOut} min={checkIn ? dateAdd(checkIn, 1) : dateAdd(today, 1)} label="Leave" onChange={setCheckOut} />
         </Field>
         <Field label="Guests" look={look} layout={layout} className="col-span-2 sm:col-span-1">
@@ -112,17 +118,17 @@ export function EnquiryBar({
           type="submit"
           className={cn(
             "col-span-2 inline-flex h-12 items-center justify-center gap-2 rounded-full px-6 text-[15px] font-semibold whitespace-nowrap transition-transform active:scale-[0.98] motion-reduce:transform-none lg:col-span-1",
-            booking.online ? "bg-[var(--theme)] text-white" : "bg-[#25D366] text-[#0C181F]",
+            bookable ? "bg-[var(--theme)] text-white" : "bg-[#25D366] text-[#0C181F]",
             look.button,
           )}
         >
-          {booking.online ? <CalendarDays className="size-[18px]" /> : <WhatsAppIcon size={18} />}
-          {booking.online ? "Check dates" : "Send on WhatsApp"}
+          {bookable ? <CalendarDays className="size-[18px]" /> : <WhatsAppIcon size={18} />}
+          {bookable ? "Check dates" : "Send on WhatsApp"}
         </button>
       </form>
       {look.hint === null ? null : (
         <p className={cn("px-1 text-xs", look.hint)}>
-          {booking.online
+          {bookable
             ? "See which nights are free and book in a minute."
             : `Opens WhatsApp with your ${roomWord.toLowerCase()} and dates filled in. We reply to confirm.`}
         </p>

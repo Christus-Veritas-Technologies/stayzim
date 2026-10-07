@@ -17,7 +17,8 @@ export function Carousel({
   controls = "top",
   buttonClassName,
   activeButtonClassName,
-  counter,
+  counterNoun,
+  progress = false,
   header,
 }: {
   children: ReactNode;
@@ -30,8 +31,10 @@ export function Carousel({
   buttonClassName?: string;
   /** The Next button, drawn heavier like the designs */
   activeButtonClassName?: string;
-  /** Renders the position, e.g. (index, total) => `${index + 1} of ${total} rooms` */
-  counter?: (index: number, total: number) => ReactNode;
+  /** Shows "1 of 4 rooms" under the row */
+  counterNoun?: string;
+  /** A line under the row that fills as the guest moves along */
+  progress?: boolean;
   /** Title and intro, shown with the buttons beside them */
   header?: ReactNode;
 }) {
@@ -45,8 +48,9 @@ export function Carousel({
     if (!element) return;
     const first = element.firstElementChild as HTMLElement | null;
     const step = first ? first.offsetWidth + parseFloat(getComputedStyle(element).columnGap || "0") : element.clientWidth;
-    setIndex(Math.min(items.length - 1, Math.round(element.scrollLeft / Math.max(1, step))));
-    setEdges({ start: element.scrollLeft <= 4, end: element.scrollLeft + element.clientWidth >= element.scrollWidth - 4 });
+    const end = element.scrollLeft + element.clientWidth >= element.scrollWidth - 4;
+    setIndex(end ? items.length - 1 : Math.min(items.length - 1, Math.round(element.scrollLeft / Math.max(1, step))));
+    setEdges({ start: element.scrollLeft <= 4, end });
   }, [items.length]);
 
   useEffect(() => {
@@ -64,8 +68,10 @@ export function Carousel({
     element.scrollBy({ left: by * step, behavior: reduce ? "auto" : "smooth" });
   }
 
+  // Everything fits: no buttons, counter or progress line
+  const fits = edges.start && edges.end;
   const buttons =
-    controls === "none" || items.length <= 1 ? null : (
+    controls === "none" || items.length <= 1 || fits ? null : (
       <div className="flex shrink-0 gap-2">
         <button
           type="button"
@@ -108,9 +114,23 @@ export function Carousel({
           </li>
         ))}
       </ul>
-      {controls === "bottom" || counter ? (
-        <div className="flex items-center justify-between gap-4">
-          {counter ? <span className="text-sm">{counter(index, items.length)}</span> : <span />}
+      {!fits && (controls === "bottom" || counterNoun || progress) ? (
+        <div className="flex items-center gap-5">
+          {progress ? (
+            <span className="relative h-px flex-1 bg-current opacity-25" aria-hidden="true">
+              <span
+                className="absolute inset-y-0 left-0 -my-px h-[2px] bg-current opacity-100 transition-[width] duration-300 motion-reduce:transition-none"
+                style={{ width: `${((index + 1) / Math.max(1, items.length)) * 100}%` }}
+              />
+            </span>
+          ) : (
+            <span className="flex-1" />
+          )}
+          {counterNoun ? (
+            <span className="shrink-0 text-sm font-medium" aria-live="polite">
+              {index + 1} of {items.length} {counterNoun}
+            </span>
+          ) : null}
           {controls === "bottom" ? buttons : null}
         </div>
       ) : null}

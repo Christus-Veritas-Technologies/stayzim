@@ -254,7 +254,7 @@ export function SocialLinks({ site, className, button }: { site: LiveSite; class
  * The map: Google's embed when the lodge has a pin, else a drawn map with the
  * lodge's name on it (it still links to Google Maps beside it).
  */
-export function MapView({ site, className, pin }: { site: LiveSite; className?: string; pin?: string }) {
+export function MapView({ site, className, pin, dark = false }: { site: LiveSite; className?: string; pin?: string; dark?: boolean }) {
   if (site.latitude !== null && site.longitude !== null) {
     return (
       <iframe
@@ -267,12 +267,19 @@ export function MapView({ site, className, pin }: { site: LiveSite; className?: 
     );
   }
   return (
-    <div className={cn("relative min-h-[280px] overflow-hidden bg-[#E8EEE6]", className)} aria-hidden="true">
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(12,24,31,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(12,24,31,0.05)_1px,transparent_1px)] bg-[size:44px_44px]" />
-      <div className="absolute top-[16%] left-[14%] h-[30%] w-[26%] rounded-[50%] bg-[#D2E4EE]" />
-      <div className="absolute right-[16%] bottom-[14%] h-[22%] w-[22%] rounded-[40%] bg-[#D7E6D0]" />
-      <div className="absolute top-0 left-[58%] h-[140%] w-3 origin-top rotate-[18deg] bg-white" />
-      <div className="absolute top-[62%] -left-[10%] h-3 w-[130%] -rotate-[8deg] bg-white" />
+    <div className={cn("relative min-h-[280px] overflow-hidden", dark ? "bg-[#2A2C2E]" : "bg-[#E8EEE6]", className)} aria-hidden="true">
+      <div
+        className={cn(
+          "absolute inset-0 bg-[size:44px_44px]",
+          dark
+            ? "bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)]"
+            : "bg-[linear-gradient(rgba(12,24,31,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(12,24,31,0.05)_1px,transparent_1px)]",
+        )}
+      />
+      <div className={cn("absolute top-[16%] left-[14%] h-[30%] w-[26%] rounded-[50%]", dark ? "bg-[#233640]" : "bg-[#D2E4EE]")} />
+      <div className={cn("absolute right-[16%] bottom-[14%] h-[22%] w-[22%] rounded-[40%]", dark ? "bg-[#2B3A2C]" : "bg-[#D7E6D0]")} />
+      <div className={cn("absolute top-0 left-[58%] h-[140%] w-3 origin-top rotate-[18deg]", dark ? "bg-[#3A3D40]" : "bg-white")} />
+      <div className={cn("absolute top-[62%] -left-[10%] h-3 w-[130%] -rotate-[8deg]", dark ? "bg-[#3A3D40]" : "bg-white")} />
       <div className="absolute top-[44%] left-1/2 flex -translate-x-1/2 -translate-y-full flex-col items-center gap-1">
         <span className={cn("size-9 rotate-45 rounded-[50%_50%_0_50%] border-[3px] border-white shadow-md", pin ?? "bg-[var(--theme)]")} />
         <span className="mt-1 rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#0C181F] shadow-sm">{site.name}</span>

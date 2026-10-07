@@ -15,8 +15,9 @@ type GalleryPhoto = { url: string; srcSet?: string | null; width: number; height
  * - strip: one row that scrolls sideways (a filmstrip)
  * - ovals: tall rounded shapes, four across
  * - panels: tall photos side by side
+ * - row: four tall photos of different widths in one line
  */
-export type GalleryLayout = "feature" | "grid3" | "grid4" | "strip" | "ovals" | "panels";
+export type GalleryLayout = "feature" | "grid3" | "grid4" | "strip" | "ovals" | "panels" | "row";
 
 const LAYOUTS: Record<GalleryLayout, { list: string; item: (index: number) => string | undefined; image: string; sizes: (index: number) => string }> = {
   feature: {
@@ -34,6 +35,12 @@ const LAYOUTS: Record<GalleryLayout, { list: string; item: (index: number) => st
     sizes: () => "(min-width: 1024px) 31vw, (min-width: 640px) 44vw, 78vw",
   },
   ovals: { list: "grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4", item: () => undefined, image: "aspect-[3/4]", sizes: () => "(min-width: 768px) 25vw, 50vw" },
+  row: {
+    list: "grid grid-cols-2 gap-3 md:grid-cols-[1.4fr_1fr_1fr_1.2fr]",
+    item: () => undefined,
+    image: "h-[200px] w-full sm:h-[260px] md:h-[320px]",
+    sizes: () => "(min-width: 768px) 30vw, 50vw",
+  },
   panels: {
     list: "grid grid-cols-2 gap-3 md:grid-cols-3",
     item: (index) => (index === 0 ? "col-span-2 md:col-span-1" : undefined),

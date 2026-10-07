@@ -121,7 +121,7 @@ export function ShorelineTemplate({ site }: { site: LiveSite }) {
           {site.rooms.length > 0 && site.whatsapp ? (
             <div className="relative z-10 px-3 pb-3 sm:px-10 sm:pb-9">
               <Reveal delay={0.15} className="rounded-[24px] bg-white p-3 text-[#10202A] shadow-[0_24px_60px_-30px_rgba(0,0,0,0.6)] sm:rounded-[28px] sm:p-5">
-                <EnquiryBar lodge={site.name} rooms={site.rooms} whatsapp={site.whatsapp} look={{ hint: "text-[#5F6B72]" }} />
+                <EnquiryBar lodge={site.name} rooms={site.rooms} whatsapp={site.whatsapp} online={online} look={{ hint: "text-[#5F6B72]" }} />
               </Reveal>
             </div>
           ) : null}

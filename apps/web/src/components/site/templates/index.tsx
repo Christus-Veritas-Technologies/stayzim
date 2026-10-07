@@ -8,6 +8,7 @@ import { RondavelTemplate } from "@/components/site/templates/rondavel";
 import { ShadeTemplate } from "@/components/site/templates/shade";
 import { ShorelineTemplate } from "@/components/site/templates/shoreline";
 import { VerandaTemplate } from "@/components/site/templates/veranda";
+import { WordmarkTemplate } from "@/components/site/templates/wordmark";
 import { PageViewTracker, SiteTracking } from "@/components/site/tracking";
 import type { LiveSite } from "@/lib/site";
 
@@ -17,6 +18,7 @@ const DESIGNS: Partial<Record<TemplateKey, (props: { site: LiveSite }) => React.
   "starter-rondavel": RondavelTemplate,
   "starter-shade": ShadeTemplate,
   "growth-shoreline": ShorelineTemplate,
+  "growth-wordmark": WordmarkTemplate,
 };
 
 /**
