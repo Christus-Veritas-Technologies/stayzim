@@ -6,14 +6,20 @@ export const env = createEnv({
   server: {
     DATABASE_URL: z.string().min(1),
     // Web app origins allowed to call the API with cookies, comma-separated,
-    // e.g. "https://app.stayzim.co.zw,https://stayzim.co.zw"
+    // e.g. "https://app.stayzim.co.zw,https://stayzim.co.zw" (not the API's own address).
+    // WEB_URL's origin is always allowed too.
     CORS_ORIGIN: z
       .string()
       .transform((value) => value.split(",").map((origin) => origin.trim().replace(/\/+$/, "")).filter(Boolean))
       .pipe(z.array(z.url()).min(1)),
     // Lodge sites live at {slug}.SITES_DOMAIN and may report visits to the API.
     // "stayzim.co.zw" in production; "localhost:9999" locally (mistvalley.localhost:9999).
-    SITES_DOMAIN: z.string().min(1).default("stayzim.co.zw"),
+    // A scheme or trailing slash is dropped ("https://stayzim.co.zw/" → "stayzim.co.zw").
+    SITES_DOMAIN: z
+      .string()
+      .min(1)
+      .default("stayzim.co.zw")
+      .transform((value) => value.trim().replace(/^https?:\/\//i, "").replace(/\/+$/, "").toLowerCase()),
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
     PORT: z.coerce.number().default(9998),
 
@@ -36,8 +42,8 @@ export const env = createEnv({
       .default("x-forwarded-for")
       .transform((value) => value.toLowerCase()),
 
-    // Sign in with Google (packages/auth). Leave unset to hide the button. Only links to
-    // existing owner accounts: Google never creates one.
+    // Sign in with Google (packages/auth). Leave unset to hide the button. Signs in the
+    // account with that Google email, or creates it (then /start).
     GOOGLE_CLIENT_ID: z.string().min(1).optional(),
     GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
 

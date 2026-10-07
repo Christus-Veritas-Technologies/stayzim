@@ -9,6 +9,7 @@
 export const env = {
   NEXT_PUBLIC_SERVER_URL: process.env.NEXT_PUBLIC_SERVER_URL as string,
   NEXT_PUBLIC_WHATSAPP_NUMBER: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || undefined,
-  NEXT_PUBLIC_SITES_DOMAIN: process.env.NEXT_PUBLIC_SITES_DOMAIN || "stayzim.co.zw",
+  // "https://stayzim.co.zw/" is taken as "stayzim.co.zw"
+  NEXT_PUBLIC_SITES_DOMAIN: (process.env.NEXT_PUBLIC_SITES_DOMAIN || "stayzim.co.zw").trim().replace(/^https?:\/\//i, "").replace(/\/+$/, ""),
   NEXT_PUBLIC_META_PIXEL: process.env.NEXT_PUBLIC_META_PIXEL || undefined,
 };

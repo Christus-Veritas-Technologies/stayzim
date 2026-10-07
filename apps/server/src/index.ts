@@ -22,6 +22,9 @@ import { sites } from "./routes/sites";
 
 const app = new Hono<{ Variables: AuthVariables }>();
 
+/** CORS_ORIGIN, plus WEB_URL's origin: the web app always reaches the API, even if CORS_ORIGIN misses it. */
+const WEB_ORIGINS = new Set([...env.CORS_ORIGIN, ...(env.WEB_URL ? [new URL(env.WEB_URL).origin] : [])]);
+
 app.use(logger());
 
 // Lodge photos and logos, in development without R2 (see lib/uploads.ts). Before
@@ -37,7 +40,7 @@ app.use(
   "/*",
   cors({
     // The web app's origins, and any lodge site, on its subdomain or its own domain (they report visits)
-    origin: async (origin) => (env.CORS_ORIGIN.includes(origin) || (await isAnyLodgeSiteOrigin(origin)) ? origin : null),
+    origin: async (origin) => (WEB_ORIGINS.has(origin) || (await isAnyLodgeSiteOrigin(origin)) ? origin : null),
     allowMethods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
     // The session cookie travels with requests from the web app

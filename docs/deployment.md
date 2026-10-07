@@ -239,4 +239,4 @@ How it works:
 
 - The web app's proxy sees a host that isn't StayZim's and asks the API, `GET /api/sites/domain/:host`, which lodge it belongs to. Answers are cached for 5 minutes, and unknown domains for 1 minute. An unknown domain gets the "Lodge not found" page.
 - The API accepts visit reports from those domains (CORS).
-- **Limit:** owners' own visits on their custom domain are counted. The session cookie belongs to `stayzim.co.zw` and isn't sent from another site; on the subdomain they're still skipped.
+- **Owner visits:** the session cookie belongs to `stayzim.co.zw` and isn't sent from another site, so on a custom domain the owner's visits are skipped by the owner key their dashboard's View site link carries (`apps/server/src/lib/owner-key.ts`).
