@@ -102,7 +102,11 @@ function CreateFlow() {
             setLook(key);
             router.replace(`/create?step=look&look=${key}`, { scroll: false });
           }}
-          onNext={() => go("lodge")}
+          onNext={() => {
+            trackCreateStep("look");
+            metaCreateStep("look");
+            go("lodge");
+          }}
         />
       </CreateFrame>
     );

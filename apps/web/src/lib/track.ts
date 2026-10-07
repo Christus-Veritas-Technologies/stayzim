@@ -87,11 +87,12 @@ export function signupSource(): SignupSource {
 }
 
 /**
- * One step of /create, for the drop-off funnel: open → lodge (name and
- * WhatsApp done, demo made) → photo (first photo up) → live → claim.
- * Stored as CTA_CLICK events in the "create" section.
+ * One step of /create, for the drop-off funnel: open → look (a design
+ * picked) → lodge (name and WhatsApp done, demo made) → photo (first photo
+ * up) → live → claim. Stored as CTA_CLICK events in the "create" section;
+ * `pnpm --filter server funnel` counts them.
  */
-export type CreateStep = "open" | "lodge" | "photo" | "live" | "claim";
+export type CreateStep = "open" | "look" | "lodge" | "photo" | "live" | "claim";
 
 export function trackCreateStep(step: CreateStep) {
   send({ type: "CTA_CLICK", visitorId: visitorId(), path: "/create", cta: `create_${step}`, section: "create", ...utm() });
