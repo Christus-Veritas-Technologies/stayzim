@@ -4,6 +4,7 @@ import { DemoBand, DemoPill, DemoRibbon } from "@/components/site/demo-badges";
 import { BasicTemplate } from "@/components/site/templates/basic";
 import { ClassicTemplate } from "@/components/site/templates/classic";
 import { PLACEHOLDER_LOOKS } from "@/components/site/templates/looks";
+import { RondavelTemplate } from "@/components/site/templates/rondavel";
 import { VerandaTemplate } from "@/components/site/templates/veranda";
 import { PageViewTracker, SiteTracking } from "@/components/site/tracking";
 import type { LiveSite } from "@/lib/site";
@@ -11,6 +12,7 @@ import type { LiveSite } from "@/lib/site";
 /** Each template's design (designs/StayZim Lodge Templates.html). */
 const DESIGNS: Partial<Record<TemplateKey, (props: { site: LiveSite }) => React.ReactNode>> = {
   "starter-veranda": VerandaTemplate,
+  "starter-rondavel": RondavelTemplate,
 };
 
 /**
