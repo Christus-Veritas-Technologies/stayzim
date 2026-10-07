@@ -97,7 +97,7 @@ Plus shared states: suspended site, 404, save errors, loading, locked features.
 
 **Already brought forward from "after the MVP":** self sign-up, separate dashboard pages, custom domains, and the bookings calendar.
 
-**After the MVP** (once the first 3 lodges pay): Pro blog, expanded analytics, room and gallery pages on lodge sites, an admin area (all lodges, revenue, churn, payment chasing, sign in as a lodge), and the CMS's [Later](cms/README.md#later) list (seasonal prices, deposits by guests, iCal sync, custom sections).
+**After the MVP** (once the first 3 lodges pay): AI-written site text (each lodge's hero, description and room text drafted from its name, place, rooms and photos, so generated sites don't all read the same; the owner reviews and edits it), Pro blog, expanded analytics, room and gallery pages on lodge sites, an admin area (all lodges, revenue, churn, payment chasing, sign in as a lodge), and the CMS's [Later](cms/README.md#later) list (seasonal prices, deposits by guests, iCal sync, custom sections).
 
 Progress against all of this is tracked in [progress.md](progress.md).
 

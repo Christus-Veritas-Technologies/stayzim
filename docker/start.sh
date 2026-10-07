@@ -16,13 +16,23 @@ if [ "${SKIP_DB_MIGRATE:-${SKIP_DB_PUSH:-0}}" != "1" ]; then
     case "$output" in
       *P3005*)
         echo "[start] This database was set up with 'prisma db push', before migrations."
-        echo "[start] Baseline it once, then restart (see docs/deployment.md):"
-        echo "[start]   cd /app/packages/db && ./node_modules/.bin/prisma migrate resolve --applied 0_init"
+        # Nothing in it yet (no accounts, no lodges): start it again from the migrations
+        if bun scripts/reset-if-empty.ts && output=$(./node_modules/.bin/prisma migrate deploy 2>&1); then
+          echo "$output" | tail -n 1
+        else
+          echo "$output"
+          echo "[start] It has data, so it wasn't reset. Baseline it once, then restart (see docs/deployment.md):"
+          echo "[start]   cd /app/packages/db && ./node_modules/.bin/prisma migrate resolve --applied 0_init"
+          exit 1
+        fi
+        ;;
+      *)
+        exit 1
         ;;
     esac
-    exit 1
+  else
+    echo "$output" | tail -n 1
   fi
-  echo "$output" | tail -n 1
 fi
 
 cd "${APP_DIR:?APP_DIR must be set}"

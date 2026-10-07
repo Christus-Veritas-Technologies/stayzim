@@ -174,7 +174,7 @@ The scripts print temporary passwords.
 
 **Rolling back:** redeploy the previous commit from Coolify's Deployments tab. Migrations don't roll back by themselves, so a rollback across a migration that removed something needs a restore (below).
 
-**A database made before migrations** (with `prisma db push`) stops the server with error P3005. Baseline it once in the server container:
+**A database made before migrations** (with `prisma db push`) gives error P3005. If it has no accounts and no lodges, the server's start script drops its tables and applies the migrations from scratch (`packages/db/scripts/reset-if-empty.ts`), so a first deploy onto a used-but-empty database just works. With any account or lodge in it, nothing is dropped and the server stops; baseline it once in the server container:
 
 ```bash
 cd /app/packages/db && ./node_modules/.bin/prisma migrate resolve --applied 0_init

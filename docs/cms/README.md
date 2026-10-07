@@ -293,6 +293,7 @@ Not in the MVP. Each needs the user's go-ahead.
 - Per-person prices, and other currencies.
 - Deposits by Paynow when a guest books (on Growth's "coming" list).
 - An iCal export or import, to sync with Booking.com and Airbnb (the start of Pro's channel sync).
+- AI-written site text: a draft hero, description and room text for each lodge from its name, place, rooms and photos, so new sites don't all share the template defaults. The owner reviews and edits before it goes live.
 - Custom sections ("Our restaurant"), section order and on/off switches.
 - Separate room pages on lodge sites.
 - WhatsApp Business API notifications for owners.
