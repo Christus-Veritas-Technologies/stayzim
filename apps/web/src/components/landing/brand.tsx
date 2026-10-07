@@ -34,10 +34,10 @@ export function LogoMark({ size = 34, className }: { size?: number; className?: 
   );
 }
 
-export function Wordmark({ size = 34, className }: { size?: number; className?: string }) {
+export function Wordmark({ size = 34, className, markClassName }: { size?: number; className?: string; markClassName?: string }) {
   return (
     <span className={`inline-flex items-center gap-2.5 font-display font-bold tracking-[-0.01em] ${className ?? ""}`}>
-      <LogoMark size={size} />
+      <LogoMark size={size} className={markClassName} />
       StayZim
     </span>
   );

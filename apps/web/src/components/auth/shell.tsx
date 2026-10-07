@@ -32,13 +32,13 @@ export function AuthShell({
   return (
     <div className="min-h-svh bg-white lg:grid lg:grid-cols-2 lg:gap-3 lg:p-3">
       {/* Phone header */}
-      <header className={cn("relative h-[188px] overflow-hidden text-white lg:hidden", KARIBA_GRADIENT)}>
-        <Rings className="top-[60%] left-[78%]" sizes={[420, 280, 160]} />
-        <Place name="Kariba" className="top-[46%] left-[12%]" delay={0.3} />
-        <Place name="Nyanga" className="top-[26%] right-[8%]" tone="peach" delay={0.45} />
-        <Place name="Vic Falls" className="top-[54%] right-[18%]" delay={0.6} />
+      <header className={cn("relative h-[204px] overflow-hidden text-white lg:hidden", KARIBA_GRADIENT)}>
+        <Rings className="top-[62%] left-[80%]" sizes={[440, 300, 170]} />
+        <Place name="Kariba" className="top-[50%] left-[11%]" delay={0.3} />
+        <Place name="Nyanga" className="top-[28%] right-[9%]" tone="peach" delay={0.45} />
+        <Place name="Vic Falls" className="top-[60%] right-[17%]" delay={0.6} />
         <Link href="/" className="absolute top-5 left-5 text-lg text-white no-underline" aria-label="StayZim home">
-          <Wordmark size={30} />
+          <Wordmark size={32} markClassName="rounded-[9px] ring-2 ring-white/55" />
         </Link>
         {mobileBadge ? (
           <motion.div
@@ -52,7 +52,7 @@ export function AuthShell({
         ) : null}
       </header>
 
-      <div className="relative -mt-7 flex min-h-[calc(100svh-160px)] flex-col rounded-t-[28px] bg-white px-5 pt-8 pb-6 sm:px-8 lg:mt-0 lg:min-h-[calc(100svh-24px)] lg:rounded-none lg:px-11 lg:pt-4 lg:pb-3">
+      <div className="relative -mt-7 flex min-h-[calc(100svh-176px)] flex-col rounded-t-[28px] bg-white px-5 pt-8 pb-6 sm:px-8 lg:mt-0 lg:min-h-[calc(100svh-24px)] lg:rounded-none lg:px-11 lg:pt-4 lg:pb-3">
         <Link href="/" className="hidden w-max text-[19px] text-ink no-underline lg:flex" aria-label="StayZim home">
           <Wordmark size={32} />
         </Link>
