@@ -4,6 +4,9 @@ import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 
+import { postInput, postSlug, reviewsInput } from "@stayzim/sites/schemas";
+
+import { photoJson } from "../lib/lodge";
 import { requireAuth, withSession, type AuthVariables } from "../lib/session";
 import { validJson } from "../lib/validate";
 
@@ -58,7 +61,77 @@ function adminRequestJson(request: RequestWithLodge) {
 
 const withLodge = { lodge: { select: { name: true, slug: true, whatsapp: true, owner: { select: { name: true, email: true } } } } } as const;
 
-/** /api/admin: StayZim's own tools. Today: working through owners' change requests. */
+const lodgeListQuery = z.object({ q: z.string().trim().max(80).default("") });
+
+/** A lodge by its slug, or 404. */
+async function lodgeBySlug(slug: string) {
+  const lodge = await prisma.lodge.findUnique({
+    where: { slug: slug.toLowerCase() },
+    select: { id: true, name: true, slug: true, plan: true, status: true, reviewScore: true, reviewCount: true, reviewSource: true, reviewUrl: true },
+  });
+  if (!lodge) throw new HTTPException(404, { message: "No lodge with that address" });
+  return lodge;
+}
+
+type StoredAdminPost = { id: string; slug: string; title: string; excerpt: string | null; body: string; coverId: string | null; publishedOn: string; updatedAt: Date };
+
+function adminPostJson({ id, slug, title, excerpt, body, coverId, publishedOn, updatedAt }: StoredAdminPost) {
+  return { id, slug, title, excerpt, body, coverId, publishedOn, updatedAt };
+}
+
+/** Everything the content screen shows for one lodge. */
+async function lodgeContent(lodgeId: string) {
+  const lodge = await prisma.lodge.findUniqueOrThrow({
+    where: { id: lodgeId },
+    select: {
+      name: true,
+      slug: true,
+      plan: true,
+      status: true,
+      reviewScore: true,
+      reviewCount: true,
+      reviewSource: true,
+      reviewUrl: true,
+      reviews: { orderBy: { position: "asc" } },
+      posts: { orderBy: [{ publishedOn: "desc" }, { createdAt: "desc" }] },
+      photos: { orderBy: [{ roomId: "asc" }, { position: "asc" }] },
+    },
+  });
+  return {
+    lodge: { name: lodge.name, slug: lodge.slug, plan: lodge.plan, status: lodge.status },
+    reviews: {
+      score: lodge.reviewScore,
+      count: lodge.reviewCount,
+      source: lodge.reviewSource ?? "Booking.com",
+      url: lodge.reviewUrl,
+      quotes: lodge.reviews.map(({ quote, author, origin, stayed, score }) => ({ quote, author, origin, stayed, score })),
+    },
+    posts: lodge.posts.map(adminPostJson),
+    photos: lodge.photos.map(photoJson),
+  };
+}
+
+/** A post's cover must be one of the lodge's own photos. */
+async function checkCover(lodgeId: string, coverId: string | null) {
+  if (!coverId) return;
+  const photo = await prisma.photo.findFirst({ where: { id: coverId, lodgeId }, select: { id: true } });
+  if (!photo) throw new HTTPException(400, { message: "Pick one of the lodge's photos for the cover" });
+}
+
+/** Saves a post, turning a clash on the address into a sentence. */
+async function savePost(save: () => Promise<StoredAdminPost>) {
+  try {
+    return await save();
+  } catch (error) {
+    // P2002: the unique (lodge, slug) index
+    if (typeof error === "object" && error !== null && "code" in error && error.code === "P2002") {
+      throw new HTTPException(409, { message: "Another post already uses that address. Change the address or the title." });
+    }
+    throw error;
+  }
+}
+
+/** /api/admin: StayZim's own tools: owners' change requests, and the reviews and journal on Pro sites. */
 export const admin = new Hono<{ Variables: AuthVariables }>()
   .use(withSession, requireAuth(), requireAdmin)
 
@@ -100,4 +173,63 @@ export const admin = new Hono<{ Variables: AuthVariables }>()
       include: withLodge,
     });
     return c.json(adminRequestJson(updated));
+  })
+
+  /** Lodges for the content screen, Pro first. */
+  .get("/lodges", async (c) => {
+    const query = lodgeListQuery.safeParse(c.req.query());
+    const q = query.success ? query.data.q : "";
+    const lodges = await prisma.lodge.findMany({
+      where: q ? { OR: [{ name: { contains: q, mode: "insensitive" } }, { slug: { contains: q.toLowerCase() } }] } : {},
+      select: { name: true, slug: true, plan: true, status: true, reviewScore: true, _count: { select: { reviews: true, posts: true } } },
+      orderBy: [{ plan: "desc" }, { name: "asc" }],
+      take: 100,
+    });
+    return c.json({
+      lodges: lodges.map(({ _count, ...lodge }) => ({ ...lodge, quotes: _count.reviews, posts: _count.posts })),
+    });
+  })
+
+  .get("/lodges/:slug/content", async (c) => {
+    const lodge = await lodgeBySlug(c.req.param("slug"));
+    return c.json(await lodgeContent(lodge.id));
+  })
+
+  /** The score and the quotes, saved together (the quotes in the order sent). */
+  .put("/lodges/:slug/reviews", validJson(reviewsInput), async (c) => {
+    const lodge = await lodgeBySlug(c.req.param("slug"));
+    const { score, count, source, url, quotes } = c.req.valid("json");
+    await prisma.$transaction([
+      prisma.lodge.update({ where: { id: lodge.id }, data: { reviewScore: score, reviewCount: count, reviewSource: source, reviewUrl: url } }),
+      prisma.review.deleteMany({ where: { lodgeId: lodge.id } }),
+      prisma.review.createMany({ data: quotes.map((quote, position) => ({ ...quote, lodgeId: lodge.id, position })) }),
+    ]);
+    return c.json(await lodgeContent(lodge.id));
+  })
+
+  .post("/lodges/:slug/posts", validJson(postInput), async (c) => {
+    const lodge = await lodgeBySlug(c.req.param("slug"));
+    const input = c.req.valid("json");
+    await checkCover(lodge.id, input.coverId);
+    const slug = input.slug || postSlug(input.title) || "post";
+    const post = await savePost(() => prisma.post.create({ data: { ...input, slug, lodgeId: lodge.id } }));
+    return c.json({ post: adminPostJson(post), content: await lodgeContent(lodge.id) }, 201);
+  })
+
+  .patch("/lodges/:slug/posts/:id", validJson(postInput), async (c) => {
+    const lodge = await lodgeBySlug(c.req.param("slug"));
+    const existing = await prisma.post.findFirst({ where: { id: c.req.param("id"), lodgeId: lodge.id }, select: { id: true } });
+    if (!existing) throw new HTTPException(404, { message: "That post no longer exists" });
+    const input = c.req.valid("json");
+    await checkCover(lodge.id, input.coverId);
+    const slug = input.slug || postSlug(input.title) || "post";
+    const post = await savePost(() => prisma.post.update({ where: { id: existing.id }, data: { ...input, slug } }));
+    return c.json({ post: adminPostJson(post), content: await lodgeContent(lodge.id) });
+  })
+
+  .delete("/lodges/:slug/posts/:id", async (c) => {
+    const lodge = await lodgeBySlug(c.req.param("slug"));
+    const removed = await prisma.post.deleteMany({ where: { id: c.req.param("id"), lodgeId: lodge.id } });
+    if (removed.count === 0) throw new HTTPException(404, { message: "That post no longer exists" });
+    return c.json(await lodgeContent(lodge.id));
   });

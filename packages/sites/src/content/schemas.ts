@@ -10,7 +10,7 @@ import { HERO_LIMITS } from "../index";
 import { AMENITY_KEYS } from "./amenities";
 import { isDateString, nightsBetween } from "./dates";
 import { SOCIAL_KEYS, socialLink, STAY_TIMES, type SocialLinks } from "./guest-info";
-import { BOOKING_LIMITS, GUEST_INFO_LIMITS, LODGE_LIMITS, ROOM_LIMITS } from "./limits";
+import { BOOKING_LIMITS, CONTENT_LIMITS, GUEST_INFO_LIMITS, LODGE_LIMITS, ROOM_LIMITS } from "./limits";
 import type { PublicSite } from "./types";
 
 /** Digits only, with the country code: "+263 77 123 4567" → "263771234567". */
@@ -231,6 +231,36 @@ const siteRoom = z.object({
   size: z.number().nullable().default(null),
 });
 
+const siteReviews = z.object({
+  score: z.number().nullable().default(null),
+  count: z.number().nullable().default(null),
+  source: z.string().default("Booking.com"),
+  url: z.string().nullable().default(null),
+  quotes: z
+    .array(
+      z.object({
+        quote: z.string(),
+        author: z.string(),
+        origin: z.string().nullable().default(null),
+        stayed: z.string().nullable().default(null),
+        score: z.number().nullable().default(null),
+      }),
+    )
+    .default([]),
+});
+
+const sitePost = z.object({
+  slug: z.string(),
+  title: z.string(),
+  excerpt: z.string().nullable().default(null),
+  publishedOn: z.string(),
+  readMinutes: z.number().default(1),
+  cover: sitePhoto.nullable().catch(null).default(null),
+});
+
+/** One journal post with its body, for the post page. */
+export const sitePostFullSchema = sitePost.extend({ body: z.string() });
+
 const liveSite = z.object({
   status: z.literal("LIVE"),
   demo: z.boolean().default(false),
@@ -268,6 +298,8 @@ const liveSite = z.object({
       ),
     ),
   booking: z.object({ mode: z.enum(["whatsapp", "request"]).catch("whatsapp") }).default({ mode: "whatsapp" }),
+  reviews: siteReviews.nullable().catch(null).default(null),
+  journal: z.array(sitePost).catch([]).default([]),
 });
 
 export const publicSiteSchema = z.discriminatedUnion("status", [
@@ -279,3 +311,60 @@ export const publicSiteSchema = z.discriminatedUnion("status", [
 type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 const sameAsContract: Same<z.output<typeof publicSiteSchema>, PublicSite> = true;
 void sameAsContract;
+
+
+// --- Reviews and the journal: the StayZim team enters them for Pro sites ---
+
+const score = z.number().min(1, "Scores go from 1 to 10").max(10, "Scores go from 1 to 10").multipleOf(0.1, "Use one decimal, like 9.4");
+const httpsLink = (label: string) =>
+  z
+    .string()
+    .trim()
+    .max(CONTENT_LIMITS.url)
+    .transform((value) => value || null)
+    .pipe(z.url({ protocol: /^https$/, message: `${label} must start with https://` }).nullable());
+
+export const reviewsInput = z.object({
+  score: score.nullable(),
+  count: z.number().int().min(1).max(100_000).nullable(),
+  source: z.string().trim().min(2, "Say where the reviews are from").max(CONTENT_LIMITS.source),
+  url: httpsLink("The listing link").nullable().default(null),
+  quotes: z
+    .array(
+      z.object({
+        quote: z.string().trim().min(3, "Write the guest's words").max(CONTENT_LIMITS.quote, `Keep each quote under ${CONTENT_LIMITS.quote} characters`),
+        author: z.string().trim().min(1, "Add the guest's name").max(CONTENT_LIMITS.author),
+        origin: optionalText(CONTENT_LIMITS.origin, "Where they're from").default(null),
+        stayed: optionalText(CONTENT_LIMITS.stayed, "When they stayed").default(null),
+        score: score.nullable().default(null),
+      }),
+    )
+    .max(CONTENT_LIMITS.quotes, `Up to ${CONTENT_LIMITS.quotes} quotes`),
+});
+
+/** "A morning walk to Bridal Veil Falls" → "a-morning-walk-to-bridal-veil-falls" */
+export function postSlug(title: string) {
+  return title
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, CONTENT_LIMITS.postSlug)
+    .replace(/-+$/g, "");
+}
+
+export const postInput = z.object({
+  title: z.string().trim().min(3, "Add a title").max(CONTENT_LIMITS.postTitle),
+  /** Left empty: made from the title */
+  slug: z
+    .string()
+    .trim()
+    .max(CONTENT_LIMITS.postSlug)
+    .regex(/^[a-z0-9-]*$/, "Use lowercase letters, numbers and dashes")
+    .default(""),
+  excerpt: optionalText(CONTENT_LIMITS.excerpt, "The summary").default(null),
+  body: z.string().trim().min(1, "Write the post").max(CONTENT_LIMITS.body, "The post is too long"),
+  coverId: z.string().nullable().default(null),
+  publishedOn: z.string().refine(isDateString, "Pick a date"),
+});

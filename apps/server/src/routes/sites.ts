@@ -32,6 +32,7 @@ import { z } from "zod";
 import { sendQuietly } from "../lib/billing";
 import { bookingReference, bookingsEnabled, checkWindow, claimRooms, HOLDING, holdsFor } from "../lib/bookings";
 import { clientIp } from "../lib/ip";
+import { proContent, publishedPost, publishedPosts } from "../lib/content";
 import { lodgeJson } from "../lib/lodge";
 import { withSession, type AuthVariables } from "../lib/session";
 import { newReference } from "../lib/reference";
@@ -55,6 +56,13 @@ function requestMode(lodge: { plan: Plan; whatsapp: string | null; rooms: { visi
 }
 
 /** A lodge whose site is up and takes requests, or null (404, the same as an unknown site). */
+/** A live Pro lodge, the only kind with a journal. */
+async function journalLodge(slug: string) {
+  const lodge = await prisma.lodge.findUnique({ where: { slug: slug.toLowerCase() }, select: { id: true, plan: true, status: true, demoEndsAt: true } });
+  if (!lodge || lodge.plan !== "PRO" || lodge.status === "SUSPENDED") return null;
+  return demoEnded(lodge, new Date()) ? null : lodge;
+}
+
 async function bookableLodge(slug: string) {
   const lodge = await prisma.lodge.findUnique({
     where: { slug: slug.toLowerCase() },
@@ -103,7 +111,10 @@ export const sites = new Hono<{ Variables: AuthVariables }>()
 
   /** The lodge's site content. 404 for an unknown lodge; a short answer for a suspended one or an ended demo. */
   .get("/:slug", async (c) => {
-    const lodge = await prisma.lodge.findUnique({ where: { slug: c.req.param("slug").toLowerCase() }, select: { id: true, status: true } });
+    const lodge = await prisma.lodge.findUnique({
+      where: { slug: c.req.param("slug").toLowerCase() },
+      select: { id: true, status: true, plan: true, reviewScore: true, reviewCount: true, reviewSource: true, reviewUrl: true },
+    });
     if (!lodge) return c.json({ error: "No lodge here" }, 404);
 
     const full = await lodgeJson(lodge.id);
@@ -157,7 +168,23 @@ export const sites = new Hono<{ Variables: AuthVariables }>()
         return url ? [{ key, label: SOCIAL_NETWORKS[key].label, url }] : [];
       }),
       booking: { mode: requestMode(full) ? "request" : "whatsapp" },
+      ...(await proContent(lodge)),
     } satisfies PublicSite);
+  })
+
+  /** Pro: every published journal post, newest first. */
+  .get("/:slug/journal", async (c) => {
+    const lodge = await journalLodge(c.req.param("slug"));
+    if (!lodge) return c.json({ error: "No journal here" }, 404);
+    return c.json({ posts: await publishedPosts(lodge.id) });
+  })
+
+  /** Pro: one journal post with its body. */
+  .get("/:slug/journal/:post", async (c) => {
+    const lodge = await journalLodge(c.req.param("slug"));
+    const post = lodge ? await publishedPost(lodge.id, c.req.param("post").toLowerCase()) : null;
+    if (!post) return c.json({ error: "No post here" }, 404);
+    return c.json(post);
   })
 
   /** The nights each room is full, for the guest's date picker. No guest data, ever. */

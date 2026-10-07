@@ -52,3 +52,20 @@ export const BOOKING_LIMITS = {
   /** Days of availability one call returns */
   availabilityDays: 120,
 } as const;
+
+/** Pro sites: reviews and the journal, both entered by the StayZim team. */
+export const CONTENT_LIMITS = {
+  quotes: 12,
+  quote: 400,
+  author: 60,
+  origin: 60,
+  stayed: 40,
+  source: 40,
+  url: 500,
+  postTitle: 120,
+  postSlug: 80,
+  excerpt: 240,
+  body: 20_000,
+  /** Journal posts a site lists on its home page */
+  latestPosts: 3,
+} as const;

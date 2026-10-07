@@ -1,0 +1,49 @@
+/// A guest's words from the lodge's listing (Booking.com or similar), entered by
+/// the StayZim team for Pro sites. Shown in the order of `position`.
+model Review {
+  id       String  @id @default(cuid())
+  lodgeId  String  @map("lodge_id")
+  lodge    Lodge   @relation(fields: [lodgeId], references: [id], onDelete: Cascade)
+  /// What the guest wrote, up to 400 characters
+  quote    String
+  /// "Tendai M."
+  author   String
+  /// Where they're from: "Harare"
+  origin   String?
+  /// When they stayed: "March 2026"
+  stayed   String?
+  /// Their own score on the listing, e.g. 9.6
+  score    Float?
+  position Int     @default(0)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([lodgeId, position])
+  @@map("review")
+}
+
+/// A journal post on a Pro site (the two SEO posts a month), written by the StayZim team.
+model Post {
+  id          String   @id @default(cuid())
+  lodgeId     String   @map("lodge_id")
+  lodge       Lodge    @relation(fields: [lodgeId], references: [id], onDelete: Cascade)
+  /// In the address: /journal/{slug}
+  slug        String
+  title       String
+  /// One or two lines for the list and search results
+  excerpt     String?
+  /// Plain text: blank lines between paragraphs, "## " starts a heading
+  body        String
+  /// One of the lodge's photos, shown at the top
+  coverId     String?  @map("cover_id")
+  cover       Photo?   @relation("PostCover", fields: [coverId], references: [id], onDelete: SetNull)
+  /// Shown from this day (Harare). Later dates wait, so posts can be queued.
+  publishedOn String   @map("published_on")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([lodgeId, slug])
+  @@index([lodgeId, publishedOn])
+  @@map("post")
+}

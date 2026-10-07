@@ -84,9 +84,42 @@ export type LiveSite = {
    * dates and send a request (Growth and Pro, with WhatsApp and a room shown).
    */
   booking: { mode: "whatsapp" | "request" };
+  /** Pro sites with a score or quotes; null otherwise */
+  reviews: SiteReviews | null;
+  /** Pro: the latest journal posts, newest first (the journal page lists them all) */
+  journal: SitePost[];
 };
 
 export type SiteSocialLink = { key: SocialKey; label: string; url: string };
+
+/** One guest's words, from the lodge's listing */
+export type SiteReview = { quote: string; author: string; origin: string | null; stayed: string | null; score: number | null };
+
+/** Pro: the lodge's score where guests review it, and quotes the StayZim team picked */
+export type SiteReviews = {
+  /** 9.4 (out of 10) */
+  score: number | null;
+  count: number | null;
+  /** "Booking.com" */
+  source: string;
+  /** The listing, to read every review */
+  url: string | null;
+  quotes: SiteReview[];
+};
+
+/** A journal post in a list (the body comes with GET /api/sites/:slug/journal/:post) */
+export type SitePost = {
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  /** YYYY-MM-DD */
+  publishedOn: string;
+  readMinutes: number;
+  cover: SitePhoto | null;
+};
+
+/** A whole post: plain text, blank lines between paragraphs, "## " for headings */
+export type SitePostFull = SitePost & { body: string };
 
 export type PublicSite = { status: "SUSPENDED" | "DEMO_ENDED"; slug: string; name: string } | LiveSite;
 

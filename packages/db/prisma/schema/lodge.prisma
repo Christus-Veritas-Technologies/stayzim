@@ -66,6 +66,14 @@ model Lodge {
   /// Booking requests from the site are confirmed straight away when the nights are free (Growth and Pro)
   autoConfirmBookings Boolean @default(false) @map("auto_confirm_bookings")
 
+  /// The lodge's score on its listing, e.g. 9.4 on Booking.com (Pro sites; set by the StayZim team)
+  reviewScore  Float?  @map("review_score")
+  reviewCount  Int?    @map("review_count")
+  /// Where the score is from: "Booking.com"
+  reviewSource String? @map("review_source")
+  /// The listing, so guests can read every review
+  reviewUrl    String? @map("review_url")
+
   /// Headings, prices and links on the site, e.g. Highland #1E4A3B. The WhatsApp button stays green.
   themeColor  String  @default("#1E4A3B") @map("theme_color")
   /// Path under the upload directory, like Photo.key
@@ -94,6 +102,8 @@ model Lodge {
   invoices Invoice[]
   payments Payment[]
   bookings Booking[]
+  reviews  Review[]
+  posts    Post[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -141,6 +151,7 @@ model Photo {
   roomId  String? @map("room_id")
   room    Room?   @relation(fields: [roomId], references: [id], onDelete: Cascade)
   heroOf  Lodge?  @relation("LodgeHero")
+  coverOf Post[]  @relation("PostCover")
 
   /// Path under the upload directory, e.g. "lodges/<lodgeId>/<id>.jpg"
   key       String  @unique
