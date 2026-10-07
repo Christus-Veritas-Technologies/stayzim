@@ -10,7 +10,7 @@ StayZim runs on one VPS with [Coolify](https://coolify.io), behind Cloudflare. C
 | `server` | The API (Hono on Bun). Applies new database migrations each time it starts | `api.stayzim.co.zw` |
 | `db` | Postgres 16, data in the `postgres` volume | internal only |
 
-Lodge photos live in Cloudflare R2, served from `media.stayzim.co.zw`, so the server needs no volume.
+Lodge photos live in Cloudflare R2, served from `cdn.stayzim.co.zw`, so the server needs no volume.
 
 The outreach tool (`apps/outreach`) isn't in this stack. Deploy it as its own resource with `apps/outreach/Dockerfile` when it's needed.
 
@@ -40,7 +40,7 @@ Add `stayzim.co.zw` to Cloudflare and point the registrar's nameservers at it.
 | A | `api` | VPS IP |
 | A | `*` | VPS IP (every lodge site) |
 
-The `media` record comes from R2 (step 2), not from you.
+The `cdn` record comes from R2 (step 2), not from you.
 
 **SSL/TLS:**
 
@@ -60,14 +60,16 @@ Cloudflare also sends:
 ## 2. Cloudflare R2 (lodge photos)
 
 1. Go to R2 → Create bucket `stayzim-media`.
-2. Under Settings → Custom Domains, add `media.stayzim.co.zw`. Cloudflare creates the DNS record.
-3. Add a Cache Rule for `media.stayzim.co.zw`: cache everything, Edge TTL 1 year. Every photo has a new file name, so nothing ever needs purging.
+2. Under Settings → Custom Domains, add `cdn.stayzim.co.zw`. Cloudflare creates the DNS record, and the bucket is public on that domain only (leave the r2.dev URL off).
+3. Add a Cache Rule for `cdn.stayzim.co.zw`: cache everything, Edge TTL 1 year, Browser TTL 1 year. Every photo has a new file name, so nothing ever needs purging. (Uploads carry no Cache-Control header of their own: Bun's S3 client can't set one, so this rule is what makes photos cache.)
 4. Go to R2 → Manage API Tokens → Create a token with **Object Read & Write**, limited to this bucket.
 5. Note:
    - the Account ID → `R2_ACCOUNT_ID`;
    - the Access Key ID and Secret → `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY`;
    - `R2_BUCKET=stayzim-media`;
-   - `R2_PUBLIC_URL=https://media.stayzim.co.zw`.
+   - `R2_PUBLIC_URL=https://cdn.stayzim.co.zw`.
+
+The pages show photos with plain `<img>` tags, so neither Next.js nor CORS needs anything for them. `next.config.ts` allows `cdn.stayzim.co.zw` for `next/image` in case it's used later; change it there if the domain changes.
 
 The API refuses to start in production without R2.
 

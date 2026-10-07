@@ -107,7 +107,7 @@ export function describeStorage() {
   return storage.kind === "r2" ? `Cloudflare R2 bucket "${env.R2_BUCKET}"` : `local folder ${UPLOAD_ROOT} (R2 not configured)`;
 }
 
-/** Public URL of a stored file, e.g. https://media.stayzim.co.zw/lodges/abc/xyz.jpg */
+/** Public URL of a stored file, e.g. https://cdn.stayzim.co.zw/lodges/abc/xyz.jpg */
 export function uploadUrl(key: string) {
   return storage.url(key);
 }

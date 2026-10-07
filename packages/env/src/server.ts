@@ -60,7 +60,7 @@ export const env = createEnv({
     R2_ACCESS_KEY_ID: z.string().min(1).optional(),
     R2_SECRET_ACCESS_KEY: z.string().min(1).optional(),
     R2_BUCKET: z.string().min(1).optional(),
-    // Public URL of the bucket (its custom domain or r2.dev URL), e.g. https://media.stayzim.co.zw
+    // Public URL of the bucket (its custom domain or r2.dev URL), e.g. https://cdn.stayzim.co.zw
     R2_PUBLIC_URL: z
       .url()
       .optional()

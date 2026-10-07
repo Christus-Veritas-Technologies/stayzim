@@ -314,5 +314,5 @@ Step by step in [deployment.md](deployment.md).
 - `stayzim.co.zw`: apps/web (`www.` and `app.` redirect to it)
 - `{slug}.stayzim.co.zw`: lodge sites, also apps/web, via a wildcard DNS record and certificate (see [deployment.md](deployment.md))
 - `api.stayzim.co.zw`: apps/server, with `COOKIE_DOMAIN=.stayzim.co.zw` so web and API share the session cookie, and `CORS_ORIGIN=https://stayzim.co.zw`
-- `media.stayzim.co.zw`: the R2 bucket's public domain, for lodge photos
+- `cdn.stayzim.co.zw`: the R2 bucket's public domain, for lodge photos (the hero photo is preloaded: React does it for a high-priority `<img>`)
 - Outreach runs on the same VPS but isn't exposed publicly beyond its password-protected pages

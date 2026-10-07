@@ -32,6 +32,12 @@ const nextConfig: NextConfig = {
   // (next typegen + tsc), which CI runs on every push
   typescript: { ignoreBuildErrors: true },
   headers: async () => [{ source: "/:path*", headers: securityHeaders }],
+  // Lodge photos come from the R2 bucket's domain (R2_PUBLIC_URL on the server). Pages
+  // show them with plain <img> and srcset (resized on upload), which needs no setting;
+  // this lets next/image use them too.
+  images: {
+    remotePatterns: [new URL("https://cdn.stayzim.co.zw/**")],
+  },
 };
 
 export default nextConfig;
