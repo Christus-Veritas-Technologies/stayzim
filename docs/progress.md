@@ -368,7 +368,7 @@ Built (web):
 - **Sales WhatsApp number,** for the landing page and the demo lodges (`seed-demos --whatsapp`).
 - **Demo lodge photos,** and a check of the demo copy in `packages/auth/scripts/seed-demos.ts`.
 - **Hosting:** the VPS, Coolify, the Cloudflare zone, and the origin certificate ([deployment.md](deployment.md)).
-- **Template designs** for the 8 placeholders, from the designer.
+- **Template designs** for the 8 placeholders, from the designer. As of 7 October, only the landing page and app screens are in `designs/`; the template files haven't been pushed yet.
 - **Real-device check** on iOS Safari and Android Chrome, especially the sign-up flow and photo picking.
 - **A review of the Privacy and Terms drafts** (`apps/web/src/app/privacy`, `apps/web/src/app/terms`), now covering the demo, payments and deletion.
 - **Facebook ads:** the Meta Pixel is built and off. Set `NEXT_PUBLIC_META_PIXEL_ID` and rebuild web to switch it on; the privacy notice then mentions it. Server-side Conversions API isn't added (it needs a Meta access token).
@@ -383,6 +383,8 @@ Newest first. One line per piece of work that landed on `main`.
 - Guests book on Growth and Pro sites (date picker, full nights greyed out); the owner confirms, or turns on Confirm bookings automatically. Classic leads with Book now, WhatsApp second; Starter stays on WhatsApp.
 - Booking data on the dashboard: Coming up, Today, the stats tile split, upcoming bookings on Rooms, a downgrade note on Billing; direct-booking copy on the landing page, sign-in and `/start`.
 - `.env.example` files list every setting; browser tests for the CMS and bookings; a Starter lodge in CI.
+- Bookings page redesign: four tiles for today, queue-style request cards (clashes outlined), an agenda-style desktop calendar, tinted days on the phone month, and calendar-leaf dates in booking lists.
+- Auth screens on phones checked against `designs/StayZim App Screens.html`: the logo sits in a ringed tile and the Kariba header is a little taller.
 
 ### 6 October 2026 (CMS)
 
