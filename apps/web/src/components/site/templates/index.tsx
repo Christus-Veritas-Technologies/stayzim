@@ -4,6 +4,7 @@ import { DemoBand, DemoPill, DemoRibbon } from "@/components/site/demo-badges";
 import { BasicTemplate } from "@/components/site/templates/basic";
 import { ClassicTemplate } from "@/components/site/templates/classic";
 import { PLACEHOLDER_LOOKS } from "@/components/site/templates/looks";
+import { CanopyTemplate } from "@/components/site/templates/canopy";
 import { CourtyardTemplate } from "@/components/site/templates/courtyard";
 import { EscarpmentTemplate } from "@/components/site/templates/escarpment";
 import { OverlapTemplate } from "@/components/site/templates/overlap";
@@ -25,6 +26,7 @@ const DESIGNS: Partial<Record<TemplateKey, (props: { site: LiveSite }) => React.
   "growth-overlap": OverlapTemplate,
   "pro-escarpment": EscarpmentTemplate,
   "pro-courtyard": CourtyardTemplate,
+  "pro-canopy": CanopyTemplate,
 };
 
 /** What the booking sheet needs, where the site takes bookings. Previews never do: Book stays a WhatsApp link there. */

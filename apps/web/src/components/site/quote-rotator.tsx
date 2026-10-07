@@ -17,6 +17,7 @@ export function QuoteRotator({
   byClassName,
   buttonClassName,
   className,
+  marks = true,
 }: {
   quotes: SiteReview[];
   /** "Booking.com", shown in the name line */
@@ -25,6 +26,8 @@ export function QuoteRotator({
   byClassName?: string;
   buttonClassName?: string;
   className?: string;
+  /** Curly quotes around the words; off where the design draws its own mark */
+  marks?: boolean;
 }) {
   const [index, setIndex] = useState(0);
   const reduce = useReducedMotion();
@@ -44,7 +47,7 @@ export function QuoteRotator({
           transition={{ duration: 0.35 }}
           className="flex flex-col gap-6"
         >
-          <blockquote className={quoteClassName}>“{quote.quote}”</blockquote>
+          <blockquote className={quoteClassName}>{marks ? `“${quote.quote}”` : quote.quote}</blockquote>
           <figcaption className={byClassName}>
             <strong className="font-semibold">{quote.author}</strong>
             {by.length > 0 ? ` · ${by.join(" · ")}` : ""}
