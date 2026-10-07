@@ -81,7 +81,8 @@ const SECTIONS: LegalSection[] = [
       <p>
         On our own site we count page views and which buttons are tapped, with the page, the website or advert that sent you, your browser,
         and the same kind of random number in your browser. We use it to see which adverts and parts of the page work. We don&apos;t keep IP
-        addresses for these visits.
+        addresses for these visits. When you make a site, we keep the advert or website that sent you with it, and which steps you finished, so we
+        know which adverts bring lodges.
         We also use the Meta (Facebook) Pixel on stayzim.co.zw, sign-up and the owner dashboard, so we can tell which Facebook and Instagram
         adverts work: it tells Meta when you view a page, sign up, make your demo or pay (the plan and amount, never card or mobile money
         details). Lodge sites never use it.
