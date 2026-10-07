@@ -69,3 +69,14 @@ test("old sign-up links land on /create, keeping the plan and the ad's tags", as
   await page.goto("/signup?plan=pro&utm_source=meta");
   await expect(page).toHaveURL(/\/create\?plan=pro&utm_source=meta/);
 });
+
+test("each design opens a preview on an example lodge, and Use picks it", async ({ page }) => {
+  await page.goto("/create");
+  await page.getByRole("radio", { name: /Wordmark/ }).hover();
+  await page.getByRole("button", { name: "Preview Wordmark" }).click();
+  const frame = page.frameLocator('iframe[title="Wordmark design preview"]');
+  await expect(frame.getByText("Preview: Wordmark template")).toBeVisible({ timeout: 30_000 });
+  await page.getByRole("button", { name: "Use Wordmark" }).click();
+  await expect(page.getByRole("radio", { name: /Wordmark/ })).toHaveAttribute("aria-checked", "true");
+  await expect(page).toHaveURL(/look=growth-wordmark/);
+});

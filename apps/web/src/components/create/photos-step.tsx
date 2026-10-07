@@ -97,7 +97,7 @@ export function PhotosStep({ uploads, onLive }: { uploads: ReturnType<typeof use
             title={shown === 0 ? "Drag photos here" : "Drag another photo here"}
             touchTitle={shown === 0 ? "Add photos from your phone" : "Add another photo"}
             action={shown === 0 ? "Upload photos" : "Add more"}
-            note={shown === 0 ? undefined : `${CREATE_PHOTOS - shown} more for the best first look.`}
+            note={shown === 0 ? undefined : "Resized on your phone first, so it goes up on slow data."}
             tip={shown === 0 ? "Daylight photos look best" : undefined}
           />
         ) : null}
