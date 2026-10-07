@@ -190,6 +190,11 @@ export function phoneToInput(digits: string | null) {
   return digits.startsWith("263") ? digits.slice(3) : `+${digits}`;
 }
 
+/** The "+263" shown before a number box, dropped once the number has its own country code. */
+export function dialPrefix(text: string) {
+  return text.trim().startsWith("+") ? null : "+263";
+}
+
 /** The digits to store from what was typed, or the problem with it. */
 export function phoneFromInput(text: string): { digits: string | null; error?: string } {
   const trimmed = text.trim();

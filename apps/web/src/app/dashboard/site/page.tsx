@@ -41,6 +41,7 @@ import { WhyDisabled } from "@/components/why-disabled";
 import { api, apiUpload } from "@/lib/api";
 import { ImageReadError, LOGO_EDGE, photoForm, resizeImage } from "@/lib/images";
 import {
+  dialPrefix,
   formatPhone,
   lodgePlace,
   phoneFromInput,
@@ -316,7 +317,7 @@ export default function LodgeInfoPage() {
                   <InputGroup>
                     <InputGroupAddon>
                       <WhatsAppIcon size={15} color="#1F7A4D" />
-                      +263
+                      {dialPrefix(draft.whatsapp)}
                     </InputGroupAddon>
                     <InputGroupInput
                       value={draft.whatsapp}
@@ -330,7 +331,7 @@ export default function LodgeInfoPage() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label="Phone (optional)" error={errors.phone} hint="For guests who'd rather call.">
                     <InputGroup>
-                      <InputGroupAddon>+263</InputGroupAddon>
+                      {dialPrefix(draft.phone) ? <InputGroupAddon>+263</InputGroupAddon> : null}
                       <InputGroupInput
                         value={draft.phone}
                         onChange={(event) => set("phone", event.target.value)}

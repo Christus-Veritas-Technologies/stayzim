@@ -41,7 +41,7 @@ import {
   type BookingsWindow,
   type DashboardBooking,
 } from "@/lib/bookings";
-import { formatPhone, phoneFromInput, phoneToInput, type Lodge } from "@/lib/lodge";
+import { dialPrefix, formatPhone, phoneFromInput, phoneToInput, type Lodge } from "@/lib/lodge";
 
 export type SheetRoom = BookingsWindow["rooms"][number];
 
@@ -400,7 +400,7 @@ export function BookingSheet({
                     <InputGroup>
                       <InputGroupAddon>
                         <WhatsAppIcon size={15} color="#1F7A4D" />
-                        +263
+                        {dialPrefix(draft.guestPhone)}
                       </InputGroupAddon>
                       <InputGroupInput
                         value={draft.guestPhone}

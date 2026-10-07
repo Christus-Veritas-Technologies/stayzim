@@ -13,7 +13,7 @@ import { PlanPicker } from "@/components/plan-picker";
 import { StepHeading } from "@/components/start/frame";
 import { api } from "@/lib/api";
 import { metaEvent } from "@/lib/meta-pixel";
-import { phoneFromInput, PLANS, type Lodge, type PlanKey } from "@/lib/lodge";
+import { dialPrefix, phoneFromInput, PLANS, type Lodge, type PlanKey } from "@/lib/lodge";
 import { SITES_DOMAIN } from "@/lib/site-host";
 
 type SlugCheck = { slug: string; available: boolean; problem: string | null };
@@ -113,7 +113,7 @@ export function LodgeStep({ plan: initialPlan, onCreated }: { plan: PlanKey; onC
             <InputGroup>
               <InputGroupAddon>
                 <WhatsAppIcon size={15} color="#1F7A4D" />
-                +263
+                {dialPrefix(whatsapp)}
               </InputGroupAddon>
               <InputGroupInput
                 value={whatsapp}
