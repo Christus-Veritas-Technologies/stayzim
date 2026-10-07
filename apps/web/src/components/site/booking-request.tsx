@@ -84,6 +84,8 @@ export function BookingRequest({
   const [formError, setFormError] = useState<{ text: string; whatsapp?: boolean } | null>(null);
   const [sending, setSending] = useState(false);
   const [reference, setReference] = useState<string | null>(null);
+  /** The lodge confirms bookings automatically: the guest is booked, not waiting */
+  const [booked, setBooked] = useState(false);
   const { full, error: availabilityError } = useAvailability(site.slug, month);
 
   const room = site.rooms.find((entry) => entry.id === roomId) ?? site.rooms[0]!;
@@ -94,7 +96,7 @@ export function BookingRequest({
   );
 
   const chatText = reference
-    ? `Hi ${site.name}, I've just sent a booking request (${reference}): ${room.name}, ${formatStay(dates.start!, dates.end!)}, ${guests} ${guests === 1 ? "guest" : "guests"}. My name is ${name.trim()}.`
+    ? `Hi ${site.name}, I've just ${booked ? "booked" : "sent a booking request"} (${reference}): ${room.name}, ${formatStay(dates.start!, dates.end!)}, ${guests} ${guests === 1 ? "guest" : "guests"}. My name is ${name.trim()}.`
     : dates.start && dates.end
       ? `Hi ${site.name}, I'd like to book the ${room.name} for ${formatStay(dates.start, dates.end)}, ${guests} ${guests === 1 ? "guest" : "guests"}.`
       : `Hi ${site.name}, I'd like to book the ${room.name}. My dates are: `;
@@ -141,9 +143,10 @@ export function BookingRequest({
           website,
         }),
       });
-      const body = (await response.json().catch(() => ({}))) as { reference?: string; error?: string; fullOn?: string };
+      const body = (await response.json().catch(() => ({}))) as { reference?: string; status?: string; error?: string; fullOn?: string };
       if (response.ok && body.reference) {
         setReference(body.reference);
+        setBooked(body.status === "CONFIRMED");
         setStep("sent");
       } else if (response.status === 409) {
         setErrors({ dates: body.error ?? "Those dates just filled up. Pick others." });
@@ -174,9 +177,11 @@ export function BookingRequest({
       <SheetContent side={wide ? "right" : "bottom"} style={theme} className="max-sm:max-h-[92svh]">
         <form onSubmit={next} className="flex h-full min-h-0 flex-col" noValidate>
           <SheetHeader>
-            <SheetTitle>{step === "sent" ? "Request sent" : `Book at ${site.name}`}</SheetTitle>
+            <SheetTitle>{step === "sent" ? (booked ? "You're booked" : "Request sent") : `Book at ${site.name}`}</SheetTitle>
             <SheetDescription>
-              {step === "dates" ? "Pick your dates. Greyed-out nights are full." : step === "details" ? "How the lodge can reach you." : `${site.name} will confirm with you, usually on WhatsApp.`}
+              {step === "dates" ? "Pick your dates. Greyed-out nights are full." : step === "details" ? "How the lodge can reach you." : booked
+                  ? `${site.name} has your booking. They'll be in touch on WhatsApp.`
+                  : `${site.name} will confirm with you, usually on WhatsApp.`}
             </SheetDescription>
             {step !== "sent" ? (
               <ol className="mt-3 flex gap-1.5" aria-label="Steps">
@@ -318,7 +323,9 @@ export function BookingRequest({
                     <p className="text-[14px] text-muted">
                       {room.name}, {formatStay(dates.start!, dates.end!)}. Your reference is <strong className="font-semibold whitespace-nowrap text-ink">{reference}</strong>.
                     </p>
-                    <p className="text-[13px] text-muted-2">The nights aren&apos;t held until the lodge confirms.</p>
+                    <p className="text-[13px] text-muted-2">
+                      {booked ? "The nights are yours. Keep the reference for your stay." : "The nights aren't held until the lodge confirms."}
+                    </p>
                   </div>
                 </motion.div>
               )}

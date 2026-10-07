@@ -128,6 +128,7 @@ export async function lodgeJson(lodgeId: string): Promise<DashboardLodge> {
     cancellationPolicy: lodge.cancellationPolicy || null,
     faq: readFaq(lodge.faq),
     socialLinks: readSocialLinks(lodge.socialLinks),
+    autoConfirmBookings: lodge.autoConfirmBookings,
     bookingsWaiting: bookings.waiting,
     today: bookings.today,
   };

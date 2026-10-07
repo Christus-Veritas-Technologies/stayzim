@@ -53,8 +53,10 @@ function whatsappButton(url: string, label: string) {
   return `<p style="margin:0 0 8px"><a href="${escapeHtml(url)}" style="color:${BRAND};font-weight:600">${escapeHtml(label)}</a></p>`;
 }
 
-/** To the owner: a guest sent a booking request from the site. */
+/** To the owner: a guest sent a booking request from the site (or booked, when bookings confirm themselves). */
 export function bookingRequestEmail(input: Stay & {
+  /** Confirmed straight away (the owner's "Confirm bookings automatically") */
+  confirmed?: boolean;
   to: string;
   ownerName: string;
   guestName: string;
@@ -65,31 +67,34 @@ export function bookingRequestEmail(input: Stay & {
   requestsUrl: string;
 }): Email {
   const list = rows(input, [["Guest", `${input.guestName}, ${input.guestPhone}`]]);
+  const confirmed = Boolean(input.confirmed);
+  const action = confirmed ? "See your bookings" : "Confirm or decline";
+  const after = confirmed ? "It's confirmed and the nights are held. Cancel it from your dashboard if you need to." : "The dates aren't held until you confirm.";
   return {
     to: input.to,
-    subject: `New booking request: ${input.roomName}, ${input.dates}`,
+    subject: `${confirmed ? "New booking" : "New booking request"}: ${input.roomName}, ${input.dates}`,
     text: [
       `Hi ${input.ownerName.split(" ")[0]},`,
       "",
-      `${input.guestName} would like to stay at ${input.lodgeName}.`,
+      confirmed ? `${input.guestName} booked a stay at ${input.lodgeName}.` : `${input.guestName} would like to stay at ${input.lodgeName}.`,
       "",
       ...textRows(list),
       ...(input.message ? ["", `Their note: ${input.message}`] : []),
       "",
-      `Confirm or decline it: ${input.requestsUrl}`,
+      `${action}: ${input.requestsUrl}`,
       `WhatsApp ${input.guestName}: ${input.guestWhatsappUrl}`,
       "",
-      "The dates aren't held until you confirm.",
+      after,
     ].join("\n"),
     html: layout({
-      preview: `${input.guestName} asked for ${input.roomName}, ${input.dates}.`,
+      preview: confirmed ? `${input.guestName} booked ${input.roomName}, ${input.dates}.` : `${input.guestName} asked for ${input.roomName}, ${input.dates}.`,
       body: `${greeting(input.ownerName)}
-<p style="margin:0">${escapeHtml(input.guestName)} would like to stay at <strong>${escapeHtml(input.lodgeName)}</strong>.</p>
+<p style="margin:0">${escapeHtml(input.guestName)} ${confirmed ? "booked a stay" : "would like to stay"} at <strong>${escapeHtml(input.lodgeName)}</strong>.</p>
 ${summary(list)}
 ${input.message ? `<p style="margin:16px 0 0;padding:12px 14px;background:#F4F7F9;border-radius:10px;font-size:14px;line-height:21px">“${escapeHtml(input.message)}”</p>` : ""}
-${button(input.requestsUrl, "Confirm or decline")}
+${button(input.requestsUrl, action)}
 ${whatsappButton(input.guestWhatsappUrl, `WhatsApp ${input.guestName}`)}
-<p style="margin:0;font-size:13px;line-height:20px;color:${MUTED}">The dates aren't held until you confirm.</p>`,
+<p style="margin:0;font-size:13px;line-height:20px;color:${MUTED}">${after}</p>`,
     }),
   };
 }

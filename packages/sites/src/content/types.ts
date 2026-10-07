@@ -167,6 +167,8 @@ export type DashboardLodge = {
   cancellationPolicy: string | null;
   faq: FaqEntry[];
   socialLinks: SocialLinks;
+  /** Site requests on free nights are confirmed straight away */
+  autoConfirmBookings: boolean;
   /** Booking requests waiting for an answer (0 without the calendar) */
   bookingsWaiting: number;
   /** Today in the calendar (zeros without it) */

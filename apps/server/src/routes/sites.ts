@@ -1,6 +1,6 @@
 import { zValidator } from "@hono/zod-validator";
 import prisma from "@stayzim/db";
-import { bookingRequestEmail } from "@stayzim/mail/templates";
+import { bookingConfirmedEmail, bookingRequestEmail } from "@stayzim/mail/templates";
 import {
   BOOKING_LIMITS,
   canHold,
@@ -25,11 +25,12 @@ import {
 import { bookingRequestInput } from "@stayzim/sites/schemas";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
+import { HTTPException } from "hono/http-exception";
 import { rateLimiter } from "hono-rate-limiter";
 import { z } from "zod";
 
 import { sendQuietly } from "../lib/billing";
-import { bookingReference, bookingsEnabled, checkWindow, HOLDING, holdsFor } from "../lib/bookings";
+import { bookingReference, bookingsEnabled, checkWindow, claimRooms, HOLDING, holdsFor } from "../lib/bookings";
 import { clientIp } from "../lib/ip";
 import { lodgeJson } from "../lib/lodge";
 import { withSession, type AuthVariables } from "../lib/session";
@@ -67,6 +68,10 @@ async function bookableLodge(slug: string) {
       demoEndsAt: true,
       whatsapp: true,
       ownerId: true,
+      autoConfirmBookings: true,
+      email: true,
+      checkInFrom: true,
+      checkOutBy: true,
       owner: { select: { name: true, email: true } },
       rooms: { where: { visible: true }, orderBy: { position: "asc" }, select: { id: true, name: true, units: true, price: true, sleeps: true, visible: true } },
     },
@@ -211,26 +216,40 @@ export const sites = new Hono<{ Variables: AuthVariables }>()
       const fits = canHold(room.units, holds, { ...input, quantity: 1 });
       if (!fits.ok) return c.json({ error: `${room.name} is full on ${formatDay(fits.fullOn)}. Try other dates or another room.`, fullOn: fits.fullOn }, 409);
 
-      const booking = await prisma.booking.create({
-        data: {
-          reference: await bookingReference(prisma),
-          lodgeId: lodge.id,
-          roomId: room.id,
-          kind: "STAY",
-          status: "REQUESTED",
-          source: "SITE",
-          checkIn: dateValue(input.checkIn),
-          checkOut: dateValue(input.checkOut),
-          quantity: 1,
-          guests: input.guests,
-          guestName: input.name,
-          guestPhone: input.phone,
-          guestEmail: input.email,
-          message: input.message,
-          roomName: room.name,
-          nightlyPrice: room.price,
-        },
-      });
+      // "Confirm bookings automatically": booked straight away, under the room's lock so the last room can't go twice
+      const instant = lodge.autoConfirmBookings;
+      let booking;
+      try {
+        booking = await prisma.$transaction(async (tx) => {
+          if (instant) await claimRooms(tx, room, { ...input, quantity: 1 });
+          return tx.booking.create({
+            data: {
+              reference: await bookingReference(tx),
+              lodgeId: lodge.id,
+              roomId: room.id,
+              kind: "STAY",
+              status: instant ? "CONFIRMED" : "REQUESTED",
+              decidedAt: instant ? new Date() : null,
+              source: "SITE",
+              checkIn: dateValue(input.checkIn),
+              checkOut: dateValue(input.checkOut),
+              quantity: 1,
+              guests: input.guests,
+              guestName: input.name,
+              guestPhone: input.phone,
+              guestEmail: input.email,
+              message: input.message,
+              roomName: room.name,
+              nightlyPrice: room.price,
+            },
+          });
+        });
+      } catch (error) {
+        if (error instanceof HTTPException && error.status === 409) {
+          return c.json({ error: `${error.message}. Try other dates or another room.` }, 409);
+        }
+        throw error;
+      }
 
       const user = c.get("user");
       const own = Boolean(user && (user.id === lodge.ownerId || user.role === "ADMIN"));
@@ -267,11 +286,32 @@ export const sites = new Hono<{ Variables: AuthVariables }>()
           guestPhone: `+${input.phone}`,
           guestWhatsappUrl: `https://wa.me/${input.phone}`,
           message: input.message,
-          requestsUrl: `${DASHBOARD_URL}/bookings?tab=requests`,
+          requestsUrl: `${DASHBOARD_URL}/bookings?tab=${instant ? "upcoming" : "requests"}`,
+          confirmed: instant,
         }),
-        "booking request",
+        instant ? "new booking" : "booking request",
       );
-      return c.json({ reference: booking.reference }, 201);
+      if (instant && input.email) {
+        const times = [lodge.checkInFrom && `Check-in from ${lodge.checkInFrom}`, lodge.checkOutBy && `Check-out by ${lodge.checkOutBy}`].filter(Boolean).join(" · ");
+        await sendQuietly(
+          bookingConfirmedEmail({
+            to: input.email,
+            guestName: input.name,
+            lodgeName: lodge.name,
+            roomName: room.name,
+            dates: formatStay(input.checkIn, input.checkOut),
+            nights,
+            guests: input.guests,
+            total: `$${room.price * nights}`,
+            reference: booking.reference,
+            times: times || null,
+            lodgeWhatsappUrl: lodge.whatsapp ? `https://wa.me/${lodge.whatsapp}` : null,
+            replyTo: lodge.email ?? undefined,
+          }),
+          "booking confirmation",
+        );
+      }
+      return c.json({ reference: booking.reference, status: booking.status }, 201);
     },
   )
 

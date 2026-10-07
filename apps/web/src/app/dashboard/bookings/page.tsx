@@ -19,6 +19,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { BookingRow } from "@/components/dashboard/booking-row";
+import { BookingSettings } from "@/components/dashboard/booking-settings";
 import { BookingSheet, type BookingSheetTarget } from "@/components/dashboard/booking-sheet";
 import { BookingsMonth } from "@/components/dashboard/bookings-month";
 import { BookingsTimeline } from "@/components/dashboard/bookings-timeline";
@@ -168,6 +169,10 @@ function Bookings() {
       />
 
       <TodayStrip lodge={lodge} onRequests={() => setTab("requests")} />
+
+      <PageSection>
+        <BookingSettings />
+      </PageSection>
 
       <PageSection>
         <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:px-0">
@@ -355,7 +360,11 @@ function Requests({
         <EmptyState
           icon={<Inbox />}
           title="No requests waiting"
-          description="When a guest picks dates on your site and sends a request, it shows here, and we email you."
+          description={
+            lodge.autoConfirmBookings
+              ? "Bookings from your site are confirmed automatically, so they go straight to Upcoming. We email you each one."
+              : "When a guest picks dates on your site and sends a request, it shows here, and we email you."
+          }
         />
       </Card>
     );

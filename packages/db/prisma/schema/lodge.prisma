@@ -54,15 +54,17 @@ model Lodge {
   heroSubline  String? @map("hero_subline")
 
   /// Guest info (docs/cms/guest-info.md). Times as "14:00".
-  checkInFrom        String? @map("check_in_from")
-  checkOutBy         String? @map("check_out_by")
+  checkInFrom         String? @map("check_in_from")
+  checkOutBy          String? @map("check_out_by")
   /// string[], up to 10
-  houseRules         Json    @default("[]") @map("house_rules")
-  cancellationPolicy String? @map("cancellation_policy")
+  houseRules          Json    @default("[]") @map("house_rules")
+  cancellationPolicy  String? @map("cancellation_policy")
   /// { q: string; a: string }[], up to 8
-  faq                Json    @default("[]")
+  faq                 Json    @default("[]")
   /// { facebook?: url, instagram?: url, … }
-  socialLinks        Json    @default("{}") @map("social_links")
+  socialLinks         Json    @default("{}") @map("social_links")
+  /// Booking requests from the site are confirmed straight away when the nights are free (Growth and Pro)
+  autoConfirmBookings Boolean @default(false) @map("auto_confirm_bookings")
 
   /// Headings, prices and links on the site, e.g. Highland #1E4A3B. The WhatsApp button stays green.
   themeColor  String  @default("#1E4A3B") @map("theme_color")

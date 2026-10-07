@@ -101,6 +101,7 @@ export const lodgePatch = z
     heroHeadline: optionalText(HERO_LIMITS.headline, "The headline"),
     heroSubline: optionalText(HERO_LIMITS.subline, "The line under the headline"),
     ...guestInfo,
+    autoConfirmBookings: z.boolean(),
   })
   .partial();
 
