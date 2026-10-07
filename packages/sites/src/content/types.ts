@@ -79,6 +79,11 @@ export type LiveSite = {
   faq: FaqEntry[];
   /** In display order, only the ones the owner filled in */
   socialLinks: SiteSocialLink[];
+  /**
+   * How Book buttons work. whatsapp: they open a chat. request: guests pick
+   * dates and send a request (Growth and Pro, with WhatsApp and a room shown).
+   */
+  booking: { mode: "whatsapp" | "request" };
 };
 
 export type SiteSocialLink = { key: SocialKey; label: string; url: string };
@@ -220,3 +225,6 @@ export type BookingsWindow = {
   /** Whether the plan includes bookings; false: read-only (after a downgrade) */
   enabled: boolean;
 };
+
+/** GET /api/sites/:slug/availability: the nights each room is full, nothing about who booked. */
+export type SiteAvailability = { from: string; to: string; rooms: { id: string; full: string[] }[] };

@@ -76,10 +76,17 @@ const SECTIONS: LegalSection[] = [
   {
     title: "Bookings are between you and your guests",
     body: (
-      <p>
-        Guests book with you directly on WhatsApp. StayZim isn&apos;t part of the booking: we don&apos;t take payments, set your prices or
-        rules, or handle cancellations and refunds. Those are between you and your guest.
-      </p>
+      <>
+        <p>
+          Guests book with you directly, on WhatsApp or, on Growth and Pro, with a booking request from your site that you confirm or decline.
+          StayZim isn&apos;t part of the booking: we don&apos;t take payments, set your prices or rules, or handle cancellations and refunds.
+          Those are between you and your guest.
+        </p>
+        <p>
+          The bookings calendar is a tool to help you. Keep it up to date (confirm, decline or cancel requests, and close dates you can&apos;t
+          take), and use guests&apos; details only for their booking.
+        </p>
+      </>
     ),
   },
   {

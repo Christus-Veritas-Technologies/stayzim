@@ -15,8 +15,21 @@ import type { LiveSite } from "@/lib/site";
 export function SiteTemplate({ site, preview = false }: { site: LiveSite; preview?: boolean }) {
   const template = findTemplate(site.template) ?? findTemplate("growth-classic")!;
   const basic = PLACEHOLDER_LOOKS[template.key as TemplateKey];
+  // Previews never take requests: Book stays a WhatsApp link there
+  const booking =
+    !preview && site.booking.mode === "request" && site.whatsapp
+      ? {
+          slug: site.slug,
+          name: site.name,
+          whatsapp: site.whatsapp,
+          themeColor: site.themeColor,
+          checkInFrom: site.checkInFrom,
+          checkOutBy: site.checkOutBy,
+          rooms: site.rooms.map(({ id, name, price, sleeps }) => ({ id, name, price, sleeps })),
+        }
+      : null;
   return (
-    <SiteTracking slug={site.slug} enabled={!preview}>
+    <SiteTracking slug={site.slug} enabled={!preview} booking={booking}>
       <PageViewTracker />
       {site.demo ? <DemoRibbon /> : null}
       {basic ? <BasicTemplate site={site} config={{ ...basic, name: template.name, motion: template.motion }} /> : <ClassicTemplate site={site} />}

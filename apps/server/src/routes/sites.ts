@@ -1,15 +1,41 @@
 import { zValidator } from "@hono/zod-validator";
 import prisma from "@stayzim/db";
-import { demoEnded, findTemplate, heroText, SOCIAL_KEYS, SOCIAL_NETWORKS, type PublicSite } from "@stayzim/sites";
+import { bookingRequestEmail } from "@stayzim/mail/templates";
+import {
+  BOOKING_LIMITS,
+  canHold,
+  dateAdd,
+  dateOnly,
+  dateValue,
+  demoEnded,
+  findTemplate,
+  formatDay,
+  formatStay,
+  fullNights,
+  heroText,
+  isDateString,
+  nightsBetween,
+  SOCIAL_KEYS,
+  SOCIAL_NETWORKS,
+  todayInHarare,
+  type Plan,
+  type PublicSite,
+  type SiteAvailability,
+} from "@stayzim/sites";
+import { bookingRequestInput } from "@stayzim/sites/schemas";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { rateLimiter } from "hono-rate-limiter";
 import { z } from "zod";
 
+import { sendQuietly } from "../lib/billing";
+import { bookingReference, bookingsEnabled, checkWindow, HOLDING, holdsFor } from "../lib/bookings";
 import { clientIp } from "../lib/ip";
 import { lodgeJson } from "../lib/lodge";
 import { withSession, type AuthVariables } from "../lib/session";
-import { describeDevice, slugForCustomDomain } from "../lib/sites";
+import { newReference } from "../lib/reference";
+import { DASHBOARD_URL, describeDevice, slugForCustomDomain } from "../lib/sites";
+import { validJson } from "../lib/validate";
 
 /** What a lodge site shows (the PublicSite contract in @stayzim/sites). Nothing about the plan, billing or the owner. */
 export type { PublicSite } from "@stayzim/sites";
@@ -21,6 +47,35 @@ const eventSchema = z.object({
   roomId: z.string().max(64).optional(),
   referrer: z.string().max(1024).optional(),
 });
+
+/** Guests can send booking requests: the plan has the calendar, and there's a WhatsApp number and a room to book. */
+function requestMode(lodge: { plan: Plan; whatsapp: string | null; rooms: { visible: boolean }[] }) {
+  return bookingsEnabled(lodge.plan) && Boolean(lodge.whatsapp) && lodge.rooms.some((room) => room.visible);
+}
+
+/** A lodge whose site is up and takes requests, or null (404, the same as an unknown site). */
+async function bookableLodge(slug: string) {
+  const lodge = await prisma.lodge.findUnique({
+    where: { slug: slug.toLowerCase() },
+    select: {
+      id: true,
+      slug: true,
+      customDomain: true,
+      name: true,
+      plan: true,
+      status: true,
+      demoEndsAt: true,
+      whatsapp: true,
+      ownerId: true,
+      owner: { select: { name: true, email: true } },
+      rooms: { where: { visible: true }, orderBy: { position: "asc" }, select: { id: true, name: true, units: true, price: true, sleeps: true, visible: true } },
+    },
+  });
+  if (!lodge || lodge.status === "SUSPENDED" || demoEnded(lodge, new Date()) || !requestMode(lodge)) return null;
+  return lodge;
+}
+
+const availabilityQuery = z.object({ from: z.string().refine(isDateString), days: z.coerce.number().int().min(1).max(BOOKING_LIMITS.availabilityDays).default(BOOKING_LIMITS.availabilityDays) });
 
 /** Cloudflare adds CF-IPCountry when the site is proxied through it. XX and T1 mean unknown and Tor. */
 function countryFrom(header: string | undefined) {
@@ -96,8 +151,129 @@ export const sites = new Hono<{ Variables: AuthVariables }>()
         const url = full.socialLinks[key];
         return url ? [{ key, label: SOCIAL_NETWORKS[key].label, url }] : [];
       }),
+      booking: { mode: requestMode(full) ? "request" : "whatsapp" },
     } satisfies PublicSite);
   })
+
+  /** The nights each room is full, for the guest's date picker. No guest data, ever. */
+  .get("/:slug/availability", async (c) => {
+    const lodge = await bookableLodge(c.req.param("slug"));
+    if (!lodge) return c.json({ error: "No lodge here" }, 404);
+    const parsed = availabilityQuery.safeParse(c.req.query());
+    const today = todayInHarare();
+    const from = parsed.success && parsed.data.from > today ? parsed.data.from : today;
+    const to = dateAdd(from, parsed.success ? parsed.data.days : BOOKING_LIMITS.availabilityDays);
+    const holds = await prisma.booking.findMany({
+      where: { lodgeId: lodge.id, ...HOLDING, checkIn: { lt: dateValue(to) }, checkOut: { gt: dateValue(from) } },
+      select: { roomId: true, checkIn: true, checkOut: true, quantity: true },
+    });
+    const rooms = lodge.rooms.map((room) => ({
+      id: room.id,
+      full: fullNights(
+        room.units,
+        holds.filter((hold) => hold.roomId === room.id).map((hold) => ({ checkIn: dateOnly(hold.checkIn), checkOut: dateOnly(hold.checkOut), quantity: hold.quantity })),
+        from,
+        to,
+      ),
+    }));
+    c.header("Cache-Control", "public, max-age=60");
+    return c.json({ from, to, rooms } satisfies SiteAvailability);
+  })
+
+  /**
+   * A guest's booking request. It holds no rooms: the owner confirms it. The
+   * owner gets an email; the guest is offered WhatsApp with the reference.
+   */
+  .post(
+    "/:slug/bookings",
+    rateLimiter({ windowMs: 10 * 60_000, limit: 5, standardHeaders: "draft-7", keyGenerator: clientIp }),
+    bodyLimit({ maxSize: 8 * 1024 }),
+    withSession,
+    validJson(bookingRequestInput),
+    async (c) => {
+      const input = c.req.valid("json");
+      const lodge = await bookableLodge(c.req.param("slug") ?? "");
+      if (!lodge) return c.json({ error: "This lodge isn't taking requests here. Message them on WhatsApp." }, 404);
+      // Bots fill in every field: answer as if it worked, keep nothing
+      if (input.website) return c.json({ reference: newReference("B") }, 201);
+
+      const room = lodge.rooms.find((entry) => entry.id === input.roomId);
+      if (!room) return c.json({ error: "That room isn't available. Pick another." }, 400);
+      checkWindow(input, "guest");
+      if (input.guests > room.sleeps * room.units) {
+        return c.json({ error: `${room.name} sleeps ${room.sleeps}. Pick another room, or fewer guests.` }, 400);
+      }
+      const today = await prisma.booking.count({ where: { lodgeId: lodge.id, source: "SITE", createdAt: { gte: new Date(Date.now() - 24 * 3600_000) } } });
+      if (today >= BOOKING_LIMITS.dailyRequests) {
+        return c.json({ error: `${lodge.name} has a lot of requests today. Message them on WhatsApp instead.` }, 429);
+      }
+      const holds = await holdsFor(prisma, room.id, input.checkIn, input.checkOut);
+      const fits = canHold(room.units, holds, { ...input, quantity: 1 });
+      if (!fits.ok) return c.json({ error: `${room.name} is full on ${formatDay(fits.fullOn)}. Try other dates or another room.`, fullOn: fits.fullOn }, 409);
+
+      const booking = await prisma.booking.create({
+        data: {
+          reference: await bookingReference(prisma),
+          lodgeId: lodge.id,
+          roomId: room.id,
+          kind: "STAY",
+          status: "REQUESTED",
+          source: "SITE",
+          checkIn: dateValue(input.checkIn),
+          checkOut: dateValue(input.checkOut),
+          quantity: 1,
+          guests: input.guests,
+          guestName: input.name,
+          guestPhone: input.phone,
+          guestEmail: input.email,
+          message: input.message,
+          roomName: room.name,
+          nightlyPrice: room.price,
+        },
+      });
+
+      const user = c.get("user");
+      const own = Boolean(user && (user.id === lodge.ownerId || user.role === "ADMIN"));
+      if (!own) {
+        const { device, browser } = describeDevice(c.req.header("user-agent"));
+        await prisma.siteEvent.create({
+          data: {
+            lodgeId: lodge.id,
+            type: "BOOKING_REQUEST",
+            visitorId: crypto.randomUUID(),
+            path: "/#book",
+            roomId: room.id,
+            country: countryFrom(c.req.header("cf-ipcountry")),
+            device,
+            browser,
+            ip: clientIp(c),
+          },
+        });
+      }
+
+      const nights = nightsBetween(input.checkIn, input.checkOut);
+      await sendQuietly(
+        bookingRequestEmail({
+          to: lodge.owner.email,
+          ownerName: lodge.owner.name,
+          lodgeName: lodge.name,
+          roomName: room.name,
+          dates: formatStay(input.checkIn, input.checkOut),
+          nights,
+          guests: input.guests,
+          total: `$${room.price * nights}`,
+          reference: booking.reference,
+          guestName: input.name,
+          guestPhone: `+${input.phone}`,
+          guestWhatsappUrl: `https://wa.me/${input.phone}`,
+          message: input.message,
+          requestsUrl: `${DASHBOARD_URL}/bookings?tab=requests`,
+        }),
+        "booking request",
+      );
+      return c.json({ reference: booking.reference }, 201);
+    },
+  )
 
   /**
    * A page view or a Book on WhatsApp tap. The owner's (and StayZim staff's)

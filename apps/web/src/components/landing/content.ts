@@ -107,7 +107,12 @@ export const PLANS: Plan[] = [
     description: "For most lodges. Know who visits and book them direct.",
     price: "$40",
     cta: "Try Growth free for 2 days",
-    features: ["Everything in Starter", "Visitor analytics", "A free .co.zw domain, like yourlodge.co.zw"],
+    features: [
+      "Everything in Starter",
+      "Booking calendar: guests pick dates on your site, you confirm",
+      "Visitor analytics",
+      "A free .co.zw domain, like yourlodge.co.zw",
+    ],
     featured: true,
   },
   {

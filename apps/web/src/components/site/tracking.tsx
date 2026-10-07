@@ -1,16 +1,69 @@
 "use client";
 
-import { env } from "@/lib/public-env";
 import { cn } from "@stayzim/ui/lib/utils";
-import { createContext, useContext, useEffect, type ReactNode } from "react";
+import dynamic from "next/dynamic";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+
+import { env } from "@/lib/public-env";
+
+/** What the booking request sheet needs: only when the site takes requests (Growth and Pro). */
+export type BookingSite = {
+  slug: string;
+  name: string;
+  whatsapp: string;
+  themeColor: string;
+  checkInFrom: string | null;
+  checkOutBy: string | null;
+  rooms: { id: string; name: string; price: number; sleeps: number }[];
+};
+
+// Loaded on the first tap of a Book button (started on pointerdown), so the site's first load stays light
+const loadSheet = () => import("@/components/site/booking-request");
+const BookingRequest = dynamic(() => loadSheet().then((module) => module.BookingRequest), { ssr: false });
+
+type BookingState = { site: BookingSite | null; open: (roomId?: string) => void };
+const BookingContext = createContext<BookingState>({ site: null, open: () => {} });
 
 const VISITOR_KEY = "stayzim.visitor";
 
 /** Off in template previews, so owners trying designs don't count as visitors. */
 const TrackingContext = createContext({ slug: "", enabled: true });
 
-export function SiteTracking({ slug, enabled, children }: { slug: string; enabled: boolean; children: ReactNode }) {
-  return <TrackingContext.Provider value={{ slug, enabled }}>{children}</TrackingContext.Provider>;
+export function SiteTracking({
+  slug,
+  enabled,
+  booking = null,
+  children,
+}: {
+  slug: string;
+  enabled: boolean;
+  /** Set when Book buttons open the request sheet instead of WhatsApp */
+  booking?: BookingSite | null;
+  children: ReactNode;
+}) {
+  const [request, setRequest] = useState<{ open: boolean; roomId?: string; key: number } | null>(null);
+  const open = useCallback((roomId?: string) => setRequest((current) => ({ open: true, roomId, key: (current?.key ?? 0) + 1 })), []);
+  const tracking = useMemo(() => ({ slug, enabled }), [slug, enabled]);
+  const bookingState = useMemo(() => ({ site: booking, open }), [booking, open]);
+  return (
+    <TrackingContext.Provider value={tracking}>
+      <BookingContext.Provider value={bookingState}>
+        {children}
+        {booking && request ? (
+          <BookingRequest
+            key={request.key}
+            site={booking}
+            roomId={request.roomId}
+            open={request.open}
+            onOpenChange={(next) => setRequest((current) => (current ? { ...current, open: next } : current))}
+            onWhatsApp={(roomId) => {
+              if (enabled) track(slug, "BOOKING_CHAT", roomId);
+            }}
+          />
+        ) : null}
+      </BookingContext.Provider>
+    </TrackingContext.Provider>
+  );
 }
 
 /** A version 4 UUID. crypto.randomUUID only exists on HTTPS pages; getRandomValues works on any. */
@@ -78,7 +131,11 @@ export function PageViewTracker() {
   return null;
 }
 
-/** A wa.me link that records the tap first. Works without JavaScript too. */
+/**
+ * A Book button. Normally a wa.me link that records the tap first (it works
+ * without JavaScript too). When the site takes requests, a tap opens the
+ * booking sheet instead; the link stays as the fallback.
+ */
 export function BookLink({
   href,
   roomId,
@@ -93,12 +150,19 @@ export function BookLink({
   "aria-label"?: string;
 }) {
   const { slug, enabled } = useContext(TrackingContext);
+  const booking = useContext(BookingContext);
   return (
     <a
       href={href}
       target="_blank"
       rel="noreferrer"
-      onClick={() => {
+      onPointerDown={booking.site ? () => void loadSheet() : undefined}
+      onClick={(event) => {
+        if (booking.site) {
+          event.preventDefault();
+          booking.open(roomId);
+          return;
+        }
         if (enabled && slug) track(slug, "BOOKING_CHAT", roomId);
       }}
       className={cn(className)}

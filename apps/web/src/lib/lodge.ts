@@ -93,8 +93,7 @@ export const PLANS: Record<
     tagline: "Get booked",
     price: PLAN_PRICES.GROWTH,
     pitch: "For most lodges. See who visits.",
-    features: ["Everything in Starter", "Visitor analytics", "A free .co.zw domain"],
-    later: "Booking calendar, coming later",
+    features: ["Everything in Starter", "Booking calendar: guests request dates on your site", "Visitor analytics", "A free .co.zw domain"],
   },
   PRO: {
     name: "Pro",

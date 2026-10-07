@@ -165,7 +165,7 @@ export type Device = keyof typeof DEVICE_LABEL;
 /** GET /api/lodge/activity and /visits: one visit or booking chat. */
 export type SiteVisit = {
   id: string;
-  type: "PAGE_VIEW" | "BOOKING_CHAT";
+  type: "PAGE_VIEW" | "BOOKING_CHAT" | "BOOKING_REQUEST";
   createdAt: string;
   country: string | null;
   device: Device;

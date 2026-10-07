@@ -87,7 +87,7 @@ function PlanCard({ plan }: { plan: Plan }) {
         <motion.div variants={feature} className="mt-auto flex flex-col gap-2 rounded-[14px] bg-purple-tint px-4 py-3.5">
           <span className="text-xs font-bold tracking-[0.06em] text-purple-dark uppercase">Coming to Growth</span>
           <span className="text-sm leading-[21px] text-slate">
-            A booking calendar, deposits by Paynow or InnBucks, Instagram feed, local SEO.
+            Deposits by Paynow or InnBucks, Instagram feed, local SEO.
           </span>
         </motion.div>
       ) : null}

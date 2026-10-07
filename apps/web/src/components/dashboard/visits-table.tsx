@@ -63,7 +63,7 @@ type VisitsPage = { total: number; page: number; pageSize: number; paths: { path
 
 type Journey = { startedAt: string; endedAt: string; steps: { id: string; type: Activity; path: string; createdAt: string; room: string | null }[] };
 
-const ACTIVITY_LABEL: Record<Activity, string> = { PAGE_VIEW: "Page view", BOOKING_CHAT: "Booking chat" };
+const ACTIVITY_LABEL: Record<Activity, string> = { PAGE_VIEW: "Page view", BOOKING_CHAT: "Booking chat", BOOKING_REQUEST: "Booking request" };
 
 function query(filters: Filters) {
   const params = new URLSearchParams({ page: String(filters.page), pageSize: String(filters.pageSize), where: filters.where, sort: filters.sort });
@@ -405,7 +405,7 @@ function CountryChip({ code }: { code: string | null }) {
 }
 
 function ActivityBadge({ type, children }: { type: Activity; children?: ReactNode }) {
-  const chat = type === "BOOKING_CHAT";
+  const chat = type !== "PAGE_VIEW";
   return (
     <span
       className={cn(

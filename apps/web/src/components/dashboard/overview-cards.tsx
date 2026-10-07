@@ -6,7 +6,7 @@ import { Card, CardAction, CardHeader, CardTitle } from "@stayzim/ui/components/
 import { EmptyState } from "@stayzim/ui/components/empty-state";
 import { cn } from "@stayzim/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, BedDouble, Eye, Images, MessageCircle, Pencil } from "lucide-react";
+import { ArrowRight, BedDouble, CalendarPlus, Eye, Images, MessageCircle, Pencil } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -96,6 +96,16 @@ export function RoomsSummaryCard() {
 type ActivityItem = { id: string; icon: typeof Eye; tone: string; title: string; detail: string; at: string };
 
 function visitItem(visit: SiteVisit): ActivityItem {
+  if (visit.type === "BOOKING_REQUEST") {
+    return {
+      id: visit.id,
+      icon: CalendarPlus,
+      tone: "bg-purple-wash text-purple",
+      title: visit.room ? `Booking request · ${visit.room}` : "Booking request",
+      detail: `${countryName(visit.country)} · ${DEVICE_LABEL[visit.device]}`,
+      at: visit.createdAt,
+    };
+  }
   if (visit.type === "BOOKING_CHAT") {
     return {
       id: visit.id,

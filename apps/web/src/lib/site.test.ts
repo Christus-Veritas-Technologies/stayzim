@@ -32,6 +32,7 @@ const site: LiveSite = {
   cancellationPolicy: null,
   faq: [],
   socialLinks: [],
+  booking: { mode: "whatsapp" },
 };
 
 describe("bookingUrl", () => {

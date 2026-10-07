@@ -54,8 +54,25 @@ const SECTIONS: LegalSection[] = [
         </ul>
         <p>
           The lodge&apos;s owner sees these visits in their dashboard. The owner&apos;s and StayZim&apos;s own visits aren&apos;t counted.
-          Bookings themselves happen in WhatsApp, between the guest and the lodge: StayZim doesn&apos;t see those chats.
+          Chats on WhatsApp are between the guest and the lodge: StayZim doesn&apos;t see them.
         </p>
+      </>
+    ),
+  },
+  {
+    title: "Guests who send a booking request",
+    body: (
+      <>
+        <p>
+          On some lodge sites, guests can pick dates and send a booking request. With it we keep what the guest gives us: their name, WhatsApp
+          number, the room, dates and number of guests, and, if they add them, an email address and a note.
+        </p>
+        <ul>
+          <li>Only that lodge&apos;s owner sees them, to confirm or decline the booking. The dates a room is full show on the site, never who booked.</li>
+          <li>If the guest gave an email address, they get an email when the lodge confirms, declines or cancels.</li>
+          <li>Owners can also note bookings they took on WhatsApp or by phone in the same calendar.</li>
+          <li>12 months after the stay we delete the guest&apos;s name, number, email and note. The booking stays, without them, so the owner&apos;s counts add up.</li>
+        </ul>
       </>
     ),
   },

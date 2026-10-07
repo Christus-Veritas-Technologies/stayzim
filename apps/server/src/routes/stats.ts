@@ -49,7 +49,7 @@ const visitsQuery = z.object({
   /** zw: visitors in Zimbabwe; abroad: anywhere else we know */
   where: z.enum(["all", "zw", "abroad"]).default("all"),
   device: z.enum(["PHONE", "TABLET", "COMPUTER"]).optional(),
-  type: z.enum(["PAGE_VIEW", "BOOKING_CHAT"]).optional(),
+  type: z.enum(["PAGE_VIEW", "BOOKING_CHAT", "BOOKING_REQUEST"]).optional(),
   /** One part of the site, e.g. "/" or "/#rooms" */
   path: z.string().max(200).optional(),
   sort: z.enum(["newest", "oldest"]).default("newest"),

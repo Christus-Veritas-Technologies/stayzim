@@ -266,6 +266,7 @@ const liveSite = z.object({
         (SOCIAL_KEYS as readonly string[]).includes(link.key),
       ),
     ),
+  booking: z.object({ mode: z.enum(["whatsapp", "request"]).catch("whatsapp") }).default({ mode: "whatsapp" }),
 });
 
 export const publicSiteSchema = z.discriminatedUnion("status", [

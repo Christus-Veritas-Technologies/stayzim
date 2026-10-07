@@ -18,6 +18,9 @@ import { BILLING_URL, createInvoice, refreshPayment, sendOnce } from "../lib/bil
 import { issuerLine } from "../lib/business";
 import { removeUploads } from "../lib/uploads";
 
+/** How long guests' details are kept after their stay (the privacy page says 12 months). */
+const GUEST_DATA_DAYS = 365;
+
 /**
  * The billing job, hourly (and from scripts/run-billing.ts). Every step is safe
  * to run again: invoices are found before they're made, and each email is sent
@@ -33,7 +36,7 @@ import { removeUploads } from "../lib/uploads";
  * 4. Demos that ended 30 days ago and were never paid for: deleted.
  */
 export async function runBilling(now = new Date()) {
-  const report = { invoices: 0, notices: 0, overdue: 0, suspended: 0, checked: 0, deleted: 0 };
+  const report = { invoices: 0, notices: 0, overdue: 0, suspended: 0, checked: 0, deleted: 0, anonymised: 0 };
 
   // 1 and 2: lodges that pay
   const paying = await prisma.lodge.findMany({
@@ -172,6 +175,13 @@ export async function runBilling(now = new Date()) {
     console.log(`[billing] Deleted the unpaid demo ${lodge.slug} (ended over ${DEMO_KEEP_DAYS} days ago)`);
     report.deleted += 1;
   }
+
+  // 5: guests' names, numbers, emails and notes go 12 months after their stay (the booking stays, for the owner's counts)
+  const forgotten = await prisma.booking.updateMany({
+    where: { kind: "STAY", anonymisedAt: null, checkOut: { lt: addDays(now, -GUEST_DATA_DAYS) } },
+    data: { guestName: null, guestPhone: null, guestEmail: null, message: null, anonymisedAt: now },
+  });
+  report.anonymised = forgotten.count;
 
   return report;
 }
