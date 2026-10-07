@@ -15,6 +15,8 @@ export type BookingSite = {
   checkInFrom: string | null;
   checkOutBy: string | null;
   rooms: { id: string; name: string; price: number; sleeps: number }[];
+  /** A template preview in the dashboard: the sheet works, but nothing is sent */
+  preview?: boolean;
 };
 
 // Loaded on the first tap of a Book button (started on pointerdown), so the site's first load stays light

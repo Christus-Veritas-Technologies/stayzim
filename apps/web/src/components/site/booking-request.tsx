@@ -126,7 +126,7 @@ export function BookingRequest({
       setStep("details");
       return;
     }
-    void send();
+    if (!site.preview) void send();
   }
 
   async function send() {
@@ -374,10 +374,15 @@ export function BookingRequest({
                       <>${room.price} a night</>
                     )}
                   </span>
-                  <Button type="submit" size="lg" loading={sending}>
+                  <Button type="submit" size="lg" loading={sending} disabled={site.preview && step === "details"}>
                     {step === "dates" ? "Next" : "Send request"}
                   </Button>
                 </div>
+                {site.preview && step === "details" ? (
+                  <p className="w-full rounded-xl bg-surface px-3 py-2.5 text-[12.5px] leading-5 text-muted">
+                    This is a preview, so nothing is sent. On your live site, guests&apos; requests come straight to you.
+                  </p>
+                ) : null}
                 <a
                   href={chatUrl}
                   target="_blank"

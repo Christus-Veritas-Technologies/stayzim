@@ -26,9 +26,9 @@ const DESIGNS: Record<TemplateKey, (props: { site: LiveSite }) => React.ReactNod
   "pro-canopy": CanopyTemplate,
 };
 
-/** What the booking sheet needs, where the site takes bookings. Previews never do: Book stays a WhatsApp link there. */
+/** What the booking sheet needs, where the site takes bookings. In a preview the sheet opens, but sends nothing. */
 export function bookingSite(site: LiveSite, preview = false): BookingSite | null {
-  return !preview && site.booking.mode === "request" && site.whatsapp
+  return site.booking.mode === "request" && site.whatsapp
     ? {
         slug: site.slug,
         name: site.name,
@@ -37,6 +37,7 @@ export function bookingSite(site: LiveSite, preview = false): BookingSite | null
         checkInFrom: site.checkInFrom,
         checkOutBy: site.checkOutBy,
         rooms: site.rooms.map(({ id, name, price, sleeps }) => ({ id, name, price, sleeps })),
+        preview,
       }
     : null;
 }
