@@ -84,6 +84,25 @@ test.describe("owner", () => {
     await guest.close();
   });
 
+  test("guest info opens unedited, and Back asks before edits are lost", async ({ page }) => {
+    await page.goto("/dashboard");
+    await page.goto("/dashboard/guest-info");
+    const save = page.getByRole("button", { name: "Save changes" }).filter({ visible: true }).first();
+    await expect(save).toBeDisabled();
+    const policy = page.getByLabel("Cancellation policy");
+    const before = await policy.inputValue();
+    await policy.fill(`${before} Back test.`);
+    await page.goBack();
+    const dialog = page.getByRole("alertdialog");
+    await expect(dialog).toContainText("Discard your changes?");
+    await dialog.getByRole("button", { name: "Keep editing" }).click();
+    await expect(page).toHaveURL(/\/dashboard\/guest-info/);
+    await expect(policy).toHaveValue(`${before} Back test.`);
+    await page.goBack();
+    await page.getByRole("alertdialog").getByRole("button", { name: "Discard changes" }).click();
+    await expect(page).toHaveURL(/\/dashboard$/);
+  });
+
   test("a booking taken on WhatsApp goes in the calendar, and cancelling frees it", async ({ page }) => {
     const checkIn = dayFromNow(offset());
     const checkOut = dayFromNow(Math.round((Date.parse(checkIn) - Date.now()) / DAY) + 2);
