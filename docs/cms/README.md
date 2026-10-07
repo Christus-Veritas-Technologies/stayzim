@@ -258,7 +258,7 @@ The principles are the ones the dashboard already follows:
 | --- | --- |
 | Server and web types drift | One contract in `packages/sites`, `satisfies` on serializers, the web copies deleted |
 | Web and API deployed out of step, or a stale cache | Only additive fields, each with a default, plus `publicSiteSchema.parse` in `getSite` |
-| The placeholder templates mustn't change | New behaviour comes through the server (hidden rooms) and the shared `BookLink` (booking sheet); new sections only in Classic and in the designer's spec |
+| Templates drift from the contract | Every template takes the same `LiveSite`, books through the shared `BookLink`, and has `#rooms` and `#location`; the browser tests check all nine at 360px |
 | Lodge site page weight on phones | The booking sheet is a lazy chunk loaded on the first tap; no date library; availability fetched only when the sheet opens; FAQ and rules are plain HTML; first-load JS must stay within ±2 KB |
 | Dates off by one day | `@db.Date` columns and `YYYY-MM-DD` strings end to end, pure helpers, "today" in Harare, tests across month, year and leap-day boundaries |
 | Double bookings | Owner actions that add holds run in one transaction under a per-room advisory lock and recount before writing (409 "Standard Room is full on 12 Oct"); requests hold nothing; the dashboard warns before confirming |

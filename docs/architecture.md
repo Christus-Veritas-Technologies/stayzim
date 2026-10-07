@@ -83,7 +83,7 @@ Shared UX pieces, so every screen behaves the same:
 | `NavIcon`, `NavTrailing` | `src/components/dashboard/link-pending.tsx` | `useLinkStatus` spinner on the nav item being opened |
 | `WhyDisabled` | `src/components/why-disabled.tsx` | Tooltip on a disabled control saying why ("No changes to save", "Comes with Pro") |
 | `OfflineBanner`, `useOnline` | `src/components/dashboard/offline-banner.tsx`, `src/lib/online.ts` | Strip under the header while offline; Save buttons disable with `OFFLINE_REASON` |
-| `UnsavedChangesGuard` | `src/components/dashboard/unsaved-changes.tsx` | "Discard your changes?" before an in-app link leaves a form with edits, plus the browser's prompt on reload. The room sheet asks before closing |
+| `UnsavedChangesGuard` | `src/components/dashboard/unsaved-changes.tsx` | "Discard your changes?" before an in-app link or the browser's Back button leaves a form with edits (Back lands on an extra history entry first), plus the browser's prompt on reload. The room sheet asks before closing |
 | Error and 404 screens | `src/app/not-found.tsx`, `error.tsx`, `global-error.tsx`, `dashboard/error.tsx` | StayZim-branded, with Try again (`retry()`) and Message us |
 
 ### apps/server: Hono on Bun, port 9998
@@ -104,7 +104,7 @@ Shared UX pieces, so every screen behaves the same:
 | `GET /api/lodge/visits`, `GET /api/lodge/activity` | Visits newest first with filters and pages; the latest 6 for the overview. Growth and Pro |
 | `GET/POST /api/lodge/requests` | The owner's change requests; send one (at most 10 open) |
 | `GET /api/sites/:slug` | Public lodge site content (no plan or owner data), fresh on every request |
-| `POST /api/sites/:slug/events` | Page views and Book on WhatsApp taps from lodge sites. 60/minute per IP; skips the owner's and the team's own visits |
+| `POST /api/sites/:slug/events` | Page views and Book on WhatsApp taps from lodge sites. 60/minute per IP; skips the owner's and the team's own visits (by session cookie, or by the owner key on a lodge's own domain) |
 | `GET /api/admin/requests?status=open\|done\|all`, `PATCH /api/admin/requests/:id` | Team only: list requests across lodges, set status and reply |
 
 - **CORS:** allows the `CORS_ORIGIN` list (comma-separated web origins) and any `{slug}.SITES_DOMAIN` origin (lodge sites report visits), with credentials, so the session cookie is sent.
@@ -131,6 +131,7 @@ Scaffold from the starter template. Not part of the MVP yet.
 - **Reserved subdomains** (`www`, `app`, `api`, `admin`, `media`, …) are listed once, in `RESERVED_SLUGS` (`packages/sites/src/slugs.ts`), and used by web, server and the scripts.
 - **Rendering:** `/sites/[slug]` fetches `GET /api/sites/:slug` on every request (owners' edits show straight away) and renders `<SiteTemplate>`. Suspended lodges get `SuspendedSite`; unknown ones `UnknownSite`.
 - **Tracking:** `components/site/tracking.tsx` posts page views and Book on WhatsApp taps, with a random visitor id kept in `localStorage`. The server adds device and browser (user agent), IP and country (Cloudflare's `CF-IPCountry`, so countries are empty until the sites sit behind Cloudflare). Owners see visits on Growth and Pro.
+- **Owner key:** on a lodge's own domain StayZim's cookie isn't sent, so the dashboard's View site links (`ownerSiteUrl`) end in `#stayzim-owner={key}`, an HMAC of the lodge id (`apps/server/src/lib/owner-key.ts`). The site keeps it in `localStorage`, takes it off the address and sends it with each event; the API skips events that carry the lodge's key. Copied and shared links never carry it.
 - **Footer:** "Made with StayZim" and a Privacy link back to the main site (`MAIN_URL`).
 
 ### Templates
@@ -217,7 +218,8 @@ The `resolve-request` script does the same from a terminal (`pnpm --filter @stay
   - Owners pay from Billing: a prompt on the phone (EcoCash, OneMoney), a code for the InnBucks app, or Paynow's page ("web", for cards).
   - The Billing screen polls `GET /api/lodge/billing/payments/:id`, which asks Paynow at most every 5 seconds.
   - Paynow also posts to `POST /api/paynow/result`. The hash is checked, then we poll Paynow ourselves with the stored poll URL and check the amount before applying.
-  - `applyPayment()` (`lib/billing.ts`) is idempotent: it moves the lodge to the plan paid for, `ACTIVE`, extends `paidUntil` from whichever is later (now or the current `paidUntil`), closes open invoices, and emails the receipt.
+  - `applyPayment()` (`lib/billing.ts`) is idempotent: it moves the lodge to the plan paid for, `ACTIVE`, sets `paidUntil` with `paidUntilAfterPayment()` (`packages/sites`: the time left, moved to the new plan at the two monthly prices in whole days rounded down, then the months paid for), closes open invoices, and emails the receipt.
+- **Prices** (`packages/sites/src/plans.ts`): `planPrice(plan, months)` is the monthly price times the months, except 12 months, which take `ANNUAL_DISCOUNT` (Starter 10%, Growth 17%, Pro 30%) and round down to whole dollars: $216, $398, $630. Paynow amounts, `mark-paid`, the pay card, Billing and the pricing page all use it.
   - Without `PAYNOW_INTEGRATION_*`, the Paynow buttons are hidden and the merchant codes remain.
 - **Merchant codes:** `ECOCASH_MERCHANT_CODE` and `INNBUCKS_MERCHANT_CODE` on the server. `GET /api/lodge/billing` returns the ones that are set, and Billing shows a card for each. With none, it shows "Message us" instead. They're runtime settings, so changing them needs no rebuild.
 - **Manual payments:** `pnpm --filter server mark-paid --slug … [--months 3] [--plan pro] [--channel cash]` records one with the same `applyPayment` (receipt included). `--status` sets a status by hand; `--list` shows everyone.

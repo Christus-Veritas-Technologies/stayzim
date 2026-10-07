@@ -2,7 +2,7 @@
 
 _What's built, what's next, and what's blocking. Update this file whenever a piece of work lands. For what StayZim is and why, see [project.md](project.md)._
 
-**Last updated:** 7 October 2026 (CMS and bookings built)
+**Last updated:** 7 October 2026 (designed templates, yearly discounts, plan-change carry-over)
 
 ## At a glance
 
@@ -21,7 +21,7 @@ _What's built, what's next, and what's blocking. Update this file whenever a pie
 | Shared UI components (packages/ui) | ✅ Built |
 | Lodge sites ({slug}.stayzim.co.zw) | ✅ Rendering, subdomain routing, tracking, suspended and 404 pages, template preview route, robots and sitemap |
 | Custom domains per lodge | ✅ Any plan once paid (free .co.zw on Growth and Pro): `set-domain`, routing, CORS, canonical URLs, the dashboard address card and a catch-all Traefik route |
-| Site templates (9, 3 per plan) | 🟡 Catalog, plan rules, Design screen and preview done. Only Classic has a real design; the 8 placeholders stay untouched until the user's designer delivers |
+| Site templates (9, 3 per plan) | ✅ All nine designed (`designs/StayZim Lodge Templates.html`): Veranda, Rondavel, Shade; Shoreline, Wordmark, Overlap; Escarpment, Courtyard, Canopy. Previews open the booking sheet without sending |
 | Change requests | ✅ Owner screen, team screen (`/admin/requests`), API and script |
 | Owner analytics | ✅ Live numbers, chart, countries, activity, and the visits table (filters, pages, each visit's path, 90 days) |
 | Lodge CMS (rooms, guest info, quick wins) | ✅ Built, all plans: room details, how many, hide, duplicate, photo order; Guest info (times, rules, policy, FAQ, links); most asked-about rooms; edit your name. See [CMS](#cms) and [cms/](cms/README.md) |
@@ -84,7 +84,8 @@ Story IDs refer to the designer brief.
 - [x] S8 Visit tracking: page views and Book on WhatsApp taps (`site_event`), owner and staff visits skipped
 - [x] S9 Under 1.5 MB: about 1.36 MB on a phone with realistic photos (smaller copies, `srcset`, lazy carousels)
 - [x] Templates: 9 in the catalog, plan rules, preview route, Starter templates completely still
-- [ ] Real designs for the 8 placeholder templates (waiting on the user's designer; don't touch the placeholders until then)
+- [x] Real designs for all nine templates, with reviews and a journal on Pro
+- [ ] Look at each template with real photos (the designs had none)
 
 ### Analytics (Screen 5) and Billing (Screen 6)
 
@@ -177,8 +178,7 @@ Everything that could be done without the user is done (the CMS and bookings too
 2. **Deploy** with [deployment.md](deployment.md): VPS, Coolify, Cloudflare DNS and the origin certificate.
 3. **Business details on invoices:** set `BUSINESS_NAME`, `BUSINESS_ADDRESS` and `BUSINESS_TAX_NUMBER` on the server.
 4. **Demo lodges:** run `seed-demos` with the sales number, then add real photos as each demo owner.
-5. **Real template designs** for the 8 placeholders, when the designer delivers. Leave `basic.tsx` and `looks.ts` alone until then.
-6. **Real devices:** iOS Safari and Android Chrome, especially the booking sheet's date picker and the dashboard calendar.
+5. **Real devices:** iOS Safari and Android Chrome, especially the booking sheet's date picker and the dashboard calendar.
 
 ## Handoff (7 October 2026)
 
@@ -189,7 +189,7 @@ The user's rules:
 - Work on `main` (no separate branches), one commit per small task, and never add a Co-Authored-By line, even when a tool suggests one.
 - Add subtle framer-motion animations wherever they fit, all off with "reduce motion".
 - Web and server only; ignore apps/native.
-- **Don't touch the 8 placeholder templates** (`templates/basic.tsx`, `looks.ts`) until the user's designer delivers.
+- **Templates** follow `designs/StayZim Lodge Templates.html`, one file each under `components/site/templates/`.
 - **The CMS is built** ([docs/cms/](cms/README.md)). Same data for every template; only the rendering differs; the shapes live once in `packages/sites/src/content/`. Rooms are room types with a count.
 - **Bookings are Growth and Pro only:** guests book on the site first, WhatsApp second; the owner confirms (or turns on Confirm bookings automatically). Starter sites keep Book on WhatsApp. Anything under the CMS docs' "Later" list (seasonal prices, deposits, iCal sync, custom sections) needs the user first.
 - **There is no trial.** Owners sign up for a free 2-day demo on the plan they pick (`/signup`, `/start`), and pay through Paynow.
@@ -229,8 +229,7 @@ What was built, in order (each its own commit on `main`):
 
 Known gaps:
 
-- **The 8 placeholder templates** show the hidden-room rule and open the booking sheet (through `BookLink`), but not the new sections or Book now wording; the designer's templates should (template contract in [cms/README.md](cms/README.md#the-template-contract)).
-- **Template previews** never take bookings: their Book buttons open WhatsApp.
+- **Template previews** open the booking sheet with real availability, but its last step says it's a preview and sends nothing.
 - **Demo lodges** (`seed-demos`) are Growth and Pro, so they take booking requests; they go to the demo owner accounts.
 - **The guest's date picker** shows availability for 120 days at a time and fetches more as they page.
 
@@ -272,7 +271,7 @@ Known gaps:
 
 - **Paynow** is only tested against a stand-in written from the official SDK's code; the first real test-mode payment is the real check.
 - **Cloudflare for SaaS origin certificate:** see deployment.md; on the first custom domain, check for a 526.
-- **Changing plan mid-period** takes effect when the payment goes through, and the new period is added at the new price; there's no proration.
+- **Changing plan mid-period** takes effect when the payment goes through. The time left moves to the new plan at the two monthly prices, in whole days rounded down (`carriedOverMs`), then the months paid for start; the pay card shows the result first.
 - **The dev API's hot reload** can leave Prisma in a bad state ("not valid UTF-8" errors). Restart it; production doesn't hot-reload.
 
 ### Built earlier (tiers 4 and 5)
@@ -318,10 +317,9 @@ Each of these is its own commit on `main`; the architecture doc, the README and 
 
 Known gaps:
 
-- **Owner visits on a custom domain** are counted (the session cookie is StayZim's). On the subdomain they're skipped.
+- **Owner visits on a custom domain** are skipped once the owner has opened their site from a dashboard View site link on that device (the per-lodge key, `lib/owner-key.ts`). Typing the address on a new device, before ever using that link there, still counts.
 - **The Docker build here** skipped `apt-get` (Debian mirrors are blocked in this sandbox). Production builds install OpenSSL as written.
-- **Template thumbnails** are still sketches from `looks.ts`.
-- **Unsaved changes:** the guard doesn't catch the browser's own Back button.
+- **Unsaved changes:** the browser's Back button asks too (an extra history entry while a form has edits). Sheets (room, booking) still close on Back without asking.
 
 ### Spec: site templates
 
@@ -355,7 +353,7 @@ Built (web):
 
 - **Preview route** `apps/web/src/app/preview/[slug]/[template]/page.tsx`: any template, including locked ones; `noindex`; tracking off; a slim "Preview: {name} template" bar. Hero text that is the live template's default switches to the previewed template's (`withTemplate()` in `lib/site.ts`).
 - **Design screen** `apps/web/src/app/dashboard/design/page.tsx` (under My site): hero text with counters and a live phone preview; templates grouped by plan with thumbnails (`template-thumb.tsx`), a sliding "Live" ring, locked cards with "Upgrade to {plan}" on WhatsApp; a preview sheet (iframe, Phone and Desktop); "Use this template" (disabled with a reason when locked or live) applies straight away, with Undo in the toast.
-- **Starter templates** have no motion at all (`basic.tsx`).
+- **Starter templates** have no motion at all.
 
 ## Blocked on / needs a decision
 
@@ -380,6 +378,7 @@ Newest first. One line per piece of work that landed on `main`.
 
 ### 7 October 2026
 
+- Tier 1 and the small gaps: a foreign phone number no longer shows "+263 +44…"; the "Coming to Growth" box is gone; 12 months cost 10%, 17% or 30% less (Starter $216, Growth $398, Pro $630, rounded down); Guest info no longer opens as edited; Back asks before losing edits; owner visits on their own domain aren't counted; previews open the booking sheet; plan changes carry the time left over; the Meta Pixel is hard-coded.
 - Guests book on Growth and Pro sites (date picker, full nights greyed out); the owner confirms, or turns on Confirm bookings automatically. Classic leads with Book now, WhatsApp second; Starter stays on WhatsApp.
 - Booking data on the dashboard: Coming up, Today, the stats tile split, upcoming bookings on Rooms, a downgrade note on Billing; direct-booking copy on the landing page, sign-in and `/start`.
 - `.env.example` files list every setting; browser tests for the CMS and bookings; a Starter lodge in CI.

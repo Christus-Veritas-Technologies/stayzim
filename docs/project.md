@@ -49,7 +49,7 @@ StayZim gives Zimbabwean lodges, guesthouses, cottages and Airbnbs their own web
 | Price | $20/month | $40/month | $75/month |
 | Tagline | Get found | Get booked | Get full |
 | For | New Airbnbs and small guesthouses | About 80% of lodges; the plan to sell | Busy lodges with 5+ rooms, diaspora owners |
-| Includes | Site on {slug}.stayzim.co.zw (hero, rooms, gallery, map), Book on WhatsApp button, Google Business setup, connect a domain they have | Starter + visitor analytics + a free .co.zw domain. Coming: booking calendar, Paynow/InnBucks deposits, Instagram feed, local SEO | Growth + StayZim manages Booking.com and Airbnb photos and text, channel sync, 2 SEO blog posts a month, priority WhatsApp support |
+| Includes | Site on {slug}.stayzim.co.zw (hero, rooms, gallery, map), Book on WhatsApp button, Google Business setup, connect a domain they have | Starter + booking calendar + visitor analytics + a free .co.zw domain | Growth + StayZim manages Booking.com and Airbnb photos and text, channel sync, 2 SEO blog posts a month, priority WhatsApp support |
 
 - **Three plans, no free plan.** Owners sign up and pick a plan. Their site is live straight away as a **free 2-day demo** on that plan, with "demo" badges.
 - **Unpaid demos:** the site goes offline when the demo ends, and the demo is deleted 30 days later.
@@ -59,6 +59,8 @@ StayZim gives Zimbabwean lodges, guesthouses, cottages and Airbnbs their own web
   - They can also pay to the EcoCash or InnBucks merchant code; StayZim records it with `mark-paid`.
   - Invoices are emailed 3 days before, the day before and on the day the paid time ends; receipts on payment.
 - **Missed payment:** Active → Overdue when the paid time ends (the site stays up 3 more days) → Suspended (the site shows "temporarily unavailable"; the dashboard still works so they can pay) → Active once paid. This all happens automatically.
+- **Paying for a year:** 12 months cost 10% less on Starter ($216), 17% on Growth ($398) and 30% on Pro ($630), rounded down to whole dollars (`ANNUAL_DISCOUNT`).
+- **Changing plan:** the paid time left moves to the new plan at the two monthly prices (12 days of Growth become 6 of Pro), then the months paid for start.
 - **Own domains** on every plan, once paid. Growth and Pro include a free `.co.zw`.
 - **Bookings:** Growth and Pro. Guests book on the site first (WhatsApp second); owners confirm, or turn on Confirm bookings automatically, and decline, cancel, add bookings and close dates ([docs/cms/bookings.md](cms/bookings.md)). Starter keeps Book on WhatsApp.
 - **The CMS** (room details, hide, duplicate, guest info, FAQ, links) is for every plan ([docs/cms/](cms/README.md)).
@@ -67,6 +69,8 @@ StayZim gives Zimbabwean lodges, guesthouses, cottages and Airbnbs their own web
 
 | Topic | Decision |
 | --- | --- |
+| Pricing page | Lists only what's built; no "Coming soon" box. |
+| Grace period | 3 days after the paid time ends, then the site goes offline. |
 | Niche | Lodges, guesthouses and Airbnbs only. Restaurants were considered and rejected (may be taken on by referral, not marketed to). |
 | Booking | WhatsApp first. No card payments by guests in the MVP. On Growth and Pro, guests book on the site first (dates, then their details) and WhatsApp is the second way; the owner confirms each booking, or lets free nights confirm automatically. |
 | Content (CMS) | One fixed data shape for every lodge and template; only the rendering differs. Owners edit rooms, guest info and bookings themselves. Rooms are room types with a count ("Standard Room × 6"). |
@@ -114,9 +118,6 @@ The brief is a few weeks old. Where it disagrees with what's built, the build wi
 ## Open questions
 
 - Which lodge gets the first real demo, so the site uses its real photos?
-- How should pricing show features that aren't built yet (list only what exists, or mark "Coming soon")? The landing page currently shows a "Coming to Growth" box.
-- Is 3 days the right grace period before suspension?
-- Offer an annual prepay discount (for example, 10 months' price for 12)?
 - English only, or Shona and Ndebele on lodge sites later?
 - StayZim's sales WhatsApp number for the landing page buttons (`NEXT_PUBLIC_WHATSAPP_NUMBER`).
 
