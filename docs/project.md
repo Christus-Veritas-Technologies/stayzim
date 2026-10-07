@@ -60,7 +60,7 @@ StayZim gives Zimbabwean lodges, guesthouses, cottages and Airbnbs their own web
   - Invoices are emailed 3 days before, the day before and on the day the paid time ends; receipts on payment.
 - **Missed payment:** Active → Overdue when the paid time ends (the site stays up 3 more days) → Suspended (the site shows "temporarily unavailable"; the dashboard still works so they can pay) → Active once paid. This all happens automatically.
 - **Own domains** on every plan, once paid. Growth and Pro include a free `.co.zw`.
-- **Bookings calendar:** Growth and Pro. Guests send booking requests from the site; owners confirm, decline, cancel, add bookings and close dates ([docs/cms/bookings.md](cms/bookings.md)).
+- **Bookings:** Growth and Pro. Guests book on the site first (WhatsApp second); owners confirm, or turn on Confirm bookings automatically, and decline, cancel, add bookings and close dates ([docs/cms/bookings.md](cms/bookings.md)). Starter keeps Book on WhatsApp.
 - **The CMS** (room details, hide, duplicate, guest info, FAQ, links) is for every plan ([docs/cms/](cms/README.md)).
 
 ## Decisions so far
@@ -68,7 +68,7 @@ StayZim gives Zimbabwean lodges, guesthouses, cottages and Airbnbs their own web
 | Topic | Decision |
 | --- | --- |
 | Niche | Lodges, guesthouses and Airbnbs only. Restaurants were considered and rejected (may be taken on by referral, not marketed to). |
-| Booking | WhatsApp first. No card payments by guests in the MVP. On Growth and Pro, guests can also send a booking request with dates from the site; the owner confirms it in the dashboard, and WhatsApp opens with the dates filled in. |
+| Booking | WhatsApp first. No card payments by guests in the MVP. On Growth and Pro, guests book on the site first (dates, then their details) and WhatsApp is the second way; the owner confirms each booking, or lets free nights confirm automatically. |
 | Content (CMS) | One fixed data shape for every lodge and template; only the rendering differs. Owners edit rooms, guest info and bookings themselves. Rooms are room types with a count ("Standard Room × 6"). |
 | Sign-up | Self sign-up (`/signup`, email or Google) straight into a 2-day demo on the plan the owner picks. StayZim can still create accounts with a temporary password (`create-owner`). |
 | Analytics | Basic visit tracking (date, IP, page, country). Shown on Growth and Pro only, as the reason to upgrade. |
@@ -84,14 +84,14 @@ StayZim gives Zimbabwean lodges, guesthouses, cottages and Airbnbs their own web
 | Marketing site | Landing page (how it works, demo lodges, the maths, pricing, questions) | stayzim.co.zw/ |
 | Lodge site | One-page lodge site (hero, rooms, gallery, map, contact, sticky WhatsApp button) | {slug}.stayzim.co.zw/ |
 | Owner app | Login, forgot password, set new password | app.stayzim.co.zw/login |
-| Owner app | Dashboard: overview, Lodge info, Rooms, Gallery, Guest info (planned), Design, Requests | /dashboard |
-| Owner app | Bookings (planned; Growth and Pro, locked preview on Starter) | /dashboard/bookings |
+| Owner app | Dashboard: overview (with today's arrivals and Coming up), Lodge info, Rooms, Gallery, Guest info, Design, Requests | /dashboard |
+| Owner app | Bookings: requests, calendar, upcoming and past (Growth and Pro; locked preview on Starter) | /dashboard/bookings |
 | Owner app | Analytics (locked preview on Starter) | /dashboard/analytics |
 | Owner app | Billing: plan, status, pay with Paynow, invoices and receipts | /dashboard/billing |
 
 Plus shared states: suspended site, 404, save errors, loading, locked features.
 
-**Already brought forward from "after the MVP":** self sign-up, separate dashboard pages, custom domains, and (planned) the bookings calendar.
+**Already brought forward from "after the MVP":** self sign-up, separate dashboard pages, custom domains, and the bookings calendar.
 
 **After the MVP** (once the first 3 lodges pay): Pro blog, expanded analytics, room and gallery pages on lodge sites, an admin area (all lodges, revenue, churn, payment chasing, sign in as a lodge), and the CMS's [Later](cms/README.md#later) list (seasonal prices, deposits by guests, iCal sync, custom sections).
 

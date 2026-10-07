@@ -1,6 +1,6 @@
 # Core: the content contract and the Rooms CMS
 
-_Status: **planned.** All plans. Read the [CMS architecture](README.md) first._
+_Status: **built** (6 October 2026). All plans. Read the [CMS architecture](README.md) first._
 
 Two steps, built in order:
 

@@ -1,6 +1,6 @@
 # Guest info: stay details, FAQ, and social and listing links
 
-_Status: **planned.** All plans. Three small features on one new dashboard page. Read the [CMS architecture](README.md) first._
+_Status: **built** (6 October 2026). All plans. Three small features on one new dashboard page. Read the [CMS architecture](README.md) first._
 
 These are the things guests ask on WhatsApp again and again. Owners can't put them on their site today without a change request:
 

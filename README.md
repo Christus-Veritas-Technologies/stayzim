@@ -132,16 +132,21 @@ Lodge sites open at `http://{slug}.localhost:9999` (Chrome and Firefox resolve `
 ## Testing
 
 - **Unit tests** (`pnpm test`) run with `bun test`. They cover:
-  - template rules (`packages/sites`);
+  - template rules, the content contract's schemas, dates and availability (`packages/sites`);
   - SMTP settings and emails (`packages/mail`);
   - visit chaining, lodge origins, devices and photo `srcset`s (`apps/server`, `src/lib/*.test.ts`);
-  - dates, periods, site addresses and WhatsApp links (`apps/web`, `src/lib/*.test.ts`).
+  - dates, periods, site addresses, WhatsApp links, room facts, booking messages and guest phone numbers (`apps/web`, `src/lib/*.test.ts`).
 
   Each app's `test/setup.ts` sets fixed settings and Zimbabwe time, so a local `.env` doesn't change the results.
-- **Browser tests** (`pnpm --filter web e2e`) are Playwright smoke tests: the landing page, an owner signing in, and a lodge site's Book on WhatsApp links. See [apps/web/e2e/README.md](apps/web/e2e/README.md).
+- **Browser tests** (`pnpm --filter web e2e`) use Playwright:
+  - smoke tests: the landing page, an owner signing in, a lodge site's Book links;
+  - the CMS (`cms.e2e.ts`): room details and hiding, guest info, an owner's booking, a guest booking the owner confirms, instant bookings, and a Starter site that stays on WhatsApp;
+  - every screen at 360px.
+
+  They need the Growth lodge `mistvalley` and the Starter lodge `cliffview`. See [apps/web/e2e/README.md](apps/web/e2e/README.md).
 - **CI** (`.github/workflows/ci.yml`) runs on every push to `main` and on pull requests. It has two jobs:
   - type-check, unit tests, and builds of web and server;
-  - browser tests: a fresh Postgres with the migrations, an owner and lodge made with the scripts, and the production builds of both apps.
+  - browser tests: a fresh Postgres with the migrations, two owners and lodges (Growth and Starter) made with the scripts, and the production builds of both apps.
 
 ## Database changes
 

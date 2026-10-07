@@ -1,6 +1,6 @@
 # The lodge CMS
 
-_Status: **planned, not built.** These docs are the plan. Build in the order under [Build order](#build-order), one commit per step, and tick items off in [progress.md](../progress.md#cms-pending)._
+_Status: **built** (6 and 7 October 2026), in the order under [Build order](#build-order); what landed is ticked in [progress.md](../progress.md#cms). Where the build differs from this plan, it says so below._
 
 Owners manage their own site content: rooms, guest info and, on Growth and Pro, bookings. It works like a website builder's CMS (Framer's, for example) with one fixed content type per thing:
 
@@ -221,6 +221,7 @@ model Booking {
 
 - **Holds:** confirmed stays, and blocks that aren't cancelled. The number taken on a night is the sum of `quantity` over the holds that cover it. A night is **full** when that sum is at least `room.units`.
 - **Requests hold nothing.** Spam can't close a calendar, and the owner decides who gets the room.
+- **Confirm bookings automatically** (`Lodge.autoConfirmBookings`, off by default, added on 7 October): a guest's booking on free nights is created CONFIRMED, under the same per-room lock, so it holds the room at once.
 - **Expired** is worked out when read, the way `demoEnded` is: a REQUESTED booking whose check-in has passed shows as "Expired". There's no job and no extra status.
 - **The site never receives guest data.** The availability endpoint returns only the full dates of each room.
 
@@ -272,13 +273,13 @@ The principles are the ones the dashboard already follows:
 | Price edits rewriting old bookings | Each booking keeps the nightly price it was made at |
 | Bad JSON in the guest-info columns | zod on the way in, `.catch(default)` on the way out |
 | Downgrading from Growth to Starter | Nothing is deleted. Bookings become read-only with an upgrade note, and the site goes back to WhatsApp buttons |
-| Guest personal data | Never public. The privacy page lists it. The hourly job (`apps/server/src/jobs/billing.ts`, renamed to a general job when this lands) clears guest name, phone, email and message 12 months after check-out |
+| Guest personal data | Never public. The privacy page lists it. The hourly job (`apps/server/src/jobs/billing.ts`, which kept its name) clears guest name, phone, email and message 12 months after check-out |
 | Two devices editing at once | Last save wins; every response returns the whole lodge, so screens catch up. Fine for the MVP |
 | Scope creep | Anything in [Later](#later) needs the user's go-ahead first |
 
 ## Build order
 
-Each step is a few small commits, validated with types, tests, a real browser and screenshots at 360 and 1280. Tick them off in [progress.md](../progress.md#cms-pending).
+Each step is a few small commits, validated with types, tests, a real browser and screenshots at 360 and 1280. What landed is ticked in [progress.md](../progress.md#cms).
 
 1. **Foundation:** the content contract, serializers on it, web copies removed. No visible change. ([rooms.md](rooms.md#1-foundation))
 2. **Rooms CMS:** migration, room details, how many, hide, duplicate, photo order, Classic renders the details. ([rooms.md](rooms.md))

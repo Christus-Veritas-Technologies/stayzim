@@ -1,6 +1,6 @@
 # Bookings: the calendar, owner tools and requests from the site
 
-_Status: **planned.** Growth and Pro (`includesBookingCalendar`). These are the two hard features. Build part 1, then part 2. Read the [CMS architecture](README.md) and [rooms.md](rooms.md) first; this needs `Room.units` and `Room.visible`._
+_Status: **built** (7 October 2026). Growth and Pro (`includesBookingCalendar`). These are the two hard features, built part 1, then part 2, with the additions under [Added while building](#added-while-building). Read the [CMS architecture](README.md) and [rooms.md](rooms.md) first; this needs `Room.units` and `Room.visible`._
 
 **Why.** Owners keep track of bookings in WhatsApp chats and paper diaries, and they double-book. Guests want to see whether dates are free without waiting for a reply.
 
@@ -265,7 +265,7 @@ All of it is 0 on Starter.
 ## Privacy and retention
 
 - `apps/web/src/app/privacy/page.tsx` gains a short section: what a guest gives (name, phone, optional email and note), who sees it (the lodge only), and how long it's kept (12 months after the stay).
-- The hourly job (`apps/server/src/jobs/billing.ts`, renamed `jobs/hourly.ts` with the billing steps unchanged) clears the guest's name, phone, email and message 12 months after check-out. The booking row stays, for the owner's counts.
+- The hourly job (`apps/server/src/jobs/billing.ts`; it kept its name) clears the guest's name, phone, email and message 12 months after check-out. The booking row stays, for the owner's counts.
 
 ## Pitfalls specific to bookings
 
@@ -311,3 +311,25 @@ All of it is 0 on Starter.
 - Terms and privacy are updated.
 - progress.md is ticked.
 - architecture.md has a Bookings section.
+
+## Added while building
+
+Asked by the user on 7 October 2026, once the CMS was done:
+
+- **Book first, WhatsApp second (Growth and Pro).**
+  - Classic's Book buttons read **Book now** in the lodge's colour, with a calendar icon.
+  - The phone's sticky bar is Book now plus a round WhatsApp button.
+  - The contact band offers Book now and the WhatsApp number.
+  - `BookLink` takes `channel="whatsapp"` for buttons that must always open the chat.
+  - Starter sites keep Book on WhatsApp everywhere.
+- **Confirm bookings automatically.**
+  - An owner switch on the Bookings page (`Lodge.autoConfirmBookings`, migration `lodge_auto_confirm`).
+  - When it's on, `POST /api/sites/:slug/bookings` claims the room under the lock (`claimRooms`) and creates the booking CONFIRMED.
+  - The guest sees "You're booked".
+  - The owner's email says "New booking", and the guest gets the confirmation email when they gave one.
+- **Booking data in the dashboard:**
+  - the Today strip and a **Coming up** card (next 3 arrivals) on the overview;
+  - the stats tile counts site bookings and WhatsApp chats apart (`bookingRequests` in `/api/lodge/stats`);
+  - Rooms shows upcoming bookings and offers Hide instead of Delete;
+  - Billing notes that bookings stay after a move to Starter.
+

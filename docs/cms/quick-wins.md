@@ -1,6 +1,6 @@
 # Quick wins (5-minute changes)
 
-_Status: **planned.** Small changes that give owners more control. Each is one commit. Read the [CMS architecture](README.md) for the rules they follow._
+_Status: **built** (6 October 2026). Small changes that give owners more control. Each is one commit. Read the [CMS architecture](README.md) for the rules they follow._
 
 | # | Change | Plans | Where it's specified |
 | --- | --- | --- | --- |

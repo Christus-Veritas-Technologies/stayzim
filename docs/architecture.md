@@ -140,31 +140,34 @@ Scaffold from the starter template. Not part of the MVP yet.
 - **Downgrades:** `LodgeJson.template` is the owner's pick; `siteTemplate` is what's live (`effectiveTemplate()`: the pick if the plan allows it, else the plan's `DEFAULT_TEMPLATE`). The Design screen says so and offers the upgrade.
 - **Hero text:** owners can set the headline (60 characters) and the line under it (140). Stored once on the lodge (`heroHeadline`, `heroSubline`), so switching templates keeps them; empty means the template's default copy, with `{name}` and `{place}` filled in (`heroText()`, `fillCopy()`).
 - **Web registry** (`components/site/templates/index.tsx`): `growth-classic` has its own design (`classic.tsx`); the other 8 are placeholders from one configurable component (`basic.tsx`, looks in `looks.ts`, which the Design screen's thumbnails also read). When real designs arrive, give each template its own file and remove its placeholder look.
-- **Every template reads the same data.** Templates differ only in rendering. The planned CMS makes this a written contract ([docs/cms/README.md](cms/README.md#the-template-contract)):
+- **Every template reads the same data.** Templates differ only in rendering. The CMS makes this a written contract ([docs/cms/README.md](cms/README.md#the-template-contract)):
   - the sections every template renders when they have content;
   - `BookLink` for every Book button;
   - optional fields as `null` or empty lists, never missing.
 - **Design screen** (`/dashboard/design`): hero text with a live phone preview; templates grouped by plan with thumbnails, a sliding "Live" ring, and locked cards with "Upgrade to {plan}"; a preview sheet with the real site in an iframe (`/preview/{slug}/{key}`, Phone and Desktop widths); "Use this template" applies it at once, with Undo in the toast.
 
-## Lodge CMS (planned)
+## Lodge CMS
 
-_Not built yet: the plan is in [docs/cms/](cms/README.md), and the build order in [progress.md](progress.md#cms-pending)._
+The design is in [docs/cms/](cms/README.md); what was built is in [progress.md](progress.md#cms).
 
-- **One content contract** in `packages/sites/src/content/`: limits, the amenity list, zod input schemas, the `publicSiteSchema` output schema, and the dashboard types. Server and web both use it, replacing today's hand-copied types in `apps/web/src/lib/lodge.ts` and `site.ts`.
+- **One content contract** in `packages/sites/src/content/`: limits, the amenity list, zod input schemas (`@stayzim/sites/schemas`, for the server and server-side web only, so zod stays out of browser bundles), the `publicSiteSchema` output schema, and the `LiveSite` / `DashboardLodge` types. The server's serializers `satisfies` them; the web app imports them (`apps/web/src/lib/lodge.ts` and `site.ts` re-export them).
 - **Additive only:** new fields arrive with defaults, so old rows, old clients and the placeholder templates keep working.
-- **Rooms** become room types with a count:
+- **Rooms** are room types with a count:
   - `units`, how many the lodge has;
   - `visible`;
   - a description, beds and size.
 - **Guest info:** check-in and check-out times, house rules, cancellation policy, FAQ, and social and listing links. Lists are Json columns on `Lodge`.
-- **Bookings** (Growth and Pro):
-  - a `Booking` table holding stays and closed dates;
-  - guests send requests from the site, which hold no rooms;
-  - owners confirm, decline, cancel, add bookings and close dates, under a per-room lock that refuses overbooking.
+- **Bookings** (Growth and Pro; [cms/bookings.md](cms/bookings.md)):
+  - a `Booking` table (`booking.prisma`) holding stays and closed dates, with date-only check-in and check-out;
+  - **on the site:** `LiveSite.booking.mode` is `request` on Growth and Pro (with WhatsApp and a visible room). Every Book button is a `BookLink`, which then opens the lazily loaded booking sheet (`components/site/booking-request.tsx`); `channel="whatsapp"` keeps a button on WhatsApp. `GET /api/sites/:slug/availability` gives the full nights only, `POST /api/sites/:slug/bookings` takes the booking (rate limit, honeypot, daily cap);
+  - **requests hold no rooms** until the owner confirms, unless the owner turned on **Confirm bookings automatically** (`Lodge.autoConfirmBookings`);
+  - **owners** (`/dashboard/bookings`, `/api/lodge/bookings`) confirm, decline, cancel, edit, add bookings and close dates. Anything that holds rooms runs under a per-room Postgres advisory lock and recounts first, so the last room can't go twice (409 "… is full on 12 Oct");
+  - **emails:** a new booking or request to the owner; confirmed, declined and cancelled to guests who gave an email;
+  - **privacy:** the hourly job clears guests' details 12 months after the stay.
 
 ## Change requests
 
-Anything owners can't change themselves goes through change requests. As the CMS lands, room details, guest info and bookings move out of requests.
+Anything owners can't change themselves goes through change requests. Room details, guest info and bookings are self-serve now, through the CMS.
 
 1. **Owner** (`/dashboard/requests`): picks a topic (Words, Photos, Rooms, Design, Something else), writes the message (10–1000 characters) and sends it. The request gets a reference like `R-7K2Q`, and the owner can pass it on to StayZim on WhatsApp in one tap.
 2. **Team** (`/admin/requests`): the Waiting list (open and in progress, oldest first). Set the status and write a reply; Message {owner} opens WhatsApp to the lodge's number.
@@ -241,7 +244,7 @@ The `resolve-request` script does the same from a terminal (`pnpm --filter @stay
 | --- | --- |
 | `@stayzim/db` | Prisma schema, split by area in `prisma/schema/`, the shared client (`import prisma from "@stayzim/db"`), and the `create-lodge` and `resolve-request` scripts |
 | `@stayzim/auth` | better-auth config (`auth`), `MIN_PASSWORD_LENGTH`, `googleSignInEnabled`, and `scripts/create-owner.ts` |
-| `@stayzim/sites` | The template catalog and its rules (`templateAllowed`, `effectiveTemplate`, `DEFAULT_TEMPLATE`, `HERO_LIMITS`, `heroText`), plan prices and inclusions (`plans.ts`), slug rules (`slugs.ts`), and billing dates in Zimbabwe time (`billing-dates.ts`). Shared by server, web and scripts. The CMS content contract (`content/`) is planned to live here too ([docs/cms/](cms/README.md)) |
+| `@stayzim/sites` | The template catalog and its rules (`templateAllowed`, `effectiveTemplate`, `DEFAULT_TEMPLATE`, `HERO_LIMITS`, `heroText`), plan prices and inclusions (`plans.ts`), slug rules (`slugs.ts`), and billing dates in Zimbabwe time (`billing-dates.ts`). Shared by server, web and scripts. And the CMS content contract (`content/`: limits, amenities, guest-info rules, dates and availability, types; zod schemas at `@stayzim/sites/schemas`) |
 | `@stayzim/mail` | `sendEmail()` over SMTP with Nodemailer, `verifyMailConnection()`, and templates: account emails in `templates.ts`; welcome, invoice, receipt, demo ended and site offline in `billing.ts` |
 | `@stayzim/env` | Validated env per app: `server`, `web`, `outreach`, `native` |
 | `@stayzim/ui` | StayZim design tokens and shadcn-style components on Base UI (buttons, fields, dialogs, sheets, tabs, menus, …) |
@@ -257,7 +260,8 @@ One Prisma schema, split into files:
 | `landing.prisma` | `LandingEvent` | server |
 | `lodge.prisma` | `Lodge` (plan, status, `demoEndsAt`, `paidUntil`, own domain, theme, template and hero text, one per owner), `Room`, `Photo` (gallery when `roomId` is null), `ChangeRequest` | server |
 | `billing.prisma` | `Invoice`, `Payment`, `BillingNotice` (emails sent), `BillingCounter` (running numbers) | server |
-| `site.prisma` | `SiteEvent` (lodge site page views and booking chats) | server |
+| `site.prisma` | `SiteEvent` (lodge site page views, booking chats and booking requests) | server |
+| `booking.prisma` | `Booking` (stays and closed dates, guests' requests, the owner's notes; snapshots of the room name and price) | server |
 | `outreach.prisma` | `WhatsappSession`, `Contact`, `OutreachMessage`, `InboundMessage` | outreach |
 
 Both databases get the whole schema; each app only uses its own tables. Changes go through Prisma migrations in `packages/db/prisma/migrations` (`0_init` is the baseline): `pnpm db:migrate` creates one after a schema edit, and `pnpm db:deploy` (or a container start) applies new ones. Databases made with `db push` before then need baselining once (README, [Database changes](../README.md#database-changes)). `prisma generate` runs on every install and works without `DATABASE_URL`.
