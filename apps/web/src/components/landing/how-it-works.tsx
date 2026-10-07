@@ -207,8 +207,8 @@ export function HowItWorks() {
           </Step>
           <Step
             number="02"
-            title="Guests book on WhatsApp"
-            body="Every room has a button that opens WhatsApp with the room and your lodge already written in."
+            title="Guests book you direct"
+            body="Every room has a Book on WhatsApp button with the room already written in. On Growth and Pro, guests can also pick dates on your site and you confirm."
           >
             <BookStep />
           </Step>

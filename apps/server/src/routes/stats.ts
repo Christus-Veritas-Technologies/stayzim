@@ -87,6 +87,9 @@ export const stats = new Hono<{ Variables: LodgeVariables }>()
     let previousVisits = 0;
     let bookingChats = 0;
     let previousBookingChats = 0;
+    /** Bookings sent from the site's booking sheet (Growth and Pro) */
+    let bookingRequests = 0;
+    let previousBookingRequests = 0;
     let visitsToday = 0;
     let visitsYesterday = 0;
     const countries = new Map<string, number>();
@@ -105,14 +108,16 @@ export const stats = new Hono<{ Variables: LodgeVariables }>()
           current[Math.min(shape.buckets - 1, Math.floor((time - start.getTime()) / shape.size))]!++;
           if (event.country) countries.set(event.country, (countries.get(event.country) ?? 0) + 1);
         } else {
-          bookingChats++;
+          if (event.type === "BOOKING_REQUEST") bookingRequests++;
+          else bookingChats++;
           if (event.roomId) roomTaps.set(event.roomId, (roomTaps.get(event.roomId) ?? 0) + 1);
         }
       } else if (time >= previousStart.getTime()) {
         if (view) {
           previousVisits++;
           previous[Math.min(shape.buckets - 1, Math.floor((time - previousStart.getTime()) / shape.size))]!++;
-        } else previousBookingChats++;
+        } else if (event.type === "BOOKING_REQUEST") previousBookingRequests++;
+        else previousBookingChats++;
       }
     }
 
@@ -138,6 +143,8 @@ export const stats = new Hono<{ Variables: LodgeVariables }>()
       previousVisits,
       bookingChats,
       previousBookingChats,
+      bookingRequests,
+      previousBookingRequests,
       countries: other > 0 ? [...top, { code: "Other", share: other }] : top,
       chart: current.map((count, index) => ({
         start: new Date(start.getTime() + index * shape.size).toISOString(),

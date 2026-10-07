@@ -122,7 +122,7 @@ const WEEK_BARS = [14, 22, 18, 30, 26, 40, 34];
 export function ProductPanel() {
   return (
     <PanelFrame
-      title="Guests book on WhatsApp. You keep 100%."
+      title="Guests book you direct. You keep 100%."
       body="Rooms, photos and prices for your lodge, all in one place."
     >
       <GlassCard className="top-[5%] left-[6%] w-[250px]" delay={0.2}>

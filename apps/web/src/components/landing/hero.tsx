@@ -184,7 +184,7 @@ export function Hero() {
           variants={fadeUp}
           className="mt-3.5 text-center text-[17px] leading-[26px] text-slate lg:mt-5 lg:text-xl lg:leading-[30px]"
         >
-          Your own lodge website. Guests book on WhatsApp.
+          Your own lodge website. Guests book on your site or on WhatsApp.
         </motion.p>
 
         <motion.div

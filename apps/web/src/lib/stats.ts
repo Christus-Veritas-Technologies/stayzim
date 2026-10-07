@@ -33,6 +33,9 @@ export type VisitStats = {
   previousVisits: number;
   bookingChats: number;
   previousBookingChats: number;
+  /** Bookings sent from the site (Growth and Pro) */
+  bookingRequests: number;
+  previousBookingRequests: number;
   /** The top two and "Other", by share of visits whose country is known */
   countries: Country[];
   chart: ChartPoint[];
@@ -89,6 +92,8 @@ function fromResponse(period: Period, response: StatsResponse): VisitStats {
   return {
     ...response,
     topRooms: response.topRooms ?? [],
+    bookingRequests: response.bookingRequests ?? 0,
+    previousBookingRequests: response.previousBookingRequests ?? 0,
     countries: response.countries.map((country) => ({ ...country, name: countryName(country.code) })),
     chart: response.chart.map((point) => ({ ...chartLabels(period, point.start, now), current: point.current, previous: point.previous })),
   };

@@ -3,9 +3,11 @@
 import { Button, buttonVariants } from "@stayzim/ui/components/button";
 import { CopyButton } from "@stayzim/ui/components/copy-button";
 import { FormMessage } from "@stayzim/ui/components/field";
+import { includesBookingCalendar } from "@stayzim/sites";
 import { ArrowUpRight, RotateCcw } from "lucide-react";
 import { useState } from "react";
 
+import { ComingUpCard } from "@/components/dashboard/coming-up";
 import { useLodge } from "@/components/dashboard/lodge-provider";
 import { ActivityCard, RoomsSummaryCard } from "@/components/dashboard/overview-cards";
 import { Page, PageHeader, PageSection } from "@/components/dashboard/page";
@@ -102,6 +104,12 @@ export default function DashboardPage() {
           <PageSection>
             <StatCards stats={stats} period={period} loading={loading} />
           </PageSection>
+
+          {includesBookingCalendar(lodge.plan) ? (
+            <PageSection>
+              <ComingUpCard />
+            </PageSection>
+          ) : null}
 
           <PageSection className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
             <VisitsCard

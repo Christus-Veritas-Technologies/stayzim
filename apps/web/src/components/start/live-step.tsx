@@ -1,5 +1,6 @@
 "use client";
 
+import { includesBookingCalendar } from "@stayzim/sites";
 import { buttonVariants } from "@stayzim/ui/components/button";
 import { CopyButton } from "@stayzim/ui/components/copy-button";
 import { motion, useReducedMotion } from "framer-motion";
@@ -57,7 +58,9 @@ export function LiveStep() {
         <Burst />
       </div>
       <StepHeading title={`${lodge.name} is live`}>
-        Guests can see your rooms and book on WhatsApp right now.
+        {includesBookingCalendar(lodge.plan)
+          ? "Guests can see your rooms and book on your site or on WhatsApp right now."
+          : "Guests can see your rooms and book on WhatsApp right now."}
         {lodge.demoEndsAt ? ` It's a free demo until ${formatLongDate(lodge.demoEndsAt)} at ${formatClock(lodge.demoEndsAt)}.` : null}
       </StepHeading>
 

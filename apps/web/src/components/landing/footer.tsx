@@ -20,7 +20,7 @@ export function Footer() {
           <Item className="flex flex-col gap-3.5">
             <Wordmark size={38} className="text-2xl text-white" />
             <span className="max-w-[320px] text-[15px] leading-[23px] text-soft">
-              Lodge websites with booking on WhatsApp, for lodges across Zimbabwe.
+              Lodge websites with direct booking, for lodges across Zimbabwe.
             </span>
           </Item>
           <Item className="flex flex-col gap-2 font-display text-[22px] font-medium tracking-[-0.015em] lg:items-end lg:text-[26px]">

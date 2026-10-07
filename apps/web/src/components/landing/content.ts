@@ -133,6 +133,10 @@ export const PLANS: Plan[] = [
 
 export const QUESTIONS = [
   {
+    q: "How do guests book?",
+    a: "On Starter, every room has a Book on WhatsApp button. On Growth and Pro, guests pick their dates on your site and send a booking you confirm in one tap (or automatically), with WhatsApp one tap away too.",
+  },
+  {
     q: "Do I have to leave Booking.com?",
     a: "No. Keep your listing. StayZim turns guests who already found you, like repeat guests and people who follow you on Facebook, into direct bookings.",
   },

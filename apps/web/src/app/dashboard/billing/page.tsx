@@ -3,7 +3,7 @@
 import { Badge } from "@stayzim/ui/components/badge";
 import { Card } from "@stayzim/ui/components/card";
 import { CopyButton } from "@stayzim/ui/components/copy-button";
-import { DEMO_DAYS } from "@stayzim/sites";
+import { DEMO_DAYS, includesBookingCalendar } from "@stayzim/sites";
 import { cn } from "@stayzim/ui/lib/utils";
 import { motion } from "framer-motion";
 import { Button, buttonVariants } from "@stayzim/ui/components/button";
@@ -277,6 +277,7 @@ function Plans({ lodge, onPick, canPay }: { lodge: Lodge; onPick: (plan: PlanKey
       </div>
       <div className="grid gap-3 lg:grid-cols-3">
         {PLAN_ORDER.map((key: PlanKey, index) => {
+          const upcoming = lodge.rooms.reduce((sum, room) => sum + room.upcomingBookings, 0);
           const plan = PLANS[key];
           const current = key === lodge.plan;
           return (
@@ -314,6 +315,12 @@ function Plans({ lodge, onPick, canPay }: { lodge: Lodge; onPick: (plan: PlanKey
                   </li>
                 ) : null}
               </ul>
+              {!includesBookingCalendar(key) && includesBookingCalendar(lodge.plan) && upcoming > 0 ? (
+                <p className="rounded-xl bg-surface px-3 py-2.5 text-[12.5px] leading-5 text-muted">
+                  Your {upcoming} upcoming {upcoming === 1 ? "booking stays" : "bookings stay"} in your calendar, but guests would book on WhatsApp
+                  again.
+                </p>
+              ) : null}
               <div className="mt-auto">
                 {canPay ? (
                   <Button variant={current ? "default" : "outline"} className="w-full" onClick={() => onPick(key)}>

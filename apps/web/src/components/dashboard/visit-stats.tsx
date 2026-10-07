@@ -72,10 +72,10 @@ export function StatCards({ stats, period, loading = false }: { stats: VisitStat
       <TrayStatCard
         tone="purple"
         icon={MessageCircle}
-        label="Booking chats"
-        value={stats.bookingChats}
-        badge={<Trend current={stats.bookingChats} previous={stats.previousBookingChats} />}
-        foot="Book on WhatsApp taps"
+        label="Bookings and chats"
+        value={stats.bookingChats + stats.bookingRequests}
+        badge={<Trend current={stats.bookingChats + stats.bookingRequests} previous={stats.previousBookingChats + stats.previousBookingRequests} />}
+        foot={`${stats.bookingRequests} on your site · ${stats.bookingChats} on WhatsApp`}
       />
       <PlainStatCard icon={Globe2} label="Where visitors are">
         {top ? (
@@ -176,8 +176,8 @@ export function AnalyticsUpsell({ className }: { className?: string }) {
           <Lock className="size-3" />
           {growth.name} plan
         </span>
-        <p className="font-display text-lg leading-6 font-semibold">See who visits your site, and who taps Book on WhatsApp</p>
-        <p className="text-[13.5px] text-muted">Visits by day, countries, and booking chats per room.</p>
+        <p className="font-display text-lg leading-6 font-semibold">Take bookings on your site, and see who visits</p>
+        <p className="text-[13.5px] text-muted">A bookings calendar guests book from, plus visits by day, countries and booking chats per room.</p>
       </div>
       <a
         href={stayzimChatUrl(`Hi StayZim, I'd like to move ${lodge.name} to the ${growth.name} plan ($${growth.price}/month).`)}

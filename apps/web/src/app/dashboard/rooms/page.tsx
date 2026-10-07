@@ -165,6 +165,7 @@ function RoomRow({
               <Users className="size-3" />
               Sleeps {room.sleeps}
               {room.units > 1 ? <span className="text-muted-2">· You have {room.units}</span> : null}
+              {room.upcomingBookings > 0 ? <span className="font-semibold text-brand">· {room.upcomingBookings} upcoming</span> : null}
             </span>
           </span>
         </button>
@@ -202,6 +203,7 @@ function RoomRow({
             <span className="text-xs text-muted">
               {formatPrice(room.price)} / night · Sleeps {room.sleeps}
               {room.units > 1 ? ` · × ${room.units}` : ""}
+              {room.upcomingBookings > 0 ? ` · ${room.upcomingBookings} upcoming` : ""}
             </span>
             {!room.visible ? (
               <span className="text-xs font-semibold text-muted-2">Hidden from your site</span>
@@ -468,19 +470,39 @@ export default function RoomsPage() {
           <AlertDialogIcon>
             <Trash2 />
           </AlertDialogIcon>
-          <AlertDialogTitle>Delete {deleting?.name}?</AlertDialogTitle>
-          <AlertDialogDescription>
-            It disappears from your site straight away
-            {deleting && deleting.photos.length > 0
-              ? `, with its ${deleting.photos.length} ${deleting.photos.length === 1 ? "photo" : "photos"}`
-              : ""}
-            . You can&apos;t undo this.
-          </AlertDialogDescription>
+          <AlertDialogTitle>{deleting && deleting.upcomingBookings > 0 ? `Hide ${deleting.name} instead?` : `Delete ${deleting?.name}?`}</AlertDialogTitle>
+          {deleting && deleting.upcomingBookings > 0 ? (
+            <AlertDialogDescription>
+              It has {deleting.upcomingBookings} upcoming {deleting.upcomingBookings === 1 ? "booking" : "bookings"}, so it can&apos;t be deleted. Hide it
+              and guests won&apos;t see it; the bookings stay.
+            </AlertDialogDescription>
+          ) : (
+            <AlertDialogDescription>
+              It disappears from your site straight away
+              {deleting && deleting.photos.length > 0
+                ? `, with its ${deleting.photos.length} ${deleting.photos.length === 1 ? "photo" : "photos"}`
+                : ""}
+              . You can&apos;t undo this.
+            </AlertDialogDescription>
+          )}
           <AlertDialogFooter>
             <AlertDialogClose render={<Button variant="outline" />}>Keep room</AlertDialogClose>
-            <Button variant="destructive" onClick={confirmDelete} loading={busyDelete}>
-              Delete room
-            </Button>
+            {deleting && deleting.upcomingBookings > 0 ? (
+              <Button
+                onClick={() => {
+                  const room = deleting;
+                  setDeleting(null);
+                  if (room.visible) void actions.onToggleVisible(room);
+                }}
+                disabled={!deleting.visible}
+              >
+                {deleting.visible ? "Hide room" : "Already hidden"}
+              </Button>
+            ) : (
+              <Button variant="destructive" onClick={confirmDelete} loading={busyDelete}>
+                Delete room
+              </Button>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

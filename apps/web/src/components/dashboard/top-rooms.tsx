@@ -30,12 +30,12 @@ export function TopRoomsCard({ stats, period, loading = false }: { stats: VisitS
     <Card className={cn("gap-4 px-4 pt-[18px] pb-4 transition-opacity duration-300 sm:px-5", loading && "opacity-60")} aria-busy={loading || undefined}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <span className="text-[13.5px] font-medium text-slate">Most asked-about rooms</span>
-        <span className="text-[13px] text-muted">Book taps · {periodLabel(period)}</span>
+        <span className="text-[13px] text-muted">Bookings and Book taps · {periodLabel(period)}</span>
       </div>
       {stats.topRooms.length === 0 ? (
         <p className="flex items-center gap-2.5 rounded-xl bg-surface px-4 py-5 text-[13px] text-muted">
           <BedDouble className="size-4 shrink-0 text-muted-2" />
-          When guests tap Book on a room, it shows here.
+          When guests book or tap Book on a room, it shows here.
         </p>
       ) : (
         <ol className="flex flex-col gap-3">
@@ -48,7 +48,7 @@ export function TopRoomsCard({ stats, period, loading = false }: { stats: VisitS
                   <span className="flex items-baseline justify-between gap-3 text-[13.5px]">
                     <span className="truncate font-semibold">{entry.name}</span>
                     <span className="shrink-0 font-semibold tabular-nums">
-                      {entry.count} <span className="font-normal text-muted">{entry.count === 1 ? "tap" : "taps"}</span>
+                      {entry.count}
                     </span>
                   </span>
                   <span className="h-1.5 overflow-hidden rounded-full bg-surface">
