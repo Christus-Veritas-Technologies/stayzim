@@ -19,13 +19,19 @@ export type UploadItem = {
   /** Bytes after resizing */
   size?: number;
   error?: string;
+  /** Trying again smaller, after the full-size upload failed on the connection */
+  lighter?: boolean;
   file: File;
 };
 
+/** The second try on a weak connection: smaller and lighter (still sharp on a phone). */
+const LIGHTER = { maxEdge: 1280, quality: 0.7 };
+
 /**
  * Uploads photos one at a time (so each shows progress and a slow connection
- * isn't split many ways), resizing each on the phone first. Failed photos stay
- * in the list with Retry.
+ * isn't split many ways), resizing each on the phone first. A photo that fails
+ * on the connection tries once more by itself, smaller; after that it stays in
+ * the list with Retry.
  */
 export function usePhotoUploads({
   roomId,
@@ -89,7 +95,7 @@ export function usePhotoUploads({
 
     void (async () => {
       try {
-        const image = await resizeImage(next.file);
+        const image = await resizeImage(next.file, next.lighter ? LIGHTER : undefined);
         const copies = await smallerCopies(image);
         update(next.id, { size: image.blob.size + (copies.medium?.blob.size ?? 0) + (copies.small?.blob.size ?? 0) });
         const result = await apiUpload<{ photo: Photo; lodge: Lodge }>(
@@ -98,7 +104,10 @@ export function usePhotoUploads({
           (fraction) => update(next.id, { progress: fraction }),
         );
         if (result.error !== undefined) {
-          update(next.id, { status: "failed", error: result.error });
+          // Dropped or timed out (slow line, or too big for it): once more, lighter
+          const connection = result.status === 0 || result.status === 413 || result.status >= 500;
+          if (connection && !next.lighter) update(next.id, { status: "waiting", progress: 0, lighter: true });
+          else update(next.id, { status: "failed", error: result.error });
         } else {
           setLodge(result.data.lodge);
           onUploaded?.(result.data.photo);
