@@ -9,14 +9,14 @@ export type TemplateLook = Omit<BasicConfig, "name" | "motion">;
  * The Design screen's thumbnails read them too.
  */
 export const PLACEHOLDER_LOOKS: Partial<Record<TemplateKey, TemplateLook>> = {
-  "starter-clear": { layout: "stack", tone: "light", font: "sans" },
-  "starter-simple": { layout: "split", tone: "light", font: "sans" },
-  "starter-compact": { layout: "rooms-first", tone: "light", font: "sans" },
-  "growth-panorama": { layout: "stack", tone: "warm", font: "sans" },
-  "growth-journal": { layout: "split", tone: "warm", font: "serif" },
-  "pro-signature": { layout: "stack", tone: "dark", font: "serif" },
-  "pro-safari": { layout: "split", tone: "warm", font: "serif" },
-  "pro-horizon": { layout: "rooms-first", tone: "dark", font: "sans" },
+  "starter-veranda": { layout: "stack", tone: "light", font: "sans" },
+  "starter-rondavel": { layout: "split", tone: "light", font: "sans" },
+  "starter-shade": { layout: "rooms-first", tone: "light", font: "sans" },
+  "growth-wordmark": { layout: "stack", tone: "warm", font: "sans" },
+  "growth-overlap": { layout: "split", tone: "warm", font: "serif" },
+  "pro-escarpment": { layout: "stack", tone: "dark", font: "serif" },
+  "pro-courtyard": { layout: "split", tone: "warm", font: "serif" },
+  "pro-canopy": { layout: "rooms-first", tone: "dark", font: "sans" },
 };
 
 /** Classic's look, close enough for a thumbnail. */

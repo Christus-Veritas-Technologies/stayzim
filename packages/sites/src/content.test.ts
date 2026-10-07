@@ -111,7 +111,7 @@ describe("schemas", () => {
       status: "LIVE",
       slug: "mistvalley",
       name: "Mist Valley",
-      template: "growth-classic",
+      template: "growth-shoreline",
       hero: { headline: "Mist Valley", subline: "Rest" },
       themeColor: "#1E4A3B",
       rooms: [{ id: "r1", name: "Hillside", price: 95, sleeps: 2, amenities: ["wifi", "from-a-newer-api"] }],

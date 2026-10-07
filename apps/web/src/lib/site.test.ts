@@ -9,8 +9,8 @@ const site: LiveSite = {
   slug: "mistvalley",
   customDomain: null,
   name: "Mist Valley Lodge",
-  template: "growth-classic",
-  hero: { headline: "Mist Valley Lodge", subline: "A place to rest in Nyanga, Manicaland. Book direct with us." },
+  template: "growth-shoreline",
+  hero: { headline: "Slow days in Nyanga, Manicaland", subline: "Rooms at Mist Valley Lodge, each one ready for you. Pick your dates and book direct." },
   description: "",
   town: "Nyanga",
   region: "Manicaland",
@@ -49,13 +49,13 @@ describe("bookingUrl", () => {
 
 describe("withTemplate", () => {
   test("swaps default hero text for the other template's default", () => {
-    const preview = withTemplate(site, findTemplate("pro-safari")!);
-    expect(preview.template).toBe("pro-safari");
-    expect(preview.hero.headline).toBe("Discover Nyanga, Manicaland");
+    const preview = withTemplate(site, findTemplate("pro-escarpment")!);
+    expect(preview.template).toBe("pro-escarpment");
+    expect(preview.hero.headline).toBe("Wake up in Nyanga, Manicaland.");
   });
 
   test("keeps hero text the owner wrote", () => {
     const own = { ...site, hero: { headline: "Fires, mist and trout", subline: "Our own words" } };
-    expect(withTemplate(own, findTemplate("pro-safari")!).hero).toEqual(own.hero);
+    expect(withTemplate(own, findTemplate("pro-courtyard")!).hero).toEqual(own.hero);
   });
 });

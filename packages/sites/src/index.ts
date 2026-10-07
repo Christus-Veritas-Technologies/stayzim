@@ -27,82 +27,82 @@ export const PLAN_RANK: Record<Plan, number> = { STARTER: 0, GROWTH: 1, PRO: 2 }
 export const PLANS_LABEL: Record<Plan, string> = { STARTER: "Starter", GROWTH: "Growth", PRO: "Pro" };
 
 export const TEMPLATES = [
-  // Starter: clean and quick, nothing moves
+  // Starter: one page, one font, one theme colour. Nothing moves.
   {
-    key: "starter-clear",
-    name: "Clear",
+    key: "starter-veranda",
+    name: "Veranda",
     plan: "STARTER",
-    description: "Name, rooms and the WhatsApp button, nothing in the way.",
+    description: "Rounded hero card with a price pill, then rooms, gallery and map.",
     motion: "none",
-    defaults: { headline: "{name}", subline: "Book your stay directly with us on WhatsApp." },
+    defaults: { headline: "A quiet stay in {place}", subline: "Comfortable rooms at {name}. See our prices and book direct with us." },
   },
   {
-    key: "starter-simple",
-    name: "Simple",
+    key: "starter-rondavel",
+    name: "Rondavel",
     plan: "STARTER",
-    description: "A big photo on top, everything else in one column.",
+    description: "Full-bleed hero with the WhatsApp number on the edge, tall room cards and a dark map band.",
     motion: "none",
-    defaults: { headline: "Welcome to {name}", subline: "Comfortable rooms in {place}. Message us to book." },
+    defaults: { headline: "Sleep well in {place}", subline: "{name}: a small lodge with a warm welcome. Message us to book." },
   },
   {
-    key: "starter-compact",
-    name: "Compact",
+    key: "starter-shade",
+    name: "Shade",
     plan: "STARTER",
-    description: "Rooms first, for guests who already know you.",
+    description: "Classic serif lodge: amenity tiles, a theme-colour rooms band with prices, gallery and map.",
     motion: "none",
-    defaults: { headline: "Stay at {name}", subline: "See our rooms and prices, then book on WhatsApp." },
-  },
-
-  // Growth: richer layouts with subtle motion
-  {
-    key: "growth-classic",
-    name: "Classic",
-    plan: "GROWTH",
-    description: "Full-width hero, room cards with photos, gallery, map and contact.",
-    motion: "subtle",
     defaults: { headline: "{name}", subline: "A place to rest in {place}. Book direct with us." },
   },
+
+  // Growth: more layout, an enquiry bar with dates, subtle motion
   {
-    key: "growth-panorama",
-    name: "Panorama",
+    key: "growth-shoreline",
+    name: "Shoreline",
     plan: "GROWTH",
-    description: "Wide photos lead, with the rooms laid out side by side.",
+    description: "Pill navigation over a big photo, an enquiry bar with dates, a highlighted intro and rich room cards.",
     motion: "subtle",
-    defaults: { headline: "Wake up in {place}", subline: "{name}: book your room directly with us." },
+    defaults: { headline: "Slow days in {place}", subline: "Rooms at {name}, each one ready for you. Pick your dates and book direct." },
   },
   {
-    key: "growth-journal",
-    name: "Journal",
+    key: "growth-wordmark",
+    name: "Wordmark",
     plan: "GROWTH",
-    description: "Text-led and calm, like a travel magazine.",
+    description: "A giant lodge-name wordmark, a pill enquiry bar, a room carousel and amenities worked out from the rooms.",
     motion: "subtle",
-    defaults: { headline: "A stay at {name}", subline: "Slow mornings, warm rooms and the best of {place}." },
+    defaults: { headline: "A lodge in {place}", subline: "Warm rooms and quiet mornings at {name}. Book direct, no booking fees." },
+  },
+  {
+    key: "growth-overlap",
+    name: "Overlap",
+    plan: "GROWTH",
+    description: "Glass navigation and a floating room card over the hero, an overlapping enquiry bar and a room carousel.",
+    motion: "subtle",
+    defaults: { headline: "Find your quiet stay.", subline: "Rooms at {name} in {place}. Booking takes a minute." },
   },
 
-  // Pro: the most polished, with rich motion
+  // Pro: editorial, with reviews, a journal and rich motion
   {
-    key: "pro-signature",
-    name: "Signature",
+    key: "pro-escarpment",
+    name: "Escarpment",
     plan: "PRO",
-    description: "Cinematic hero, parallax photos and a sticky booking bar.",
+    description: "Cinematic hero and enquiry bar, editorial room spreads, reviews and a journal.",
     motion: "rich",
-    defaults: { headline: "{name}", subline: "Your home in {place}. Reserve directly, no booking fees." },
+    defaults: { headline: "Wake up in {place}.", subline: "{name}: a small place with a long view. Book direct, no booking fees." },
   },
   {
-    key: "pro-safari",
-    name: "Safari",
+    key: "pro-courtyard",
+    name: "Courtyard",
     plan: "PRO",
-    description: "Earthy and bold, made for lodges near parks and lakes.",
+    description: "Dark split hero, a big statement with numbers, rooms as an expanding list, a filmstrip and the journal.",
     motion: "rich",
-    defaults: { headline: "Discover {place}", subline: "Unforgettable days and quiet nights at {name}." },
+    defaults: { headline: "{name}", subline: "Rooms around one quiet house in {place}." },
   },
   {
-    key: "pro-horizon",
-    name: "Horizon",
+    key: "pro-canopy",
+    name: "Canopy",
     plan: "PRO",
-    description: "Minimal and premium, with large type and generous space.",
+    description: "Aerial hero, numbers from the rooms, an at-a-glance table, room cards, a review and the journal.",
     motion: "rich",
-    defaults: { headline: "{name}", subline: "Considered stays in {place}." },
+    defaults: { headline: "A quiet camp in {place}", subline: "{name}: a handful of rooms and a lot of quiet. Book direct with us." },
   },
 ] as const satisfies readonly Template[];
 
@@ -110,18 +110,32 @@ export type TemplateKey = (typeof TEMPLATES)[number]["key"];
 
 export const TEMPLATE_KEYS = TEMPLATES.map((template) => template.key) as [TemplateKey, ...TemplateKey[]];
 
+/** Keys from before the designed templates (October 2026), to the design that took each one's place. */
+export const RETIRED_TEMPLATES: Record<string, TemplateKey> = {
+  "starter-clear": "starter-veranda",
+  "starter-simple": "starter-rondavel",
+  "starter-compact": "starter-shade",
+  "growth-classic": "growth-shoreline",
+  "growth-panorama": "growth-wordmark",
+  "growth-journal": "growth-overlap",
+  "pro-signature": "pro-escarpment",
+  "pro-safari": "pro-courtyard",
+  "pro-horizon": "pro-canopy",
+};
+
 /** The template each plan starts on, and falls back to after a downgrade. */
 export const DEFAULT_TEMPLATE: Record<Plan, TemplateKey> = {
-  STARTER: "starter-clear",
-  GROWTH: "growth-classic",
-  PRO: "pro-signature",
+  STARTER: "starter-veranda",
+  GROWTH: "growth-shoreline",
+  PRO: "pro-escarpment",
 };
 
 /** Owners write these themselves; longer text would break the hero on phones. */
 export const HERO_LIMITS = { headline: 60, subline: 140 } as const;
 
 export function findTemplate(key: string | null | undefined): Template | undefined {
-  return TEMPLATES.find((template) => template.key === key);
+  const current = key ? (RETIRED_TEMPLATES[key] ?? key) : key;
+  return TEMPLATES.find((template) => template.key === current);
 }
 
 /** A plan can use its own templates and every plan's below it. */

@@ -13,7 +13,7 @@ import type { LiveSite } from "@/lib/site";
  * for yet) gets its badges around whichever template it uses.
  */
 export function SiteTemplate({ site, preview = false }: { site: LiveSite; preview?: boolean }) {
-  const template = findTemplate(site.template) ?? findTemplate("growth-classic")!;
+  const template = findTemplate(site.template) ?? findTemplate("growth-shoreline")!;
   const basic = PLACEHOLDER_LOOKS[template.key as TemplateKey];
   // Previews never take requests: Book stays a WhatsApp link there
   const booking =

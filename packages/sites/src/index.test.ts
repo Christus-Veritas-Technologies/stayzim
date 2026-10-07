@@ -8,6 +8,7 @@ import {
   heroText,
   normalizeDomain,
   PLAN_RANK,
+  RETIRED_TEMPLATES,
   TEMPLATE_KEYS,
   TEMPLATES,
   templateAllowed,
@@ -35,8 +36,8 @@ describe("the template catalog", () => {
 
 describe("templateAllowed", () => {
   test("lets a plan use its own templates and every plan's below it", () => {
-    const starter = findTemplate("starter-clear")!;
-    const pro = findTemplate("pro-safari")!;
+    const starter = findTemplate("starter-veranda")!;
+    const pro = findTemplate("pro-courtyard")!;
     expect(templateAllowed(starter, "STARTER")).toBe(true);
     expect(templateAllowed(starter, "PRO")).toBe(true);
     expect(templateAllowed(pro, "GROWTH")).toBe(false);
@@ -46,17 +47,23 @@ describe("templateAllowed", () => {
 
 describe("effectiveTemplate", () => {
   test("keeps an allowed choice", () => {
-    expect(effectiveTemplate("growth-journal", "PRO").key).toBe("growth-journal");
+    expect(effectiveTemplate("growth-overlap", "PRO").key).toBe("growth-overlap");
   });
 
   test("falls back to the plan's default after a downgrade", () => {
-    expect(effectiveTemplate("pro-horizon", "STARTER").key).toBe("starter-clear");
-    expect(effectiveTemplate("pro-horizon", "GROWTH").key).toBe("growth-classic");
+    expect(effectiveTemplate("pro-canopy", "STARTER").key).toBe("starter-veranda");
+    expect(effectiveTemplate("pro-canopy", "GROWTH").key).toBe("growth-shoreline");
   });
 
   test("falls back for no choice or an unknown key", () => {
-    expect(effectiveTemplate(null, "PRO").key).toBe("pro-signature");
-    expect(effectiveTemplate("gone-template", "GROWTH").key).toBe("growth-classic");
+    expect(effectiveTemplate(null, "PRO").key).toBe("pro-escarpment");
+    expect(effectiveTemplate("gone-template", "GROWTH").key).toBe("growth-shoreline");
+  });
+
+  test("reads a key from before the designed templates as the design that replaced it", () => {
+    expect(effectiveTemplate("growth-classic", "GROWTH").key).toBe("growth-shoreline");
+    expect(effectiveTemplate("pro-safari", "PRO").key).toBe("pro-courtyard");
+    for (const key of Object.values(RETIRED_TEMPLATES)) expect(findTemplate(key)?.key).toBe(key);
   });
 });
 
@@ -72,19 +79,19 @@ describe("fillCopy", () => {
 
 describe("heroText", () => {
   const lodge = { name: "Lakeview Cabins", place: "Kariba", heroHeadline: null, heroSubline: null };
-  const safari = findTemplate("pro-safari")!;
+  const safari = findTemplate("pro-escarpment")!;
 
   test("uses the template's copy when the owner hasn't written their own", () => {
     expect(heroText(safari, lodge)).toEqual({
-      headline: "Discover Kariba",
-      subline: "Unforgettable days and quiet nights at Lakeview Cabins.",
+      headline: "Wake up in Kariba.",
+      subline: "Lakeview Cabins: a small place with a long view. Book direct, no booking fees.",
     });
   });
 
   test("prefers the owner's text, ignoring blank text", () => {
     expect(heroText(safari, { ...lodge, heroHeadline: "  Sunsets on the lake ", heroSubline: "   " })).toEqual({
       headline: "Sunsets on the lake",
-      subline: "Unforgettable days and quiet nights at Lakeview Cabins.",
+      subline: "Lakeview Cabins: a small place with a long view. Book direct, no booking fees.",
     });
   });
 });

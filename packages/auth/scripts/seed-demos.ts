@@ -50,7 +50,7 @@ const DEMOS: DemoLodge[] = [
     longitude: 32.75,
     themeColor: "#1E4A3B",
     plan: "GROWTH",
-    template: "growth-classic",
+    template: "growth-shoreline",
     description:
       "Stone cottages in the pine forest above Nyanga, with log fires, quiet mornings in the mist and the trout dams a short walk away. A family-run lodge for slow weekends in the Eastern Highlands.",
     heroHeadline: null,
@@ -71,7 +71,7 @@ const DEMOS: DemoLodge[] = [
     longitude: 32.77,
     themeColor: "#8A4B2A",
     plan: "PRO",
-    template: "pro-signature",
+    template: "pro-escarpment",
     description:
       "A ridge-top retreat in the Bvumba mountains, among msasa trees that turn copper every spring. Wide views to Mozambique, birdsong at dawn, and the botanical gardens ten minutes down the road.",
     heroHeadline: "Above the clouds in the Bvumba",
@@ -93,7 +93,7 @@ const DEMOS: DemoLodge[] = [
     longitude: 28.8,
     themeColor: "#1D5C7A",
     plan: "PRO",
-    template: "pro-safari",
+    template: "pro-canopy",
     description:
       "Six timber cabins on the shore of Lake Kariba, with sundowners on the deck, elephants along the water's edge and tiger fishing from our jetty. Boat trips and house-boat transfers arranged on request.",
     heroHeadline: "Sunsets on Lake Kariba",
