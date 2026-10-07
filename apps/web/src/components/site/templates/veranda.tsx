@@ -45,7 +45,7 @@ export function VerandaTemplate({ site }: { site: LiveSite }) {
   const nav = [
     { href: "#rooms", label: "Rooms" },
     site.gallery.length > 0 ? { href: "#gallery", label: "Gallery" } : null,
-    mapsLink ? { href: "#location", label: "Location" } : null,
+    { href: "#location", label: "Location" },
   ].filter((link) => link !== null);
 
   return (

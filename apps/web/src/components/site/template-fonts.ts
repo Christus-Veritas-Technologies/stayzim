@@ -1,4 +1,4 @@
-import { Bricolage_Grotesque, Cormorant_Garamond, Gloock, Hanken_Grotesk, Instrument_Serif, Tenor_Sans, Urbanist } from "next/font/google";
+import { Bricolage_Grotesque, Cormorant_Garamond, Gloock, Hanken_Grotesk, Instrument_Serif, Newsreader, Tenor_Sans, Urbanist } from "next/font/google";
 
 /*
  * The lodge templates' own typefaces, from designs/StayZim Lodge Templates.html.
@@ -41,3 +41,6 @@ export const instrumentSerif = Instrument_Serif({
   preload: false,
   display: "swap",
 });
+
+/** Shade: Newsreader's regular weight (the app loads only its semibold) */
+export const newsreaderBook = Newsreader({ variable: "--font-newsreader-book", subsets: ["latin"], weight: ["400", "500"], preload: false, display: "swap" });
