@@ -33,6 +33,8 @@ const site: LiveSite = {
   faq: [],
   socialLinks: [],
   booking: { mode: "whatsapp" },
+  reviews: null,
+  journal: [],
 };
 
 describe("bookingUrl", () => {

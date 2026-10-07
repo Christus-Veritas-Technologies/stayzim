@@ -1,10 +1,12 @@
 "use client";
 
-import { cn } from "@stayzim/ui/lib/utils";
 import { Dialog, DialogContent, DialogTitle } from "@stayzim/ui/components/dialog";
+import { cn } from "@stayzim/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
+
+import { PHOTO_FALLBACK } from "@/lib/site-content";
 
 type GalleryPhoto = { url: string; srcSet?: string | null; width: number; height: number; caption: string };
 
@@ -184,10 +186,6 @@ export function SiteGallery({
     </>
   );
 }
-
-/** Where a photo is missing: a soft wash of the lodge's colour (templates set --theme). */
-export const PHOTO_FALLBACK =
-  "bg-[linear-gradient(160deg,color-mix(in_oklab,var(--theme,#1E4A3B)_18%,#F4EFE6)_0%,color-mix(in_oklab,var(--theme,#1E4A3B)_55%,#8A7A66)_100%)]";
 
 /** A room's photos, swiped sideways, with dots. */
 export function RoomPhotos({

@@ -5,6 +5,13 @@ import type { LiveSite, SiteRoom } from "@stayzim/sites";
  * and in the designer's templates (docs/cms/README.md, "The template contract").
  */
 
+/**
+ * Where a photo is missing: a soft wash of the lodge's colour (templates set
+ * --theme). Here, not in a client module, so server templates get the string.
+ */
+export const PHOTO_FALLBACK =
+  "bg-[linear-gradient(160deg,color-mix(in_oklab,var(--theme,#1E4A3B)_18%,#F4EFE6)_0%,color-mix(in_oklab,var(--theme,#1E4A3B)_55%,#8A7A66)_100%)]";
+
 /** "32 m²" */
 export function formatSize(size: number) {
   return `${size} m²`;

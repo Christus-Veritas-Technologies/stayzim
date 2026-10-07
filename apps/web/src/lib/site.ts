@@ -1,6 +1,7 @@
 import { env } from "@stayzim/env/web";
-import { fillCopy, findTemplate, type LiveSite, type PublicSite, type Template } from "@stayzim/sites";
-import { publicSiteSchema } from "@stayzim/sites/schemas";
+import { fillCopy, findTemplate, type LiveSite, type PublicSite, type SitePost, type SitePostFull, type Template } from "@stayzim/sites";
+import { publicSiteSchema, sitePostFullSchema, sitePostSchema } from "@stayzim/sites/schemas";
+import { z } from "zod";
 import { cache } from "react";
 
 import { lodgePlace } from "@/lib/lodge";
@@ -20,6 +21,24 @@ export const getSite = cache(async (slug: string): Promise<PublicSite | null> =>
   if (!response.ok) throw new Error(`Site ${slug} didn't load (${response.status})`);
   // Defaults fill fields an older API doesn't send yet; unknown ones are dropped
   return publicSiteSchema.parse(await response.json());
+});
+
+/** Pro: every published journal post, newest first. null when the lodge has no journal. */
+export const getJournal = cache(async (slug: string): Promise<SitePost[] | null> => {
+  const api = env.SERVER_INTERNAL_URL ?? env.NEXT_PUBLIC_SERVER_URL;
+  const response = await fetch(`${api}/api/sites/${encodeURIComponent(slug)}/journal`, { cache: "no-store" });
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error(`Journal for ${slug} didn't load (${response.status})`);
+  return z.object({ posts: z.array(sitePostSchema) }).parse(await response.json()).posts;
+});
+
+/** Pro: one journal post with its body, or null. */
+export const getPost = cache(async (slug: string, post: string): Promise<SitePostFull | null> => {
+  const api = env.SERVER_INTERNAL_URL ?? env.NEXT_PUBLIC_SERVER_URL;
+  const response = await fetch(`${api}/api/sites/${encodeURIComponent(slug)}/journal/${encodeURIComponent(post)}`, { cache: "no-store" });
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error(`Post ${post} didn't load (${response.status})`);
+  return sitePostFullSchema.parse(await response.json());
 });
 
 /**

@@ -258,7 +258,8 @@ const sitePost = z.object({
   cover: sitePhoto.nullable().catch(null).default(null),
 });
 
-/** One journal post with its body, for the post page. */
+/** A journal post in a list, and one with its body for the post page. */
+export const sitePostSchema = sitePost;
 export const sitePostFullSchema = sitePost.extend({ body: z.string() });
 
 const liveSite = z.object({

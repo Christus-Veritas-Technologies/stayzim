@@ -3,12 +3,11 @@ import { ArrowUpRight, CalendarDays, Check, ChevronDown, LogIn, LogOut, MapPin }
 import type { ReactNode } from "react";
 
 import { WhatsAppIcon } from "@/components/landing/brand";
-import { PHOTO_FALLBACK } from "@/components/site/gallery";
 import { SocialIcon } from "@/components/site/social-icons";
 import { BookLink } from "@/components/site/tracking";
 import { AMENITIES, formatPhone, lodgePlace } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
-import { amenitySummary, emphasis, hasStayInfo, roomStats } from "@/lib/site-content";
+import { amenitySummary, emphasis, hasStayInfo, PHOTO_FALLBACK, roomStats } from "@/lib/site-content";
 import { MAIN_URL } from "@/lib/site-host";
 
 /*
