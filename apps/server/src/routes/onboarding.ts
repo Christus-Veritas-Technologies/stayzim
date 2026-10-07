@@ -1,5 +1,5 @@
 import prisma from "@stayzim/db";
-import { addDays, DEFAULT_TEMPLATE, DEMO_DAYS, isPlan, slugFromName, slugProblem } from "@stayzim/sites";
+import { addDays, DEFAULT_TEMPLATE, DEMO_DAYS, findTemplate, isPlan, slugFromName, slugProblem, TEMPLATE_KEYS, templateAllowed } from "@stayzim/sites";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { rateLimiter } from "hono-rate-limiter";
@@ -25,6 +25,8 @@ const source = (max: number) =>
 const lodgeSchema = z.object({
   // /create starts every demo on Growth (the plan most lodges take) unless the link named one
   plan: z.string().refine(isPlan, "Pick a plan").default("GROWTH"),
+  // The look picked on /create's first step. Left out: the plan's default
+  template: z.enum(TEMPLATE_KEYS, "Pick one of the designs").optional(),
   name: z.string().trim().min(2, "Add your lodge name").max(80, "Keep the name under 80 characters"),
   // The town and the address can come later, from the dashboard
   town: z
@@ -117,6 +119,9 @@ export const onboarding = new Hono<{ Variables: AuthVariables }>()
       }
 
       const plan = input.plan as keyof typeof DEFAULT_TEMPLATE;
+      if (input.template && !templateAllowed(findTemplate(input.template)!, plan)) {
+        throw new HTTPException(400, { message: "That design needs a bigger plan." });
+      }
       const lodge = await prisma.lodge.create({
         data: {
           slug,
@@ -125,7 +130,7 @@ export const onboarding = new Hono<{ Variables: AuthVariables }>()
           region: input.region,
           whatsapp: input.whatsapp,
           plan,
-          template: DEFAULT_TEMPLATE[plan],
+          template: input.template ?? DEFAULT_TEMPLATE[plan],
           status: "DEMO",
           demoEndsAt: addDays(new Date(), DEMO_DAYS),
           ownerId: user.id,
