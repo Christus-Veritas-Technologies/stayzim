@@ -247,6 +247,7 @@ const siteRoom = z.object({
   description: z.string().nullable().default(null),
   beds: z.string().nullable().default(null),
   size: z.number().nullable().default(null),
+  sample: z.boolean().default(false),
 });
 
 const siteReviews = z.object({
@@ -352,6 +353,17 @@ const liveSite = z.object({
   booking: z.object({ mode: z.enum(["whatsapp", "request"]).catch("whatsapp") }).default({ mode: "whatsapp" }),
   reviews: siteReviews.nullable().catch(null).default(null),
   journal: z.array(sitePost).catch([]).default([]),
+  samples: z
+    .object({
+      rooms: z.boolean().default(false),
+      gallery: z.boolean().default(false),
+      guestInfo: z.boolean().default(false),
+      reviews: z.boolean().default(false),
+      journal: z.boolean().default(false),
+      map: z.boolean().default(false),
+    })
+    .catch({ rooms: false, gallery: false, guestInfo: false, reviews: false, journal: false, map: false })
+    .default({ rooms: false, gallery: false, guestInfo: false, reviews: false, journal: false, map: false }),
 });
 
 export const publicSiteSchema = z.discriminatedUnion("status", [

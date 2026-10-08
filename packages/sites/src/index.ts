@@ -204,3 +204,4 @@ export * from "./content/journal";
 export * from "./content/facts";
 export type * from "./content/types";
 export { copyForLodge, copyVars, siteCopy, welcomeDescription, type CopyFacts, type CopyLodge, type SiteCopy } from "./copy";
+export { applySamples, isSampleRoomId, NO_SAMPLES, SAMPLE_PHOTOS, SAMPLE_ROOM_PREFIX, sampleGallery, samplePosts, sampleReviews, sampleRooms, type SampleInput, type SiteSamples } from "./samples";

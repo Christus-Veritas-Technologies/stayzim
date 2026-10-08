@@ -1,6 +1,7 @@
 import type { Plan } from "../index";
 import type { AmenityKey } from "./amenities";
 import type { SiteCopy } from "../copy";
+import type { SiteSamples } from "../samples";
 import type { LodgeKind, Setting } from "./facts";
 import type { FaqEntry, SocialKey, SocialLinks } from "./guest-info";
 
@@ -44,6 +45,8 @@ export type SiteRoom = {
   beds: string | null;
   /** Square metres */
   size: number | null;
+  /** An example room on a demo site (never bookable; replaced by the owner's first room) */
+  sample: boolean;
 };
 
 export type LiveSite = {
@@ -96,6 +99,8 @@ export type LiveSite = {
   reviews: SiteReviews | null;
   /** Pro: the latest journal posts, newest first (the journal page lists them all) */
   journal: SitePost[];
+  /** Which sections are example content on a demo site (../samples) */
+  samples: SiteSamples;
 };
 
 export type SiteSocialLink = { key: SocialKey; label: string; url: string };

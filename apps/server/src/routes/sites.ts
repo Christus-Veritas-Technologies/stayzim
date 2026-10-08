@@ -12,8 +12,12 @@ import {
   formatDay,
   formatStay,
   fullNights,
+  applySamples,
   copyForLodge,
   heroText,
+  isSetting,
+  NO_SAMPLES,
+  samplePosts,
   welcomeDescription,
   isDateString,
   nightsBetween,
@@ -21,6 +25,7 @@ import {
   SOCIAL_NETWORKS,
   todayInHarare,
   type Plan,
+  type LiveSite,
   type PublicSite,
   type SiteAvailability,
 } from "@stayzim/sites";
@@ -63,9 +68,17 @@ function requestMode(lodge: { plan: Plan; whatsapp: string | null; rooms: { visi
 /** A lodge whose site is up and takes requests, or null (404, the same as an unknown site). */
 /** A live Pro lodge, the only kind with a journal. */
 async function journalLodge(slug: string) {
-  const lodge = await prisma.lodge.findUnique({ where: { slug: slug.toLowerCase() }, select: { id: true, plan: true, status: true, demoEndsAt: true } });
+  const lodge = await prisma.lodge.findUnique({
+    where: { slug: slug.toLowerCase() },
+    select: { id: true, plan: true, status: true, demoEndsAt: true, name: true, town: true, setting: true },
+  });
   if (!lodge || lodge.plan !== "PRO" || lodge.status === "SUSPENDED") return null;
   return demoEnded(lodge, new Date()) ? null : lodge;
+}
+
+/** A Pro demo's example journal posts (packages/sites samples). */
+function demoPosts(lodge: { name: string; town: string | null; setting: string | null }) {
+  return samplePosts({ name: lodge.name, town: lodge.town, setting: isSetting(lodge.setting) ? lodge.setting : null, publishedOn: todayInHarare() });
 }
 
 async function bookableLodge(slug: string) {
@@ -129,7 +142,7 @@ export const sites = new Hono<{ Variables: AuthVariables }>()
     const place = [full.town, full.region].filter(Boolean).join(", ") || null;
     // Generated text for every section; the owner's own hero and description win
     const copy = copyForLodge(full, heroText(findTemplate(full.siteTemplate)!, { ...full, place }));
-    return c.json({
+    const site: LiveSite = {
       status: "LIVE",
       demo: lodge.status === "DEMO",
       slug: full.slug,
@@ -167,6 +180,7 @@ export const sites = new Hono<{ Variables: AuthVariables }>()
           description: room.description,
           beds: room.beds,
           size: room.size,
+          sample: false,
         })),
       gallery: full.gallery.map(({ url, srcSet, width, height, caption }) => ({ url, srcSet, width, height, caption })),
       checkInFrom: full.checkInFrom,
@@ -180,20 +194,30 @@ export const sites = new Hono<{ Variables: AuthVariables }>()
       }),
       booking: { mode: requestMode(full) ? "request" : "whatsapp" },
       ...(await proContent(lodge)),
-    } satisfies PublicSite);
+      samples: NO_SAMPLES,
+    };
+    // A demo shows example rooms, photos, guest info and (Pro) reviews and posts wherever the owner has none yet
+    return c.json(applySamples(site, { roomsHint: full.roomsHint, priceHint: full.priceHint, pro: lodge.plan === "PRO", today: todayInHarare() }) satisfies PublicSite);
   })
 
   /** Pro: every published journal post, newest first. */
   .get("/:slug/journal", async (c) => {
     const lodge = await journalLodge(c.req.param("slug"));
     if (!lodge) return c.json({ error: "No journal here" }, 404);
-    return c.json({ posts: await publishedPosts(lodge.id) });
+    const posts = await publishedPosts(lodge.id);
+    if (posts.length === 0 && lodge.status === "DEMO") {
+      return c.json({ posts: demoPosts(lodge).map(({ body: _body, ...post }) => post) });
+    }
+    return c.json({ posts });
   })
 
   /** Pro: one journal post with its body. */
   .get("/:slug/journal/:post", async (c) => {
     const lodge = await journalLodge(c.req.param("slug"));
-    const post = lodge ? await publishedPost(lodge.id, c.req.param("post").toLowerCase()) : null;
+    const slug = c.req.param("post").toLowerCase();
+    let post = lodge ? await publishedPost(lodge.id, slug) : null;
+    // A demo with no posts of its own shows the example ones
+    if (!post && lodge?.status === "DEMO" && (await publishedPosts(lodge.id)).length === 0) post = demoPosts(lodge).find((entry) => entry.slug === slug) ?? null;
     if (!post) return c.json({ error: "No post here" }, 404);
     return c.json(post);
   })

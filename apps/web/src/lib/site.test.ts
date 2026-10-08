@@ -1,4 +1,4 @@
-import { findTemplate, siteCopy } from "@stayzim/sites";
+import { findTemplate, NO_SAMPLES, siteCopy } from "@stayzim/sites";
 import { describe, expect, test } from "bun:test";
 
 import { bookingUrl, withTemplate, type LiveSite } from "./site";
@@ -39,6 +39,7 @@ const site: LiveSite = {
   booking: { mode: "whatsapp" },
   reviews: null,
   journal: [],
+  samples: NO_SAMPLES,
 };
 
 describe("bookingUrl", () => {
