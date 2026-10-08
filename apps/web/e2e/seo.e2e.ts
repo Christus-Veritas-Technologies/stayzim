@@ -72,7 +72,9 @@ test.describe("owner", () => {
     await page.goto("/dashboard/billing?plan=starter");
     const pay = page.getByRole("button", { name: /^Pay \$/ });
     // Without Paynow set up (CI), Billing says "Message us" instead of showing the pay card
-    test.skip(!(await pay.isVisible().catch(() => false)) && (await page.getByText("Message us").first().isVisible()), "Paynow isn't set up here");
+    const messageUs = page.getByText(/Message us and we.ll send you a Paynow link/);
+    await expect(pay.or(messageUs).first()).toBeVisible();
+    test.skip(await messageUs.isVisible(), "Paynow isn't set up here");
     const designs = page.getByRole("radiogroup", { name: "Pick a design for Starter" });
     await expect(designs).toBeVisible();
     await expect(pay).toBeDisabled();
