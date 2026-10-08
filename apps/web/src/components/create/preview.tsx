@@ -1,21 +1,16 @@
 "use client";
 
 import { slugFromName } from "@stayzim/sites";
-import { Spinner } from "@stayzim/ui/components/spinner";
 import { cn } from "@stayzim/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import { Lock } from "lucide-react";
-import { useEffect, useState } from "react";
 
 import type { CreateFacts } from "@/components/create/place-step";
+import { SitePreview } from "@/components/preview/site-preview";
 import { SITES_DOMAIN } from "@/lib/site-host";
 
 export const DEFAULT_THEME = "#1E4A3B";
 
-/** The site pages are drawn at a phone's width, then scaled to fit the column. */
-const PHONE = { width: 390, height: 780 };
-const FRAME_WIDTH = 288;
-const SCALE = FRAME_WIDTH / PHONE.width;
 /** Typing changes the preview once the owner pauses */
 const SETTLE_MS = 700;
 
@@ -40,66 +35,19 @@ export function samplePreviewUrl({ template, name, town, country, facts, themeCo
   return `/preview/sample/${template}${search ? `?${search}` : ""}`;
 }
 
-/** `value`, once it has stopped changing for a moment. */
-function useSettled(value: string) {
-  const [settled, setSettled] = useState(value);
-  useEffect(() => {
-    const timer = window.setTimeout(() => setSettled(value), SETTLE_MS);
-    return () => window.clearTimeout(timer);
-  }, [value]);
-  return settled;
-}
-
 /**
  * The owner's site in the design they picked (wide screens): the real page in
- * a phone, scaled to fit. A new address loads behind the current one and
- * swaps in when it's ready, so typing never blanks the preview.
+ * an iPhone, scaled to fit the column, with full screen for a closer look.
  */
-export function CreatePreview({ src, name, host }: { src: string; name: string; host?: string }) {
-  const wanted = useSettled(src);
-  const [shown, setShown] = useState<string | null>(null);
-  const loading = wanted !== shown;
-
+export function CreatePreview({ src, name, host, tint }: { src: string; name: string; host?: string; tint?: string }) {
   return (
     <div className="flex flex-col gap-3">
       <p className="text-center text-[12.5px] font-semibold tracking-[0.08em] text-muted-2 uppercase">Your site, live as you go</p>
       <div className="mx-auto flex w-full max-w-[288px] items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[12px] text-slate shadow-card">
         <Lock className="size-3 shrink-0 text-success" />
         <span className="truncate">{previewHost(name, host)}</span>
-        <AnimatePresence>
-          {loading && shown ? (
-            <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="ml-auto" aria-label="Updating">
-              <Spinner className="size-3 text-brand" />
-            </motion.span>
-          ) : null}
-        </AnimatePresence>
       </div>
-      <div
-        className="relative mx-auto overflow-hidden rounded-[30px] border-[6px] border-ink bg-white shadow-card"
-        style={{ width: FRAME_WIDTH + 12, height: PHONE.height * SCALE + 12 }}
-      >
-        {[shown, loading ? wanted : null].map((url, layer) =>
-          url ? (
-            <iframe
-              key={url}
-              src={url}
-              title="Preview of your site"
-              tabIndex={-1}
-              onLoad={() => setShown(url)}
-              className={cn("absolute top-0 left-0 origin-top-left border-0", layer === 1 && "invisible")}
-              style={{ width: PHONE.width, height: PHONE.height, transform: `scale(${SCALE})` }}
-            />
-          ) : null,
-        )}
-        <AnimatePresence>
-          {shown ? null : (
-            <motion.div exit={{ opacity: 0 }} className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white text-[13px] text-muted">
-              <Spinner className="size-5 text-brand" />
-              Building the preview
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+      <SitePreview src={src} host={previewHost(name, host)} tint={tint} settle={SETTLE_MS} />
     </div>
   );
 }

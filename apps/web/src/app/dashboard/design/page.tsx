@@ -18,19 +18,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@stay
 import { Field, FormMessage } from "@stayzim/ui/components/field";
 import { InfoTip } from "@stayzim/ui/components/info-tip";
 import { Input } from "@stayzim/ui/components/input";
-import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@stayzim/ui/components/sheet";
 import { Textarea } from "@stayzim/ui/components/textarea";
 import { cn } from "@stayzim/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowUpRight, ChevronRight, Eye, Info, Lock, RotateCcw, Shuffle, Sparkles, Type } from "lucide-react";
+import { Eye, Info, Lock, RotateCcw, Shuffle, Sparkles, Type } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useLodge } from "@/components/dashboard/lodge-provider";
 import { Page, PageHeader, PageSection } from "@/components/dashboard/page";
 import { RequestChangeHint } from "@/components/dashboard/request-change-hint";
-import { SitePreview } from "@/components/dashboard/site-preview";
-import { PreviewWidthTabs, TemplatePreviewFrame, type PreviewWidth } from "@/components/dashboard/template-preview-frame";
+import { PreviewAside } from "@/components/preview/preview-aside";
+import { PreviewSheet } from "@/components/preview/preview-sheet";
 import { TemplateThumb } from "@/components/dashboard/template-thumb";
 import { UnsavedChangesGuard } from "@/components/dashboard/unsaved-changes";
 import { WhatsAppIcon } from "@/components/landing/brand";
@@ -38,6 +37,7 @@ import { Appear, Item, riseIn } from "@/components/motion";
 import { WhyDisabled } from "@/components/why-disabled";
 import { lodgePlace, ownerSiteUrl, PLANS, siteHost, siteUrl, type Lodge } from "@/lib/lodge";
 import { OFFLINE_REASON, useOnline } from "@/lib/online";
+import { draftPreviewUrl } from "@/lib/preview";
 import { stayzimChatUrl } from "@/lib/whatsapp";
 
 const PLAN_ORDER: Plan[] = ["STARTER", "GROWTH", "PRO"];
@@ -111,7 +111,7 @@ export default function DesignPage() {
         <RequestChangeHint className="px-1" />
       </PageSection>
 
-      <PreviewSheet lodge={lodge} template={previewing} liveKey={live.key} onClose={() => setPreviewing(null)} />
+      <TemplateSheet lodge={lodge} template={previewing} liveKey={live.key} onClose={() => setPreviewing(null)} />
     </Page>
   );
 }
@@ -236,7 +236,6 @@ function HeroText({ lodge, live }: { lodge: Lodge; live: Template }) {
   const [subline, setSubline] = useState(lodge.heroSubline ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [previewOpen, setPreviewOpen] = useState(false);
 
   const place = lodgePlace(lodge);
   // Written for this lodge from its type, setting and place (packages/sites copy engine)
@@ -290,17 +289,7 @@ function HeroText({ lodge, live }: { lodge: Lodge; live: Template }) {
     setError(null);
   }
 
-  const preview = {
-    name: lodge.name,
-    place,
-    description: lodge.description,
-    themeColor: lodge.themeColor,
-    logoUrl: lodge.logoUrl,
-    heroUrl: lodge.heroUrl,
-    rooms: lodge.rooms,
-    headline: headline.trim() || defaults.headline,
-    subline: subline.trim() || defaults.subline,
-  };
+  const preview = draftPreviewUrl(lodge, { heroHeadline: headline, heroSubline: subline });
 
   const actions = (
     <>
@@ -382,7 +371,7 @@ function HeroText({ lodge, live }: { lodge: Lodge; live: Template }) {
                     className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted-2"
                   >
                     Written for {lodge.name}.
-                    <InfoTip label="More about our wording">We write your site's text from your type of place, setting, town and rooms. Try other wording picks different sentences; nothing you typed is lost.</InfoTip>
+                    <InfoTip>We write your site's text from your type of place, setting, town and rooms. Try other wording picks different sentences; nothing you typed is lost.</InfoTip>
                     <Button variant="ghost" size="sm" className="-ml-1" onClick={onShuffle} loading={shuffling} disabled={!online}>
                       <Shuffle />
                       Try other wording
@@ -396,42 +385,7 @@ function HeroText({ lodge, live }: { lodge: Lodge; live: Template }) {
         </CardContent>
       </Card>
 
-      <aside className="sticky top-20 hidden flex-col gap-3 xl:flex">
-        <div className="flex items-center justify-between text-[13px]">
-          <span className="font-semibold">Preview</span>
-          <span className="inline-flex items-center gap-1.5 text-muted">
-            <span className="size-1.5 rounded-full bg-success" />
-            Updates as you type
-          </span>
-        </div>
-        <SitePreview lodge={preview} />
-      </aside>
-
-      <button
-        type="button"
-        onClick={() => setPreviewOpen(true)}
-        className="flex w-full items-center gap-3 rounded-[20px] bg-white p-3 text-left shadow-card transition-colors hover:bg-surface xl:hidden"
-      >
-        <span className="flex h-12 w-10 shrink-0 items-center justify-center rounded-lg bg-[linear-gradient(180deg,#C9D9D2,#7C978B)] text-white">
-          <Sparkles className="size-4" />
-        </span>
-        <span className="flex flex-1 flex-col">
-          <span className="text-[14px] font-semibold">Preview the hero</span>
-          <span className="text-xs text-muted">See the words before you save</span>
-        </span>
-        <ChevronRight className="size-4 text-muted-2" />
-      </button>
-
-      <Sheet open={previewOpen} onOpenChange={setPreviewOpen}>
-        <SheetContent side="bottom">
-          <SheetHeader>
-            <SheetTitle>Preview</SheetTitle>
-          </SheetHeader>
-          <SheetBody className="bg-surface-2">
-            <SitePreview lodge={preview} />
-          </SheetBody>
-        </SheetContent>
-      </Sheet>
+      <PreviewAside src={preview.src} host={preview.host} tint={lodge.themeColor} live="Updates as you type" label="Preview the hero" sublabel="See the words before you save" />
 
       <UnsavedChangesGuard when={dirty && !saving} />
 
@@ -453,7 +407,7 @@ function HeroText({ lodge, live }: { lodge: Lodge; live: Template }) {
   );
 }
 
-function PreviewSheet({
+function TemplateSheet({
   lodge,
   template,
   liveKey,
@@ -466,7 +420,6 @@ function PreviewSheet({
 }) {
   const { save } = useLodge();
   const online = useOnline();
-  const [width, setWidth] = useState<PreviewWidth>("phone");
   const [applying, setApplying] = useState(false);
   // Keep the last template while the sheet slides out
   const [shown, setShown] = useState<Template | null>(template);
@@ -511,66 +464,37 @@ function PreviewSheet({
     });
   }
 
-  const src = shown ? `/preview/${lodge.slug}/${shown.key}` : undefined;
+  const src = shown ? `/preview/${lodge.slug}/${shown.key}?bare=1` : "";
 
   return (
-    <Sheet open={template !== null} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="sm:max-w-[min(1120px,calc(100vw-1rem))]">
-        <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
-            {shown?.name}
-            {shown ? (
-              live ? (
-                <Badge variant="success" status>
-                  Live
-                </Badge>
-              ) : (
-                <Badge variant={PLAN_BADGE[shown.plan]}>{PLANS_LABEL[shown.plan]}</Badge>
-              )
-            ) : null}
-          </SheetTitle>
-          <SheetDescription>{shown ? `${shown.description} ${MOTION_LABEL[shown.motion]}.` : null}</SheetDescription>
-        </SheetHeader>
-
-        <SheetBody className="flex flex-col gap-3 bg-surface-2">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <PreviewWidthTabs value={width} onChange={setWidth} />
-            <p className="text-xs text-muted-2">Your saved lodge info, rooms and photos. Visits here aren&apos;t counted.</p>
-          </div>
-
-          <TemplatePreviewFrame src={src} title={`${shown?.name} template preview`} width={width} />
-        </SheetBody>
-
-        <SheetFooter className="flex-wrap justify-between">
-          <a
-            href={src}
-            target="_blank"
-            rel="noreferrer"
-            className={buttonVariants({ variant: "ghost", size: "sm", className: "-ml-2" })}
-          >
-            Open in a new tab
-            <ArrowUpRight />
-          </a>
-          <div className="flex items-center gap-2">
-            {shown && locked ? (
-              <a
-                href={upgradeUrl(lodge, shown)}
-                target="_blank"
-                rel="noreferrer"
-                className={buttonVariants({ variant: "accent" })}
-              >
-                <WhatsAppIcon size={15} color="#FFFFFF" />
-                Upgrade to {PLANS_LABEL[shown.plan]}
-              </a>
-            ) : null}
-            <WhyDisabled reason={applying ? null : reason}>
-              <Button onClick={apply} loading={applying} disabled={reason !== null}>
-                Use this template
-              </Button>
-            </WhyDisabled>
-          </div>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+    <PreviewSheet
+      preview={shown && template ? { title: shown.name, description: `${shown.description} ${MOTION_LABEL[shown.motion]}.`, src, host: siteHost(lodge), tint: lodge.themeColor } : null}
+      onClose={onClose}
+      note="Your saved lodge info, rooms and photos. Visits here aren't counted."
+      action={
+        <div className="flex items-center gap-2">
+          {shown ? (
+            live ? (
+              <Badge variant="success" status>
+                Live
+              </Badge>
+            ) : (
+              <Badge variant={PLAN_BADGE[shown.plan]}>{PLANS_LABEL[shown.plan]}</Badge>
+            )
+          ) : null}
+          {shown && locked ? (
+            <a href={upgradeUrl(lodge, shown)} target="_blank" rel="noreferrer" className={buttonVariants({ variant: "accent" })}>
+              <WhatsAppIcon size={15} color="#FFFFFF" />
+              Upgrade to {PLANS_LABEL[shown.plan]}
+            </a>
+          ) : null}
+          <WhyDisabled reason={applying ? null : reason}>
+            <Button onClick={apply} loading={applying} disabled={reason !== null}>
+              Use this template
+            </Button>
+          </WhyDisabled>
+        </div>
+      }
+    />
   );
 }

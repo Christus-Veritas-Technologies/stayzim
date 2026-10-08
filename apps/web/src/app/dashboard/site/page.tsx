@@ -1,19 +1,17 @@
 "use client";
 
-import { COUNTRIES, DEFAULT_COUNTRY, LODGE_KINDS, SETTINGS, type LodgeKind, type Setting } from "@stayzim/sites";
+import { COUNTRIES, DEFAULT_COUNTRY, LODGE_KINDS, SETTINGS, type LodgeKind, type Setting, type SiteDraft } from "@stayzim/sites";
 import { Avatar } from "@stayzim/ui/components/avatar";
 import { Button, buttonVariants } from "@stayzim/ui/components/button";
 import { Field, FormMessage } from "@stayzim/ui/components/field";
 import { Input, InputGroup, InputGroupAddon, InputGroupInput } from "@stayzim/ui/components/input";
 import { NativeSelect } from "@stayzim/ui/components/native-select";
-import { Sheet, SheetBody, SheetContent, SheetHeader, SheetTitle } from "@stayzim/ui/components/sheet";
 import { Tabs, TabsList, TabsPanel, TabsTab } from "@stayzim/ui/components/tabs";
 import { Textarea } from "@stayzim/ui/components/textarea";
 import { cn } from "@stayzim/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Check,
-  ChevronRight,
   Crosshair,
   FileText,
   ImageIcon,
@@ -37,9 +35,9 @@ import { WebAddress } from "@/components/dashboard/web-address";
 import { Page, PageHeader, PageSection } from "@/components/dashboard/page";
 import { PhotoDropzone } from "@/components/dashboard/photo-tiles";
 import { RequestChangeHint } from "@/components/dashboard/request-change-hint";
-import { SitePreview } from "@/components/dashboard/site-preview";
 import { UnsavedChangesGuard } from "@/components/dashboard/unsaved-changes";
 import { WhatsAppIcon } from "@/components/landing/brand";
+import { PreviewAside } from "@/components/preview/preview-aside";
 import { WhyDisabled } from "@/components/why-disabled";
 import { api, apiUpload } from "@/lib/api";
 import { ImageReadError, LOGO_EDGE, photoForm, resizeImage } from "@/lib/images";
@@ -56,6 +54,7 @@ import {
   type Lodge,
 } from "@/lib/lodge";
 import { OFFLINE_REASON, useOnline } from "@/lib/online";
+import { draftPreviewUrl } from "@/lib/preview";
 
 const DESCRIPTION_MAX = 300;
 
@@ -156,7 +155,6 @@ export default function LodgeInfoPage() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [tab, setTab] = useState("details");
-  const [previewOpen, setPreviewOpen] = useState(false);
   const online = useOnline();
   const { changes } = useMemo(() => changesFrom(draft, lodge), [draft, lodge]);
   const dirty = Object.keys(changes).length > 0 || draft.whatsapp !== phoneToInput(lodge.whatsapp) || draft.phone !== phoneToInput(lodge.phone);
@@ -205,16 +203,16 @@ export default function LodgeInfoPage() {
     setSaveError(null);
   }
 
-  const heroUrl = lodge.gallery.find((photo) => photo.id === draft.heroPhotoId)?.url ?? lodge.gallery[0]?.url ?? null;
-  const preview = {
+  const preview = draftPreviewUrl(lodge, {
     name: draft.name,
-    place: lodgePlace({ town: draft.town, region: draft.region }),
     description: draft.description,
+    town: draft.town.trim() || null,
+    region: draft.region.trim() || null,
+    country: draft.country.trim() || null,
+    kind: (draft.kind || null) as SiteDraft["kind"],
+    setting: (draft.setting || null) as SiteDraft["setting"],
     themeColor: draft.themeColor,
-    logoUrl: lodge.logoUrl,
-    heroUrl,
-    rooms: lodge.rooms,
-  };
+  });
 
   const actions = (
     <>
@@ -501,45 +499,14 @@ export default function LodgeInfoPage() {
           <RequestChangeHint className="mt-5 px-1" />
         </fieldset>
 
-        <aside className="sticky top-20 hidden flex-col gap-3 xl:flex">
-          <div className="flex items-center justify-between text-[13px]">
-            <span className="font-semibold">Preview</span>
-            <span className="inline-flex items-center gap-1.5 text-muted">
-              <span className="size-1.5 rounded-full bg-success" />
-              Updates as you edit
-            </span>
-          </div>
-          <SitePreview lodge={preview} />
-        </aside>
+        <div className="hidden xl:block">
+          <PreviewAside src={preview.src} host={preview.host} tint={draft.themeColor} />
+        </div>
       </PageSection>
 
       <PageSection className="xl:hidden">
-        <button
-          type="button"
-          onClick={() => setPreviewOpen(true)}
-          className="flex w-full items-center gap-3 rounded-[20px] bg-white p-3 text-left shadow-card transition-colors hover:bg-surface"
-        >
-          <span className="flex h-12 w-10 shrink-0 items-center justify-center rounded-lg bg-[linear-gradient(180deg,#C9D9D2,#7C978B)] text-white">
-            <Sparkles className="size-4" />
-          </span>
-          <span className="flex flex-1 flex-col">
-            <span className="text-[14px] font-semibold">Preview your site</span>
-            <span className="text-xs text-muted">See changes before you save</span>
-          </span>
-          <ChevronRight className="size-4 text-muted-2" />
-        </button>
+        <PreviewAside src={preview.src} host={preview.host} tint={draft.themeColor} />
       </PageSection>
-
-      <Sheet open={previewOpen} onOpenChange={setPreviewOpen}>
-        <SheetContent side="bottom">
-          <SheetHeader>
-            <SheetTitle>Preview</SheetTitle>
-          </SheetHeader>
-          <SheetBody className="bg-surface-2">
-            <SitePreview lodge={preview} />
-          </SheetBody>
-        </SheetContent>
-      </Sheet>
 
       {/* Don't lose edits to a stray tap on another page, Back or reload */}
       <UnsavedChangesGuard when={dirty && !saving} />

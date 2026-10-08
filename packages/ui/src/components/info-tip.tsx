@@ -9,9 +9,10 @@ import type * as React from "react";
  * The "?" beside a label whose meaning isn't obvious: a sentence or two on
  * hover or focus, or on a tap on phones (a popover, since tooltips don't open
  * on touch). Use it sparingly; a hint under the field is better for anything
- * people need to read.
+ * people need to read. Its name stays "More info" (not the field's), so it
+ * never competes with the field for its label.
  */
-function InfoTip({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
+function InfoTip({ label = "More info", children, className }: { label?: string; children: React.ReactNode; className?: string }) {
   return (
     <Popover>
       <PopoverTrigger

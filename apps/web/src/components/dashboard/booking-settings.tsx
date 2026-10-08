@@ -37,7 +37,7 @@ export function BookingSettings() {
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="flex items-center gap-1.5 text-[14px] font-semibold">
           Confirm bookings automatically
-          <InfoTip label="More about confirming automatically">When it's on, a guest who asks for free nights is booked at once. When it's off, you confirm each one in Requests.</InfoTip>
+          <InfoTip>When it's on, a guest who asks for free nights is booked at once. When it's off, you confirm each one in Requests.</InfoTip>
         </span>
         <span className="text-[12.5px] text-muted">
           {lodge.autoConfirmBookings

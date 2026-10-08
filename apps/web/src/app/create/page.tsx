@@ -12,7 +12,7 @@ import { LodgeStep, type CreatePlace } from "@/components/create/lodge-step";
 import { lookFromParams, LookStep } from "@/components/create/look-step";
 import { PhotosStep } from "@/components/create/photos-step";
 import { factsFromParams, factsParams, PlaceStep, type CreateFacts } from "@/components/create/place-step";
-import { CreatePreview, samplePreviewUrl } from "@/components/create/preview";
+import { CreatePreview, DEFAULT_THEME, samplePreviewUrl } from "@/components/create/preview";
 import { LodgeProvider, useLodge } from "@/components/dashboard/lodge-provider";
 import { usePhotoUploads } from "@/components/dashboard/use-photo-uploads";
 import { planFromParam } from "@/components/plan-picker";
@@ -89,7 +89,7 @@ function CreateFlow() {
   if (isPending) return <Loading step={0} />;
 
   // Before there's a lodge: the picked design, written from the answers so far
-  const preview = <CreatePreview src={samplePreviewUrl({ template: look, name, town: place.town, country: place.country, facts })} name={name} />;
+  const preview = <CreatePreview src={samplePreviewUrl({ template: look, name, town: place.town, country: place.country, facts })} name={name} tint={DEFAULT_THEME} />;
 
   // Before there's a lodge: the look, the place, then the name, town and WhatsApp
   const lodgeStep =
@@ -170,7 +170,7 @@ function AfterLodge({ step, guest, resuming, onGo }: { step: Step; guest: boolea
 
   // The lodge's own site now; it reloads as saved photos arrive
   const preview = (
-    <CreatePreview src={`/preview/${lodge.slug}/${lodge.siteTemplate}?bare=1&photos=${lodge.gallery.length}`} name={lodge.name} host={siteHost(lodge)} />
+    <CreatePreview src={`/preview/${lodge.slug}/${lodge.siteTemplate}?bare=1&photos=${lodge.gallery.length}`} name={lodge.name} host={siteHost(lodge)} tint={lodge.themeColor} />
   );
   return step === "live" ? (
     <CreateFrame step={4} preview={preview}>

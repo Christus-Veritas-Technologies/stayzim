@@ -122,7 +122,7 @@ function Question({ title, hint, help, children }: { title: string; hint?: strin
       <div className="flex flex-col gap-0.5">
         <h2 className="flex items-center gap-1.5 text-[16px] leading-6 font-semibold text-ink">
           {title}
-          {help ? <InfoTip label={`More about: ${title}`}>{help}</InfoTip> : null}
+          {help ? <InfoTip>{help}</InfoTip> : null}
         </h2>
         {hint ? <p className="text-[13px] leading-[19px] text-muted">{hint}</p> : null}
       </div>

@@ -94,8 +94,11 @@ test("each design opens a preview on an example lodge, and Use picks it", async 
   await page.goto("/create");
   await page.getByRole("radio", { name: /Wordmark/ }).hover();
   await page.getByRole("button", { name: "Preview Wordmark" }).click();
-  const frame = page.frameLocator('iframe[title="Wordmark design preview"]');
-  await expect(frame.getByText("Preview: Wordmark template")).toBeVisible({ timeout: 30_000 });
+  // The real site in the design, in a phone frame (components/preview)
+  const frame = page.frameLocator('iframe[title="Wordmark preview"]:not(.invisible)');
+  await expect(frame.locator("#rooms")).toBeAttached({ timeout: 30_000 });
+  await page.getByRole("tab", { name: "Browser" }).click();
+  await expect(frame.locator("#rooms")).toBeAttached({ timeout: 30_000 });
   await page.getByRole("button", { name: "Use Wordmark" }).click();
   await expect(page.getByRole("radio", { name: /Wordmark/ })).toHaveAttribute("aria-checked", "true");
   await expect(page).toHaveURL(/look=growth-wordmark/);

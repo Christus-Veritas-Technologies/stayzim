@@ -67,7 +67,7 @@ function Field({ label, hint, help, error, action, count, required = false, cont
           {help ? (
             <span className="flex min-w-0 items-center gap-1.5">
               <Label htmlFor={id}>{label}</Label>
-              <InfoTip label={typeof label === "string" ? `More about ${label}` : "More about this"}>{help}</InfoTip>
+              <InfoTip>{help}</InfoTip>
             </span>
           ) : (
             <Label htmlFor={id}>{label}</Label>

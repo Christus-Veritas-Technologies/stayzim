@@ -1,21 +1,21 @@
 "use client";
 
 import { DEFAULT_TEMPLATE, findTemplate, TEMPLATES, type Template, type TemplateKey } from "@stayzim/sites";
-import { Button, buttonVariants } from "@stayzim/ui/components/button";
-import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@stayzim/ui/components/sheet";
+import { Button } from "@stayzim/ui/components/button";
 import { Tabs, TabsList, TabsTab } from "@stayzim/ui/components/tabs";
 import { cn } from "@stayzim/ui/lib/utils";
 import { motion } from "framer-motion";
-import { ArrowRight, ArrowUpRight, Check, Eye } from "lucide-react";
+import { ArrowRight, Check, Eye } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { CreateActions, CreateHeading } from "@/components/create/frame";
 import { DEFAULT_THEME } from "@/components/create/preview";
-import { PreviewWidthTabs, TemplatePreviewFrame, type PreviewWidth } from "@/components/dashboard/template-preview-frame";
 import { TemplateThumb } from "@/components/dashboard/template-thumb";
 import { LODGES } from "@/components/landing/content";
+import { PreviewSheet } from "@/components/preview/preview-sheet";
 import { api } from "@/lib/api";
 import { PLAN_ORDER, PLANS, type PlanKey } from "@/lib/lodge";
+import { SITES_DOMAIN } from "@/lib/site-host";
 
 /** A few words each, so the tiles stay small. The design screen has the long descriptions. */
 const LOOKS: Record<TemplateKey, string> = {
@@ -60,55 +60,39 @@ function useExampleLodge() {
   return slug;
 }
 
-/** A design on the example lodge, phone-sized or full width, and "Use {name}". */
+/** A design on the example lodge, in an iPhone or a browser, and "Use {name}". */
 function LookPreview({ slug, template, onClose, onUse }: { slug: string; template: Template | null; onClose: () => void; onUse: (key: TemplateKey) => void }) {
-  const [width, setWidth] = useState<PreviewWidth>("phone");
   // Keep the last design while the sheet slides out
   const [shown, setShown] = useState<Template | null>(template);
   useEffect(() => {
     if (template) setShown(template);
   }, [template]);
-  const src = shown ? `/preview/${slug}/${shown.key}` : undefined;
   const plan = shown ? PLANS[shown.plan] : null;
 
   return (
-    <Sheet open={template !== null} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="sm:max-w-[min(1120px,calc(100vw-1rem))]">
-        <SheetHeader>
-          <SheetTitle>{shown?.name}</SheetTitle>
-          <SheetDescription>{shown?.description}</SheetDescription>
-        </SheetHeader>
-        <SheetBody className="flex flex-col gap-3 bg-surface-2">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <PreviewWidthTabs value={width} onChange={setWidth} />
-            <p className="text-xs text-muted-2">An example lodge. Yours shows your own name, rooms and photos.</p>
-          </div>
-          <TemplatePreviewFrame src={src} title={`${shown?.name} design preview`} width={width} />
-        </SheetBody>
-        <SheetFooter className="flex-wrap justify-between">
-          <a href={src} target="_blank" rel="noreferrer" className={buttonVariants({ variant: "ghost", size: "sm", className: "-ml-2" })}>
-            Open in a new tab
-            <ArrowUpRight />
-          </a>
-          <div className="flex items-center gap-3">
-            {plan ? (
-              <span className="hidden text-[12.5px] text-muted-2 sm:inline">
-                {plan.name} · ${plan.price}/mo
-              </span>
-            ) : null}
-            <Button
-              onClick={() => {
-                if (shown) onUse(shown.key as TemplateKey);
-                onClose();
-              }}
-            >
-              <Check />
-              Use {shown?.name}
-            </Button>
-          </div>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+    <PreviewSheet
+      preview={shown && template ? { title: shown.name, description: shown.description, src: `/preview/${slug}/${shown.key}?bare=1`, host: `${slug}.${SITES_DOMAIN}` } : null}
+      onClose={onClose}
+      note="An example lodge. Yours shows your own name, rooms and photos."
+      action={
+        <div className="flex items-center gap-3">
+          {plan ? (
+            <span className="hidden text-[12.5px] text-muted-2 sm:inline">
+              {plan.name} · ${plan.price}/mo
+            </span>
+          ) : null}
+          <Button
+            onClick={() => {
+              if (shown) onUse(shown.key as TemplateKey);
+              onClose();
+            }}
+          >
+            <Check />
+            Use {shown?.name}
+          </Button>
+        </div>
+      }
+    />
   );
 }
 

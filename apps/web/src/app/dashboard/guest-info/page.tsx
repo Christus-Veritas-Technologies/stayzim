@@ -4,7 +4,6 @@ import { Button } from "@stayzim/ui/components/button";
 import { Field, FormMessage } from "@stayzim/ui/components/field";
 import { Input, InputGroup, InputGroupAddon, InputGroupInput } from "@stayzim/ui/components/input";
 import { NativeSelect } from "@stayzim/ui/components/native-select";
-import { Sheet, SheetBody, SheetContent, SheetHeader, SheetTitle } from "@stayzim/ui/components/sheet";
 import { Textarea } from "@stayzim/ui/components/textarea";
 import {
   FAQ_SUGGESTIONS,
@@ -19,22 +18,23 @@ import {
   type SocialLinks,
 } from "@stayzim/sites";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ArrowDown, ArrowUp, ChevronRight, CircleHelp, Clock, Info, Plus, Share2, Sparkles, X } from "lucide-react";
+import { ArrowDown, ArrowUp, CircleHelp, Clock, Info, Plus, Share2, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { FormSection, type SectionState } from "@/components/dashboard/form-section";
-import { GuestInfoPreview } from "@/components/dashboard/guest-info-preview";
 import { ListEditor } from "@/components/dashboard/list-editor";
 import { ExampleNote } from "@/components/dashboard/example-note";
 import { useLodge } from "@/components/dashboard/lodge-provider";
 import { Page, PageHeader, PageSection } from "@/components/dashboard/page";
 import { RequestChangeHint } from "@/components/dashboard/request-change-hint";
 import { UnsavedChangesGuard } from "@/components/dashboard/unsaved-changes";
+import { PreviewAside } from "@/components/preview/preview-aside";
 import { SocialIcon } from "@/components/site/social-icons";
 import { WhyDisabled } from "@/components/why-disabled";
 import { siteHost, siteUrl, type Lodge } from "@/lib/lodge";
 import { OFFLINE_REASON, useOnline } from "@/lib/online";
+import { draftPreviewUrl } from "@/lib/preview";
 
 /** The form, as typed. */
 type Draft = {
@@ -109,7 +109,6 @@ export default function GuestInfoPage() {
   const [errors, setErrors] = useState<Errors>({});
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [previewOpen, setPreviewOpen] = useState(false);
   // Open the questions while there are none, decided once (it mustn't flip after the first save)
   const [faqStartsOpen] = useState(() => lodge.faq.length === 0);
   const online = useOnline();
@@ -159,16 +158,17 @@ export default function GuestInfoPage() {
     setSaveError(null);
   }
 
-  const preview = (
-    <GuestInfoPreview
-      themeColor={lodge.themeColor}
-      checkInFrom={draft.checkInFrom || null}
-      checkOutBy={draft.checkOutBy || null}
-      houseRules={draft.houseRules}
-      cancellationPolicy={draft.cancellationPolicy.trim() || null}
-      faq={draft.faq}
-      links={SOCIAL_KEYS.filter((key) => draft.socialLinks[key].trim())}
-    />
+  // The site's Good to know section, with the unsaved edits
+  const preview = draftPreviewUrl(
+    lodge,
+    {
+      checkInFrom: draft.checkInFrom || null,
+      checkOutBy: draft.checkOutBy || null,
+      houseRules: draft.houseRules,
+      cancellationPolicy: draft.cancellationPolicy.trim() || null,
+      faq: draft.faq.map(({ q, a }) => ({ q, a })),
+    },
+    { hash: "#good-to-know" },
   );
 
   const actions = (
@@ -323,43 +323,14 @@ export default function GuestInfoPage() {
           <RequestChangeHint className="mt-2 px-1" />
         </fieldset>
 
-        <aside className="sticky top-20 hidden flex-col gap-3 xl:flex">
-          <div className="flex items-center justify-between text-[13px]">
-            <span className="font-semibold">Preview</span>
-            <span className="inline-flex items-center gap-1.5 text-muted">
-              <span className="size-1.5 rounded-full bg-success" />
-              Updates as you edit
-            </span>
-          </div>
-          {preview}
-        </aside>
+        <div className="hidden xl:block">
+          <PreviewAside src={preview.src} host={preview.host} tint={lodge.themeColor} />
+        </div>
       </PageSection>
 
       <PageSection className="xl:hidden">
-        <button
-          type="button"
-          onClick={() => setPreviewOpen(true)}
-          className="flex w-full items-center gap-3 rounded-[20px] bg-white p-3 text-left shadow-card transition-colors hover:bg-surface"
-        >
-          <span className="flex h-12 w-10 shrink-0 items-center justify-center rounded-lg bg-[linear-gradient(180deg,#C9D9D2,#7C978B)] text-white">
-            <Sparkles className="size-4" />
-          </span>
-          <span className="flex flex-1 flex-col">
-            <span className="text-[14px] font-semibold">Preview guest info</span>
-            <span className="text-xs text-muted">See it the way guests will, before you save</span>
-          </span>
-          <ChevronRight className="size-4 text-muted-2" />
-        </button>
+        <PreviewAside src={preview.src} host={preview.host} tint={lodge.themeColor} label="Preview guest info" sublabel="See it the way guests will, before you save" />
       </PageSection>
-
-      <Sheet open={previewOpen} onOpenChange={setPreviewOpen}>
-        <SheetContent side="bottom">
-          <SheetHeader>
-            <SheetTitle>Preview</SheetTitle>
-          </SheetHeader>
-          <SheetBody className="bg-surface-2">{preview}</SheetBody>
-        </SheetContent>
-      </Sheet>
 
       <UnsavedChangesGuard when={dirty && !saving} />
 

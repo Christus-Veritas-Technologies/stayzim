@@ -349,7 +349,7 @@ export function RoomSheet({
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="flex items-center gap-1.5 text-[13px] font-semibold text-ink-2">
                     Show on site
-                    <InfoTip label="More about Show on site">Turn it off for a room you're not letting for now, like during repairs. It keeps its photos and bookings.</InfoTip>
+                    <InfoTip>Turn it off for a room you're not letting for now, like during repairs. It keeps its photos and bookings.</InfoTip>
                   </span>
                   <span className="text-xs text-muted-2">
                     {draft.visible ? "Guests see this room and can book it." : "Hidden rooms stay here. Guests don't see them."}
