@@ -7,6 +7,8 @@
 export const RESERVED_SLUGS: ReadonlySet<string> = new Set([
   "www", "app", "api", "admin", "mail", "media", "outreach", "help", "status", "demo", "sites",
   "signup", "start", "login", "billing", "support", "blog", "docs", "static", "assets", "cdn",
+  // /preview/sample/{template} and the example photos
+  "sample", "samples",
 ]);
 
 export const SLUG_MIN = 3;

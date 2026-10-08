@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { siteCopy } from "./copy";
 import type { LiveSite } from "./content/types";
 import { applySamples, isSampleRoomId, NO_SAMPLES, sampleRooms } from "./samples";
+import { SAMPLE_NAME, sampleSite } from "./samples/site";
 
 const copy = siteCopy({ slug: "kudu", name: "Kudu Hill", town: "Kariba", region: null, country: "Zimbabwe", kind: "lodge", setting: "lake", roomCount: null, priceFrom: null, seed: 0 });
 
@@ -82,5 +83,32 @@ describe("example content", () => {
     const shown = applySamples(site, { ...input, pro: false });
     expect(shown.samples.reviews).toBe(false);
     expect(shown.journal).toEqual([]);
+  });
+});
+
+describe("sampleSite", () => {
+  const base = { template: "pro-canopy", name: "Kudu Hill", town: "Kariba", country: "Zimbabwe", kind: "lodge" as const, setting: "lake" as const, roomsHint: 3, priceHint: 80, themeColor: "#1E4A3B", today: "2026-10-08" };
+
+  test("is a whole demo site in the picked design, written for the lodge", () => {
+    const site = sampleSite(base);
+    expect(site.template).toBe("pro-canopy");
+    expect(site.demo).toBe(true);
+    expect(site.rooms.length).toBe(3);
+    expect(site.rooms.every((room) => room.sample)).toBe(true);
+    expect(site.samples.reviews).toBe(true);
+    expect(site.hero.headline.length).toBeGreaterThan(0);
+    expect(site.description).not.toBe("");
+  });
+
+  test("works before the owner has typed anything, and gives Starter no Pro examples", () => {
+    const site = sampleSite({ ...base, template: "starter-veranda", name: " ", town: null, kind: null, setting: null, roomsHint: null, priceHint: null });
+    expect(site.name).toBe(SAMPLE_NAME);
+    expect(site.rooms.length).toBe(3);
+    expect(site.reviews).toBeNull();
+    expect(site.journal).toEqual([]);
+  });
+
+  test("an unknown design falls back to a real one", () => {
+    expect(sampleSite({ ...base, template: "nope" }).template).toBe("growth-shoreline");
   });
 });

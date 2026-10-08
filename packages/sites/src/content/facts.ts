@@ -67,9 +67,9 @@ export const ZIMBABWE_TOWNS = [
 export const COUNTRIES = ["Zimbabwe", "Zambia", "Botswana", "Mozambique", "South Africa", "Malawi", "Namibia"] as const;
 
 export function isLodgeKind(value: unknown): value is LodgeKind {
-  return typeof value === "string" && value in LODGE_KINDS;
+  return typeof value === "string" && Object.hasOwn(LODGE_KINDS, value);
 }
 
 export function isSetting(value: unknown): value is Setting {
-  return typeof value === "string" && value in SETTINGS;
+  return typeof value === "string" && Object.hasOwn(SETTINGS, value);
 }

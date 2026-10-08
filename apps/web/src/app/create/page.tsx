@@ -10,9 +10,9 @@ import { CreateFrame, type CreateStepIndex } from "@/components/create/frame";
 import { LiveStep } from "@/components/create/live-step";
 import { LodgeStep, type CreatePlace } from "@/components/create/lodge-step";
 import { lookFromParams, LookStep } from "@/components/create/look-step";
-import { PhotosStep, previewPhotos } from "@/components/create/photos-step";
+import { PhotosStep } from "@/components/create/photos-step";
 import { factsFromParams, factsParams, PlaceStep, type CreateFacts } from "@/components/create/place-step";
-import { CreatePreview } from "@/components/create/preview";
+import { CreatePreview, samplePreviewUrl } from "@/components/create/preview";
 import { LodgeProvider, useLodge } from "@/components/dashboard/lodge-provider";
 import { usePhotoUploads } from "@/components/dashboard/use-photo-uploads";
 import { planFromParam } from "@/components/plan-picker";
@@ -88,11 +88,13 @@ function CreateFlow() {
 
   if (isPending) return <Loading step={0} />;
 
-  // Before there's a lodge: the look, then the name and WhatsApp
+  // Before there's a lodge: the picked design, written from the answers so far
+  const preview = <CreatePreview src={samplePreviewUrl({ template: look, name, town: place.town, country: place.country, facts })} name={name} />;
+
   // Before there's a lodge: the look, the place, then the name, town and WhatsApp
   const lodgeStep =
     step === "lodge" ? (
-      <CreateFrame step={2} preview={<CreatePreview name={name} photos={[]} />} onBack={() => go("place")}>
+      <CreateFrame step={2} preview={preview} onBack={() => go("place")}>
         <LodgeStep
           plan={findTemplate(look)!.plan}
           template={look}
@@ -110,7 +112,7 @@ function CreateFlow() {
         />
       </CreateFrame>
     ) : step === "place" ? (
-      <CreateFrame step={1} onBack={() => go("look")}>
+      <CreateFrame step={1} preview={preview} onBack={() => go("look")}>
         <PlaceStep
           facts={facts}
           onChange={(answers) => {
@@ -126,7 +128,7 @@ function CreateFlow() {
         />
       </CreateFrame>
     ) : (
-      <CreateFrame step={0}>
+      <CreateFrame step={0} preview={preview}>
         <LookStep
           value={look}
           onChange={(key) => {
@@ -166,7 +168,10 @@ function AfterLodge({ step, guest, resuming, onGo }: { step: Step; guest: boolea
   }, [leave, router]);
   if (leave) return <Loading step={3} />;
 
-  const preview = <CreatePreview name={lodge.name} host={siteHost(lodge)} themeColor={lodge.themeColor} photos={previewPhotos(lodge, uploads)} />;
+  // The lodge's own site now; it reloads as saved photos arrive
+  const preview = (
+    <CreatePreview src={`/preview/${lodge.slug}/${lodge.siteTemplate}?bare=1&photos=${lodge.gallery.length}`} name={lodge.name} host={siteHost(lodge)} />
+  );
   return step === "live" ? (
     <CreateFrame step={4} preview={preview}>
       <LiveStep />

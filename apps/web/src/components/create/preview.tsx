@@ -1,70 +1,124 @@
 "use client";
 
 import { slugFromName } from "@stayzim/sites";
+import { Spinner } from "@stayzim/ui/components/spinner";
 import { cn } from "@stayzim/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import { Lock } from "lucide-react";
+import { useEffect, useState } from "react";
 
-import { SitePreview } from "@/components/dashboard/site-preview";
+import type { CreateFacts } from "@/components/create/place-step";
 import { SITES_DOMAIN } from "@/lib/site-host";
 
-export type CreatePreviewProps = {
-  name: string;
-  /** The site's real address once it exists; until then, one made from the name */
-  host?: string;
-  themeColor?: string;
-  /** Photos so far, saved or still uploading (local previews), first is the top photo */
-  photos: string[];
-};
-
 export const DEFAULT_THEME = "#1E4A3B";
+
+/** The site pages are drawn at a phone's width, then scaled to fit the column. */
+const PHONE = { width: 390, height: 780 };
+const FRAME_WIDTH = 288;
+const SCALE = FRAME_WIDTH / PHONE.width;
+/** Typing changes the preview once the owner pauses */
+const SETTLE_MS = 700;
 
 function previewHost(name: string, host?: string) {
   return host ?? `${slugFromName(name) || "yourlodge"}.${SITES_DOMAIN}`;
 }
 
+/** What /create knows before the lodge exists, for /preview/sample/{template}. */
+export type SampleAnswers = { template: string; name: string; town: string; country: string; facts: CreateFacts; themeColor?: string };
+
+export function samplePreviewUrl({ template, name, town, country, facts, themeColor }: SampleAnswers) {
+  const query = new URLSearchParams();
+  if (name.trim()) query.set("name", name.trim());
+  if (town.trim()) query.set("town", town.trim());
+  if (country.trim()) query.set("country", country.trim());
+  if (facts.kind) query.set("kind", facts.kind);
+  if (facts.setting) query.set("setting", facts.setting);
+  if (facts.roomsHint) query.set("rooms", String(facts.roomsHint));
+  if (facts.priceHint) query.set("price", String(facts.priceHint));
+  if (themeColor) query.set("color", themeColor);
+  const search = query.toString();
+  return `/preview/sample/${template}${search ? `?${search}` : ""}`;
+}
+
+/** `value`, once it has stopped changing for a moment. */
+function useSettled(value: string) {
+  const [settled, setSettled] = useState(value);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSettled(value), SETTLE_MS);
+    return () => window.clearTimeout(timer);
+  }, [value]);
+  return settled;
+}
+
 /**
- * The owner's site taking shape as they type and upload (wide screens): a
- * phone with the address bar, the hero, and the photos underneath.
+ * The owner's site in the design they picked (wide screens): the real page in
+ * a phone, scaled to fit. A new address loads behind the current one and
+ * swaps in when it's ready, so typing never blanks the preview.
  */
-export function CreatePreview({ name, host, themeColor = DEFAULT_THEME, photos }: CreatePreviewProps) {
+export function CreatePreview({ src, name, host }: { src: string; name: string; host?: string }) {
+  const wanted = useSettled(src);
+  const [shown, setShown] = useState<string | null>(null);
+  const loading = wanted !== shown;
+
   return (
     <div className="flex flex-col gap-3">
       <p className="text-center text-[12.5px] font-semibold tracking-[0.08em] text-muted-2 uppercase">Your site, live as you go</p>
-      <div className="mx-auto flex w-full max-w-[300px] items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[12px] text-slate shadow-card">
+      <div className="mx-auto flex w-full max-w-[288px] items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[12px] text-slate shadow-card">
         <Lock className="size-3 shrink-0 text-success" />
         <span className="truncate">{previewHost(name, host)}</span>
-      </div>
-      <SitePreview
-        lodge={{
-          name: name || "Your lodge",
-          place: null,
-          description: name ? `Welcome to ${name}. See our rooms and book your stay direct with us.` : "",
-          themeColor,
-          logoUrl: null,
-          heroUrl: photos[0] ?? null,
-          rooms: [],
-        }}
-      />
-      <ul className="mx-auto grid w-full max-w-[300px] grid-cols-3 gap-1.5" aria-label="Photos so far">
-        <AnimatePresence initial={false}>
-          {photos.slice(0, 3).map((url) => (
-            <motion.li key={url} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
-              {/* eslint-disable-next-line @next/next/no-img-element -- local previews and resized uploads */}
-              <img src={url} alt="" className="aspect-[4/3] w-full rounded-lg object-cover" />
-            </motion.li>
-          ))}
+        <AnimatePresence>
+          {loading && shown ? (
+            <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="ml-auto" aria-label="Updating">
+              <Spinner className="size-3 text-brand" />
+            </motion.span>
+          ) : null}
         </AnimatePresence>
-        {Array.from({ length: Math.max(0, 3 - photos.length) }, (_, index) => (
-          <li key={`empty-${index}`} className="aspect-[4/3] rounded-lg border border-dashed border-line-2 bg-white/60" />
-        ))}
-      </ul>
+      </div>
+      <div
+        className="relative mx-auto overflow-hidden rounded-[30px] border-[6px] border-ink bg-white shadow-card"
+        style={{ width: FRAME_WIDTH + 12, height: PHONE.height * SCALE + 12 }}
+      >
+        {[shown, loading ? wanted : null].map((url, layer) =>
+          url ? (
+            <iframe
+              key={url}
+              src={url}
+              title="Preview of your site"
+              tabIndex={-1}
+              onLoad={() => setShown(url)}
+              className={cn("absolute top-0 left-0 origin-top-left border-0", layer === 1 && "invisible")}
+              style={{ width: PHONE.width, height: PHONE.height, transform: `scale(${SCALE})` }}
+            />
+          ) : null,
+        )}
+        <AnimatePresence>
+          {shown ? null : (
+            <motion.div exit={{ opacity: 0 }} className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white text-[13px] text-muted">
+              <Spinner className="size-5 text-brand" />
+              Building the preview
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
 
-/** The same on a phone, small enough to sit above the form: the top photo, the name and the address. */
-export function MiniPreview({ name, host, themeColor = DEFAULT_THEME, photos, className }: CreatePreviewProps & { className?: string }) {
+/** On a phone, small enough to sit above the form: the top photo, the name and the address. */
+export function MiniPreview({
+  name,
+  host,
+  themeColor = DEFAULT_THEME,
+  photos,
+  className,
+}: {
+  name: string;
+  host?: string;
+  themeColor?: string;
+  /** Photos so far, saved or still uploading (local previews), first is the top photo */
+  photos: string[];
+  className?: string;
+}) {
   return (
     <div className={cn("relative mb-5 h-[118px] overflow-hidden rounded-2xl xl:hidden", className)} style={{ backgroundColor: themeColor }} aria-label="Preview of your site">
       <AnimatePresence>
