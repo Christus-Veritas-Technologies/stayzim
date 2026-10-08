@@ -133,6 +133,8 @@ Scaffold from the starter template. Not part of the MVP yet.
 - **Tracking:** `components/site/tracking.tsx` posts page views and Book on WhatsApp taps, with a random visitor id kept in `localStorage`. The server adds device and browser (user agent), IP and country (Cloudflare's `CF-IPCountry`, so countries are empty until the sites sit behind Cloudflare). Owners see visits on Growth and Pro.
 - **Owner key:** on a lodge's own domain StayZim's cookie isn't sent, so the dashboard's View site links (`ownerSiteUrl`) end in `#stayzim-owner={key}`, an HMAC of the lodge id (`apps/server/src/lib/owner-key.ts`). The site keeps it in `localStorage`, takes it off the address and sends it with each event; the API skips events that carry the lodge's key. Copied and shared links never carry it.
 - **Footer:** "Made with StayZim" and a Privacy link back to the main site (`MAIN_URL`).
+- **Pages per plan:** Starter is one page; Growth and Pro add pages under `app/sites/[slug]/` (`LiveSite.pages`, from `PLAN_PAGES`), in the design's look through `PageShell`. See [cms/pages.md](cms/pages.md).
+- **Copy and examples:** the API sends generated copy with every site (`packages/sites/src/copy/`, [cms/copy.md](cms/copy.md)), and on a demo fills empty sections with example content (`packages/sites/src/samples/`, [cms/examples.md](cms/examples.md)).
 
 ### Templates
 

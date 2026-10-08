@@ -2,7 +2,7 @@
 
 _What's built, what's next, and what's blocking. Update this file whenever a piece of work lands. For what StayZim is and why, see [project.md](project.md)._
 
-**Last updated:** 7 October 2026 (`/create` led by the look, one photo dropzone; see [create-redesign.md](create-redesign.md))
+**Last updated:** 8 October 2026 (value-first sites: plan tabs, a real preview, pages per plan, generated copy and example content; see [cms/pages.md](cms/pages.md), [cms/copy.md](cms/copy.md) and [cms/examples.md](cms/examples.md))
 
 ## At a glance
 
@@ -12,7 +12,7 @@ _What's built, what's next, and what's blocking. Update this file whenever a pie
 | Landing page analytics (CTA clicks, page views) | ✅ Built |
 | Privacy and Terms pages | ✅ Drafted in plain language; need a review before launch |
 | WhatsApp outreach tool (internal) | ✅ Built |
-| Self sign-up and the 2-day demo (`/create`) | ✅ Pick a look (the nine designs, price shown small) + lodge name and WhatsApp + 3 photos to a live demo in about 90 seconds (7 s automated), in a step-by-step frame built from the design system ([create-redesign.md](create-redesign.md)), no email until Claim my site, ad tags saved, drop-off tracked per step, demo badges, offline when it ends, deleted 30 days later |
+| Self sign-up and the 2-day demo (`/create`) | ✅ Pick a look (designs in plan tabs, Starter first) + your place (type, setting, rooms, price) + lodge name, town and WhatsApp + 3 photos to a live demo, with the picked design previewed live beside the form ([create-redesign.md](create-redesign.md)); no email until Claim my site, ad tags saved, drop-off tracked per step, demo badges, offline when it ends, deleted 30 days later |
 | Owner sign-in (login, reset, first-login password) | ✅ Built, matches the app screens design |
 | Sign in with Google | ✅ Built (signs in or signs up), needs a Google OAuth client to test for real |
 | Email (SMTP via Nodemailer) | ✅ Built, needs SMTP credentials |
@@ -23,6 +23,9 @@ _What's built, what's next, and what's blocking. Update this file whenever a pie
 | Lodge sites ({slug}.stayzim.co.zw) | ✅ Rendering, subdomain routing, tracking, suspended and 404 pages, template preview route, robots and sitemap |
 | Custom domains per lodge | ✅ Any plan once paid (free .co.zw on Growth and Pro): `set-domain`, routing, CORS, canonical URLs, the dashboard address card and a catch-all Traefik route |
 | Site templates (9, 3 per plan) | ✅ All nine designed (`designs/StayZim Lodge Templates.html`): Veranda, Rondavel, Shade; Shoreline, Wordmark, Overlap; Escarpment, Courtyard, Canopy. Previews open the booking sheet without sending |
+| Pages per plan | ✅ Starter one page (room filters on it); Growth adds Rooms (filters), a page per room, Gallery and Contact; Pro adds Our story, Things to do, Reviews, Check dates and a compare table ([cms/pages.md](cms/pages.md)) |
+| Generated copy | ✅ Every text on a site written from the lodge's facts, hundreds of variants, Try other wording ([cms/copy.md](cms/copy.md)) |
+| Example content on demos | ✅ Example rooms, guest info, reviews, posts and a real map until the owner adds theirs, marked Example and never bookable ([cms/examples.md](cms/examples.md)); stock photos still to add |
 | Change requests | ✅ Owner screen, team screen (`/admin/requests`), API and script |
 | Owner analytics | ✅ Live numbers, chart, countries, activity, and the visits table (filters, pages, each visit's path, 90 days) |
 | Lodge CMS (rooms, guest info, quick wins) | ✅ Built, all plans: room details, how many, hide, duplicate, photo order; Guest info (times, rules, policy, FAQ, links); most asked-about rooms; edit your name. See [CMS](#cms) and [cms/](cms/README.md) |
@@ -395,6 +398,18 @@ Built (web):
 ## Log
 
 Newest first. One line per piece of work that landed on `main`.
+
+### 8 October 2026
+
+Value first: a new owner sees a full site in their chosen design, written for their lodge, before adding anything.
+
+- **`/create`:** designs in plan tabs (Starter first); a new "Your place" step (type, setting, rooms, a typical price) and town and country on the lodge step, stored on the lodge (migration `lodge_facts`) and editable in Lodge info; the preview beside the form is the picked design, written from the answers so far (`/preview/sample/{template}`).
+- **Generated copy** ([cms/copy.md](cms/copy.md)): `packages/sites/src/copy/`, every slot from hero to FAQ, picked by a stable hash; the owner's own text wins; Try other wording on the Design screen.
+- **Example content** ([cms/examples.md](cms/examples.md)): demo sites fill empty sections with example rooms, photos, guest info, (Pro) reviews and posts, and a real map on the RBZ in Harare; each marked Example, never stored, never bookable; the dashboard says so on Rooms, Gallery and Guest info.
+- **Pages per plan** ([cms/pages.md](cms/pages.md)): Growth and Pro pages in each design's look, room filters (Starter on the home page), Pro's Check dates and compare table, the sitemap per plan.
+- **Demo marks:** the demo pill is a StayZim-branded link, the band at the end has the mark and a brand-blue button, footers show the mark.
+- **Not done:** stock photos. The sandbox's network policy blocked images.unsplash.com and images.pexels.com, so the photo list is empty and examples use colour placeholders; adding them is three steps in [cms/examples.md](cms/examples.md#stock-photos).
+- **Checked:** types, unit tests (68 in `packages/sites`), the create, templates, pages, mobile and smoke e2e, and screenshots at 360 and 1280 of the new pages and `/create` steps.
 
 ### 7 October 2026
 

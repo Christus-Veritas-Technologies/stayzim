@@ -15,6 +15,9 @@ Owners manage their own site content: rooms, guest info and, on Growth and Pro, 
 | [guest-info.md](guest-info.md) | Stay details (check-in and check-out times, house rules, cancellation policy), FAQ, social and listing links | 3 small |
 | [bookings.md](bookings.md) | The bookings calendar and owner tools, plus booking requests from the lodge site (Growth and Pro) | 2 hard |
 | [quick-wins.md](quick-wins.md) | Most asked-about rooms, edit your name, and the room quick wins listed in rooms.md | 5-minute |
+| [copy.md](copy.md) | Generated copy: every text a site shows, written from the lodge's facts (type, setting, town, rooms, price) | Built 8 Oct |
+| [pages.md](pages.md) | Pages per plan: Starter one page, Growth Rooms, room pages, Gallery and Contact, Pro's story, things to do and reviews; room filters | Built 8 Oct |
+| [examples.md](examples.md) | Example content on demo sites: rooms, photos, guest info, reviews, posts and map, marked and never bookable | Built 8 Oct |
 
 ## Decisions (agreed with the user, 6 October 2026)
 

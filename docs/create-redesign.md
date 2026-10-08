@@ -164,6 +164,13 @@ Used in:
   - nothing scrolls sideways.
 - **Tests:** a new browser test opens Wordmark's preview and uses it. `create`, `mobile` and `templates` pass (36 tests), as do the unit tests and types.
 
+## Added on 8 October (value first)
+
+- **Plan tabs:** the look step shows the designs one plan at a time, Starter first, the price small in each tab.
+- **Your place:** a new step 2 (type of place, setting, rooms, a typical price); the lodge step adds town and country. Four steps now, then live.
+- **The real preview:** the column beside the form is the picked design in a scaled phone (`/preview/sample/{template}` before the lodge exists, then the lodge's own site), updated once typing pauses without blanking.
+- The site it makes has generated copy and example content: see [cms/copy.md](cms/copy.md) and [cms/examples.md](cms/examples.md).
+
 ## What's left
 
 1. **Run `deploy/check-routing.sh` on the VPS** and fix what it reports (above). Only the user, or an agent with a shell on the server, can.
