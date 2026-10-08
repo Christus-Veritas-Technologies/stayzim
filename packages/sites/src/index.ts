@@ -203,3 +203,4 @@ export * from "./content/guest-info";
 export * from "./content/journal";
 export * from "./content/facts";
 export type * from "./content/types";
+export { copyVars, siteCopy, type CopyFacts, type SiteCopy } from "./copy";
