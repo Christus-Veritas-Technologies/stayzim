@@ -122,9 +122,18 @@ Install Coolify on the VPS (Ubuntu 24.04, 2 vCPU, 4 GB RAM is plenty to start). 
    - Branch: `main`.
 
 3. **Domains:**
-   - service `web`: `https://stayzim.co.zw,https://www.stayzim.co.zw`;
-   - service `server`: `https://api.stayzim.co.zw`;
+   - service `web`: `https://stayzim.co.zw:9999,https://www.stayzim.co.zw:9999`;
+   - service `server`: `https://api.stayzim.co.zw:9998`;
    - `db`: none.
+
+   The `:9999` and `:9998` tell Coolify which port inside the container to send traffic to. Visitors still use plain `https://stayzim.co.zw`.
+
+   **Moving from two Dockerfile applications to this one compose resource** (the compose file carries the lodge-site route; separate applications don't):
+
+   1. Stop the old `web` and `server` applications and remove their domains, so the compose resource can take the domains.
+   2. Create the compose resource as above, with the same values for `BETTER_AUTH_SECRET`, R2, SMTP, Paynow and Google as the old server app (so nobody is signed out), and a new `POSTGRES_PASSWORD`. Don't set `DATABASE_URL`: the compose file points the server at its own `db`.
+   3. Deploy. The bundled database starts empty and is migrated on start; make the owner and demo accounts again as in [First run](#4-first-run). A Coolify-managed Postgres used before can be deleted once you're happy.
+   4. Check `https://api.stayzim.co.zw/health`, the landing page and a lodge site, and run `deploy/check-routing.sh`. Then delete the old applications.
 
    Lodge sites need no domain here: the `web` service's Traefik labels in the compose file send every other host to it (`PathPrefix(`/`)` at priority 1, the same in Traefik v2 and v3), with lower priority than the named domains. Don't add `*.stayzim.co.zw` as a domain. If Coolify adds Let's Encrypt to these routes, switch that off: Cloudflare and the origin certificate handle TLS.
 
