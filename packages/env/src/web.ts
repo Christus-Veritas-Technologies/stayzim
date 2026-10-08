@@ -7,6 +7,9 @@ export const env = createEnv({
     // Docker. Server-side fetches (lodge site pages) use it instead of the public URL,
     // so they don't leave the machine. Defaults to NEXT_PUBLIC_SERVER_URL.
     SERVER_INTERNAL_URL: z.url().optional(),
+    // IndexNow: the same key as the API's INDEXNOW_KEY, served at /indexnow-key.txt on every
+    // lodge host so search engines can check the API's pings. Unset: the file 404s.
+    INDEXNOW_KEY: z.string().regex(/^[a-zA-Z0-9-]{8,128}$/).optional(),
   },
   client: {
     NEXT_PUBLIC_SERVER_URL: z.url(),
@@ -25,6 +28,7 @@ export const env = createEnv({
   },
   runtimeEnv: {
     SERVER_INTERNAL_URL: process.env.SERVER_INTERNAL_URL,
+    INDEXNOW_KEY: process.env.INDEXNOW_KEY,
     NEXT_PUBLIC_SERVER_URL: process.env.NEXT_PUBLIC_SERVER_URL,
     NEXT_PUBLIC_WHATSAPP_NUMBER: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER,
     NEXT_PUBLIC_SITES_DOMAIN: process.env.NEXT_PUBLIC_SITES_DOMAIN,

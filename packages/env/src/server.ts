@@ -96,6 +96,10 @@ export const env = createEnv({
     // Paid lodges (any plan) can claim a free .co.zw domain from the dashboard while this
     // isn't "false". Unset, "true" or anything else: domains are still free.
     DOMAIN_STILL_FREE: z.string().optional(),
+    // IndexNow (Bing, Yandex and others): when a lodge's site goes live after paying, its
+    // pages are sent to search engines straight away. 8 to 128 letters, digits or hyphens;
+    // the same value on the web app, which serves it at /indexnow-key.txt. Unset: off.
+    INDEXNOW_KEY: z.string().regex(/^[a-zA-Z0-9-]{8,128}$/).optional(),
     // Tests only: a stand-in for https://www.paynow.co.zw
     PAYNOW_API_URL: z.url().default("https://www.paynow.co.zw"),
   },

@@ -15,6 +15,7 @@ import {
 } from "@stayzim/sites";
 
 import { issuerLine } from "./business";
+import { pingIndexNow } from "./indexnow";
 import { pollPayment } from "./paynow";
 import { DASHBOARD_URL, siteUrlFor } from "./sites";
 
@@ -166,13 +167,20 @@ export async function applyPayment(paymentId: string, extra: { paynowReference?:
     await tx.invoice.updateMany({ where: { lodgeId: payment.lodgeId, status: "OPEN", plan: payment.plan }, data: { status: "PAID", paidAt: now } });
     await tx.invoice.updateMany({ where: { lodgeId: payment.lodgeId, status: "OPEN" }, data: { status: "VOID" } });
     if (payment.invoiceId) await tx.invoice.update({ where: { id: payment.invoiceId }, data: { status: "PAID", paidAt: now } });
-    return { payment, paidUntil };
+    return { payment, paidUntil, before: lodge };
   });
   if (!applied) return false;
 
-  const { payment, paidUntil } = applied;
+  const { payment, paidUntil, before } = applied;
   const fresh = await prisma.payment.findUniqueOrThrow({ where: { id: payment.id }, select: { previousPlan: true, template: true } });
-  const lodge = await prisma.lodge.findUniqueOrThrow({ where: { id: payment.lodgeId }, select: { name: true, owner: { select: { name: true, email: true } } } });
+  const lodge = await prisma.lodge.findUniqueOrThrow({
+    where: { id: payment.lodgeId },
+    select: { name: true, slug: true, customDomain: true, owner: { select: { name: true, email: true } } },
+  });
+  // Paid sites are for search engines: tell them when one goes live (out of a demo or offline) or gains pages (a new plan)
+  if (before.status === "DEMO" || before.status === "SUSPENDED" || before.plan !== payment.plan) {
+    void pingIndexNow({ slug: lodge.slug, customDomain: lodge.customDomain, plan: payment.plan });
+  }
   await sendOnce(
     `payment:${payment.id}:RECEIPT`,
     payment.lodgeId,
