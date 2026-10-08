@@ -8,7 +8,9 @@ import {
   carriedOverMs,
   demoEnded,
   extendPaidUntil,
-  includesFreeDomain,
+  canClaimDomain,
+  domainStillFree,
+  freeDomainName,
   isValidSlug,
   noticeFor,
   paidUntilAfterPayment,
@@ -37,9 +39,13 @@ describe("plans", () => {
   });
 
   test("free .co.zw domain on Growth and Pro", () => {
-    expect(includesFreeDomain("STARTER")).toBe(false);
-    expect(includesFreeDomain("GROWTH")).toBe(true);
-    expect(includesFreeDomain("PRO")).toBe(true);
+    expect(domainStillFree(undefined)).toBe(true);
+    expect(domainStillFree("true")).toBe(true);
+    expect(domainStillFree(" FALSE ")).toBe(false);
+    expect(canClaimDomain("ACTIVE")).toBe(true);
+    expect(canClaimDomain("OVERDUE")).toBe(true);
+    expect(canClaimDomain("DEMO")).toBe(false);
+    expect(canClaimDomain("SUSPENDED")).toBe(false);
   });
 });
 
@@ -135,5 +141,22 @@ describe("formatting", () => {
     expect(formatHarareDay(at("2026-10-07T22:30:00Z"))).toBe("8 October 2026");
     expect(formatCents(4000)).toBe("$40.00");
     expect(formatCents(90000)).toBe("$900.00");
+  });
+});
+
+describe("free domain names", () => {
+  test("tidy what the owner typed into a .co.zw name", () => {
+    expect(freeDomainName("mistvalleylodge")).toBe("mistvalleylodge.co.zw");
+    expect(freeDomainName("MistValley Lodge")).toBe("mistvalleylodge.co.zw");
+    expect(freeDomainName("https://www.mistvalleylodge.co.zw/")).toBe("mistvalleylodge.co.zw");
+    expect(freeDomainName("mist-valley")).toBe("mist-valley.co.zw");
+  });
+
+  test("refuse names that can't be registered", () => {
+    expect(freeDomainName("ab")).toBeNull();
+    expect(freeDomainName("-mist")).toBeNull();
+    expect(freeDomainName("mist--valley")).toBeNull();
+    expect(freeDomainName("mist.valley")).toBeNull();
+    expect(freeDomainName("")).toBeNull();
   });
 });

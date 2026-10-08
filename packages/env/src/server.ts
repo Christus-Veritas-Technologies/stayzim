@@ -93,6 +93,9 @@ export const env = createEnv({
     // In Paynow's test mode, payments must use the merchant account's email.
     // Leave empty in live mode: the owner's email is sent.
     PAYNOW_AUTH_EMAIL: z.email().optional(),
+    // Paid lodges (any plan) can claim a free .co.zw domain from the dashboard while this
+    // isn't "false". Unset, "true" or anything else: domains are still free.
+    DOMAIN_STILL_FREE: z.string().optional(),
     // Tests only: a stand-in for https://www.paynow.co.zw
     PAYNOW_API_URL: z.url().default("https://www.paynow.co.zw"),
   },

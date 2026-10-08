@@ -9,6 +9,7 @@ import { useState } from "react";
 
 import { ComingUpCard } from "@/components/dashboard/coming-up";
 import { DemoCountdownCard } from "@/components/dashboard/demo-countdown";
+import { DomainClaimCard } from "@/components/dashboard/domain-claim";
 import { useLodge } from "@/components/dashboard/lodge-provider";
 import { ActivityCard, RoomsSummaryCard } from "@/components/dashboard/overview-cards";
 import { Page, PageHeader, PageSection } from "@/components/dashboard/page";
@@ -72,6 +73,7 @@ export default function DashboardPage() {
 
       <PageSection>
         <DemoCountdownCard />
+        <DomainClaimCard />
       </PageSection>
 
       <PageSection className="lg:hidden">

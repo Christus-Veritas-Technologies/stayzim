@@ -4,23 +4,22 @@ import { Badge } from "@stayzim/ui/components/badge";
 import { buttonVariants } from "@stayzim/ui/components/button";
 import { CopyButton } from "@stayzim/ui/components/copy-button";
 import { InfoTip } from "@stayzim/ui/components/info-tip";
-import { includesFreeDomain } from "@stayzim/sites";
 import { ArrowUpRight, Globe } from "lucide-react";
 import Link from "next/link";
 
+import { DomainClaimLine } from "@/components/dashboard/domain-claim";
 import { Reveal } from "@/components/motion";
 import { ownerSiteUrl, type Lodge } from "@/lib/lodge";
 import { siteHost, siteUrl, subdomainHost } from "@/lib/site-host";
 
-/** The change requests an owner sends to ask for their own domain: the free .co.zw (Growth, Pro), or one they have. */
-export const FREE_DOMAIN_REQUEST = "I'd like the free .co.zw web address that comes with my plan. The address I'd like: ";
+/** The change request an owner sends to connect a domain they already have. */
 export const OWN_DOMAIN_REQUEST = "I have my own domain and I'd like my lodge site on it. The domain is: ";
 
 /**
  * Where guests find the site. A lodge's own domain shows as connected, with the
- * stayzim.co.zw address that keeps working underneath. Without one: Growth and
- * Pro ask for their free .co.zw, Starter can connect a domain it has, and a demo
- * learns that own domains come once it's paid for.
+ * stayzim.co.zw address that keeps working underneath. Without one: a paid lodge
+ * claims its free .co.zw (while DOMAIN_STILL_FREE isn't "false"), or asks us to
+ * connect a domain it has, and a demo learns that domains come once it's paid for.
  */
 export function WebAddress({ lodge }: { lodge: Lodge }) {
   const own = Boolean(lodge.customDomain);
@@ -48,21 +47,15 @@ export function WebAddress({ lodge }: { lodge: Lodge }) {
           </span>
         ) : lodge.status === "DEMO" ? (
           <span className="text-[13px] text-muted">
-            Your own domain, like {lodge.slug}.co.zw, comes with any plan once you&apos;ve paid.{" "}
+            {lodge.freeDomain.free
+              ? `A free .co.zw domain, like ${lodge.slug}.co.zw, comes with any plan once you've paid.`
+              : `Your own domain, like ${lodge.slug}.co.zw, can be connected once you've paid.`}{" "}
             <Link href="/dashboard/billing" className="-my-2.5 py-2.5 font-semibold text-brand hover:text-brand-dark">
               Billing
             </Link>
           </span>
-        ) : includesFreeDomain(lodge.plan) ? (
-          <span className="text-[13px] text-muted">
-            Your plan includes a free .co.zw address, like {lodge.slug}.co.zw.{" "}
-            <Link
-              href={{ pathname: "/dashboard/requests", query: { topic: "OTHER", message: FREE_DOMAIN_REQUEST } }}
-              className="-my-2.5 py-2.5 font-semibold text-brand hover:text-brand-dark"
-            >
-              Ask for it
-            </Link>
-          </span>
+        ) : lodge.freeDomain.claimable || lodge.freeDomain.claim?.status === "REQUESTED" ? (
+          <DomainClaimLine />
         ) : (
           <span className="text-[13px] text-muted">
             Have your own domain? We&apos;ll connect it.{" "}
@@ -71,8 +64,7 @@ export function WebAddress({ lodge }: { lodge: Lodge }) {
               className="-my-2.5 py-2.5 font-semibold text-brand hover:text-brand-dark"
             >
               Ask us
-            </Link>{" "}
-            <span className="text-muted-2">(Growth and Pro include a free .co.zw)</span>
+            </Link>
           </span>
         )}
       </div>

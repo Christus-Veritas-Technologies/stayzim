@@ -48,9 +48,38 @@ export function annualSaving(plan: Plan) {
   return PLAN_PRICES[plan] * 12 - planPrice(plan, 12);
 }
 
-/** Growth and Pro come with a free .co.zw domain (StayZim registers it). Every paid plan can connect its own. */
-export function includesFreeDomain(plan: Plan) {
-  return plan !== "STARTER";
+/**
+ * Every paid plan comes with a free .co.zw domain that StayZim registers,
+ * until DOMAIN_STILL_FREE is "false" (unset or anything else: still free).
+ * Every paid plan can connect a domain it already has either way.
+ */
+export function domainStillFree(value: string | undefined) {
+  return value?.trim().toLowerCase() !== "false";
+}
+
+/** A lodge that has paid (any plan) can claim it; a demo pays first, and an offline site comes back first. */
+export function canClaimDomain(status: string) {
+  return status === "ACTIVE" || status === "OVERDUE";
+}
+
+/** How long a claimed domain takes to set up (registering it, DNS, the certificate). */
+export const DOMAIN_READY_HOURS = 72;
+
+/**
+ * The .co.zw name an owner asked for, tidied: "MistValley Lodge", "mistvalleylodge"
+ * and "https://www.mistvalleylodge.co.zw/" all give "mistvalleylodge.co.zw".
+ * Null when what's left isn't a usable name (3 to 63 letters, digits or hyphens).
+ */
+export function freeDomainName(input: string) {
+  const name = input
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/^www\./, "")
+    .replace(/\/.*$/, "")
+    .replace(/\.co\.zw$/, "")
+    .replace(/[\s_]+/g, "");
+  return /^[a-z0-9](?:[a-z0-9-]{1,61}[a-z0-9])$/.test(name) && !name.includes("--") ? `${name}.co.zw` : null;
 }
 
 /** Visitor analytics come with Growth and Pro. */

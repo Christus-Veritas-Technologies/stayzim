@@ -14,6 +14,9 @@ import {
   bookingRequestEmail,
   demoEndedEmail,
   demoWelcomeEmail,
+  domainClaimedEmail,
+  domainClaimTeamEmail,
+  domainReadyEmail,
   invoiceEmail,
   passwordChangedEmail,
   receiptEmail,
@@ -37,6 +40,9 @@ const emails = {
   "booking-received": bookingReceivedEmail({ ...stay, to: "sarah@x.test", guestName: "Sarah Test", lodgeWhatsappUrl: "https://wa.me/263771234567" }),
   "booking-confirmed": bookingConfirmedEmail({ ...stay, to: "sarah@x.test", guestName: "Sarah Test", times: "Check-in from 14:00 · Check-out by 10:00", lodgeWhatsappUrl: "https://wa.me/263771234567" }),
   "booking-declined": bookingClosedEmail({ ...stay, to: "sarah@x.test", guestName: "Sarah Test", kind: "declined", reason: "We're fully booked for a wedding that weekend. Sorry!", siteUrl: "https://mistvalley.stayzim.co.zw" }),
+  "domain-claimed": domainClaimedEmail({ to: "rudo@x.test", name: "Rudo Moyo", lodgeName: "Mist Valley Lodge", domain: "mistvalleylodge.co.zw", readyBy: "Sunday 11 October, 14:05", dashboardUrl: "https://stayzim.co.zw/dashboard" }),
+  "domain-claim-team": domainClaimTeamEmail({ to: "hello@stayzim.co.zw", lodgeName: "Mist Valley Lodge", slug: "mistvalley", plan: "Growth", ownerName: "Rudo Moyo", ownerEmail: "rudo@x.test", whatsapp: "263771234567", domain: "mistvalleylodge.co.zw", readyBy: "Sunday 11 October, 14:05" }),
+  "domain-ready": domainReadyEmail({ to: "rudo@x.test", name: "Rudo Moyo", lodgeName: "Mist Valley Lodge", domain: "mistvalleylodge.co.zw" }),
 };
 
 for (const [name, email] of Object.entries(emails)) {

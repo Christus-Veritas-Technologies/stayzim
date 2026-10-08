@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { bookingReceivedEmail, invoiceEmail, passwordChangedEmail, receiptEmail, resetPasswordEmail } from "./templates";
+import { bookingReceivedEmail, domainClaimedEmail, domainClaimTeamEmail, domainReadyEmail, invoiceEmail, passwordChangedEmail, receiptEmail, resetPasswordEmail } from "./templates";
 
 describe("resetPasswordEmail", () => {
   const url = "https://api.stayzim.co.zw/api/auth/reset-password/abc?callbackURL=https%3A%2F%2Fapp.stayzim.co.zw%2Freset-password";
@@ -79,5 +79,29 @@ describe("booking emails to guests", () => {
     expect(email.html).toContain("/email/stayzim-mark.png");
     expect(email.html).toContain(">StayZim</span>");
     expect(email.html).toContain("max-width:480px");
+  });
+});
+
+describe("free domain emails", () => {
+  const claim = { lodgeName: "Mist Valley Lodge", domain: "mistvalleylodge.co.zw", readyBy: "Sunday 11 October, 14:05" };
+
+  test("the owner hears when it'll be ready, and that we'll WhatsApp and email", () => {
+    const email = domainClaimedEmail({ ...claim, to: "rudo@x.test", name: "Rudo Moyo", dashboardUrl: "https://stayzim.co.zw/dashboard" });
+    expect(email.subject).toBe("mistvalleylodge.co.zw is on its way");
+    expect(email.text).toContain("ready within 72 hours");
+    expect(email.text).toContain("WhatsApp and email you");
+    expect(email.html).toContain("Sunday 11 October, 14:05");
+  });
+
+  test("the team gets the set-domain command", () => {
+    const email = domainClaimTeamEmail({ ...claim, to: "hello@stayzim.co.zw", slug: "mistvalley", plan: "Growth", ownerName: "Rudo Moyo", ownerEmail: "rudo@x.test", whatsapp: null });
+    expect(email.text).toContain("set-domain --slug mistvalley --domain mistvalleylodge.co.zw");
+    expect(email.text).toContain("WhatsApp: Not given");
+  });
+
+  test("the owner hears when it's live", () => {
+    const email = domainReadyEmail({ to: "rudo@x.test", name: "Rudo", lodgeName: "Mist Valley Lodge", domain: "mistvalleylodge.co.zw" });
+    expect(email.subject).toBe("mistvalleylodge.co.zw is live");
+    expect(email.html).toContain("https://mistvalleylodge.co.zw");
   });
 });

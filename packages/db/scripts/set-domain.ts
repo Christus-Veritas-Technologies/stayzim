@@ -5,14 +5,16 @@
  *
  *   pnpm --filter @stayzim/db set-domain --slug mistvalley --domain mistvalleylodge.co.zw
  *
- * Own domains are for paying lodges (any plan). Growth and Pro include a
- * .co.zw that StayZim registers; on Starter the owner brings their own.
+ * Own domains are for paying lodges (any plan): a .co.zw the owner claimed from
+ * the dashboard (free while DOMAIN_STILL_FREE isn't "false"; StayZim registers it),
+ * or a domain they have. A claimed one is marked ready by the billing job, which
+ * emails the owner.
  *   pnpm --filter @stayzim/db set-domain --slug mistvalley --remove
  *   pnpm --filter @stayzim/db set-domain --list
  */
 import { parseArgs } from "node:util";
 
-import { includesFreeDomain, normalizeDomain, PLANS_LABEL } from "@stayzim/sites";
+import { normalizeDomain } from "@stayzim/sites";
 
 import prisma from "../src/index";
 
@@ -66,11 +68,11 @@ if (lodge.status === "DEMO" && !values.force) {
 }
 
 await prisma.lodge.update({ where: { id: lodge.id }, data: { customDomain: domain } });
-console.log(
-  includesFreeDomain(lodge.plan)
-    ? `\n${lodge.name} is on ${PLANS_LABEL[lodge.plan]}, which includes a free .co.zw domain.`
-    : `\n${lodge.name} is on Starter: the domain is theirs to pay for (Growth and Pro include a .co.zw).`,
-);
+const claim = await prisma.domainClaim.findUnique({ where: { lodgeId: lodge.id }, select: { domain: true, status: true } });
+if (claim?.status === "REQUESTED") {
+  if (claim.domain !== domain) console.log(`\nThey claimed ${claim.domain}; their claim now points at ${domain}.`);
+  console.log(`\nThey claimed it from the dashboard: the billing job (hourly, or run-billing now) emails them that it's live. WhatsApp them too.`);
+}
 console.log(`\n${lodge.name} now answers on ${domain} (and www.${domain}), as well as ${slug}.${sitesDomain}.`);
 console.log(`
 Next, so guests can reach it (details in docs/deployment.md, "Custom domains"):

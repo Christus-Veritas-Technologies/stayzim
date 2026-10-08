@@ -1,7 +1,11 @@
 import prisma from "@stayzim/db";
+import { env } from "@stayzim/env/server";
 import {
+  canClaimDomain,
   copyForLodge,
+  DOMAIN_READY_HOURS,
   demoEnded,
+  domainStillFree,
   effectiveTemplate,
   heroText,
   isAmenity,
@@ -40,6 +44,7 @@ function loadLodge(lodgeId: string) {
     include: {
       rooms: { orderBy: { position: "asc" }, include: { photos: { orderBy: { position: "asc" } } } },
       photos: { where: { roomId: null }, orderBy: { position: "asc" } },
+      domainClaim: true,
     },
   });
 }
@@ -71,6 +76,28 @@ export function photoJson(photo: StoredPhoto): PhotoJson {
     size: photo.size,
     caption: photo.caption,
     roomId: photo.roomId,
+  };
+}
+
+/** The free .co.zw: on offer unless DOMAIN_STILL_FREE is "false", claimable once paid and before the lodge has a domain. */
+export function freeDomainJson(lodge: {
+  status: string;
+  customDomain: string | null;
+  domainClaim: { domain: string; status: "REQUESTED" | "READY"; createdAt: Date } | null;
+}): DashboardLodge["freeDomain"] {
+  const free = domainStillFree(env.DOMAIN_STILL_FREE);
+  const claim = lodge.domainClaim;
+  return {
+    free,
+    claimable: free && canClaimDomain(lodge.status) && !lodge.customDomain && !claim,
+    claim: claim
+      ? {
+          domain: claim.domain,
+          status: claim.status,
+          createdAt: claim.createdAt.toISOString(),
+          readyBy: new Date(claim.createdAt.getTime() + DOMAIN_READY_HOURS * 3600_000).toISOString(),
+        }
+      : null,
   };
 }
 
@@ -128,6 +155,7 @@ export async function lodgeJson(lodgeId: string): Promise<DashboardLodge> {
     demoEnded: demoEnded(lodge, new Date()),
     paidUntil: lodge.paidUntil?.toISOString() ?? null,
     linkSharedAt: lodge.linkSharedAt?.toISOString() ?? null,
+    freeDomain: freeDomainJson(lodge),
     updatedAt: lodge.updatedAt.toISOString(),
     rooms: lodge.rooms.map((room) => ({
       id: room.id,

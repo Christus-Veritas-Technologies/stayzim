@@ -1,5 +1,5 @@
 import prisma from "@stayzim/db";
-import { demoEndedEmail, invoiceEmail, siteOfflineEmail } from "@stayzim/mail/templates";
+import { demoEndedEmail, domainReadyEmail, invoiceEmail, siteOfflineEmail } from "@stayzim/mail/templates";
 import {
   addDays,
   calendarDaysUntil,
@@ -34,9 +34,11 @@ const GUEST_DATA_DAYS = 365;
  *    here it gets its "your demo has ended" email.
  * 3. Payments still pending (a missed Paynow callback): asked again.
  * 4. Demos that ended 30 days ago and were never paid for: deleted.
+ * 5. Guests' details, 12 months after their stay: removed.
+ * 6. Claimed free domains that set-domain has set up: marked ready, owner emailed.
  */
 export async function runBilling(now = new Date()) {
-  const report = { invoices: 0, notices: 0, overdue: 0, suspended: 0, checked: 0, deleted: 0, anonymised: 0 };
+  const report = { invoices: 0, notices: 0, overdue: 0, suspended: 0, checked: 0, deleted: 0, anonymised: 0, domains: 0 };
 
   // 1 and 2: lodges that pay
   const paying = await prisma.lodge.findMany({
@@ -182,6 +184,24 @@ export async function runBilling(now = new Date()) {
     data: { guestName: null, guestPhone: null, guestEmail: null, message: null, anonymisedAt: now },
   });
   report.anonymised = forgotten.count;
+
+  // 6: free domains StayZim has set up (set-domain): marked ready, and the owner emailed
+  const claims = await prisma.domainClaim.findMany({
+    where: { status: "REQUESTED", lodge: { customDomain: { not: null } } },
+    select: { id: true, lodgeId: true, lodge: { select: { name: true, customDomain: true, owner: { select: { name: true, email: true } } } } },
+  });
+  for (const claim of claims) {
+    const domain = claim.lodge.customDomain!;
+    await prisma.domainClaim.update({ where: { id: claim.id }, data: { status: "READY", readyAt: now, domain } });
+    const sent = await sendOnce(
+      `domain:${claim.id}:READY`,
+      claim.lodgeId,
+      "DOMAIN_READY",
+      domainReadyEmail({ to: claim.lodge.owner.email, name: claim.lodge.owner.name, lodgeName: claim.lodge.name, domain }),
+    );
+    if (sent) report.notices += 1;
+    report.domains += 1;
+  }
 
   return report;
 }

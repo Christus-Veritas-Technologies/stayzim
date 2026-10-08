@@ -1,11 +1,15 @@
 import prisma from "@stayzim/db";
-import { findTemplate, PLANS_LABEL, templateAllowed } from "@stayzim/sites";
+import { env } from "@stayzim/env/server";
+import { REPLY_TO } from "@stayzim/mail";
+import { domainClaimedEmail, domainClaimTeamEmail } from "@stayzim/mail/templates";
+import { canClaimDomain, DOMAIN_READY_HOURS, domainStillFree, findTemplate, formatHarareDateTime, freeDomainName, PLANS_LABEL, templateAllowed } from "@stayzim/sites";
 import { lodgePatch } from "@stayzim/sites/schemas";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 
+import { sendQuietly } from "../lib/billing";
 import { lodgeJson, requireLodge, type LodgeVariables } from "../lib/lodge";
 import { coordinatesFromMapsUrl } from "../lib/maps";
 import { requireAuth, withSession } from "../lib/session";
@@ -62,6 +66,49 @@ export const lodge = new Hono<{ Variables: LodgeVariables }>()
   .post("/shared", async (c) => {
     await prisma.lodge.updateMany({ where: { id: c.var.lodgeId, linkSharedAt: null }, data: { linkSharedAt: new Date() } });
     return c.json(await lodgeJson(c.var.lodgeId));
+  })
+
+  /**
+   * Claims the free .co.zw (any paid plan, while DOMAIN_STILL_FREE isn't "false").
+   * StayZim registers it within DOMAIN_READY_HOURS; the owner and the team are emailed now,
+   * and the owner again once set-domain has run (the billing job).
+   */
+  .post("/domain-claim", validJson(z.object({ name: z.string().trim().min(1).max(120) })), async (c) => {
+    const lodgeId = c.var.lodgeId;
+    const lodge = await prisma.lodge.findUniqueOrThrow({
+      where: { id: lodgeId },
+      select: { name: true, slug: true, plan: true, status: true, whatsapp: true, customDomain: true, domainClaim: true, owner: { select: { name: true, email: true } } },
+    });
+    if (!domainStillFree(env.DOMAIN_STILL_FREE)) throw new HTTPException(403, { message: "Free domains have ended. Message us to connect a domain you have." });
+    if (!canClaimDomain(lodge.status)) throw new HTTPException(403, { message: "The free domain comes once your plan is paid for." });
+    if (lodge.customDomain) throw new HTTPException(409, { message: `Your site is on ${lodge.customDomain} already.` });
+    if (lodge.domainClaim) throw new HTTPException(409, { message: `You've claimed ${lodge.domainClaim.domain} already. We'll message you when it's ready.` });
+    const domain = freeDomainName(c.req.valid("json").name);
+    if (!domain) throw new HTTPException(400, { message: "Use 3 to 63 letters, numbers or hyphens, like mistvalleylodge" });
+    const taken =
+      (await prisma.lodge.findUnique({ where: { customDomain: domain }, select: { id: true } })) ??
+      (await prisma.domainClaim.findFirst({ where: { domain }, select: { id: true } }));
+    if (taken) throw new HTTPException(409, { message: `${domain} is taken. Try another name.` });
+
+    const claim = await prisma.domainClaim.create({ data: { lodgeId, domain } });
+    const readyBy = formatHarareDateTime(new Date(claim.createdAt.getTime() + DOMAIN_READY_HOURS * 3600_000));
+    const dashboardUrl = `${env.WEB_URL ?? "https://stayzim.co.zw"}/dashboard`;
+    await sendQuietly(domainClaimedEmail({ to: lodge.owner.email, name: lodge.owner.name, lodgeName: lodge.name, domain, readyBy, dashboardUrl }), "domain claim");
+    await sendQuietly(
+      domainClaimTeamEmail({
+        to: REPLY_TO,
+        lodgeName: lodge.name,
+        slug: lodge.slug,
+        plan: PLANS_LABEL[lodge.plan],
+        ownerName: lodge.owner.name,
+        ownerEmail: lodge.owner.email,
+        whatsapp: lodge.whatsapp ? `+${lodge.whatsapp}` : null,
+        domain,
+        readyBy,
+      }),
+      "domain claim (team)",
+    );
+    return c.json(await lodgeJson(lodgeId), 201);
   })
 
   /** Replaces the logo. multipart/form-data with `file`. */

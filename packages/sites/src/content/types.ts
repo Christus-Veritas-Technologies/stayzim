@@ -217,6 +217,8 @@ export type DashboardLodge = {
   demoEnded: boolean;
   paidUntil: string | null;
   linkSharedAt: string | null;
+  /** The free .co.zw domain (DOMAIN_STILL_FREE): whether it's on offer, whether this lodge can claim it now, and its claim */
+  freeDomain: { free: boolean; claimable: boolean; claim: { domain: string; status: "REQUESTED" | "READY"; createdAt: string; readyBy: string } | null };
   updatedAt: string;
   rooms: DashboardRoom[];
   /** Photos not on a room, in order */

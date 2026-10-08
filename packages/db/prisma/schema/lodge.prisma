@@ -119,6 +119,7 @@ model Lodge {
   photos   Photo[]         @relation("LodgePhotos")
   events   SiteEvent[]
   requests ChangeRequest[]
+  domainClaim DomainClaim?
   invoices Invoice[]
   payments Payment[]
   bookings Booking[]
@@ -228,4 +229,24 @@ model ChangeRequest {
 
   @@index([lodgeId, createdAt])
   @@map("change_request")
+}
+
+enum DomainClaimStatus {
+  REQUESTED
+  READY
+}
+
+/// The free .co.zw domain an owner on a paid plan claimed (while DOMAIN_STILL_FREE isn't "false").
+/// StayZim registers it and runs set-domain; the billing job then marks it READY and emails the owner.
+model DomainClaim {
+  id        String            @id @default(cuid())
+  lodgeId   String            @unique @map("lodge_id")
+  lodge     Lodge             @relation(fields: [lodgeId], references: [id], onDelete: Cascade)
+  /// e.g. "mistvalleylodge.co.zw"
+  domain    String
+  status    DomainClaimStatus @default(REQUESTED)
+  createdAt DateTime          @default(now()) @map("created_at")
+  readyAt   DateTime?         @map("ready_at")
+
+  @@map("domain_claim")
 }

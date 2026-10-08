@@ -51,8 +51,9 @@ const SECTIONS: LegalSection[] = [
             your dashboard keeps working so you can, and the site comes back as soon as you do.
           </li>
           <li>
-            Your own domain: on any plan you can connect a domain you have; {PLANS.GROWTH.name} and {PLANS.PRO.name} include a free .co.zw
-            domain, which StayZim registers for your lodge while you stay on one of those plans.
+            Your own domain: every paid plan includes a free .co.zw domain while we offer it, which StayZim registers for your lodge
+            (claim it from your dashboard; it&apos;s ready within 72 hours) and keeps while you stay on a plan. You can also connect a domain
+            you already have.
           </li>
           <li>If we change our prices, we&apos;ll tell you at least 30 days before your next payment.</li>
         </ul>

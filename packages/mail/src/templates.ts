@@ -4,6 +4,7 @@ import { button, greeting, heading, layout, linkFallback, MUTED, small } from ".
 
 export * from "./billing";
 export * from "./bookings";
+export * from "./domains";
 
 export function resetPasswordEmail({ to, name, url }: { to: string; name: string; url: string }): Email {
   return {
