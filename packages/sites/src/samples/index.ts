@@ -193,6 +193,17 @@ export function samplePosts(input: { name: string; town: string | null; setting:
   ];
 }
 
+/** Example check-in and check-out times, house rules, cancellation and questions, from the lodge's copy. */
+export function sampleGuestInfo(copy: LiveSite["copy"]) {
+  return {
+    checkInFrom: "14:00",
+    checkOutBy: "10:00",
+    houseRules: copy.houseRules.slice(1),
+    cancellationPolicy: copy.cancellation,
+    faq: copy.faq,
+  };
+}
+
 /** What applySamples needs beyond the site itself. */
 export type SampleInput = { roomsHint: number | null; priceHint: number | null; pro: boolean; today: string };
 
@@ -220,15 +231,7 @@ export function applySamples(site: LiveSite, input: SampleInput): LiveSite {
     // The hero needs a photo too: the first example one, until they upload
     heroUrl: site.heroUrl ?? (samples.gallery ? (gallery[0]?.url ?? null) : null),
     heroSrcSet: site.heroUrl ? site.heroSrcSet : samples.gallery ? (gallery[0]?.srcSet ?? null) : null,
-    ...(samples.guestInfo
-      ? {
-          checkInFrom: "14:00",
-          checkOutBy: "10:00",
-          houseRules: site.copy.houseRules.slice(1),
-          cancellationPolicy: site.copy.cancellation,
-          faq: site.copy.faq,
-        }
-      : {}),
+    ...(samples.guestInfo ? sampleGuestInfo(site.copy) : {}),
     reviews: samples.reviews ? sampleReviews(site.name) : site.reviews,
     journal: samples.journal ? samplePosts({ name: site.name, town: site.town, setting: site.setting, publishedOn: input.today }).map(({ body: _body, ...post }) => post) : site.journal,
     samples,

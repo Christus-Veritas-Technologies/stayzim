@@ -434,3 +434,35 @@ export const postInput = z.object({
   coverId: z.string().nullable().default(null),
   publishedOn: z.string().refine(isDateString, "Pick a date"),
 });
+
+/**
+ * A draft for the live preview (content/draft.ts): what the owner is typing,
+ * so nothing is rejected for being unfinished. A field that doesn't parse is
+ * left out, and the saved value shows instead.
+ */
+const draftText = (max: number) => z.string().max(max).optional().catch(undefined);
+const draftNullableText = (max: number) => z.string().max(max).nullable().optional().catch(undefined);
+export const siteDraftSchema = z.object({
+  name: draftText(LODGE_LIMITS.name),
+  description: draftText(LODGE_LIMITS.description),
+  town: draftNullableText(LODGE_LIMITS.town),
+  region: draftNullableText(LODGE_LIMITS.region),
+  country: draftNullableText(FACT_LIMITS.country),
+  kind: z.enum(LODGE_KIND_KEYS).nullable().optional().catch(undefined),
+  setting: z.enum(SETTING_KEYS).nullable().optional().catch(undefined),
+  roomsHint: z.number().int().min(1).max(FACT_LIMITS.roomsMax).nullable().optional().catch(undefined),
+  priceHint: z.number().int().min(FACT_LIMITS.priceMin).max(FACT_LIMITS.priceMax).nullable().optional().catch(undefined),
+  copySeed: z.number().int().min(0).max(1_000_000).optional().catch(undefined),
+  themeColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().catch(undefined),
+  heroHeadline: draftNullableText(HERO_LIMITS.headline * 2),
+  heroSubline: draftNullableText(HERO_LIMITS.subline * 2),
+  checkInFrom: z.enum(STAY_TIMES).nullable().optional().catch(undefined),
+  checkOutBy: z.enum(STAY_TIMES).nullable().optional().catch(undefined),
+  houseRules: z.array(z.string().max(GUEST_INFO_LIMITS.rule)).max(GUEST_INFO_LIMITS.rules).optional().catch(undefined),
+  cancellationPolicy: draftNullableText(GUEST_INFO_LIMITS.policy),
+  faq: z
+    .array(z.object({ q: z.string().max(GUEST_INFO_LIMITS.question), a: z.string().max(GUEST_INFO_LIMITS.answer) }))
+    .max(GUEST_INFO_LIMITS.faq)
+    .optional()
+    .catch(undefined),
+});
