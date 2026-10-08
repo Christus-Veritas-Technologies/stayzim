@@ -5,14 +5,17 @@
 # No ${VAR:?message} here: Coolify reads the message as the value.
 # Full guide: docs/deployment.md
 #
-#   docker compose -f deploy/compose.yaml --env-file deploy/.env up -d --build
+# Paths are from the repository root, as Coolify runs it (--project-directory is
+# the repo). Locally, from the repo root:
+#
+#   docker compose -f deploy/compose.yaml --project-directory . --env-file deploy/.env up -d --build
 
 name: stayzim
 
 services:
   web:
     build:
-      context: ..
+      context: .
       dockerfile: apps/web/Dockerfile
       # Baked into the browser bundle: changing them needs a rebuild
       args:
@@ -47,7 +50,7 @@ services:
 
   server:
     build:
-      context: ..
+      context: .
       dockerfile: apps/server/Dockerfile
     restart: unless-stopped
     environment:
