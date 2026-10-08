@@ -6,6 +6,7 @@ import { rateLimiter } from "hono-rate-limiter";
 import { z } from "zod";
 
 import { clientIp } from "../lib/ip";
+import { isBot } from "../lib/sites";
 
 /** Short slugs like "hero_whatsapp" or "pricing"; keeps junk out of the table. */
 const slug = z
@@ -59,6 +60,8 @@ export const landing = new Hono()
   )
   .post("/events", zValidator("json", landingEventSchema), async (c) => {
     const event = c.req.valid("json");
+    // Search engines run the page's script too; they aren't visitors
+    if (isBot(c.req.header("user-agent"))) return c.body(null, 204);
 
     await prisma.landingEvent.create({
       data: {

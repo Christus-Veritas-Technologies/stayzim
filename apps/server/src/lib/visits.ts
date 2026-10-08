@@ -17,3 +17,21 @@ export function visitAround<T extends { id: string; createdAt: Date }>(events: T
   while (last < events.length - 1 && gap(last, last + 1) <= gapMs) last++;
   return events.slice(first, last + 1);
 }
+
+/**
+ * The page views that start a visit: a guest's first view, and each one after
+ * more than `gapMs` without another. One guest reading five pages is one visit.
+ * `views` can be in any order; the starts come back oldest first.
+ */
+export function visitStarts<T extends { visitorId: string; createdAt: Date }>(views: T[], gapMs = VISIT_GAP_MS): T[] {
+  const sorted = [...views].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  const last = new Map<string, number>();
+  const starts: T[] = [];
+  for (const view of sorted) {
+    const time = view.createdAt.getTime();
+    const previous = last.get(view.visitorId);
+    if (previous === undefined || time - previous > gapMs) starts.push(view);
+    last.set(view.visitorId, time);
+  }
+  return starts;
+}

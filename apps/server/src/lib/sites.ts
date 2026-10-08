@@ -51,6 +51,15 @@ export async function isAnyLodgeSiteOrigin(origin: string | undefined | null) {
 }
 
 /** Phone, tablet or computer, and "Android, Chrome", from the user agent. Good enough for owners' charts. */
+/**
+ * Search engines and link checkers that run a page's JavaScript (Googlebot,
+ * Bingbot, Lighthouse) would count as guests; their page views are dropped.
+ */
+export function isBot(userAgent: string | undefined) {
+  // "…bot/2.1" and the usual names; not "Cubot", a phone brand
+  return !userAgent || /(?<!cu)bot\/|bingpreview|crawl|spider|slurp|mediapartners|google-inspectiontool|lighthouse|pagespeed|gtmetrix|facebookexternalhit/i.test(userAgent);
+}
+
 export function describeDevice(userAgent: string | undefined) {
   const ua = userAgent ?? "";
   const device = /iPad|Tablet|(Android(?!.*Mobile))/i.test(ua) ? "TABLET" : /Mobi|iPhone|Android/i.test(ua) ? "PHONE" : "COMPUTER";

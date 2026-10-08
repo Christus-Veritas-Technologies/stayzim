@@ -29,8 +29,15 @@ export type VisitStats = {
   tracking: boolean;
   visitsToday: number;
   visitsYesterday: number;
+  /** Visits: one guest's pages with no 30-minute gap count as one (apps/server/src/lib/visits.ts) */
   visits: number;
   previousVisits: number;
+  /** Different guests (browsers) this period and the one before */
+  visitors: number;
+  previousVisitors: number;
+  /** Every page opened */
+  pageViews: number;
+  previousPageViews: number;
   bookingChats: number;
   previousBookingChats: number;
   /** Bookings sent from the site (Growth and Pro) */

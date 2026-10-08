@@ -2,6 +2,7 @@
 
 import { buttonVariants } from "@stayzim/ui/components/button";
 import { Card } from "@stayzim/ui/components/card";
+import { InfoTip } from "@stayzim/ui/components/info-tip";
 import { Skeleton } from "@stayzim/ui/components/skeleton";
 import { Tabs, TabsList, TabsTab } from "@stayzim/ui/components/tabs";
 import { cn } from "@stayzim/ui/lib/utils";
@@ -138,12 +139,21 @@ export function VisitsCard({
     <Card className={cn("gap-4 px-4 pt-[18px] pb-4 transition-opacity duration-300 sm:px-5", loading && "opacity-60")} aria-busy={loading || undefined}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
-          <span className="text-[13.5px] font-medium text-slate">Visits</span>
+          <span className="flex items-center gap-1.5 text-[13.5px] font-medium text-slate">
+            Visits
+            <InfoTip>
+              A visit is one guest looking around your site; it ends after 30 minutes without opening a page. Your own visits aren&apos;t
+              counted.
+            </InfoTip>
+          </span>
           <div className="flex items-center gap-2.5">
             <span className="font-display text-[28px] leading-8 font-semibold tracking-[-0.02em]">{stats.visits}</span>
             <Trend current={stats.visits} previous={stats.previousVisits} />
             <span className="text-[13px] text-muted">{periodRange(period)}</span>
           </div>
+          <span className="text-[13px] text-muted">
+            {stats.visitors} {stats.visitors === 1 ? "guest" : "guests"} · {stats.pageViews} {stats.pageViews === 1 ? "page" : "pages"} opened
+          </span>
         </div>
         <div className="flex items-center gap-4 pt-1 text-[12.5px] text-muted">
           <span className="inline-flex items-center gap-1.5">

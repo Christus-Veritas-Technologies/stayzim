@@ -5,7 +5,8 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, Di
 import { cn } from "@stayzim/ui/lib/utils";
 import { isSampleRoomId } from "@stayzim/sites";
 import dynamic from "next/dynamic";
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { env } from "@/lib/public-env";
 import { MAIN_URL } from "@/lib/site-host";
@@ -193,19 +194,20 @@ export function track(slug: string, type: "PAGE_VIEW" | "BOOKING_CHAT", roomId?:
   }
 }
 
-/** Page views already sent from this page load, so re-mounts (and React's dev double effects) count once. */
-const counted = new Set<string>();
-
-/** Records the page view once the page has loaded (not in previews). */
+/**
+ * Records a page view each time a guest opens a page, including going back to
+ * one they saw before (not in previews). The ref keeps React's dev double
+ * effects to one.
+ */
 export function PageViewTracker() {
   const { slug, enabled } = useContext(TrackingContext);
+  const pathname = usePathname();
+  const sent = useRef<string | null>(null);
   useEffect(() => {
-    if (!enabled || !slug) return;
-    const key = `${slug}${window.location.pathname}`;
-    if (counted.has(key)) return;
-    counted.add(key);
+    if (!enabled || !slug || sent.current === pathname) return;
+    sent.current = pathname;
     track(slug, "PAGE_VIEW");
-  }, [enabled, slug]);
+  }, [enabled, slug, pathname]);
   return null;
 }
 

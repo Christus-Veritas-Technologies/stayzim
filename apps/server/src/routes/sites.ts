@@ -45,7 +45,7 @@ import { lodgeJson } from "../lib/lodge";
 import { withSession, type AuthVariables } from "../lib/session";
 import { isOwnerVisitKey } from "../lib/owner-key";
 import { newReference } from "../lib/reference";
-import { DASHBOARD_URL, describeDevice, slugForCustomDomain } from "../lib/sites";
+import { DASHBOARD_URL, describeDevice, isBot, slugForCustomDomain } from "../lib/sites";
 import { validJson } from "../lib/validate";
 
 /** What a lodge site shows (the PublicSite contract in @stayzim/sites). Nothing about the plan, billing or the owner. */
@@ -426,6 +426,7 @@ export const sites = new Hono<{ Variables: AuthVariables }>()
       }
 
       const userAgent = c.req.header("user-agent");
+      if (isBot(userAgent)) return c.body(null, 204);
       const { device, browser } = describeDevice(userAgent);
       await prisma.siteEvent.create({
         data: {

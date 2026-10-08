@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { VISIT_GAP_MS, visitAround } from "./visits";
+import { VISIT_GAP_MS, visitAround, visitStarts } from "./visits";
 
 const minutes = (value: number) => new Date(Date.UTC(2026, 9, 6, 8, 0) + value * 60_000);
 const events = [
@@ -32,5 +32,20 @@ describe("visitAround", () => {
 
   test("is empty when the event isn't there", () => {
     expect(visitAround(events, "missing")).toEqual([]);
+  });
+});
+
+describe("visitStarts", () => {
+  const at = (minutes: number) => new Date(Date.UTC(2026, 9, 8, 8, 0) + minutes * 60_000);
+  const view = (id: string, visitorId: string, minutes: number) => ({ id, visitorId, createdAt: at(minutes) });
+
+  test("one guest reading several pages is one visit", () => {
+    const starts = visitStarts([view("a", "g1", 0), view("b", "g1", 2), view("c", "g1", 9)]);
+    expect(starts.map((start) => start.id)).toEqual(["a"]);
+  });
+
+  test("a new visit after 30 minutes without a page, and each guest separately", () => {
+    const starts = visitStarts([view("c", "g1", 45), view("a", "g1", 0), view("b", "g2", 1), view("d", "g1", 50)]);
+    expect(starts.map((start) => start.id)).toEqual(["a", "b", "c"]);
   });
 });

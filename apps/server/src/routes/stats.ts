@@ -5,7 +5,7 @@ import { createMiddleware } from "hono/factory";
 import { z } from "zod";
 
 import type { LodgeVariables } from "../lib/lodge";
-import { visitAround } from "../lib/visits";
+import { VISIT_GAP_MS, visitAround, visitStarts } from "../lib/visits";
 
 /** Days and hours on owners' charts are Zimbabwe time (CAT, UTC+2, no daylight saving). */
 const OFFSET_MS = 2 * 60 * 60 * 1000;
@@ -77,9 +77,12 @@ export const stats = new Hono<{ Variables: LodgeVariables }>()
     const from = previousStart < yesterday ? previousStart : yesterday;
 
     const events = await prisma.siteEvent.findMany({
-      where: { lodgeId: c.var.lodgeId, createdAt: { gte: from } },
-      select: { type: true, createdAt: true, country: true, roomId: true },
+      // From one visit-length earlier, so a visit already under way at `from` isn't counted as a new one
+      where: { lodgeId: c.var.lodgeId, createdAt: { gte: new Date(from.getTime() - VISIT_GAP_MS) } },
+      select: { type: true, createdAt: true, country: true, roomId: true, visitorId: true },
     });
+    // A visit is one guest's page views with no 30-minute gap: it counts once, when it starts
+    const starts = new Set(visitStarts(events.filter((event) => event.type === "PAGE_VIEW")));
 
     const current = Array.from({ length: shape.buckets }, () => 0);
     const previous = Array.from({ length: shape.buckets }, () => 0);
@@ -92,31 +95,47 @@ export const stats = new Hono<{ Variables: LodgeVariables }>()
     let previousBookingRequests = 0;
     let visitsToday = 0;
     let visitsYesterday = 0;
+    /** Every page opened, and the different guests (browsers) who opened them */
+    let pageViews = 0;
+    let previousPageViews = 0;
+    const visitors = new Set<string>();
+    const previousVisitors = new Set<string>();
     const countries = new Map<string, number>();
     /** Booking taps per room, this period */
     const roomTaps = new Map<string, number>();
 
     for (const event of events) {
       const time = event.createdAt.getTime();
-      const view = event.type === "PAGE_VIEW";
+      if (time < from.getTime()) continue;
+      const pageView = event.type === "PAGE_VIEW";
+      const view = starts.has(event);
       if (view && time >= today.getTime()) visitsToday++;
       else if (view && time >= yesterday.getTime() && time < today.getTime()) visitsYesterday++;
 
       if (time >= start.getTime()) {
+        if (pageView) {
+          pageViews++;
+          visitors.add(event.visitorId);
+        }
         if (view) {
           visits++;
           current[Math.min(shape.buckets - 1, Math.floor((time - start.getTime()) / shape.size))]!++;
           if (event.country) countries.set(event.country, (countries.get(event.country) ?? 0) + 1);
-        } else {
+        } else if (!pageView) {
           if (event.type === "BOOKING_REQUEST") bookingRequests++;
           else bookingChats++;
           if (event.roomId) roomTaps.set(event.roomId, (roomTaps.get(event.roomId) ?? 0) + 1);
         }
       } else if (time >= previousStart.getTime()) {
+        if (pageView) {
+          previousPageViews++;
+          previousVisitors.add(event.visitorId);
+        }
         if (view) {
           previousVisits++;
           previous[Math.min(shape.buckets - 1, Math.floor((time - previousStart.getTime()) / shape.size))]!++;
-        } else if (event.type === "BOOKING_REQUEST") previousBookingRequests++;
+        } else if (pageView) continue;
+        else if (event.type === "BOOKING_REQUEST") previousBookingRequests++;
         else previousBookingChats++;
       }
     }
@@ -141,6 +160,10 @@ export const stats = new Hono<{ Variables: LodgeVariables }>()
       visitsYesterday,
       visits,
       previousVisits,
+      visitors: visitors.size,
+      previousVisitors: previousVisitors.size,
+      pageViews,
+      previousPageViews,
       bookingChats,
       previousBookingChats,
       bookingRequests,
