@@ -5,6 +5,7 @@ import {
   fillCopy,
   findTemplate,
   HERO_LIMITS,
+  PLAN_RANK,
   PLANS_LABEL,
   TEMPLATES,
   templateAllowed,
@@ -22,6 +23,7 @@ import { Textarea } from "@stayzim/ui/components/textarea";
 import { cn } from "@stayzim/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import { Eye, Info, Lock, RotateCcw, Shuffle, Sparkles, Type } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -32,13 +34,11 @@ import { PreviewAside } from "@/components/preview/preview-aside";
 import { PreviewSheet } from "@/components/preview/preview-sheet";
 import { TemplateThumb } from "@/components/dashboard/template-thumb";
 import { UnsavedChangesGuard } from "@/components/dashboard/unsaved-changes";
-import { WhatsAppIcon } from "@/components/landing/brand";
 import { Appear, Item, riseIn } from "@/components/motion";
 import { WhyDisabled } from "@/components/why-disabled";
 import { lodgePlace, ownerSiteUrl, PLANS, siteHost, siteUrl, type Lodge } from "@/lib/lodge";
 import { OFFLINE_REASON, useOnline } from "@/lib/online";
 import { draftPreviewUrl } from "@/lib/preview";
-import { stayzimChatUrl } from "@/lib/whatsapp";
 
 const PLAN_ORDER: Plan[] = ["STARTER", "GROWTH", "PRO"];
 
@@ -46,11 +46,9 @@ const PLAN_BADGE: Record<Plan, "neutral" | "brand" | "purple"> = { STARTER: "neu
 
 const MOTION_LABEL: Record<MotionLevel, string> = { none: "Still", subtle: "Subtle motion", rich: "Rich motion" };
 
-function upgradeUrl(lodge: Lodge, template: Template) {
-  const plan = PLANS[template.plan];
-  return stayzimChatUrl(
-    `Hi StayZim, I'd like to move ${lodge.name} to the ${plan.name} plan ($${plan.price}/month) to use the ${template.name} template.`,
-  );
+/** Billing, with the plan that includes the template picked. */
+function upgradeUrl(template: Template) {
+  return `/dashboard/billing?plan=${template.plan.toLowerCase()}` as const;
 }
 
 export default function DesignPage() {
@@ -80,14 +78,28 @@ export default function DesignPage() {
               Your plan doesn&apos;t include <strong className="font-semibold">{chosen.name}</strong>, so your site shows{" "}
               <strong className="font-semibold">{live.name}</strong> for now.
             </span>
-            <a
-              href={upgradeUrl(lodge, chosen)}
-              target="_blank"
-              rel="noreferrer"
+            <Link
+              href={upgradeUrl(chosen)}
               className={buttonVariants({ variant: "accent", size: "sm", className: "shrink-0" })}
             >
               Upgrade to {PLANS_LABEL[chosen.plan]}
-            </a>
+            </Link>
+          </FormMessage>
+        </PageSection>
+      ) : lodge.status === "ACTIVE" && PLAN_RANK[live.plan] < PLAN_RANK[lodge.plan] ? (
+        <PageSection>
+          <FormMessage tone="info" className="items-center">
+            <Sparkles className="size-4 shrink-0 text-brand" />
+            <span className="flex-1">
+              Your {PLANS_LABEL[lodge.plan]} plan includes{" "}
+              {TEMPLATES.filter((template) => template.plan === lodge.plan).map((template, index, all) => (
+                <span key={template.key}>
+                  <strong className="font-semibold">{template.name}</strong>
+                  {index < all.length - 2 ? ", " : index === all.length - 2 ? " and " : ""}
+                </span>
+              ))}
+              . Tap one below to see your site in it.
+            </span>
           </FormMessage>
         </PageSection>
       ) : null}
@@ -215,14 +227,12 @@ function TemplateCard({ template, lodge, live, onPreview }: { template: Template
           Preview
         </Button>
         {locked ? (
-          <a
-            href={upgradeUrl(lodge, template)}
-            target="_blank"
-            rel="noreferrer"
+          <Link
+            href={upgradeUrl(template)}
             className={buttonVariants({ variant: "accent", size: "sm", className: "flex-1" })}
           >
             Upgrade to {PLANS_LABEL[template.plan]}
-          </a>
+          </Link>
         ) : null}
       </div>
     </div>
@@ -483,10 +493,9 @@ function TemplateSheet({
             )
           ) : null}
           {shown && locked ? (
-            <a href={upgradeUrl(lodge, shown)} target="_blank" rel="noreferrer" className={buttonVariants({ variant: "accent" })}>
-              <WhatsAppIcon size={15} color="#FFFFFF" />
+            <Link href={upgradeUrl(shown)} className={buttonVariants({ variant: "accent" })}>
               Upgrade to {PLANS_LABEL[shown.plan]}
-            </a>
+            </Link>
           ) : null}
           <WhyDisabled reason={applying ? null : reason}>
             <Button onClick={apply} loading={applying} disabled={reason !== null}>

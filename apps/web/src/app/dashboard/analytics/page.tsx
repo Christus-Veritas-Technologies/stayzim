@@ -5,6 +5,7 @@ import { Card } from "@stayzim/ui/components/card";
 import { CopyButton } from "@stayzim/ui/components/copy-button";
 import { EmptyState } from "@stayzim/ui/components/empty-state";
 import { Lock, Radar } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 
 import { useLodge } from "@/components/dashboard/lodge-provider";
@@ -16,7 +17,6 @@ import { PeriodTabs, StatCards, VisitsCard } from "@/components/dashboard/visit-
 import { WhatsAppIcon } from "@/components/landing/brand";
 import { hasAnalytics, PLANS, siteHost } from "@/lib/lodge";
 import { ANALYTICS_PERIODS, useVisitStats, type Period } from "@/lib/stats";
-import { stayzimChatUrl } from "@/lib/whatsapp";
 
 /** Made-up rows behind the blur on Starter, to show what Growth unlocks. */
 const SAMPLE_VISITS = [
@@ -57,14 +57,9 @@ function LockedPreview() {
           </span>
           <span className="text-xs font-semibold tracking-[0.06em] text-purple uppercase">{growth.name} plan</span>
           <p className="font-display text-lg leading-6 font-semibold">See who visits your site, and from where</p>
-          <a
-            href={stayzimChatUrl(`Hi StayZim, I'd like to move ${lodge.name} to the ${growth.name} plan ($${growth.price}/month).`)}
-            target="_blank"
-            rel="noreferrer"
-            className={buttonVariants({ variant: "accent", size: "lg", className: "w-full" })}
-          >
+          <Link href="/dashboard/billing?plan=growth" className={buttonVariants({ variant: "accent", size: "lg", className: "w-full" })}>
             Upgrade to {growth.name} (${growth.price}/mo)
-          </a>
+          </Link>
         </div>
       </div>
     </Card>

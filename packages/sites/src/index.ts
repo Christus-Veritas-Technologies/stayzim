@@ -150,6 +150,15 @@ export function effectiveTemplate(key: string | null | undefined, plan: Plan): T
   return findTemplate(DEFAULT_TEMPLATE[plan])!;
 }
 
+/**
+ * Whether the design a site shows now still comes with `plan`. When it
+ * doesn't (a Pro design, paying for Starter), the owner picks one that does
+ * before paying, and it goes live with the payment.
+ */
+export function designFitsPlan(key: string | null | undefined, currentPlan: Plan, plan: Plan) {
+  return templateAllowed(effectiveTemplate(key, currentPlan), plan);
+}
+
 /** Fills {name} and {place} in template copy. */
 export function fillCopy(text: string, lodge: { name: string; place: string | null }) {
   return text

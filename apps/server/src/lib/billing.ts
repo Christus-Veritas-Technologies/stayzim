@@ -154,7 +154,12 @@ export async function applyPayment(paymentId: string, extra: { paynowReference?:
     const paidUntil = paidUntilAfterPayment({ paidUntil: lodge.status === "DEMO" ? null : lodge.paidUntil, plan: lodge.plan }, payment.plan, payment.months, now);
     await tx.lodge.update({
       where: { id: payment.lodgeId },
-      data: { plan: payment.plan, status: "ACTIVE", demoEndsAt: null, paidUntil },
+      // A design picked for a plan that doesn't include the old one goes live with it
+      data: { plan: payment.plan, status: "ACTIVE", demoEndsAt: null, paidUntil, ...(payment.template ? { template: payment.template } : {}) },
+    });
+    await tx.payment.update({
+      where: { id: payment.id },
+      data: { coversUntil: paidUntil, previousPlan: lodge.plan !== payment.plan ? lodge.plan : null },
     });
     // Whatever was still owed is covered now: paid if it was for this plan, else no longer owed
     await tx.invoice.updateMany({ where: { lodgeId: payment.lodgeId, status: "OPEN", plan: payment.plan }, data: { status: "PAID", paidAt: now } });
@@ -189,7 +194,7 @@ export async function applyPayment(paymentId: string, extra: { paynowReference?:
 }
 
 /** Records a payment the team confirmed on Paynow outside the app (mark-paid) and applies it. */
-export async function recordManualPayment(input: { lodgeId: string; plan: Plan; months: number; amountCents?: number; channel: string; note?: string }) {
+export async function recordManualPayment(input: { lodgeId: string; plan: Plan; months: number; amountCents?: number; channel: string; note?: string; template?: string }) {
   const invoice = await prisma.invoice.findFirst({ where: { lodgeId: input.lodgeId, status: "OPEN" }, orderBy: { dueAt: "asc" } });
   const payment = await prisma.payment.create({
     data: {
@@ -202,6 +207,7 @@ export async function recordManualPayment(input: { lodgeId: string; plan: Plan; 
       channel: input.channel,
       reference: newPaymentReference(),
       note: input.note,
+      template: input.template ?? null,
     },
   });
   await applyPayment(payment.id);

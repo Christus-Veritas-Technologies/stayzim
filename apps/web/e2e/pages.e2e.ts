@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 import { E2E, lodgeSiteUrl } from "./env";
 import { scrollThrough, sideways } from "./layout";
@@ -8,13 +8,22 @@ import { scrollThrough, sideways } from "./layout";
  * room filters on it; Growth adds Rooms, a page per room, Gallery and
  * Contact; Pro adds Our story, Things to do and Reviews. Each test lodge has
  * Garden Cottage and River Suite (sleep 2) and Family Chalet (sleeps 5).
+ * A page outside the plan 308s to the home page.
  */
+
+/** A page outside the plan sends search engines and old links to the home page, for good. */
+async function goesHome(page: Page, url: string) {
+  // The redirect itself: it goes to the site's own address (its domain, when it has one)
+  const first = page.waitForResponse((response) => response.url() === url);
+  await page.goto(url).catch(() => null);
+  const response = await first;
+  expect(response.status(), url).toBe(308);
+  expect(new URL(response.headers()["location"] ?? "", url).pathname, url).toBe("/");
+}
 
 test("a Starter site is one page, with filters on its rooms", async ({ page }) => {
   const site = lodgeSiteUrl(E2E.starterLodge);
-  for (const path of ["/rooms", "/gallery", "/contact", "/about"]) {
-    expect((await page.goto(`${site}${path}`))?.status(), path).toBe(404);
-  }
+  for (const path of ["/rooms", "/gallery", "/contact", "/about"]) await goesHome(page, `${site}${path}`);
   await page.goto(site, { waitUntil: "networkidle" });
   const rooms = page.locator("#rooms [data-room-id]");
   await expect(rooms).toHaveCount(3);
@@ -41,7 +50,12 @@ test("a Growth site has Rooms, a page per room, Gallery and Contact, and no Pro 
   await expect(page.getByRole("heading", { name: "Other rooms" })).toBeVisible();
 
   for (const path of ["/gallery", "/contact"]) expect((await page.goto(`${site}${path}`))?.status(), path).toBe(200);
-  for (const path of ["/about", "/experiences", "/reviews", "/rooms/no-such-room"]) expect((await page.goto(`${site}${path}`))?.status(), path).toBe(404);
+  for (const path of ["/about", "/experiences", "/reviews"]) await goesHome(page, `${site}${path}`);
+  // A room that's gone: the Rooms page
+  const gone = `${site}/rooms/no-such-room`;
+  const first = page.waitForResponse((response) => response.url() === gone);
+  await page.goto(gone).catch(() => null);
+  expect(new URL((await first).headers()["location"] ?? "", gone).pathname).toBe("/rooms");
 
   // The home page's nav goes to the pages
   await page.goto(site);

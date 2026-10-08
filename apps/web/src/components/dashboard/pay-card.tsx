@@ -8,12 +8,14 @@ import { cn } from "@stayzim/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUpRight, CircleCheck, CircleX, CreditCard, Smartphone, Ticket } from "lucide-react";
 import Link from "next/link";
-import { ANNUAL_DISCOUNT, carriedOverMs, paidUntilAfterPayment, planPriceCents } from "@stayzim/sites";
+import { ANNUAL_DISCOUNT, carriedOverMs, paidUntilAfterPayment, planPriceCents, type TemplateKey } from "@stayzim/sites";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 
 import { useLodge } from "@/components/dashboard/lodge-provider";
+import { needsDesign, PlanSwitch } from "@/components/dashboard/plan-switch";
 import { EASE_OUT } from "@/components/motion";
 import { PlanPicker } from "@/components/plan-picker";
+import { WhyDisabled } from "@/components/why-disabled";
 import { api } from "@/lib/api";
 import { formatCents, PAY_CHANNELS, type PayChannel, type Payment, type StartedPayment } from "@/lib/billing";
 import { formatLongDate } from "@/lib/format";
@@ -72,6 +74,11 @@ export function PayCard({
   const [error, setError] = useState<string | null>(null);
   const [state, setState] = useState<State>({ kind: "idle" });
   const [now, setNow] = useState(() => Date.now());
+  // A design for the new plan, when it doesn't include the site's (picked again for each plan)
+  const [design, setDesign] = useState<{ plan: PlanKey; key: TemplateKey } | null>(null);
+  const pickedDesign = design?.plan === plan ? design.key : null;
+  const designMissing = needsDesign(lodge, plan) && !pickedDesign;
+  const upcoming = lodge.rooms.reduce((sum, room) => sum + room.upcomingBookings, 0);
   const total = planPriceCents(plan, months);
   const prompt = PAY_CHANNELS.find((item) => item.key === channel)!.prompt;
 
@@ -122,7 +129,7 @@ export function PayCard({
     metaEvent("InitiateCheckout", { value: total / 100, currency: "USD", content_name: plan.toLowerCase(), num_items: months });
     const result = await api<StartedPayment>("/api/lodge/billing/pay", {
       method: "POST",
-      json: { plan, months, channel, phone: prompt ? phone : undefined },
+      json: { plan, months, channel, phone: prompt ? phone : undefined, template: pickedDesign ?? undefined },
     });
     setStarting(false);
     if (!result.data) {
@@ -216,6 +223,7 @@ export function PayCard({
               <Field label="Plan" hint={planChangeHint(lodge, plan, months, now)}>
                 <PlanPicker value={plan} onChange={onPlanChange} disabled={starting} />
               </Field>
+              <PlanSwitch lodge={lodge} plan={plan} design={pickedDesign} onDesign={(key) => setDesign({ plan, key })} upcomingBookings={upcoming} />
               <Field label="How long" help="Pay for 1, 3 or 12 months at a time. Paying early adds to the time you have left, and 12 months costs less.">
                 <div role="radiogroup" aria-label="How long" className="grid grid-cols-3 gap-2">
                   {MONTHS.map((count) => (
@@ -283,9 +291,11 @@ export function PayCard({
               ) : (
                 <p className="text-[13px] text-muted">You&apos;ll go to Paynow to pay by Visa, Mastercard, ZimSwitch or another wallet, then come back here.</p>
               )}
-              <Button type="submit" size="lg" className="w-full" loading={starting} disabled={!online}>
-                {starting ? "Starting payment" : `Pay ${formatCents(total)}`}
-              </Button>
+              <WhyDisabled reason={starting ? null : designMissing ? `Pick a design for ${PLANS[plan].name} first` : null} className="w-full">
+                <Button type="submit" size="lg" className="w-full" loading={starting} disabled={!online || designMissing}>
+                  {starting ? "Starting payment" : `Pay ${formatCents(total)}`}
+                </Button>
+              </WhyDisabled>
               <p className="text-center text-[12px] text-muted-2">Every payment goes through Paynow, whichever way you pay. StayZim never sees your PIN or card.</p>
             </fieldset>
           </motion.form>

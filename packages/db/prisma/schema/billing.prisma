@@ -74,6 +74,12 @@ model Payment {
   receiptNumber   String?       @unique @map("receipt_number")
   /// For manual payments: who recorded it and how
   note            String?
+  /// The design the owner picked for a plan that doesn't include their current one; set on the lodge when paid
+  template        String?
+  /// The plan the lodge was on when this was paid, when it changed (for the receipt)
+  previousPlan    LodgePlan?    @map("previous_plan")
+  /// The site is live until then, thanks to this payment
+  coversUntil     DateTime?     @map("covers_until")
   paidAt          DateTime?     @map("paid_at")
   lastPolledAt    DateTime?     @map("last_polled_at")
   createdAt       DateTime      @default(now()) @map("created_at")

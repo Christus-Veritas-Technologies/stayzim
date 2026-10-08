@@ -1,6 +1,6 @@
 import prisma from "@stayzim/db";
 import { env } from "@stayzim/env/server";
-import { isPlan, PAY_MONTHS, planPriceCents } from "@stayzim/sites";
+import { designFitsPlan, findTemplate, isPlan, PAY_MONTHS, planPriceCents, PLANS_LABEL, templateAllowed } from "@stayzim/sites";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { rateLimiter } from "hono-rate-limiter";
@@ -19,6 +19,8 @@ const paySchema = z.object({
   channel: z.enum([...MOBILE_CHANNELS, "web"]),
   /** The mobile money number, for a phone prompt */
   phone: z.string().trim().optional(),
+  /** A design for the new plan, when it doesn't include the one the site shows now */
+  template: z.string().max(40).optional(),
 });
 
 /** "+263 77 123 4567", "0771234567" or "263771234567" → "0771234567", as Paynow wants it. */
@@ -64,7 +66,7 @@ export const billing = new Hono<{ Variables: LodgeVariables }>()
     validJson(paySchema),
     async (c) => {
       if (c.get("user")?.isAnonymous) throw new HTTPException(403, { message: "Claim your site first: add your email, so your receipt has somewhere to go." });
-      if (!paynowEnabled) throw new HTTPException(503, { message: "Paying online isn't switched on yet. Use EcoCash or InnBucks below, then tap I have paid." });
+      if (!paynowEnabled) throw new HTTPException(503, { message: "Paying online isn't switched on yet. Message us and we'll send you a Paynow link." });
       const input = c.req.valid("json");
       const plan = input.plan as Parameters<typeof planPriceCents>[0];
       const phone = input.channel === "web" ? null : paynowPhone(input.phone ?? "");
@@ -72,8 +74,16 @@ export const billing = new Hono<{ Variables: LodgeVariables }>()
 
       const lodge = await prisma.lodge.findUniqueOrThrow({
         where: { id: c.var.lodgeId },
-        select: { id: true, name: true, owner: { select: { email: true } } },
+        select: { id: true, name: true, plan: true, template: true, owner: { select: { email: true } } },
       });
+      // Moving to a plan without the site's design: the owner picks one of its designs first
+      const design = input.template ? findTemplate(input.template) : undefined;
+      if (input.template && (!design || !templateAllowed(design, plan))) {
+        throw new HTTPException(400, { message: `That design doesn't come with ${PLANS_LABEL[plan]}. Pick one of its designs.` });
+      }
+      if (!design && !designFitsPlan(lodge.template, lodge.plan, plan)) {
+        throw new HTTPException(400, { message: `Your design doesn't come with ${PLANS_LABEL[plan]}. Pick one of its designs first.` });
+      }
       const invoice = await prisma.invoice.findFirst({ where: { lodgeId: lodge.id, status: "OPEN", plan }, orderBy: { dueAt: "asc" } });
       const payment = await prisma.payment.create({
         data: {
@@ -86,6 +96,7 @@ export const billing = new Hono<{ Variables: LodgeVariables }>()
           channel: input.channel,
           reference: newPaymentReference(),
           phone,
+          template: design?.key ?? null,
         },
       });
 

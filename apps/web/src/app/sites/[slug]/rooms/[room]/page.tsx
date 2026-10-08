@@ -1,10 +1,10 @@
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import type { Metadata, Route } from "next";
+import { notFound, redirect } from "next/navigation";
 
 import { RoomPage } from "@/components/site/site-pages";
 import { formatPrice } from "@/lib/lodge";
 import { sitePageData, sitePageMetadata } from "@/lib/site-page-route";
-import { roomBySlug, roomUrl } from "@/lib/site-pages";
+import { pageUrl, roomBySlug, roomUrl } from "@/lib/site-pages";
 import { jsonLd, roomStructuredData } from "@/lib/structured-data";
 
 type Props = { params: Promise<{ slug: string; room: string }> };
@@ -12,8 +12,11 @@ type Props = { params: Promise<{ slug: string; room: string }> };
 async function load(params: Props["params"]) {
   const { slug, room: roomSlug } = await params;
   const site = await sitePageData(slug, "room");
-  const room = site ? roomBySlug(site, roomSlug) : null;
-  return site && room ? { site, room } : null;
+  if (!site) return null;
+  const room = roomBySlug(site, roomSlug);
+  // A room that was renamed or removed: the Rooms page (not a 404 for an old link)
+  if (!room) redirect(pageUrl(site, "rooms") as Route);
+  return { site, room };
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

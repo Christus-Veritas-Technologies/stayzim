@@ -1,18 +1,23 @@
 import type { SitePage } from "@stayzim/sites";
-import type { Metadata } from "next";
+import type { Metadata, Route } from "next";
+import { permanentRedirect } from "next/navigation";
 
 import { getSite, type LiveSite } from "@/lib/site";
+import { siteUrl } from "@/lib/site-host";
 import { hasPage } from "@/lib/site-pages";
 
 /*
- * Shared by the pages under app/sites/[slug]/ beyond the home page: the site,
- * if it's live and its plan has the page (else the page 404s), and the
- * metadata every one of them sets.
+ * Shared by the pages under app/sites/[slug]/ beyond the home page: the site
+ * if it's live (else the page 404s), a 308 to its home page when its plan
+ * doesn't have the page, and the metadata every one of them sets.
  */
 
 export async function sitePageData(slug: string, page: SitePage): Promise<LiveSite | null> {
   const site = await getSite(slug);
-  return site?.status === "LIVE" && hasPage(site, page) ? site : null;
+  if (site?.status !== "LIVE") return null;
+  // A page the plan doesn't have (it may have had it before a cheaper plan): its home page, for good
+  if (!hasPage(site, page)) permanentRedirect(siteUrl(site) as Route);
+  return site;
 }
 
 export function sitePageMetadata(site: LiveSite | null, { title, description, url }: { title: string; description: string; url: string }): Metadata {

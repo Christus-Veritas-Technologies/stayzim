@@ -310,6 +310,18 @@ export default function BillingPage() {
     const { data } = await api<BillingOverview>("/api/lodge/billing");
     if (data) setOverview(data);
   }, []);
+
+  // /dashboard/billing?plan=pro (Upgrade buttons on Design and Analytics): that plan, ready to pay
+  const linked = useRef(false);
+  useEffect(() => {
+    if (linked.current || !overview) return;
+    linked.current = true;
+    const wanted = new URLSearchParams(window.location.search).get("plan")?.toUpperCase();
+    if (wanted && PLAN_ORDER.includes(wanted as PlanKey)) {
+      setPlan(wanted as PlanKey);
+      requestAnimationFrame(() => payRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    }
+  }, [overview]);
   useEffect(() => {
     void load();
   }, [load]);

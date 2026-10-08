@@ -5,14 +5,14 @@
  * and lists every lodge with what it owes.
  *
  *   pnpm --filter server mark-paid --slug mistvalley [--months 1] [--plan growth] [--amount 40] \
- *     [--channel ecocash|innbucks|cash|bank] [--note "EcoCash ref MP2610.1234"]
+ *     [--channel ecocash|innbucks|cash|bank] [--note "EcoCash ref MP2610.1234"] [--template starter-veranda]
  *   pnpm --filter server mark-paid --slug mistvalley --status overdue|suspended|active
  *   pnpm --filter server mark-paid --list
  */
 import { parseArgs } from "node:util";
 
 import prisma from "@stayzim/db";
-import { formatCents, formatHarareDate, formatHarareDateTime, isPlan, planPriceCents, PLANS_LABEL } from "@stayzim/sites";
+import { DEFAULT_TEMPLATE, findTemplate, formatCents, formatHarareDate, formatHarareDateTime, isPlan, planPriceCents, PLANS_LABEL, templateAllowed } from "@stayzim/sites";
 
 import { recordManualPayment } from "../src/lib/billing";
 
@@ -24,6 +24,7 @@ const { values } = parseArgs({
     amount: { type: "string" },
     channel: { type: "string", default: "ecocash" },
     note: { type: "string" },
+    template: { type: "string" },
     status: { type: "string" },
     list: { type: "boolean", default: false },
   },
@@ -72,6 +73,9 @@ const months = Number(values.months);
 if (!Number.isInteger(months) || months < 1 || months > 24) fail("--months is a whole number from 1 to 24.");
 const plan = values.plan ? values.plan.toUpperCase() : lodge.plan;
 if (!isPlan(plan)) fail("--plan is starter, growth or pro.");
+// A plan without the lodge's design: --template picks one of its designs, else the plan's default shows
+const design = values.template ? findTemplate(values.template) : undefined;
+if (values.template && (!design || !templateAllowed(design, plan))) fail(`--template is one of ${PLANS_LABEL[plan]}'s designs (or a cheaper plan's), e.g. ${DEFAULT_TEMPLATE[plan]}.`);
 const amountCents = values.amount ? Math.round(Number(values.amount) * 100) : planPriceCents(plan, months);
 if (!Number.isFinite(amountCents) || amountCents <= 0) fail("--amount is in dollars, e.g. --amount 40.");
 
@@ -82,6 +86,7 @@ const payment = await recordManualPayment({
   amountCents,
   channel: values.channel.trim().toLowerCase(),
   note: values.note?.trim() || "Recorded with mark-paid",
+  template: design?.key,
 });
 const after = await prisma.lodge.findUniqueOrThrow({ where: { id: lodge.id }, select: { paidUntil: true } });
 console.log(`\nRecorded ${formatCents(amountCents)} for ${lodge.name}: ${PLANS_LABEL[plan]}, ${months} ${months === 1 ? "month" : "months"}.`);
