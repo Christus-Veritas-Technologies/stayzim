@@ -53,7 +53,7 @@ Cloudflare's free Universal SSL covers the apex and one level of wildcard, so vi
 Cloudflare also sends:
 
 - `CF-Connecting-IP`, the visitor's real IP, used for rate limits. Keep `CLIENT_IP_HEADER=cf-connecting-ip`.
-- `CF-IPCountry`, which gives owners visitor countries.
+- `CF-IPCountry`, which gives owners visitor countries. Check that Network → IP Geolocation is on (it is by default).
 
 > Alternative without Cloudflare's proxy: grey-cloud the records and let Coolify's Traefik get a Let's Encrypt wildcard with a DNS-01 challenge (Coolify → Servers → Proxy). Then set `CLIENT_IP_HEADER=x-forwarded-for`, and owners won't see countries.
 
@@ -140,6 +140,10 @@ Install Coolify on the VPS (Ubuntu 24.04, 2 vCPU, 4 GB RAM is plenty to start). 
    - Required: `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET` (`openssl rand -base64 32`), the `R2_*` settings, and `NEXT_PUBLIC_WHATSAPP_NUMBER`.
    - For online payments: `PAYNOW_INTEGRATION_ID` and `PAYNOW_INTEGRATION_KEY` (above). SMTP matters more now: welcome emails, invoices and receipts go through it.
    - SMTP and Google are needed for reset emails and Google sign-in.
+   - `COOKIE_DOMAIN=.stayzim.co.zw`: besides sign-in across subdomains, it's how an owner's own visits to their site are left out of their numbers.
+   - Optional:
+     - `DOMAIN_STILL_FREE=false` ends the free `.co.zw` offer in the dashboard (change the pricing copy with it, see [seo.md](seo.md#next)).
+     - `INDEXNOW_KEY`, the same value on `server` and `web`, sends sites that go live to Bing and others ([seo.md](seo.md)).
    - **Email senders** (Spacemail, `mail.spacemail.com`, port 465):
      - `SMTP_*` is `no-reply@stayzim.co.zw`: password resets, welcome emails, booking notices.
      - `BILLING_SMTP_USER`, `BILLING_SMTP_PASS` and `BILLING_SMTP_FROM` are `billing@stayzim.co.zw`: invoices, payment reminders, receipts, "demo ended" and "site offline". Host and port default to `SMTP_HOST` and `SMTP_PORT`. Without them, these go from no-reply too.
@@ -223,8 +227,13 @@ Try a restore now and then. One was tested here on the dev database, and the row
 **Who gets one:**
 
 - A lodge can have its own domain, like `mistvalleylodge.co.zw`, on any plan, once it has paid. Demos can't: `set-domain` refuses them, and a demo's domain is never served.
-- Growth and Pro include a free `.co.zw`. On Starter, the owner brings a domain they already have.
-- Owners ask from the Lodge info screen ("Ask for it" or "Ask us"), which opens a change request.
+- Every paid plan includes a free `.co.zw` while `DOMAIN_STILL_FREE` isn't `false` (unset means free). Owners can also connect a domain they already have.
+- **Claiming the free one:**
+  - A paid owner taps **Claim your free domain** on the dashboard, or under the web address on Lodge info, and picks the name.
+  - They're told it's ready within 72 hours and that we'll WhatsApp and email them.
+  - They get an email, and `hello@` gets one with the lodge, the owner's WhatsApp and the exact `set-domain` command (`domain_claim` table).
+  - Once `set-domain` has run, the hourly job marks the claim ready and emails the owner that the domain is live. WhatsApp them too.
+- **A domain they have:** they ask from Lodge info ("Ask us"), which opens a change request.
 
 **What it changes:** the site answers on the domain and on `{slug}.stayzim.co.zw`. Its pages tell search engines the domain is the main address, and the dashboard shows the domain as the lodge's address.
 

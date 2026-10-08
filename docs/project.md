@@ -61,7 +61,7 @@ StayZim gives Zimbabwean lodges, guesthouses, cottages and Airbnbs their own web
 - **Missed payment:** Active → Overdue when the paid time ends (the site stays up 3 more days) → Suspended (the site shows "temporarily unavailable"; the dashboard still works so they can pay) → Active once paid. This all happens automatically.
 - **Paying for a year:** 12 months cost 10% less on Starter ($216), 17% on Growth ($398) and 30% on Pro ($630), rounded down to whole dollars (`ANNUAL_DISCOUNT`).
 - **Changing plan:** the paid time left moves to the new plan at the two monthly prices (12 days of Growth become 6 of Pro), then the months paid for start.
-- **Own domains** on every plan, once paid. Growth and Pro include a free `.co.zw`.
+- **Own domains** on every plan, once paid. Every paid plan includes a free `.co.zw`, claimed from the dashboard, while `DOMAIN_STILL_FREE` isn't `false`.
 - **Bookings:** Growth and Pro. Guests book on the site first (WhatsApp second); owners confirm, or turn on Confirm bookings automatically, and decline, cancel, add bookings and close dates ([docs/cms/bookings.md](cms/bookings.md)). Starter keeps Book on WhatsApp.
 - **The CMS** (room details, hide, duplicate, guest info, FAQ, links) is for every plan ([docs/cms/](cms/README.md)).
 
@@ -113,7 +113,7 @@ The brief is a few weeks old. Where it disagrees with what's built, the build wi
 | Landing "Log in" sends people to WhatsApp | The owner login exists now (`/login`). |
 | A 14-day Growth trial, with StayZim building every site | No trial. Owners sign up and make their own site as a free 2-day demo on the plan they pick; StayZim still helps on WhatsApp. |
 | Payments recorded by hand only | Paynow online (phone prompt or card), invoices and receipts by email, automatic overdue and suspension; `mark-paid` for payments made another way. |
-| Custom domains later, plan undecided | Any plan once paid; Growth and Pro include a free .co.zw. Cloudflare for SaaS while it's free, Coolify otherwise. |
+| Custom domains later, plan undecided | Any plan once paid, each with a free .co.zw (claimed from the dashboard, ready within 72 hours) while `DOMAIN_STILL_FREE` isn't `false`. Cloudflare for SaaS while it's free, Coolify otherwise. |
 
 ## Open questions
 

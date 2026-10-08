@@ -130,10 +130,18 @@ Scaffold from the starter template. Not part of the MVP yet.
 - **Addresses:** every lodge lives at `{slug}.SITES_DOMAIN`: `stayzim.co.zw` in production, `localhost:9999` locally (Chrome resolves `mistvalley.localhost:9999`). The server's `SITES_DOMAIN` and the web app's `NEXT_PUBLIC_SITES_DOMAIN` must match.
 - **Reserved subdomains** (`www`, `app`, `api`, `admin`, `media`, …) are listed once, in `RESERVED_SLUGS` (`packages/sites/src/slugs.ts`), and used by web, server and the scripts.
 - **Rendering:** `/sites/[slug]` fetches `GET /api/sites/:slug` on every request (owners' edits show straight away) and renders `<SiteTemplate>`. Suspended lodges get `SuspendedSite`; unknown ones `UnknownSite`.
-- **Tracking:** `components/site/tracking.tsx` posts page views and Book on WhatsApp taps, with a random visitor id kept in `localStorage`. The server adds device and browser (user agent), IP and country (Cloudflare's `CF-IPCountry`, so countries are empty until the sites sit behind Cloudflare). Owners see visits on Growth and Pro.
+- **Tracking:** `components/site/tracking.tsx` posts a page view each time a guest opens a page (client-side navigation and going back included) and each Book on WhatsApp tap, with a random visitor id kept in `localStorage`.
+  - The server adds device and browser (user agent), IP and country (Cloudflare's `CF-IPCountry`, so countries are empty until the sites sit behind Cloudflare).
+  - Search engines and page checkers that run JavaScript (Googlebot, Bingbot, Lighthouse) are dropped (`isBot`, `lib/sites.ts`). So are the owner's and the team's own visits: by session cookie on stayzim.co.zw, which needs `COOKIE_DOMAIN`, and by owner key on an own domain.
+  - In the stats (`routes/stats.ts`), a **visit** is one guest's page views with no 30-minute gap (`visitStarts`, `lib/visits.ts`), shown beside the guests (different visitor ids) and the pages opened. Owners see them on Growth and Pro.
 - **Owner key:** on a lodge's own domain StayZim's cookie isn't sent, so the dashboard's View site links (`ownerSiteUrl`) end in `#stayzim-owner={key}`, an HMAC of the lodge id (`apps/server/src/lib/owner-key.ts`). The site keeps it in `localStorage`, takes it off the address and sends it with each event; the API skips events that carry the lodge's key. Copied and shared links never carry it.
 - **Footer:** "Made with StayZim" and a Privacy link back to the main site (`MAIN_URL`).
 - **Pages per plan:** Starter is one page; Growth and Pro add pages under `app/sites/[slug]/` (`LiveSite.pages`, from `PLAN_PAGES`), in the design's look through `PageShell`. See [cms/pages.md](cms/pages.md).
+- **Search and sharing:** share cards from `/og/{slug}` and `/og`, structured data, sitemaps, the `/lodges` directory (`GET /api/sites`), `www` redirects and IndexNow. See [seo.md](seo.md).
+- **Previews in the dashboard** (`components/preview/`):
+  - `SitePreview` draws the real page in an iframe at the device's own size, scaled to fit: `IphoneFrame` (a magenta iPhone 17 Pro Max) or `BrowserFrame`. It's double-buffered, with Try again and full screen.
+  - `/preview/draft/[slug]/[template]?draft=…` shows unsaved edits over the saved site (`applyDraft`, `packages/sites/src/content/draft.ts`).
+  - `PreviewSheet` and `PreviewAside` wrap it for the forms and the design pickers.
 - **Copy and examples:** the API sends generated copy with every site (`packages/sites/src/copy/`, [cms/copy.md](cms/copy.md)), and on a demo fills empty sections with example content (`packages/sites/src/samples/`, [cms/examples.md](cms/examples.md)).
 
 ### Templates
@@ -233,7 +241,16 @@ The `resolve-request` script does the same from a terminal (`pnpm --filter @stay
   2. **Status:** `ACTIVE` → `OVERDUE` → `SUSPENDED`, with the "site offline" email, plus the "demo ended" email.
   3. **Missed callbacks:** it re-checks Paynow payments still pending.
   4. **Clean-up:** it deletes demos never paid for 30 days after they ended (photos, lodge, account).
-- **Documents:** `/dashboard/billing/[number]` shows an invoice or receipt, laid out to print or save as PDF (no PDF library). The issuer details (StayZim Platform Inc, stayzim.co.zw, hello@stayzim.co.zw, +263 77 510 1506; no street address yet) are hard-coded in `apps/server/src/lib/business.ts`. They're sent with each document and printed in invoice and receipt emails.
+- **Moving to a cheaper plan:**
+  - The pay card lists what changes (`lib/plan-changes.ts`).
+  - When the site's design doesn't come with the new plan, the owner picks one of its designs first. It goes with the payment (`Payment.template`) and goes live when it's paid.
+  - The API refuses a payment that would leave a site on a design its plan lacks.
+- **Free domains:**
+  - `POST /api/lodge/domain-claim` stores a `DomainClaim` and emails the owner and `hello@`.
+  - The job marks a claim ready once `set-domain` has given the lodge its domain, and emails the owner.
+  - `DOMAIN_STILL_FREE` and `canClaimDomain` (`packages/sites/src/plans.ts`) decide who sees the offer.
+- **The demo countdown** to the second is on the dashboard home (`DemoCountdownCard`), on Billing, and in the top bar and phone strip of every page (`components/dashboard/demo-countdown.tsx`).
+- **Documents:** `/dashboard/billing/[number]` shows an invoice or receipt in StayZim's brand (brand band, PAID or DUE stamp, plan-change line, A4 print CSS), laid out to print or save as PDF (no PDF library). The issuer details (StayZim Platform Inc, stayzim.co.zw, hello@stayzim.co.zw, +263 77 510 1506; no street address yet) are hard-coded in `apps/server/src/lib/business.ts`. They're sent with each document and printed in invoice and receipt emails.
 
 ## Meta Pixel (ads)
 
@@ -260,7 +277,7 @@ The `resolve-request` script does the same from a terminal (`pnpm --filter @stay
 | `@stayzim/db` | Prisma schema, split by area in `prisma/schema/`, the shared client (`import prisma from "@stayzim/db"`), and the `create-lodge` and `resolve-request` scripts |
 | `@stayzim/auth` | better-auth config (`auth`), `MIN_PASSWORD_LENGTH`, `googleSignInEnabled`, and `scripts/create-owner.ts` |
 | `@stayzim/sites` | The template catalog and its rules (`templateAllowed`, `effectiveTemplate`, `DEFAULT_TEMPLATE`, `HERO_LIMITS`, `heroText`), plan prices and inclusions (`plans.ts`), slug rules (`slugs.ts`), and billing dates in Zimbabwe time (`billing-dates.ts`). Shared by server, web and scripts. And the CMS content contract (`content/`: limits, amenities, guest-info rules, dates and availability, types; zod schemas at `@stayzim/sites/schemas`) |
-| `@stayzim/mail` | `sendEmail()` over SMTP with Nodemailer, `verifyMailConnection()`, and templates: account emails in `templates.ts`; welcome, invoice, receipt, demo ended and site offline in `billing.ts`. Two senders: the main one (`SMTP_*`, no-reply@) and billing@ (`BILLING_SMTP_*`) for emails marked `sender: "billing"`; every email replies to hello@ unless it sets its own `replyTo` |
+| `@stayzim/mail` | `sendEmail()` over SMTP with Nodemailer, `verifyMailConnection()`, and templates on one branded layout (`layout.ts`: a 480px card, near edge to edge on phones, the StayZim mark hosted at `/email/stayzim-mark.png`, the app's fonts where mail apps load them, and shared parts: heading, button, summary, note). Account emails are in `templates.ts`; welcome, invoice, receipt, demo ended and site offline in `billing.ts`; booking emails to owners and guests in `bookings.ts`; free-domain emails in `domains.ts`. `bun scripts/preview-emails.ts <dir>` writes each to HTML. Two senders: the main one (`SMTP_*`, no-reply@) and billing@ (`BILLING_SMTP_*`) for emails marked `sender: "billing"`; every email replies to hello@ unless it sets its own `replyTo` |
 | `@stayzim/env` | Validated env per app: `server`, `web`, `outreach`, `native` |
 | `@stayzim/ui` | StayZim design tokens and shadcn-style components on Base UI (buttons, fields, dialogs, sheets, tabs, menus, …) |
 | `@stayzim/config` | Base `tsconfig` |

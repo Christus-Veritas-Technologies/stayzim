@@ -398,6 +398,26 @@ Built (web):
 
 Newest first. One line per piece of work that landed on `main`.
 
+### 8 October 2026 (later)
+
+The user's second list, all on `main`:
+
+- **Paynow only:** the merchant-code path is gone; EcoCash, InnBucks, OneMoney and cards all go through Paynow.
+- **Field help:** "?" beside fields that need it (`InfoTip` on a Popover: hover on desktop, tap on phones; `Field help`).
+- **One preview** ([architecture.md](architecture.md#lodge-sites)): the real page in a magenta iPhone 17 Pro Max or a browser frame, with unsaved edits (`/preview/draft`), on Lodge info, Design, Guest info and `/create`; the hand-drawn previews are gone.
+- **Cheaper plans:** what changes is listed, and a design for the new plan is picked before paying; out-of-plan pages 308 home.
+- **Emails** in StayZim's brand on one narrow layout, and a "request sent" email to guests from no-reply.
+- **Receipts and invoices** redesigned, with a plan-change line and an A4 print layout.
+- **Demo countdown** to the second on the dashboard, Billing and every page's top bar.
+- **Claim your free domain** (any paid plan, `DOMAIN_STILL_FREE`): a sheet, emails to the owner and the team, and a "live" email from the job after `set-domain`.
+- **Tracking:**
+  - Visits are visits, one guest's pages with no 30-minute gap, shown with the guests and the pages opened.
+  - Each navigation counts.
+  - Bots are dropped.
+  - Owners' own visits stay out on purpose: to check, open the site in a private window or on another phone.
+- **SEO** ([seo.md](seo.md)): share cards for every lodge and for StayZim, structured data, the `/lodges` directory, the main sitemap with every paid lodge, `www` redirects and IndexNow.
+- **Checked:** types and unit tests everywhere, real-browser runs, and screenshots at 360 and 1280 of each new screen, email and card.
+
 ### 8 October 2026
 
 Value first: a new owner sees a full site in their chosen design, written for their lodge, before adding anything.
