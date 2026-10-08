@@ -3,10 +3,9 @@ import { normalizeDomain } from "@stayzim/sites";
 import { headers } from "next/headers";
 
 import { slugForCustomDomain } from "@/lib/custom-domains";
-import { journalUrl } from "@/components/site/journal";
 import { getJournal, getSite } from "@/lib/site";
 import { lodgeSlugFromHost, MAIN_URL, siteUrl } from "@/lib/site-host";
-import { hasPage, pageUrl, roomUrl } from "@/lib/site-pages";
+import { hasPage, journalUrl, pageUrl, roomUrl } from "@/lib/site-pages";
 
 /** A lodge site lists its plan's pages (packages/sites content/pages.ts); StayZim's own domain has the landing page and the legal pages. */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

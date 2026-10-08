@@ -9,11 +9,10 @@ import { SampleBadge } from "@/components/site/sample-badge";
 import { BookLink } from "@/components/site/tracking";
 import type { LiveSite } from "@/lib/site";
 import { siteUrl } from "@/lib/site-host";
+import { journalUrl } from "@/lib/site-pages";
 
-/** The journal's address on the lodge's own site: /journal, or /journal/{post}. */
-export function journalUrl(site: Pick<LiveSite, "slug" | "customDomain">, post?: string) {
-  return `${siteUrl(site)}/journal${post ? `/${post}` : ""}`;
-}
+// In lib, so route handlers (the sitemap) can use it without the site's fonts
+export { journalUrl };
 
 /** The journal's type and colours: the design's page look (page-shell.tsx). */
 export function journalLook(template: string) {

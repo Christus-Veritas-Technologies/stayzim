@@ -25,6 +25,11 @@ export function pageOr(site: Linkable, page: Exclude<SitePage, "home" | "room">,
   return hasPage(site, page) ? pageUrl(site, page) : hash;
 }
 
+/** The journal's address on the lodge's own site: /journal, or /journal/{post}. */
+export function journalUrl(site: Pick<LiveSite, "slug" | "customDomain">, post?: string) {
+  return `${siteUrl(site)}/journal${post ? `/${post}` : ""}`;
+}
+
 /** A room's page: /rooms/{slug} (Growth and Pro). */
 export function roomUrl(site: Pick<LiveSite, "slug" | "customDomain" | "rooms">, roomId: string) {
   const slug = roomSlugs(site.rooms).get(roomId);
