@@ -185,7 +185,7 @@ export function RondavelTemplate({ site }: { site: LiveSite }) {
                   return (
                     <li key={room.id} className="flex flex-col">
                       <div className="relative text-white">
-                        <RoomPhotos photos={room.photos} name={room.name} theme={site.themeColor} className="aspect-[4/5]" sizes="(min-width: 1024px) 350px, (min-width: 640px) 50vw, 100vw" />
+                        <RoomPhotos photos={room.photos} name={room.name} theme={site.themeColor} sample={room.sample} sampleAt="left" className="aspect-[4/5]" sizes="(min-width: 1024px) 350px, (min-width: 640px) 50vw, 100vw" />
                         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,transparent_45%,rgba(20,16,12,0.85))]" />
                         <span className="pointer-events-none absolute top-5 right-4 text-[11px] font-semibold tracking-[0.3em] uppercase [writing-mode:vertical-rl]">
                           Sleeps {room.sleeps}

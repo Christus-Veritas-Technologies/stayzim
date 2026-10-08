@@ -8,6 +8,7 @@ import { Carousel } from "@/components/site/carousel";
 import { ClampedText } from "@/components/site/clamped-text";
 import { RoomPhotos, SiteGallery } from "@/components/site/gallery";
 import { journalUrl } from "@/components/site/journal";
+import { SampleBadge } from "@/components/site/sample-badge";
 import { Parallax } from "@/components/site/parallax";
 import {
   amenityLine,
@@ -232,7 +233,7 @@ export function CanopyTemplate({ site }: { site: LiveSite }) {
                 const roomBook = bookingUrl(site, room.name);
                 return (
                   <article key={room.id} className="flex h-full flex-col gap-3">
-                    <RoomPhotos photos={room.photos} name={room.name} theme={site.themeColor} className="aspect-[4/5]" sizes="(min-width: 1024px) 280px, (min-width: 640px) 50vw, 82vw" />
+                    <RoomPhotos photos={room.photos} name={room.name} theme={site.themeColor} sample={room.sample} className="aspect-[4/5]" sizes="(min-width: 1024px) 280px, (min-width: 640px) 50vw, 82vw" />
                     <h3 className={cn(SERIF, "mt-1 text-[30px] leading-8")}>{room.name}</h3>
                     <p className="text-[14px] text-[#6D6457]">{[`Sleeps ${room.sleeps}`, room.beds, amenityLine(room.amenities, 3)].filter(Boolean).join(" · ")}</p>
                     {room.description ? <ClampedText text={room.description} className="text-[14px] leading-6 text-[#6D6457]" /> : null}
@@ -265,6 +266,7 @@ export function CanopyTemplate({ site }: { site: LiveSite }) {
                 <QuoteRotator
                   quotes={site.reviews.quotes}
                   source={site.reviews.source}
+                  sample={site.samples.reviews}
                   marks={false}
                   quoteClassName="text-[22px] leading-[34px] sm:text-[28px] sm:leading-[42px]"
                   byClassName="text-[14.5px] text-[#6D6457]"
@@ -303,7 +305,10 @@ export function CanopyTemplate({ site }: { site: LiveSite }) {
                   <li key={post.slug}>
                     <Reveal delay={position * 0.08}>
                       <a href={journalUrl(site, post.slug)} className="group flex flex-col gap-3">
-                        <Photo photo={post.cover ?? undefined} alt="" sizes="(min-width: 1024px) 380px, (min-width: 640px) 50vw, 100vw" className="aspect-[4/3] w-full" />
+                        <div className="relative">
+                          <Photo photo={post.cover ?? undefined} alt="" sizes="(min-width: 1024px) 380px, (min-width: 640px) 50vw, 100vw" className="aspect-[4/3] w-full" />
+                          {site.samples.journal ? <SampleBadge className="absolute top-3 left-3" /> : null}
+                        </div>
                         <span className="text-[13px] text-[#6D6457]">{formatPostDate(post.publishedOn)}</span>
                         <span className={cn(SERIF, "text-[30px] leading-[34px] group-hover:text-[var(--theme)]")}>{post.title}</span>
                       </a>

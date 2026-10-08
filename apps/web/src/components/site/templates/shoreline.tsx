@@ -193,7 +193,7 @@ export function ShorelineTemplate({ site }: { site: LiveSite }) {
                   return (
                     <article key={room.id} className="flex h-full flex-col gap-4 rounded-[28px] bg-white p-2.5 pb-5 shadow-[0_18px_40px_-28px_rgba(16,32,42,0.4)]">
                       <div className="relative">
-                        <RoomPhotos photos={room.photos} name={room.name} theme={site.themeColor} className="aspect-[4/3] rounded-[22px]" />
+                        <RoomPhotos photos={room.photos} name={room.name} theme={site.themeColor} sample={room.sample} className="aspect-[4/3] rounded-[22px]" />
                         <span className="pointer-events-none absolute top-3 left-3 rounded-full bg-white px-3 py-1.5 text-[15px] shadow-sm">
                           <strong className="font-bold text-[var(--theme)]">{formatPrice(room.price)}</strong> <span className="text-[#5F6B72]">/ night</span>
                         </span>

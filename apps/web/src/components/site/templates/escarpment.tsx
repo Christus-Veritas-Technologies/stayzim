@@ -7,6 +7,7 @@ import { Reveal } from "@/components/motion";
 import { ClampedText } from "@/components/site/clamped-text";
 import { EnquiryBar } from "@/components/site/enquiry-bar";
 import { RoomPhotos, SiteGallery } from "@/components/site/gallery";
+import { SampleBadge } from "@/components/site/sample-badge";
 import { journalUrl } from "@/components/site/journal";
 import { Parallax } from "@/components/site/parallax";
 import {
@@ -195,6 +196,7 @@ export function EscarpmentTemplate({ site }: { site: LiveSite }) {
                   photos={room.photos}
                   name={room.name}
                   theme={site.themeColor}
+                  sample={room.sample}
                   className={cn("aspect-[4/3] rounded-[14px]", position % 2 === 1 && "lg:order-2")}
                   sizes="(min-width: 1024px) 640px, 100vw"
                 />
@@ -232,7 +234,10 @@ export function EscarpmentTemplate({ site }: { site: LiveSite }) {
                 return (
                   <li key={room.id}>
                     <Reveal delay={position * 0.06} className="flex items-center gap-4 rounded-[14px] bg-[#FAF6EE] p-3.5">
-                      <Photo photo={room.photos[0]} alt={room.name} sizes="150px" className="aspect-[4/3] w-[120px] shrink-0 rounded-[10px] sm:w-[150px]" />
+                      <div className="relative shrink-0">
+                        <Photo photo={room.photos[0]} alt={room.name} sizes="150px" className="aspect-[4/3] w-[120px] rounded-[10px] sm:w-[150px]" />
+                        {room.sample ? <SampleBadge className="absolute top-2 left-2" /> : null}
+                      </div>
                       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                         <Eyebrow className="text-[11px] text-[#6B6458]">Room {String(position + 3).padStart(2, "0")}</Eyebrow>
                         <h3 className={cn(SERIF, "truncate text-[26px] leading-8")}>{room.name}</h3>
@@ -276,7 +281,7 @@ export function EscarpmentTemplate({ site }: { site: LiveSite }) {
           <div className="mx-auto grid max-w-[1240px] gap-12 lg:grid-cols-[minmax(0,0.6fr)_minmax(0,1.4fr)]">
             <div className="flex flex-col gap-2">
               <Eyebrow className="text-[var(--gold)]">Guests</Eyebrow>
-              <span className="text-[15px] text-white/65">From our {site.reviews.source} reviews</span>
+              {site.reviews.source ? <span className="text-[15px] text-white/65">From our {site.reviews.source} reviews</span> : null}
               {site.reviews.score !== null ? (
                 <div className="mt-8 flex flex-col">
                   <span className={cn(SERIF, "text-[88px] leading-[88px] text-[var(--gold)]")}>{site.reviews.score.toFixed(1)}</span>
@@ -296,6 +301,7 @@ export function EscarpmentTemplate({ site }: { site: LiveSite }) {
             {site.reviews.quotes.length > 0 ? (
               <QuoteRotator
                 quotes={site.reviews.quotes}
+                sample={site.samples.reviews}
                 quoteClassName={cn(SERIF, "text-[30px] leading-[38px] italic sm:text-[42px] sm:leading-[52px]")}
                 byClassName="text-[15px] text-white/75"
                 buttonClassName="border-white/25 hover:bg-white/10"
@@ -324,7 +330,10 @@ export function EscarpmentTemplate({ site }: { site: LiveSite }) {
                 <li key={post.slug}>
                   <Reveal delay={position * 0.08}>
                     <a href={journalUrl(site, post.slug)} className="group flex flex-col gap-4">
-                      <Photo photo={post.cover ?? undefined} alt="" sizes="(min-width: 1024px) 380px, (min-width: 640px) 50vw, 100vw" className="aspect-[4/3] w-full rounded-[14px]" />
+                      <div className="relative">
+                        <Photo photo={post.cover ?? undefined} alt="" sizes="(min-width: 1024px) 380px, (min-width: 640px) 50vw, 100vw" className="aspect-[4/3] w-full rounded-[14px]" />
+                        {site.samples.journal ? <SampleBadge className="absolute top-3 left-3" /> : null}
+                      </div>
                       <span className="text-[13.5px] text-[#6B6458]">
                         {formatPostDate(post.publishedOn)} · {post.readMinutes} min read
                       </span>

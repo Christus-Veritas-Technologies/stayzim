@@ -9,6 +9,7 @@ import {
   AlertDialogIcon,
   AlertDialogTitle,
 } from "@stayzim/ui/components/alert-dialog";
+import { sampleRoomCount } from "@stayzim/sites";
 import { Badge } from "@stayzim/ui/components/badge";
 import { Button } from "@stayzim/ui/components/button";
 import { Card } from "@stayzim/ui/components/card";
@@ -29,6 +30,7 @@ import { ArrowDown, ArrowUp, BedDouble, CircleCheck, Copy, Eye, EyeOff, GripVert
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { ExampleNote } from "@/components/dashboard/example-note";
 import { useLodge } from "@/components/dashboard/lodge-provider";
 import { Page, PageHeader, PageSection } from "@/components/dashboard/page";
 import { AmenityIcons, RoomStatus, RoomThumb } from "@/components/dashboard/room-bits";
@@ -335,6 +337,14 @@ export default function RoomsPage() {
           </Button>
         }
       />
+
+      {lodge.status === "DEMO" && !lodge.rooms.some((room) => room.visible) ? (
+        <PageSection>
+          <ExampleNote>
+            Your site shows {sampleRoomCount(lodge.roomsHint)} example rooms until you add yours. They're marked Example, priced around what you told us, and guests can't book them.
+          </ExampleNote>
+        </PageSection>
+      ) : null}
 
       <PageSection>
         <Card className="overflow-hidden">

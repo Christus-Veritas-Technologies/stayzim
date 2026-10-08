@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
 
 import { BookLabel, bookTone, MadeWith, Photo, siteBasics, WhatsAppFab } from "@/components/site/parts";
+import { SampleBadge } from "@/components/site/sample-badge";
 import { cormorantGaramond, instrumentSerif, tenorSans } from "@/components/site/template-fonts";
 import { BookLink } from "@/components/site/tracking";
 import type { LiveSite } from "@/lib/site";
@@ -104,7 +105,10 @@ export function JournalList({ site, posts }: { site: LiveSite; posts: SitePost[]
           {posts.map((post) => (
             <li key={post.slug}>
               <a href={journalUrl(site, post.slug)} className="group flex flex-col gap-4">
-                <Photo photo={post.cover ?? undefined} alt="" sizes="(min-width: 1024px) 340px, (min-width: 640px) 50vw, 100vw" className="aspect-[4/3] w-full rounded-[4px]" />
+                <div className="relative">
+                  <Photo photo={post.cover ?? undefined} alt="" sizes="(min-width: 1024px) 340px, (min-width: 640px) 50vw, 100vw" className="aspect-[4/3] w-full rounded-[4px]" />
+                  {site.samples.journal ? <SampleBadge className="absolute top-3 left-3" /> : null}
+                </div>
                 <span className={cn("text-[13px]", look.muted)}>{postMeta(post)}</span>
                 <span className={cn(look.display, "text-[26px] leading-8 group-hover:text-[var(--theme)]")}>{post.title}</span>
                 {post.excerpt ? <span className={cn("text-[15px] leading-6", look.muted)}>{post.excerpt}</span> : null}
@@ -129,6 +133,7 @@ export function JournalPost({ site, post }: { site: LiveSite; post: SitePostFull
           All posts
         </a>
         <header className="flex flex-col gap-4">
+          {site.samples.journal ? <SampleBadge label="Example post" /> : null}
           <span className={cn("text-[13.5px]", look.muted)}>{postMeta(post)}</span>
           <h1 className={cn(look.display, "text-[40px] leading-[46px] text-balance sm:text-[56px] sm:leading-[62px]")}>{post.title}</h1>
           {post.excerpt ? <p className={cn("text-[19px] leading-8", look.muted)}>{post.excerpt}</p> : null}

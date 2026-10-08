@@ -3,6 +3,7 @@ import { ArrowUpRight, CalendarDays, Check, ChevronDown, LogIn, LogOut, MapPin }
 import type { ReactNode } from "react";
 
 import { WhatsAppIcon } from "@/components/landing/brand";
+import { SampleBadge } from "@/components/site/sample-badge";
 import { SocialIcon } from "@/components/site/social-icons";
 import { BookLink } from "@/components/site/tracking";
 import { AMENITIES, formatPhone, lodgePlace } from "@/lib/lodge";
@@ -165,7 +166,8 @@ export function StayDetails({
     site.checkOutBy ? { icon: <LogOut className="size-4" />, label: "Check-out", value: `By ${site.checkOutBy}` } : null,
   ].filter((entry) => entry !== null);
   return (
-    <div className={cn("grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] md:gap-4", className)}>
+    <div className={cn("relative grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] md:gap-4", className)}>
+      {site.samples.guestInfo ? <SampleBadge label="Example details" className="md:col-span-full" /> : null}
       {times.length > 0 ? (
         <div className="grid grid-cols-2 gap-3 self-start">
           {times.map((time) => (
@@ -214,6 +216,7 @@ export function Questions({ site, tone = "light", radius = "rounded-2xl", classN
   if (site.faq.length === 0) return null;
   return (
     <div className={cn("flex flex-col gap-2.5", className)}>
+      {site.samples.guestInfo ? <SampleBadge label="Example questions" /> : null}
       {site.faq.map((entry, index) => (
         <details key={entry.q} open={index === 0} className={cn("group px-5 py-4", CARD[tone], radius)}>
           <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold [&::-webkit-details-marker]:hidden">

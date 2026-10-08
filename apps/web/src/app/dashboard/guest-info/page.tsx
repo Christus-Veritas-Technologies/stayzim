@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import { FormSection, type SectionState } from "@/components/dashboard/form-section";
 import { GuestInfoPreview } from "@/components/dashboard/guest-info-preview";
 import { ListEditor } from "@/components/dashboard/list-editor";
+import { ExampleNote } from "@/components/dashboard/example-note";
 import { useLodge } from "@/components/dashboard/lodge-provider";
 import { Page, PageHeader, PageSection } from "@/components/dashboard/page";
 import { RequestChangeHint } from "@/components/dashboard/request-change-hint";
@@ -207,6 +208,12 @@ export default function GuestInfoPage() {
           </motion.div>
         ) : null}
       </AnimatePresence>
+
+      {lodge.status === "DEMO" && !lodge.checkInFrom && !lodge.checkOutBy && lodge.houseRules.length === 0 && lodge.faq.length === 0 && !lodge.cancellationPolicy ? (
+        <PageSection>
+          <ExampleNote>Your site shows example check-in times, house rules and questions, marked Example, until you save your own here.</ExampleNote>
+        </PageSection>
+      ) : null}
 
       <PageSection className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <fieldset disabled={saving} className="flex min-w-0 flex-col gap-3">

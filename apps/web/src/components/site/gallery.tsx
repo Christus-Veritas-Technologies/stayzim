@@ -1,11 +1,13 @@
 "use client";
 
+import { isSamplePhoto } from "@stayzim/sites";
 import { Dialog, DialogContent, DialogTitle } from "@stayzim/ui/components/dialog";
 import { cn } from "@stayzim/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { SampleBadge } from "@/components/site/sample-badge";
 import { PHOTO_FALLBACK } from "@/lib/site-content";
 
 type GalleryPhoto = { url: string; srcSet?: string | null; width: number; height: number; caption: string };
@@ -124,6 +126,7 @@ export function SiteGallery({
                   +{photos.length - shown.length} photos
                 </span>
               ) : null}
+              {isSamplePhoto(photo.url) ? <SampleBadge className={cn("absolute", layout === "ovals" ? "top-[12%] left-1/2 -translate-x-1/2" : "top-2.5 left-2.5")} /> : null}
               {photo.caption && layout !== "ovals" ? (
                 <span
                   className={cn(
@@ -194,10 +197,16 @@ export function RoomPhotos({
   theme,
   className = "aspect-[4/3]",
   sizes = "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, calc(100vw - 32px)",
+  sample = false,
+  sampleAt = "right",
 }: {
   photos: { url: string; srcSet?: string | null; width: number; height: number }[];
   name: string;
   theme: string;
+  /** An example room on a demo site: marked Example */
+  sample?: boolean;
+  /** The corner the Example mark takes, clear of the template's own labels */
+  sampleAt?: "left" | "right";
   /** The frame's shape (and corners); 4:3 by default */
   className?: string;
   sizes?: string;
@@ -205,8 +214,9 @@ export function RoomPhotos({
   const [index, setIndex] = useState(0);
   // Photos further along load only as the guest swipes towards them (data is precious)
   const [reached, setReached] = useState(0);
+  const badge = sample ? <SampleBadge className={cn("absolute top-3", sampleAt === "left" ? "left-3" : "right-3")} /> : null;
   if (photos.length === 0) {
-    return <div className={cn(PHOTO_FALLBACK, className)} aria-hidden="true" />;
+    return <div className={cn("relative", PHOTO_FALLBACK, className)}>{badge}</div>;
   }
   return (
     <div className={cn("relative overflow-hidden", className)}>
@@ -248,6 +258,7 @@ export function RoomPhotos({
           ))}
         </span>
       ) : null}
+      {badge}
     </div>
   );
 }

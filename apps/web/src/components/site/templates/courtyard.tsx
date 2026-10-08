@@ -1,4 +1,4 @@
-import { formatPostDate } from "@stayzim/sites";
+import { formatPostDate, isSamplePhoto } from "@stayzim/sites";
 import { cn } from "@stayzim/ui/lib/utils";
 import { ArrowRight, Plus } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
@@ -9,6 +9,7 @@ import { Carousel } from "@/components/site/carousel";
 import { ClampedText } from "@/components/site/clamped-text";
 import { RoomPhotos } from "@/components/site/gallery";
 import { journalUrl } from "@/components/site/journal";
+import { SampleBadge } from "@/components/site/sample-badge";
 import { Parallax } from "@/components/site/parallax";
 import {
   AmenityIcon,
@@ -179,7 +180,7 @@ export function CourtyardTemplate({ site }: { site: LiveSite }) {
                       </span>
                     </summary>
                     <div className="grid gap-8 pb-10 sm:pl-24 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
-                      <RoomPhotos photos={room.photos} name={room.name} theme={site.themeColor} className="aspect-[4/3] rounded-[16px]" sizes="(min-width: 1024px) 540px, 100vw" />
+                      <RoomPhotos photos={room.photos} name={room.name} theme={site.themeColor} sample={room.sample} className="aspect-[4/3] rounded-[16px]" sizes="(min-width: 1024px) 540px, 100vw" />
                       <div className="flex flex-col gap-6">
                         <p className="text-[15px] text-[#CFC7BA] sm:hidden">
                           Sleeps {room.sleeps} · {formatPrice(room.price)} / night
@@ -229,8 +230,9 @@ export function CourtyardTemplate({ site }: { site: LiveSite }) {
                   header={<h2 className={cn(DISPLAY, "text-[34px] leading-10 tracking-[0.06em] sm:text-[48px] sm:leading-[52px]")}>Around the house</h2>}
                 >
                   {site.gallery.map((photo, position) => (
-                    <figure key={photo.url} className="flex flex-col gap-3">
+                    <figure key={photo.url} className="relative flex flex-col gap-3">
                       <Photo photo={photo} alt={photo.caption || `${site.name}, photo ${position + 1}`} sizes="(min-width: 1024px) 440px, 78vw" className="aspect-[5/4] w-full rounded-[16px]" />
+                      {isSamplePhoto(photo.url) ? <SampleBadge className="absolute top-3 left-3" /> : null}
                       {photo.caption ? <figcaption className="text-[14px] text-[#6B655B]">{photo.caption}</figcaption> : null}
                     </figure>
                   ))}
@@ -246,6 +248,7 @@ export function CourtyardTemplate({ site }: { site: LiveSite }) {
                 <QuoteRotator
                   quotes={site.reviews.quotes}
                   source={site.reviews.source}
+                  sample={site.samples.reviews}
                   className="items-center"
                   quoteClassName="font-[family-name:var(--font-tenor)] text-[26px] leading-[36px] tracking-[0.02em] sm:text-[34px] sm:leading-[46px]"
                   byClassName="text-[14.5px] text-[#6B655B]"
@@ -273,7 +276,10 @@ export function CourtyardTemplate({ site }: { site: LiveSite }) {
                 <li key={post.slug} className="border-b border-white/10">
                   <a href={journalUrl(site, post.slug)} className="group grid gap-2 py-6 sm:grid-cols-[180px_minmax(0,1fr)] sm:items-baseline sm:gap-6">
                     <span className="text-[12.5px] tracking-[0.2em] text-[var(--tan)] uppercase">{formatPostDate(post.publishedOn)}</span>
-                    <span className={cn(DISPLAY, "text-[21px] leading-7 tracking-[0.06em] group-hover:text-[var(--tan)] sm:text-[26px] sm:leading-8")}>{post.title}</span>
+                    <span className={cn(DISPLAY, "text-[21px] leading-7 tracking-[0.06em] group-hover:text-[var(--tan)] sm:text-[26px] sm:leading-8")}>
+                      {post.title}
+                      {site.samples.journal ? <SampleBadge className="ml-3 align-middle" /> : null}
+                    </span>
                   </a>
                 </li>
               ))}

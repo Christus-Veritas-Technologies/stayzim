@@ -9,6 +9,7 @@ import {
   AlertDialogIcon,
   AlertDialogTitle,
 } from "@stayzim/ui/components/alert-dialog";
+import { HAS_SAMPLE_PHOTOS } from "@stayzim/sites";
 import { Button } from "@stayzim/ui/components/button";
 import { Spinner } from "@stayzim/ui/components/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@stayzim/ui/components/tooltip";
@@ -18,6 +19,7 @@ import { ArrowLeft, ArrowRight, GripVertical, ImagePlus, Images, Pencil, Star, T
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { ExampleNote } from "@/components/dashboard/example-note";
 import { useLodge } from "@/components/dashboard/lodge-provider";
 import { Page, PageHeader, PageSection } from "@/components/dashboard/page";
 import { PhotoDropzone, UploadTile } from "@/components/dashboard/photo-tiles";
@@ -193,8 +195,11 @@ export default function GalleryPage() {
         }
       />
 
-      <PageSection>
+      <PageSection className="flex flex-col gap-3">
         <GoalBanner count={lodge.gallery.length} />
+        {lodge.status === "DEMO" && lodge.gallery.length < 3 && HAS_SAMPLE_PHOTOS ? (
+          <ExampleNote>Until you have 3 photos of your own, your site fills the gallery with example photos, marked Example.</ExampleNote>
+        ) : null}
       </PageSection>
 
       <PageSection>

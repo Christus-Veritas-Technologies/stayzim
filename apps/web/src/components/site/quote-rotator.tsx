@@ -6,6 +6,8 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useState } from "react";
 
+import { SampleBadge } from "@/components/site/sample-badge";
+
 /**
  * Guests' words, one at a time, with Back and Next when there are more. The
  * template styles the quote, the name line and the buttons.
@@ -18,6 +20,7 @@ export function QuoteRotator({
   buttonClassName,
   className,
   marks = true,
+  sample = false,
 }: {
   quotes: SiteReview[];
   /** "Booking.com", shown in the name line */
@@ -28,6 +31,8 @@ export function QuoteRotator({
   className?: string;
   /** Curly quotes around the words; off where the design draws its own mark */
   marks?: boolean;
+  /** Example reviews on a demo site: marked Example above the words */
+  sample?: boolean;
 }) {
   const [index, setIndex] = useState(0);
   const reduce = useReducedMotion();
@@ -38,6 +43,7 @@ export function QuoteRotator({
 
   return (
     <figure className={cn("flex flex-col gap-8", className)}>
+      {sample ? <SampleBadge label="Example reviews" className="-mb-4" /> : null}
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={index}

@@ -26,9 +26,16 @@ export function isSampleRoomId(id: string) {
   return id.startsWith(SAMPLE_ROOM_PREFIX);
 }
 
+const SAMPLE_PHOTO_PATH = "/samples/";
+
+/** True for an example stock photo (gallery tiles mix them with the owner's own while they have fewer than 3). */
+export function isSamplePhoto(url: string) {
+  return url.startsWith(SAMPLE_PHOTO_PATH);
+}
+
 /** A stock photo as a site photo, from the web app's public folder (works on every lodge host). */
 function samplePhoto(photo: SamplePhotoFile): SitePhoto {
-  const base = `/samples/${photo.file}`;
+  const base = `${SAMPLE_PHOTO_PATH}${photo.file}`;
   return {
     url: `${base}.jpg`,
     srcSet: `${base}-sm.jpg 640w, ${base}-md.jpg 1280w, ${base}.jpg 1600w`,
@@ -87,12 +94,20 @@ function friendlyPrice(value: number) {
   return Math.max(10, Math.round(value / step) * step);
 }
 
+/** How many example rooms a demo shows: the rooms the owner said they have, 3 to 4. */
+export function sampleRoomCount(roomsHint: number | null) {
+  return Math.min(4, Math.max(3, roomsHint ?? 3));
+}
+
+/** False until stock photos are added (pnpm --filter web sample-photos): examples then have no photos. */
+export const HAS_SAMPLE_PHOTOS = Object.values(SAMPLE_PHOTOS).some((group) => group.length > 0);
+
 /**
  * Three or four example rooms that look like the lodge's own: named for its
  * setting and type, priced around the price it gave, with photos.
  */
 export function sampleRooms(input: { slug: string; kind: LodgeKind | null; setting: Setting | null; roomsHint: number | null; priceHint: number | null }): SiteRoom[] {
-  const count = Math.min(4, Math.max(3, input.roomsHint ?? 3));
+  const count = sampleRoomCount(input.roomsHint);
   const names = (input.kind && KIND_ROOM_NAMES[input.kind]) || ROOM_NAMES[input.setting ?? "any"];
   const words = input.setting ? SETTING_WORDS[input.setting] : NEUTRAL_WORDS;
   const kind = input.kind ? KIND_WORDS[input.kind] : NEUTRAL_KIND;
@@ -129,7 +144,8 @@ export function sampleReviews(name: string): SiteReviews {
   return {
     score: null,
     count: null,
-    source: "Example reviews",
+    // No source: these aren't from anywhere, and templates say "via {source}"
+    source: "",
     url: null,
     quotes: [
       { quote: `We loved our stay at ${name}. Clean, quiet and a warm welcome from the moment we arrived.`, author: "Tendai M.", origin: "Harare", stayed: null, score: null },

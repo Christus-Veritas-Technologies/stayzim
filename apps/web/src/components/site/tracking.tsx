@@ -1,10 +1,14 @@
 "use client";
 
+import { buttonVariants } from "@stayzim/ui/components/button";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@stayzim/ui/components/dialog";
 import { cn } from "@stayzim/ui/lib/utils";
+import { isSampleRoomId } from "@stayzim/sites";
 import dynamic from "next/dynamic";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { env } from "@/lib/public-env";
+import { MAIN_URL } from "@/lib/site-host";
 
 /** What the booking request sheet needs: only when the site takes requests (Growth and Pro). */
 export type BookingSite = {
@@ -26,8 +30,8 @@ const BookingRequest = dynamic(() => loadSheet().then((module) => module.Booking
 /** Dates and guests the guest already chose, e.g. in an enquiry bar */
 export type BookingStart = { checkIn?: string; checkOut?: string; guests?: number };
 
-type BookingState = { site: BookingSite | null; open: (roomId?: string, start?: BookingStart) => void };
-const BookingContext = createContext<BookingState>({ site: null, open: () => {} });
+type BookingState = { site: BookingSite | null; open: (roomId?: string, start?: BookingStart) => void; example: () => void };
+const BookingContext = createContext<BookingState>({ site: null, open: () => {}, example: () => {} });
 
 const VISITOR_KEY = "stayzim.visitor";
 const OWNER_KEY = "stayzim.owner";
@@ -54,8 +58,10 @@ export function SiteTracking({
     (roomId?: string, start?: BookingStart) => setRequest((current) => ({ open: true, roomId, start, key: (current?.key ?? 0) + 1 })),
     [],
   );
+  const [example, setExample] = useState(false);
+  const showExample = useCallback(() => setExample(true), []);
   const tracking = useMemo(() => ({ slug, enabled }), [slug, enabled]);
-  const bookingState = useMemo(() => ({ site: booking, open }), [booking, open]);
+  const bookingState = useMemo(() => ({ site: booking, open, example: showExample }), [booking, open, showExample]);
   return (
     <TrackingContext.Provider value={tracking}>
       <BookingContext.Provider value={bookingState}>
@@ -73,8 +79,32 @@ export function SiteTracking({
             }}
           />
         ) : null}
+        <ExampleRoomNote open={example} onOpenChange={setExample} />
       </BookingContext.Provider>
     </TrackingContext.Provider>
+  );
+}
+
+/**
+ * What Book on an example room (a demo site's "sample-" rooms) opens instead
+ * of the chat or the booking sheet: example rooms can't be booked.
+ */
+function ExampleRoomNote({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>This is an example room</DialogTitle>
+          <DialogDescription>It shows what a room looks like on this site. Rooms the lodge adds show here instead, and guests can book them.</DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="pt-4">
+          <a href={`${MAIN_URL}/dashboard/rooms`} className={buttonVariants({ variant: "outline" })}>
+            Add your rooms
+          </a>
+          <DialogClose className={buttonVariants()}>Got it</DialogClose>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -203,13 +233,19 @@ export function BookLink({
   const { slug, enabled } = useContext(TrackingContext);
   const context = useContext(BookingContext);
   const booking = channel === "whatsapp" ? { site: null, open: context.open } : context;
+  const example = roomId !== undefined && isSampleRoomId(roomId);
   return (
     <a
       href={href}
       target="_blank"
       rel="noreferrer"
-      onPointerDown={booking.site ? () => void loadSheet() : undefined}
+      onPointerDown={booking.site && !example ? () => void loadSheet() : undefined}
       onClick={(event) => {
+        if (example) {
+          event.preventDefault();
+          context.example();
+          return;
+        }
         if (booking.site) {
           event.preventDefault();
           booking.open(roomId);

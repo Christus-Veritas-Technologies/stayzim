@@ -5,6 +5,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { Reveal } from "@/components/motion";
 import { Carousel } from "@/components/site/carousel";
 import { EnquiryBar } from "@/components/site/enquiry-bar";
+import { SampleBadge } from "@/components/site/sample-badge";
 import { SiteGallery } from "@/components/site/gallery";
 import {
   amenityLine,
@@ -127,7 +128,10 @@ export function OverlapTemplate({ site }: { site: LiveSite }) {
             </Reveal>
             {featured ? (
               <Reveal delay={0.2} className="hidden rounded-[22px] border border-white/20 bg-white/10 p-2.5 pb-4 backdrop-blur-md lg:block">
-                <Photo photo={featured.photos[0]} alt={featured.name} sizes="280px" className="aspect-[5/4] w-full rounded-[16px]" />
+                <div className="relative">
+                  <Photo photo={featured.photos[0]} alt={featured.name} sizes="280px" className="aspect-[5/4] w-full rounded-[16px]" />
+                  {featured.sample ? <SampleBadge className="absolute top-2.5 left-2.5" /> : null}
+                </div>
                 <div className="flex flex-col gap-0.5 px-2 pt-3">
                   <span className="text-[16px] font-semibold">{featured.name}</span>
                   <span className="text-[13.5px] text-white/75">
@@ -200,6 +204,7 @@ export function OverlapTemplate({ site }: { site: LiveSite }) {
                       <Photo photo={room.photos[0]} alt={room.name} sizes="(min-width: 1024px) 540px, 88vw" className="absolute inset-0 size-full" />
                       <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_35%,rgba(20,14,8,0.85))]" />
                       <span className="absolute top-4 left-4 rounded-full bg-[#22190F] px-3 py-1.5 text-[13.5px] font-semibold">From {formatPrice(room.price)} / night</span>
+                      {room.sample ? <SampleBadge className="absolute top-4 right-4" /> : null}
                       <div className="relative flex items-end justify-between gap-4 p-5 sm:p-6">
                         <div className="flex min-w-0 flex-col gap-1">
                           <h3 className={cn(DISPLAY, "text-[28px] leading-8 sm:text-[34px] sm:leading-10")}>{room.name}</h3>
