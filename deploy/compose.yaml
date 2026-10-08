@@ -1,6 +1,8 @@
 # StayZim on one server: web (landing page, dashboard, lodge sites), the API and
 # Postgres. Made for Coolify's "Docker Compose" build pack; plain `docker compose`
-# works too. Settings come from the environment (deploy/.env.example lists them).
+# works too. Settings come from the environment (deploy/.env.example lists them);
+# POSTGRES_PASSWORD and BETTER_AUTH_SECRET have no default and must be set.
+# No ${VAR:?message} here: Coolify reads the message as the value.
 # Full guide: docs/deployment.md
 #
 #   docker compose -f deploy/compose.yaml --env-file deploy/.env up -d --build
@@ -14,10 +16,9 @@ services:
       dockerfile: apps/web/Dockerfile
       # Baked into the browser bundle: changing them needs a rebuild
       args:
-        NEXT_PUBLIC_SERVER_URL: ${NEXT_PUBLIC_SERVER_URL:?Set NEXT_PUBLIC_SERVER_URL, e.g. https://api.stayzim.co.zw}
+        NEXT_PUBLIC_SERVER_URL: ${NEXT_PUBLIC_SERVER_URL:-https://api.stayzim.co.zw}
         NEXT_PUBLIC_SITES_DOMAIN: ${NEXT_PUBLIC_SITES_DOMAIN:-stayzim.co.zw}
         NEXT_PUBLIC_WHATSAPP_NUMBER: ${NEXT_PUBLIC_WHATSAPP_NUMBER:-}
-    image: stayzim-web
     restart: unless-stopped
     environment:
       # Lodge site pages fetch their content from the API inside this network
@@ -48,13 +49,12 @@ services:
     build:
       context: ..
       dockerfile: apps/server/Dockerfile
-    image: stayzim-server
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://stayzim:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@db:5432/stayzim
+      DATABASE_URL: postgresql://stayzim:${POSTGRES_PASSWORD}@db:5432/stayzim
       CORS_ORIGIN: ${CORS_ORIGIN:-https://stayzim.co.zw}
       SITES_DOMAIN: ${SITES_DOMAIN:-stayzim.co.zw}
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET (openssl rand -base64 32)}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-https://api.stayzim.co.zw}
       WEB_URL: ${WEB_URL:-https://stayzim.co.zw}
       COOKIE_DOMAIN: ${COOKIE_DOMAIN:-.stayzim.co.zw}
@@ -77,9 +77,6 @@ services:
       BILLING_SMTP_FROM: ${BILLING_SMTP_FROM:-}
       PAYNOW_INTEGRATION_ID: ${PAYNOW_INTEGRATION_ID:-}
       PAYNOW_INTEGRATION_KEY: ${PAYNOW_INTEGRATION_KEY:-}
-      PAYNOW_AUTH_EMAIL: ${PAYNOW_AUTH_EMAIL:-}
-      ECOCASH_MERCHANT_CODE: ${ECOCASH_MERCHANT_CODE:-}
-      INNBUCKS_MERCHANT_CODE: ${INNBUCKS_MERCHANT_CODE:-}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
     expose:
@@ -93,7 +90,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: stayzim
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: stayzim
     volumes:
       - postgres:/var/lib/postgresql/data

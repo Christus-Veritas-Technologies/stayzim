@@ -85,7 +85,7 @@ Without Paynow set up, Billing shows only the merchant codes and "I have paid", 
 
 1. In the Paynow merchant account, go to Receive Payments → New integration → "3rd party shopping cart or link". Note the **Integration ID** and **Integration Key**, which become `PAYNOW_INTEGRATION_ID` and `PAYNOW_INTEGRATION_KEY`.
 2. A new integration starts in **test mode**:
-   - Payments must use the merchant account's own email, so set `PAYNOW_AUTH_EMAIL` to it.
+   - Payments must use the merchant account's own email, so set `PAYNOW_AUTH_EMAIL` to it. `deploy/compose.yaml` doesn't pass it on (production runs live): add `PAYNOW_AUTH_EMAIL: ${PAYNOW_AUTH_EMAIL:-}` to the server's environment there while testing.
    - Paynow's test phone numbers simulate success and failure.
    - When Paynow approves the integration for live payments, empty `PAYNOW_AUTH_EMAIL`, so the owner's email is sent.
 3. Paynow calls back to `https://api.stayzim.co.zw/api/paynow/result`. The server sends this address with each payment, so there's nothing to enter in Paynow.
@@ -94,7 +94,7 @@ Without Paynow set up, Billing shows only the merchant codes and "I have paid", 
 **Invoices and receipts:**
 
 - Invoices, receipts and their emails carry the issuer details hard-coded in `apps/server/src/lib/business.ts`: StayZim Platform Inc, stayzim.co.zw, hello@stayzim.co.zw, +263 77 510 1506. Add a street address or tax number there when there is one.
-- `ECOCASH_MERCHANT_CODE` and `INNBUCKS_MERCHANT_CODE` add the pay-by-merchant-code cards on Billing. Leave them empty to hide the cards; owners then see "Message us".
+- `ECOCASH_MERCHANT_CODE` and `INNBUCKS_MERCHANT_CODE` add the pay-by-merchant-code cards on Billing; without them, owners see "Message us". They aren't in `deploy/compose.yaml` today: to use them, add `ECOCASH_MERCHANT_CODE: ${ECOCASH_MERCHANT_CODE:-}` (and the InnBucks one) to the server's environment there, then set them in Coolify.
 - These are server settings: change them and restart the server, with no rebuild.
 - The billing job runs inside the server container every hour, so there's nothing to schedule.
 
