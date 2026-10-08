@@ -1,5 +1,5 @@
 import type { Email } from "./index";
-import { BRAND, button, escapeHtml, greeting, layout, MUTED } from "./layout";
+import { button, escapeHtml, greeting, heading, layout, note, small, summary, summaryText } from "./layout";
 
 /**
  * Emails about bookings: to the owner when a guest asks for dates, and to the
@@ -30,28 +30,11 @@ function rows(stay: Stay, extra: [string, string][] = []): [string, string][] {
   ];
 }
 
-function summary(list: [string, string][]) {
-  const cells = list
-    .map(
-      ([label, value]) =>
-        `<tr><td style="padding:6px 0;color:${MUTED};font-size:14px">${escapeHtml(label)}</td><td align="right" style="padding:6px 0;font-size:14px;font-weight:600">${escapeHtml(value)}</td></tr>`,
-    )
-    .join("");
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0 0;border-top:1px solid #E4E9EC;border-bottom:1px solid #E4E9EC">${cells}</table>`;
-}
-
-function textRows(list: [string, string][]) {
-  return list.map(([label, value]) => `${label}: ${value}`);
-}
-
 /** Guests' emails come from the lodge, through StayZim. */
 function guestFooter(lodgeName: string) {
   return `Sent for ${escapeHtml(lodgeName)} by StayZim. Reply to this email or message the lodge on WhatsApp.`;
 }
 
-function whatsappButton(url: string, label: string) {
-  return `<p style="margin:0 0 8px"><a href="${escapeHtml(url)}" style="color:${BRAND};font-weight:600">${escapeHtml(label)}</a></p>`;
-}
 
 /** To the owner: a guest sent a booking request from the site (or booked, when bookings confirm themselves). */
 export function bookingRequestEmail(input: Stay & {
@@ -78,7 +61,7 @@ export function bookingRequestEmail(input: Stay & {
       "",
       confirmed ? `${input.guestName} booked a stay at ${input.lodgeName}.` : `${input.guestName} would like to stay at ${input.lodgeName}.`,
       "",
-      ...textRows(list),
+      ...summaryText(list),
       ...(input.message ? ["", `Their note: ${input.message}`] : []),
       "",
       `${action}: ${input.requestsUrl}`,
@@ -88,13 +71,15 @@ export function bookingRequestEmail(input: Stay & {
     ].join("\n"),
     html: layout({
       preview: confirmed ? `${input.guestName} booked ${input.roomName}, ${input.dates}.` : `${input.guestName} asked for ${input.roomName}, ${input.dates}.`,
-      body: `${greeting(input.ownerName)}
+      label: "Booking",
+      body: `${heading(confirmed ? "New booking" : "New booking request")}
+${greeting(input.ownerName)}
 <p style="margin:0">${escapeHtml(input.guestName)} ${confirmed ? "booked a stay" : "would like to stay"} at <strong>${escapeHtml(input.lodgeName)}</strong>.</p>
 ${summary(list)}
-${input.message ? `<p style="margin:16px 0 0;padding:12px 14px;background:#F4F7F9;border-radius:10px;font-size:14px;line-height:21px">“${escapeHtml(input.message)}”</p>` : ""}
+${input.message ? note(`“${input.message}”`) : ""}
 ${button(input.requestsUrl, action)}
-${whatsappButton(input.guestWhatsappUrl, `WhatsApp ${input.guestName}`)}
-<p style="margin:0;font-size:13px;line-height:20px;color:${MUTED}">${after}</p>`,
+${button(input.guestWhatsappUrl, `WhatsApp ${input.guestName}`, "whatsapp")}
+${small(escapeHtml(after))}`,
     }),
   };
 }
@@ -118,18 +103,20 @@ export function bookingConfirmedEmail(input: Stay & {
       "",
       `${input.lodgeName} confirmed your booking.`,
       "",
-      ...textRows(list),
+      ...summaryText(list),
       ...(input.times ? ["", input.times] : []),
       ...(input.lodgeWhatsappUrl ? ["", `Questions? WhatsApp the lodge: ${input.lodgeWhatsappUrl}`] : []),
     ].join("\n"),
     html: layout({
       preview: `${input.roomName}, ${input.dates}. See you soon.`,
       footer: guestFooter(input.lodgeName),
-      body: `${greeting(input.guestName)}
+      label: input.lodgeName,
+      body: `${heading("You're booked")}
+${greeting(input.guestName)}
 <p style="margin:0"><strong>${escapeHtml(input.lodgeName)}</strong> confirmed your booking. See you soon!</p>
 ${summary(list)}
-${input.times ? `<p style="margin:16px 0 0;font-size:14px;color:${MUTED}">${escapeHtml(input.times)}</p>` : ""}
-${input.lodgeWhatsappUrl ? button(input.lodgeWhatsappUrl, "WhatsApp the lodge") : ""}`,
+${input.times ? small(escapeHtml(input.times)) : ""}
+${input.lodgeWhatsappUrl ? button(input.lodgeWhatsappUrl, "WhatsApp the lodge", "whatsapp") : ""}`,
     }),
   };
 }
@@ -164,11 +151,47 @@ export function bookingClosedEmail(input: Stay & {
     html: layout({
       preview: line,
       footer: guestFooter(input.lodgeName),
-      body: `${greeting(input.guestName)}
+      label: input.lodgeName,
+      body: `${heading(declined ? "Booking not available" : "Booking cancelled")}
+${greeting(input.guestName)}
 <p style="margin:0">${escapeHtml(line)}</p>
-${input.reason ? `<p style="margin:16px 0 0;padding:12px 14px;background:#F4F7F9;border-radius:10px;font-size:14px;line-height:21px">${escapeHtml(input.reason)}</p>` : ""}
-<p style="margin:16px 0 0;font-size:14px;color:${MUTED}">Reference ${escapeHtml(input.reference)}</p>
+${input.reason ? note(input.reason) : ""}
+${small(`Reference ${escapeHtml(input.reference)}`)}
 ${button(input.siteUrl, "See other dates")}`,
+    }),
+  };
+}
+
+/** To the guest, straight after they send a request the lodge still has to confirm (they gave an email). */
+export function bookingReceivedEmail(input: Stay & {
+  to: string;
+  guestName: string;
+  lodgeWhatsappUrl: string | null;
+  replyTo?: string;
+}): Email {
+  const list = rows(input);
+  const lead = `Your request is with ${input.lodgeName}. They'll confirm it on WhatsApp or by email. Your dates aren't held until then, and nothing is charged.`;
+  return {
+    to: input.to,
+    replyTo: input.replyTo,
+    subject: `We sent your request to ${input.lodgeName}`,
+    text: [
+      `Hi ${input.guestName.split(" ")[0]},`,
+      "",
+      lead,
+      "",
+      ...summaryText(list),
+      ...(input.lodgeWhatsappUrl ? ["", `Questions? WhatsApp the lodge: ${input.lodgeWhatsappUrl}`] : []),
+    ].join("\n"),
+    html: layout({
+      preview: `${input.roomName}, ${input.dates}: ${input.lodgeName} will confirm soon.`,
+      footer: guestFooter(input.lodgeName),
+      label: input.lodgeName,
+      body: `${heading("Request sent")}
+${greeting(input.guestName)}
+<p style="margin:0">${escapeHtml(lead)}</p>
+${summary(list)}
+${input.lodgeWhatsappUrl ? button(input.lodgeWhatsappUrl, "WhatsApp the lodge", "whatsapp") : ""}`,
     }),
   };
 }

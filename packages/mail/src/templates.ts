@@ -1,6 +1,6 @@
 import type { Email } from "./index";
 
-import { BRAND, button, escapeHtml, greeting, layout, MUTED } from "./layout";
+import { button, greeting, heading, layout, linkFallback, MUTED, small } from "./layout";
 
 export * from "./billing";
 export * from "./bookings";
@@ -20,11 +20,12 @@ export function resetPasswordEmail({ to, name, url }: { to: string; name: string
     ].join("\n"),
     html: layout({
       preview: "Choose a new password for your StayZim account.",
-      body: `${greeting(name)}
+      body: `${heading("Choose a new password")}
+${greeting(name)}
 <p style="margin:0">Someone asked to reset the password for your StayZim account. Tap the button to choose a new one.</p>
 ${button(url, "Choose a new password")}
-<p style="margin:0 0 16px;font-size:14px;line-height:20px;color:${MUTED}">The link works for 1 hour. If you did not ask for this, you can ignore this email; your password stays the same.</p>
-<p style="margin:0;font-size:13px;line-height:20px;color:${MUTED};word-break:break-all">Button not working? Paste this into your browser:<br><a href="${escapeHtml(url)}" style="color:${BRAND}">${escapeHtml(url)}</a></p>`,
+${small("The link works for 1 hour. If you did not ask for this, you can ignore this email; your password stays the same.")}
+${linkFallback(url)}`,
     }),
   };
 }
@@ -42,7 +43,8 @@ export function passwordChangedEmail({ to, name }: { to: string; name: string })
     ].join("\n"),
     html: layout({
       preview: "The password for your StayZim account was just changed.",
-      body: `${greeting(name)}
+      body: `${heading("Your password was changed")}
+${greeting(name)}
 <p style="margin:0 0 16px">The password for your StayZim account was just changed.</p>
 <p style="margin:0;color:${MUTED}">If this was you, there is nothing to do. If it was not, reset your password straight away and message us on WhatsApp.</p>`,
     }),

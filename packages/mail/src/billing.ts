@@ -1,34 +1,16 @@
 import type { Email } from "./index";
-import { BRAND, button, escapeHtml, greeting, layout, MUTED } from "./layout";
+import { BRAND, button, escapeHtml, greeting, heading, layout, linkFallback, small, summary, summaryText } from "./layout";
 
 /**
  * Emails about a lodge's demo and billing. Callers pass dates and amounts
  * already written out ("Thursday 8 October", "$40.00"), in Zimbabwe time.
  */
 
-/** A two-column summary: "Amount  $40.00". */
-function summary(rows: [string, string][]) {
-  const cells = rows
-    .map(
-      ([label, value]) =>
-        `<tr><td style="padding:6px 0;color:${MUTED};font-size:14px">${escapeHtml(label)}</td><td align="right" style="padding:6px 0;font-size:14px;font-weight:600">${escapeHtml(value)}</td></tr>`,
-    )
-    .join("");
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0 0;border-top:1px solid #E4E9EC;border-bottom:1px solid #E4E9EC">${cells}</table>`;
-}
-
-function summaryText(rows: [string, string][]) {
-  return rows.map(([label, value]) => `${label}: ${value}`);
-}
-
 /** "Issued by StayZim · Mutare, Zimbabwe · Tax no. …", under invoices and receipts. */
 function issuedBy(line: string | undefined) {
-  return line ? `<p style="margin:16px 0 0;font-size:12px;line-height:18px;color:${MUTED}">Issued by ${escapeHtml(line)}</p>` : "";
+  return line ? `<p style="margin:16px 0 0;font-size:12px;line-height:18px;color:#6C767D">Issued by ${escapeHtml(line)}</p>` : "";
 }
 
-function link(url: string) {
-  return `<p style="margin:0;font-size:13px;line-height:20px;color:${MUTED};word-break:break-all">Button not working? Paste this into your browser:<br><a href="${escapeHtml(url)}" style="color:${BRAND}">${escapeHtml(url)}</a></p>`;
-}
 
 /** Right after sign-up: the site is live, the demo's end, and how to keep it. */
 export function demoWelcomeEmail(input: {
@@ -56,12 +38,13 @@ export function demoWelcomeEmail(input: {
     ].join("\n"),
     html: layout({
       preview: `Your site is live. It's a free demo until ${input.endsAt}.`,
-      body: `${greeting(input.name)}
+      body: `${heading(`${input.lodgeName} is live`)}
+${greeting(input.name)}
 <p style="margin:0 0 16px"><strong>${escapeHtml(input.lodgeName)}</strong> has its own website now:<br><a href="${escapeHtml(input.siteUrl)}" style="color:${BRAND};font-weight:600">${escapeHtml(input.siteUrl.replace(/^https?:\/\//, ""))}</a></p>
 <p style="margin:0 0 16px">It's a free demo until <strong>${escapeHtml(input.endsAt)}</strong>. Add your photos and rooms, share the link with past guests, and watch the visits come in.</p>
 <p style="margin:0">To keep it live after that, pay for the ${escapeHtml(input.plan)} plan (${escapeHtml(input.price)} a month) from Billing. The demo badges go as soon as you do.</p>
 ${button(input.dashboardUrl, "Open your dashboard")}
-${link(input.dashboardUrl)}`,
+${linkFallback(input.dashboardUrl)}`,
     }),
   };
 }
@@ -114,19 +97,21 @@ export function invoiceEmail(input: {
       "",
       ...summaryText(rows),
       "",
-      `Pay with EcoCash, InnBucks, OneMoney or card: ${input.payUrl}`,
+      `Pay through Paynow (EcoCash, InnBucks, OneMoney, card and more): ${input.payUrl}`,
       "",
       "Already paid? Thank you. You can ignore this email.",
       ...(input.issuedBy ? ["", `Issued by ${input.issuedBy}`] : []),
     ].join("\n"),
     html: layout({
       preview: lead,
-      body: `${greeting(input.name)}
+      label: "Billing",
+      body: `${heading(input.demo ? "Keep your site live" : `Invoice ${input.number}`)}
+${greeting(input.name)}
 <p style="margin:0">${escapeHtml(lead)}</p>
 ${summary(rows)}
 ${button(input.payUrl, `Pay ${input.amount}`)}
-<p style="margin:0 0 16px;font-size:14px;line-height:20px;color:${MUTED}">EcoCash, InnBucks, OneMoney or card. Already paid? Thank you, you can ignore this email.</p>
-${link(input.payUrl)}
+${small("Every payment goes through Paynow: EcoCash, InnBucks, OneMoney, card and more. Already paid? Thank you, you can ignore this email.")}
+${linkFallback(input.payUrl)}
 ${issuedBy(input.issuedBy)}`,
     }),
   };
@@ -162,7 +147,9 @@ export function receiptEmail(input: {
     text: [`Hi ${input.name},`, "", `Thank you. We've received ${input.amount} for ${input.lodgeName}.`, "", ...summaryText(rows), "", `Your receipt: ${input.receiptUrl}`, ...(input.issuedBy ? ["", `Issued by ${input.issuedBy}`] : [])].join("\n"),
     html: layout({
       preview: `Thank you. We've received ${input.amount} for ${input.lodgeName}.`,
-      body: `${greeting(input.name)}
+      label: "Receipt",
+      body: `${heading("Payment received")}
+${greeting(input.name)}
 <p style="margin:0">Thank you. We've received <strong>${escapeHtml(input.amount)}</strong> for ${escapeHtml(input.lodgeName)}.</p>
 ${summary(rows)}
 ${button(input.receiptUrl, "View or print the receipt")}
@@ -185,11 +172,13 @@ export function demoEndedEmail(input: { to: string; name: string; lodgeName: str
     ].join("\n"),
     html: layout({
       preview: `Pay for a plan and ${input.lodgeName} is back live straight away.`,
-      body: `${greeting(input.name)}
+      label: "Billing",
+      body: `${heading("Your demo has ended")}
+${greeting(input.name)}
 <p style="margin:0 0 16px">Your free demo of <strong>${escapeHtml(input.lodgeName)}</strong> has ended, so the site is offline for now.</p>
 <p style="margin:0">We keep your photos, rooms and everything else until <strong>${escapeHtml(input.keptUntil)}</strong>. Pay for a plan and it's back live straight away, just as you left it.</p>
 ${button(input.payUrl, "Put my site back live")}
-${link(input.payUrl)}`,
+${linkFallback(input.payUrl)}`,
     }),
   };
 }
@@ -210,11 +199,13 @@ export function siteOfflineEmail(input: { to: string; name: string; lodgeName: s
     ].join("\n"),
     html: layout({
       preview: `Pay ${input.amount} and ${input.lodgeName} comes back straight away.`,
-      body: `${greeting(input.name)}
+      label: "Billing",
+      body: `${heading("Your site is offline")}
+${greeting(input.name)}
 <p style="margin:0 0 16px">We didn't receive this month's payment for <strong>${escapeHtml(input.lodgeName)}</strong>, so the site is offline for now. Guests see a short "taking a break" page.</p>
 <p style="margin:0">Pay ${escapeHtml(input.amount)} and it comes back straight away.</p>
 ${button(input.payUrl, `Pay ${input.amount}`)}
-<p style="margin:0;font-size:14px;line-height:20px;color:${MUTED}">Paid already? Reply to this email with your proof of payment and we'll sort it out.</p>`,
+${small("Paid already? Reply to this email with your proof of payment and we'll sort it out.")}`,
     }),
   };
 }

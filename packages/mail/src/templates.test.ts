@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { invoiceEmail, passwordChangedEmail, receiptEmail, resetPasswordEmail } from "./templates";
+import { bookingReceivedEmail, invoiceEmail, passwordChangedEmail, receiptEmail, resetPasswordEmail } from "./templates";
 
 describe("resetPasswordEmail", () => {
   const url = "https://api.stayzim.co.zw/api/auth/reset-password/abc?callbackURL=https%3A%2F%2Fapp.stayzim.co.zw%2Freset-password";
@@ -57,5 +57,27 @@ describe("billing emails", () => {
     const email = receiptEmail({ to: "a@b.test", name: "Rudo", lodgeName: "<b>Lodge</b>", number: "R-2026-00007", amount: "$120.00", plan: "Growth", months: 3, paidOn: "Tue 6 Oct", method: "EcoCash", paidUntil: "Wednesday 6 January", receiptUrl: "https://x.test/r" });
     expect(email.html).toContain("&lt;b&gt;Lodge&lt;/b&gt;");
     expect(email.text).toContain("Plan: Growth, 3 months");
+  });
+});
+
+describe("booking emails to guests", () => {
+  const stay = { lodgeName: "Mist Valley Lodge", roomName: "River Suite", dates: "12–15 Nov", nights: 3, guests: 2, total: "$360", reference: "B-7K2Q" };
+
+  test("a request the lodge still has to confirm: sent, not held, nothing charged, replies to the lodge", () => {
+    const email = bookingReceivedEmail({ ...stay, to: "sarah@x.test", guestName: "Sarah Test", lodgeWhatsappUrl: "https://wa.me/263771234567", replyTo: "hello@mistvalley.test" });
+    expect(email.subject).toBe("We sent your request to Mist Valley Lodge");
+    expect(email.text).toContain("aren't held until then");
+    expect(email.text).toContain("Reference: B-7K2Q");
+    expect(email.replyTo).toBe("hello@mistvalley.test");
+    // From the main (no-reply) sender, not billing@
+    expect(email.sender).toBeUndefined();
+    expect(email.html).toContain("WhatsApp the lodge");
+  });
+
+  test("every email has the StayZim frame: the mark, the name and the brand line", () => {
+    const email = bookingReceivedEmail({ ...stay, to: "sarah@x.test", guestName: "Sarah", lodgeWhatsappUrl: null });
+    expect(email.html).toContain("/email/stayzim-mark.png");
+    expect(email.html).toContain(">StayZim</span>");
+    expect(email.html).toContain("max-width:480px");
   });
 });

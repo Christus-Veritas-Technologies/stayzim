@@ -1,6 +1,6 @@
 import { zValidator } from "@hono/zod-validator";
 import prisma from "@stayzim/db";
-import { bookingConfirmedEmail, bookingRequestEmail } from "@stayzim/mail/templates";
+import { bookingConfirmedEmail, bookingReceivedEmail, bookingRequestEmail } from "@stayzim/mail/templates";
 import {
   BOOKING_LIMITS,
   canHold,
@@ -373,6 +373,24 @@ export const sites = new Hono<{ Variables: AuthVariables }>()
             replyTo: lodge.email ?? undefined,
           }),
           "booking confirmation",
+        );
+      } else if (input.email) {
+        // The guest hears straight away that the request went through (from no-reply; replies go to the lodge)
+        await sendQuietly(
+          bookingReceivedEmail({
+            to: input.email,
+            guestName: input.name,
+            lodgeName: lodge.name,
+            roomName: room.name,
+            dates: formatStay(input.checkIn, input.checkOut),
+            nights,
+            guests: input.guests,
+            total: `$${room.price * nights}`,
+            reference: booking.reference,
+            lodgeWhatsappUrl: lodge.whatsapp ? `https://wa.me/${lodge.whatsapp}` : null,
+            replyTo: lodge.email ?? undefined,
+          }),
+          "booking received",
         );
       }
       return c.json({ reference: booking.reference, status: booking.status }, 201);
