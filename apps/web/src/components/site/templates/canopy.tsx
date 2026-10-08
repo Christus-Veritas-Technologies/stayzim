@@ -11,6 +11,7 @@ import { journalUrl } from "@/components/site/journal";
 import { SampleBadge } from "@/components/site/sample-badge";
 import { Parallax } from "@/components/site/parallax";
 import {
+  AllRoomsLink,
   amenityLine,
   BookLabel,
   bookTone,
@@ -35,6 +36,7 @@ import { BookLink } from "@/components/site/tracking";
 import { AMENITIES, formatPhone, formatPrice } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
 import { roomsEmpty, scoreWord, splitIntro } from "@/lib/site-content";
+import { pageOr } from "@/lib/site-pages";
 
 const SERIF = "font-[family-name:var(--font-instrument-serif)] font-normal";
 
@@ -63,10 +65,10 @@ export function CanopyTemplate({ site }: { site: LiveSite }) {
   const intro = splitIntro(site.description);
   const photos = [site.gallery[0], site.gallery[1] ?? site.rooms[0]?.photos[0], site.gallery[2] ?? site.rooms[1]?.photos[0], site.gallery[3] ?? site.gallery[0]];
   const nav = [
-    { href: "#rooms", label: "Rooms" },
-    site.gallery.length > 0 ? { href: "#gallery", label: "Gallery" } : null,
+    { href: pageOr(site, "rooms", "#rooms"), label: "Rooms" },
+    site.gallery.length > 0 ? { href: pageOr(site, "gallery", "#gallery"), label: "Gallery" } : null,
     site.journal.length > 0 ? { href: journalUrl(site), label: "Journal" } : null,
-    { href: "#location", label: "Find us" },
+    { href: pageOr(site, "contact", "#location"), label: "Find us" },
   ].filter((link) => link !== null);
   const glance = [
     place ? { label: "Location", value: place } : null,
@@ -252,6 +254,7 @@ export function CanopyTemplate({ site }: { site: LiveSite }) {
               })}
             </Carousel>
           )}
+          <AllRoomsLink site={site} className="mt-10" />
         </section>
 
         {/* A guest's words beside a photo */}

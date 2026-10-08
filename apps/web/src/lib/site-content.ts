@@ -147,3 +147,8 @@ export function roomsEmpty(site: Pick<LiveSite, "copy">) {
 export function roomsIntro(site: Pick<LiveSite, "copy">) {
   return site.copy.rooms.intro || "Prices are per room, per night.";
 }
+
+/** What the room filters need from each room (components/site/room-filters.tsx). */
+export function filterRooms(rooms: SiteRoom[]) {
+  return rooms.map(({ id, price, sleeps, size, amenities }) => ({ id, price, sleeps, size, amenities }));
+}

@@ -202,6 +202,7 @@ export * from "./content/availability";
 export * from "./content/guest-info";
 export * from "./content/journal";
 export * from "./content/facts";
+export * from "./content/pages";
 export type * from "./content/types";
 export { copyForLodge, copyVars, siteCopy, welcomeDescription, type CopyFacts, type CopyLodge, type SiteCopy } from "./copy";
 export { SAMPLE_NAME, sampleSite, type SampleSiteInput } from "./samples/site";

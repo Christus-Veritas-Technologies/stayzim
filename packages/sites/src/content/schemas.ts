@@ -11,6 +11,7 @@ import { AMENITY_KEYS } from "./amenities";
 import { DEFAULT_COUNTRY, FACT_LIMITS, LODGE_KIND_KEYS, SETTING_KEYS } from "./facts";
 import { isDateString, nightsBetween } from "./dates";
 import { SOCIAL_KEYS, socialLink, STAY_TIMES, type SocialLinks } from "./guest-info";
+import { SITE_PAGES } from "./pages";
 import { BOOKING_LIMITS, CONTENT_LIMITS, GUEST_INFO_LIMITS, LODGE_LIMITS, ROOM_LIMITS } from "./limits";
 import type { PublicSite } from "./types";
 
@@ -364,6 +365,7 @@ const liveSite = z.object({
     })
     .catch({ rooms: false, gallery: false, guestInfo: false, reviews: false, journal: false, map: false })
     .default({ rooms: false, gallery: false, guestInfo: false, reviews: false, journal: false, map: false }),
+  pages: z.array(z.enum(SITE_PAGES)).catch(["home"]).default(["home"]),
 });
 
 export const publicSiteSchema = z.discriminatedUnion("status", [

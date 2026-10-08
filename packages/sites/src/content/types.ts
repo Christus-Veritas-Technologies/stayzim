@@ -4,6 +4,7 @@ import type { SiteCopy } from "../copy";
 import type { SiteSamples } from "../samples";
 import type { LodgeKind, Setting } from "./facts";
 import type { FaqEntry, SocialKey, SocialLinks } from "./guest-info";
+import type { SitePage } from "./pages";
 
 /**
  * The lodge content contract: what the API sends, typed once for the server
@@ -101,6 +102,8 @@ export type LiveSite = {
   journal: SitePost[];
   /** Which sections are example content on a demo site (../samples) */
   samples: SiteSamples;
+  /** The pages this site has, from its plan (./pages) */
+  pages: SitePage[];
 };
 
 export type SiteSocialLink = { key: SocialKey; label: string; url: string };

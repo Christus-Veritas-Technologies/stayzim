@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { JournalList, journalUrl } from "@/components/site/journal";
-import { bookingSite } from "@/components/site/templates";
-import { PageViewTracker, SiteTracking } from "@/components/site/tracking";
 import { getJournal, getSite } from "@/lib/site";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -24,10 +22,5 @@ export default async function JournalPage({ params }: Props) {
   const { slug } = await params;
   const [site, posts] = await Promise.all([getSite(slug), getJournal(slug)]);
   if (site?.status !== "LIVE" || !posts) notFound();
-  return (
-    <SiteTracking slug={site.slug} enabled booking={bookingSite(site)}>
-      <PageViewTracker />
-      <JournalList site={site} posts={posts} />
-    </SiteTracking>
-  );
+  return <JournalList site={site} posts={posts} />;
 }

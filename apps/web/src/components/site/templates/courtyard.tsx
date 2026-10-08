@@ -12,6 +12,7 @@ import { journalUrl } from "@/components/site/journal";
 import { SampleBadge } from "@/components/site/sample-badge";
 import { Parallax } from "@/components/site/parallax";
 import {
+  AllRoomsLink,
   AmenityIcon,
   BookLabel,
   bookTone,
@@ -36,6 +37,7 @@ import { BookLink } from "@/components/site/tracking";
 import { AMENITIES, formatPhone, formatPrice } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
 import { roomsEmpty } from "@/lib/site-content";
+import { pageOr } from "@/lib/site-pages";
 
 const DISPLAY = "font-[family-name:var(--font-tenor)] font-normal uppercase";
 
@@ -65,11 +67,11 @@ export function CourtyardTemplate({ site }: { site: LiveSite }) {
   const tone = bookTone(online);
   const thumbs = site.gallery.slice(0, 3);
   const nav = [
-    { href: "#rooms", label: "Rooms" },
+    { href: pageOr(site, "rooms", "#rooms"), label: "Rooms" },
     site.description ? { href: "#house", label: "The house" } : null,
-    site.gallery.length > 0 ? { href: "#gallery", label: "Gallery" } : null,
+    site.gallery.length > 0 ? { href: pageOr(site, "gallery", "#gallery"), label: "Gallery" } : null,
     site.journal.length > 0 ? { href: journalUrl(site), label: "Journal" } : null,
-    { href: "#location", label: "Find us" },
+    { href: pageOr(site, "contact", "#location"), label: "Find us" },
   ].filter((link) => link !== null);
 
   return (
@@ -213,6 +215,7 @@ export function CourtyardTemplate({ site }: { site: LiveSite }) {
               })}
             </div>
           )}
+          <AllRoomsLink site={site} className="mt-10" />
         </section>
       </main>
 

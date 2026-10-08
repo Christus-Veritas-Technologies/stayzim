@@ -8,6 +8,7 @@ import { ClampedText } from "@/components/site/clamped-text";
 import { EnquiryBar } from "@/components/site/enquiry-bar";
 import { RoomPhotos, SiteGallery } from "@/components/site/gallery";
 import {
+  AllRoomsLink,
   AmenityIcon,
   BookLabel,
   bookTone,
@@ -28,6 +29,7 @@ import { BookLink } from "@/components/site/tracking";
 import { AMENITIES, formatPhone, formatPrice } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
 import { highlightWords, roomsEmpty } from "@/lib/site-content";
+import { pageOr } from "@/lib/site-pages";
 
 const DISPLAY = "font-[family-name:var(--font-bricolage)]";
 
@@ -66,10 +68,10 @@ export function WordmarkTemplate({ site }: { site: LiveSite }) {
   const badge = `${[...amenities.slice(0, 2).map((entry) => AMENITIES[entry.key]?.label), site.town].filter(Boolean).join(" · ")} · `;
   const nav = [
     { href: "#top", label: "Home" },
-    { href: "#rooms", label: "Rooms" },
+    { href: pageOr(site, "rooms", "#rooms"), label: "Rooms" },
     site.description ? { href: "#about", label: "About" } : null,
-    site.gallery.length > 0 ? { href: "#gallery", label: "Gallery" } : null,
-    { href: "#location", label: "Find us" },
+    site.gallery.length > 0 ? { href: pageOr(site, "gallery", "#gallery"), label: "Gallery" } : null,
+    { href: pageOr(site, "contact", "#location"), label: "Find us" },
   ].filter((link) => link !== null);
 
   return (
@@ -205,6 +207,7 @@ export function WordmarkTemplate({ site }: { site: LiveSite }) {
               })}
             </Carousel>
           )}
+          <AllRoomsLink site={site} className="mt-10" />
         </section>
 
         {/* About, with oval photos */}

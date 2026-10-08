@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 
-/** Lodge sites are a single page; any other path shows the site's 404. */
+/** Any path a lodge site doesn't have (including pages outside its plan) shows the site's 404. */
 export default function MissingSitePage() {
   notFound();
 }

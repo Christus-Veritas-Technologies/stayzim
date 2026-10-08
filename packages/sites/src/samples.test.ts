@@ -44,6 +44,7 @@ const site: LiveSite = {
   reviews: null,
   journal: [],
   samples: NO_SAMPLES,
+  pages: ["home"],
 };
 
 const input = { roomsHint: 6, priceHint: 80, pro: true, today: "2026-10-08" };

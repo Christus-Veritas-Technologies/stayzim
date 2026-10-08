@@ -5,8 +5,9 @@ import { WhatsAppIcon } from "@/components/landing/brand";
 import { ClampedText } from "@/components/site/clamped-text";
 import { RoomPhotos, SiteGallery } from "@/components/site/gallery";
 import {
-  amenityLine,
+  AllRoomsLink,
   AmenityIcon,
+  amenityLine,
   BookLabel,
   bookTone,
   Emphasis,
@@ -23,11 +24,13 @@ import {
   StayDetails,
   WhatsAppFab,
 } from "@/components/site/parts";
+import { RoomFilters } from "@/components/site/room-filters";
 import { hankenGrotesk } from "@/components/site/template-fonts";
 import { BookLink } from "@/components/site/tracking";
 import { AMENITIES, formatPhone, formatPrice } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
-import { roomsEmpty, roomsIntro, splitIntro } from "@/lib/site-content";
+import { filterRooms, roomsEmpty, roomsIntro, splitIntro } from "@/lib/site-content";
+import { pageOr } from "@/lib/site-pages";
 
 /** "— WELCOME": a short rule, then spaced capitals. */
 function Eyebrow({ children, className }: { children: ReactNode; className?: string }) {
@@ -57,9 +60,9 @@ export function RondavelTemplate({ site }: { site: LiveSite }) {
   const tone = bookTone(online);
   const welcomePhotos = [site.gallery[0], site.gallery[1] ?? site.rooms[0]?.photos[0]];
   const nav = [
-    { href: "#rooms", label: "Rooms" },
-    site.gallery.length > 0 ? { href: "#gallery", label: "Gallery" } : null,
-    { href: "#location", label: "Location" },
+    { href: pageOr(site, "rooms", "#rooms"), label: "Rooms" },
+    site.gallery.length > 0 ? { href: pageOr(site, "gallery", "#gallery"), label: "Gallery" } : null,
+    { href: pageOr(site, "contact", "#location"), label: "Location" },
   ].filter((link) => link !== null);
 
   return (
@@ -179,39 +182,42 @@ export function RondavelTemplate({ site }: { site: LiveSite }) {
             {site.rooms.length === 0 ? (
               <p className="text-[#6B6A64]">{roomsEmpty(site)}</p>
             ) : (
-              <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {site.rooms.map((room) => {
-                  const roomBook = bookingUrl(site, room.name);
-                  return (
-                    <li key={room.id} className="flex flex-col">
-                      <div className="relative text-white">
-                        <RoomPhotos photos={room.photos} name={room.name} theme={site.themeColor} sample={room.sample} sampleAt="left" className="aspect-[4/5]" sizes="(min-width: 1024px) 350px, (min-width: 640px) 50vw, 100vw" />
-                        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,transparent_45%,rgba(20,16,12,0.85))]" />
-                        <span className="pointer-events-none absolute top-5 right-4 text-[11px] font-semibold tracking-[0.3em] uppercase [writing-mode:vertical-rl]">
-                          Sleeps {room.sleeps}
-                        </span>
-                        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col gap-1.5 p-6">
-                          <span className="text-[12.5px] font-semibold tracking-[0.2em] uppercase">{formatPrice(room.price)} / night</span>
-                          <h3 className="text-[26px] leading-8 font-semibold">{room.name}</h3>
-                          {room.amenities.length > 0 ? <span className="text-[14px] text-white/85">{amenityLine(room.amenities, 3)}</span> : null}
+              <RoomFilters rooms={filterRooms(site.rooms)} control="rounded-none">
+                <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  {site.rooms.map((room) => {
+                    const roomBook = bookingUrl(site, room.name);
+                    return (
+                      <li key={room.id} data-room-id={room.id} className="flex flex-col">
+                        <div className="relative text-white">
+                          <RoomPhotos photos={room.photos} name={room.name} theme={site.themeColor} sample={room.sample} sampleAt="left" className="aspect-[4/5]" sizes="(min-width: 1024px) 350px, (min-width: 640px) 50vw, 100vw" />
+                          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,transparent_45%,rgba(20,16,12,0.85))]" />
+                          <span className="pointer-events-none absolute top-5 right-4 text-[11px] font-semibold tracking-[0.3em] uppercase [writing-mode:vertical-rl]">
+                            Sleeps {room.sleeps}
+                          </span>
+                          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col gap-1.5 p-6">
+                            <span className="text-[12.5px] font-semibold tracking-[0.2em] uppercase">{formatPrice(room.price)} / night</span>
+                            <h3 className="text-[26px] leading-8 font-semibold">{room.name}</h3>
+                            {room.amenities.length > 0 ? <span className="text-[14px] text-white/85">{amenityLine(room.amenities, 3)}</span> : null}
+                          </div>
                         </div>
-                      </div>
-                      <div className={cn("flex-1", (room.description || room.beds || room.size) && "bg-white px-5 py-4 text-[14px] leading-6 text-[#6B6A64]")}>
-                        {room.beds || room.size ? (
-                          <p className="font-medium text-[#3C3B37]">{[room.beds, room.size ? `${room.size} m²` : null].filter(Boolean).join(" · ")}</p>
+                        <div className={cn("flex-1", (room.description || room.beds || room.size) && "bg-white px-5 py-4 text-[14px] leading-6 text-[#6B6A64]")}>
+                          {room.beds || room.size ? (
+                            <p className="font-medium text-[#3C3B37]">{[room.beds, room.size ? `${room.size} m²` : null].filter(Boolean).join(" · ")}</p>
+                          ) : null}
+                          {room.description ? <ClampedText text={room.description} /> : null}
+                        </div>
+                        {roomBook ? (
+                          <BookLink roomId={room.id} href={roomBook} className={cn(BUTTON, "mt-3 w-full", tone)}>
+                            <BookLabel online={online} size={17} upper />
+                          </BookLink>
                         ) : null}
-                        {room.description ? <ClampedText text={room.description} /> : null}
-                      </div>
-                      {roomBook ? (
-                        <BookLink roomId={room.id} href={roomBook} className={cn(BUTTON, "mt-3 w-full", tone)}>
-                          <BookLabel online={online} size={17} upper />
-                        </BookLink>
-                      ) : null}
-                    </li>
-                  );
-                })}
-              </ul>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </RoomFilters>
             )}
+            <AllRoomsLink site={site} className="mt-10" />
           </div>
         </section>
 

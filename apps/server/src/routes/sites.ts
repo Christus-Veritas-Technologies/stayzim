@@ -17,6 +17,7 @@ import {
   heroText,
   isSetting,
   NO_SAMPLES,
+  PLAN_PAGES,
   samplePosts,
   welcomeDescription,
   isDateString,
@@ -195,6 +196,7 @@ export const sites = new Hono<{ Variables: AuthVariables }>()
       booking: { mode: requestMode(full) ? "request" : "whatsapp" },
       ...(await proContent(lodge)),
       samples: NO_SAMPLES,
+      pages: [...PLAN_PAGES[lodge.plan]],
     };
     // A demo shows example rooms, photos, guest info and (Pro) reviews and posts wherever the owner has none yet
     return c.json(applySamples(site, { roomsHint: full.roomsHint, priceHint: full.priceHint, pro: lodge.plan === "PRO", today: todayInHarare() }) satisfies PublicSite);

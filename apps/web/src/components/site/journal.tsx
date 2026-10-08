@@ -1,11 +1,11 @@
 import { formatPostDate, postBlocks, type SitePost, type SitePostFull } from "@stayzim/sites";
 import { cn } from "@stayzim/ui/lib/utils";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 
-import { BookLabel, bookTone, MadeWith, Photo, siteBasics, WhatsAppFab } from "@/components/site/parts";
+import { PageShell, pageLook } from "@/components/site/page-shell";
+import { BookLabel, bookTone, Photo, siteBasics } from "@/components/site/parts";
 import { SampleBadge } from "@/components/site/sample-badge";
-import { cormorantGaramond, instrumentSerif, tenorSans } from "@/components/site/template-fonts";
 import { BookLink } from "@/components/site/tracking";
 import type { LiveSite } from "@/lib/site";
 import { siteUrl } from "@/lib/site-host";
@@ -15,70 +15,17 @@ export function journalUrl(site: Pick<LiveSite, "slug" | "customDomain">, post?:
   return `${siteUrl(site)}/journal${post ? `/${post}` : ""}`;
 }
 
-/** Each Pro template's type, so the journal reads like the rest of the site. */
-const LOOKS: Record<string, { font: string; display: string; page: string; ink: string; muted: string }> = {
-  "pro-escarpment": {
-    font: cormorantGaramond.variable,
-    display: "font-[family-name:var(--font-cormorant)] font-medium",
-    page: "bg-[#F4EEE3]",
-    ink: "text-[#1A1712]",
-    muted: "text-[#6B6458]",
-  },
-  "pro-courtyard": {
-    font: tenorSans.variable,
-    display: "font-[family-name:var(--font-tenor)] uppercase tracking-[0.06em]",
-    page: "bg-[#F0EBE3]",
-    ink: "text-[#1C1B19]",
-    muted: "text-[#6B655B]",
-  },
-  "pro-canopy": {
-    font: instrumentSerif.variable,
-    display: "font-[family-name:var(--font-instrument-serif)]",
-    page: "bg-[#EFEAE2]",
-    ink: "text-[#1F1A14]",
-    muted: "text-[#6D6457]",
-  },
-};
-const FALLBACK = LOOKS["pro-escarpment"]!;
-
+/** The journal's type and colours: the design's page look (page-shell.tsx). */
 export function journalLook(template: string) {
-  return LOOKS[template] ?? FALLBACK;
+  return pageLook(template);
 }
 
-/** Header, footer and the lodge's colour around a journal page. */
+/** The site's frame around a journal page. */
 export function JournalShell({ site, children }: { site: LiveSite; children: ReactNode }) {
-  const look = journalLook(site.template);
-  const { book, online } = siteBasics(site);
   return (
-    <div style={{ "--theme": site.themeColor } as CSSProperties} className={cn(look.font, look.page, look.ink, "min-h-svh font-sans")}>
-      <header className="border-b border-black/[0.08]">
-        <div className="mx-auto flex h-16 max-w-[1100px] items-center justify-between gap-4 px-4 sm:h-20 sm:px-8">
-          <a href={siteUrl(site)} className={cn(look.display, "truncate text-[22px] sm:text-[26px]")}>
-            {site.name}
-          </a>
-          <nav className="flex items-center gap-5 text-[14.5px] font-medium">
-            <a href={journalUrl(site)} className="hidden hover:text-[var(--theme)] sm:inline">
-              Journal
-            </a>
-            {book ? (
-              <BookLink href={book} className={cn("inline-flex h-10 items-center gap-2 rounded-full px-4 text-[14px] font-semibold", bookTone(online))}>
-                <BookLabel online={online} size={16} short />
-              </BookLink>
-            ) : null}
-          </nav>
-        </div>
-      </header>
-      <main className="mx-auto max-w-[1100px] px-4 py-14 sm:px-8 sm:py-20">{children}</main>
-      <footer className="border-t border-black/[0.08]">
-        <div className={cn("mx-auto flex max-w-[1100px] flex-col items-center gap-2 px-4 py-6 text-[13.5px] sm:flex-row sm:justify-between sm:px-8", look.muted)}>
-          <span>
-            © {new Date().getFullYear()} {site.name}
-          </span>
-          <MadeWith />
-        </div>
-      </footer>
-      <WhatsAppFab site={site} />
-    </div>
+    <PageShell site={site} current="journal">
+      {children}
+    </PageShell>
   );
 }
 

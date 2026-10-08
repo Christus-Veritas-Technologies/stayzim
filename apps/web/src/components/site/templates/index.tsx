@@ -1,5 +1,6 @@
 import { findTemplate, type TemplateKey } from "@stayzim/sites";
 
+import { bookingSite } from "@/components/site/booking-site";
 import { DemoBand, DemoPill, DemoRibbon } from "@/components/site/demo-badges";
 import { CanopyTemplate } from "@/components/site/templates/canopy";
 import { CourtyardTemplate } from "@/components/site/templates/courtyard";
@@ -10,8 +11,10 @@ import { ShadeTemplate } from "@/components/site/templates/shade";
 import { ShorelineTemplate } from "@/components/site/templates/shoreline";
 import { VerandaTemplate } from "@/components/site/templates/veranda";
 import { WordmarkTemplate } from "@/components/site/templates/wordmark";
-import { PageViewTracker, SiteTracking, type BookingSite } from "@/components/site/tracking";
+import { PageViewTracker, SiteTracking } from "@/components/site/tracking";
 import type { LiveSite } from "@/lib/site";
+
+export { bookingSite };
 
 /** Each template's design (designs/StayZim Lodge Templates.html). */
 const DESIGNS: Record<TemplateKey, (props: { site: LiveSite }) => React.ReactNode> = {
@@ -25,22 +28,6 @@ const DESIGNS: Record<TemplateKey, (props: { site: LiveSite }) => React.ReactNod
   "pro-courtyard": CourtyardTemplate,
   "pro-canopy": CanopyTemplate,
 };
-
-/** What the booking sheet needs, where the site takes bookings. In a preview the sheet opens, but sends nothing. */
-export function bookingSite(site: LiveSite, preview = false): BookingSite | null {
-  return site.booking.mode === "request" && site.whatsapp
-    ? {
-        slug: site.slug,
-        name: site.name,
-        whatsapp: site.whatsapp,
-        themeColor: site.themeColor,
-        checkInFrom: site.checkInFrom,
-        checkOutBy: site.checkOutBy,
-        rooms: site.rooms.map(({ id, name, price, sleeps }) => ({ id, name, price, sleeps })),
-        preview,
-      }
-    : null;
-}
 
 /**
  * Renders a lodge site in its template. `preview` turns tracking off, so owners

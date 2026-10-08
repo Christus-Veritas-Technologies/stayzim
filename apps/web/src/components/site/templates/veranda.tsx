@@ -4,6 +4,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { ClampedText } from "@/components/site/clamped-text";
 import { RoomPhotos, SiteGallery } from "@/components/site/gallery";
 import {
+  AllRoomsLink,
   AmenityIcon,
   BookLabel,
   bookTone,
@@ -20,11 +21,13 @@ import {
   StayDetails,
   WhatsAppFab,
 } from "@/components/site/parts";
+import { RoomFilters } from "@/components/site/room-filters";
 import { urbanist } from "@/components/site/template-fonts";
 import { BookLink } from "@/components/site/tracking";
 import { AMENITIES, formatPrice } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
-import { roomFacts, roomsEmpty, roomsIntro, splitIntro } from "@/lib/site-content";
+import { filterRooms, roomFacts, roomsEmpty, roomsIntro, splitIntro } from "@/lib/site-content";
+import { pageOr } from "@/lib/site-pages";
 
 /** A soft tint of the lodge's colour, for chips and panels. */
 const TINT = "bg-[color-mix(in_oklab,var(--theme)_7%,white)]";
@@ -43,9 +46,9 @@ export function VerandaTemplate({ site }: { site: LiveSite }) {
   const intro = splitIntro(site.description);
   const tone = bookTone(online);
   const nav = [
-    { href: "#rooms", label: "Rooms" },
-    site.gallery.length > 0 ? { href: "#gallery", label: "Gallery" } : null,
-    { href: "#location", label: "Location" },
+    { href: pageOr(site, "rooms", "#rooms"), label: "Rooms" },
+    site.gallery.length > 0 ? { href: pageOr(site, "gallery", "#gallery"), label: "Gallery" } : null,
+    { href: pageOr(site, "contact", "#location"), label: "Location" },
   ].filter((link) => link !== null);
 
   return (
@@ -161,33 +164,36 @@ export function VerandaTemplate({ site }: { site: LiveSite }) {
             {site.rooms.length === 0 ? (
               <p className="text-[var(--muted)]">{roomsEmpty(site)}</p>
             ) : (
-              <ul className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-                {site.rooms.map((room) => {
-                  const roomBook = bookingUrl(site, room.name);
-                  const facts = [...roomFacts(room), ...room.amenities.slice(0, 4).map((key) => AMENITIES[key]?.label)].filter(Boolean);
-                  return (
-                    <li key={room.id} className="flex flex-col gap-3">
-                      <div className="relative">
-                        <RoomPhotos photos={room.photos} name={room.name} theme={site.themeColor} sample={room.sample} className="aspect-[4/3] rounded-[22px]" />
-                        <span className="pointer-events-none absolute top-3 left-3 rounded-full bg-white px-3 py-1.5 text-[15px] font-bold text-[var(--theme)] shadow-sm">
-                          {formatPrice(room.price)} / night
-                        </span>
-                      </div>
-                      <div className="flex flex-col gap-1 px-1">
-                        <h3 className="text-[23px] leading-8 font-bold tracking-[-0.01em]">{room.name}</h3>
-                        <p className="text-[15px] leading-6 text-[var(--muted)]">{facts.join(" · ")}</p>
-                        {room.description ? <ClampedText text={room.description} className="mt-1 text-[15px] leading-6 text-[var(--muted)]" /> : null}
-                      </div>
-                      {roomBook ? (
-                        <BookLink roomId={room.id} href={roomBook} className={cn("ml-1 inline-flex h-11 w-fit items-center gap-2 rounded-full px-5 text-sm font-semibold", tone)}>
-                          <BookLabel online={online} size={16} />
-                        </BookLink>
-                      ) : null}
-                    </li>
-                  );
-                })}
-              </ul>
+              <RoomFilters rooms={filterRooms(site.rooms)} control="rounded-full">
+                <ul className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+                  {site.rooms.map((room) => {
+                    const roomBook = bookingUrl(site, room.name);
+                    const facts = [...roomFacts(room), ...room.amenities.slice(0, 4).map((key) => AMENITIES[key]?.label)].filter(Boolean);
+                    return (
+                      <li key={room.id} data-room-id={room.id} className="flex flex-col gap-3">
+                        <div className="relative">
+                          <RoomPhotos photos={room.photos} name={room.name} theme={site.themeColor} sample={room.sample} className="aspect-[4/3] rounded-[22px]" />
+                          <span className="pointer-events-none absolute top-3 left-3 rounded-full bg-white px-3 py-1.5 text-[15px] font-bold text-[var(--theme)] shadow-sm">
+                            {formatPrice(room.price)} / night
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-1 px-1">
+                          <h3 className="text-[23px] leading-8 font-bold tracking-[-0.01em]">{room.name}</h3>
+                          <p className="text-[15px] leading-6 text-[var(--muted)]">{facts.join(" · ")}</p>
+                          {room.description ? <ClampedText text={room.description} className="mt-1 text-[15px] leading-6 text-[var(--muted)]" /> : null}
+                        </div>
+                        {roomBook ? (
+                          <BookLink roomId={room.id} href={roomBook} className={cn("ml-1 inline-flex h-11 w-fit items-center gap-2 rounded-full px-5 text-sm font-semibold", tone)}>
+                            <BookLabel online={online} size={16} />
+                          </BookLink>
+                        ) : null}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </RoomFilters>
             )}
+            <AllRoomsLink site={site} className="mt-10" />
           </section>
 
           {/* Gallery */}

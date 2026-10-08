@@ -5,6 +5,7 @@
  * form, so the preview is the design they picked, written for their place.
  */
 import { DEFAULT_COUNTRY, type LodgeKind, type Setting } from "../content/facts";
+import { PLAN_PAGES } from "../content/pages";
 import type { LiveSite } from "../content/types";
 import { copyForLodge, welcomeDescription } from "../copy";
 import { findTemplate, heroText } from "../index";
@@ -76,6 +77,7 @@ export function sampleSite(input: SampleSiteInput): LiveSite {
     reviews: null,
     journal: [],
     samples: NO_SAMPLES,
+    pages: [...PLAN_PAGES[template.plan]],
   };
   return applySamples(site, { roomsHint: input.roomsHint, priceHint: input.priceHint, pro: template.plan === "PRO", today: input.today });
 }

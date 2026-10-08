@@ -5,8 +5,9 @@ import { WhatsAppIcon } from "@/components/landing/brand";
 import { ClampedText } from "@/components/site/clamped-text";
 import { SiteGallery } from "@/components/site/gallery";
 import {
-  amenityLine,
+  AllRoomsLink,
   AmenityIcon,
+  amenityLine,
   BookLabel,
   bookTone,
   Emphasis,
@@ -24,11 +25,13 @@ import {
   StayDetails,
   WhatsAppFab,
 } from "@/components/site/parts";
+import { RoomFilters } from "@/components/site/room-filters";
 import { newsreaderBook } from "@/components/site/template-fonts";
 import { BookLink } from "@/components/site/tracking";
 import { AMENITIES, formatPrice } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
-import { roomsEmpty, splitIntro } from "@/lib/site-content";
+import { filterRooms, roomsEmpty, splitIntro } from "@/lib/site-content";
+import { hasPage, pageOr } from "@/lib/site-pages";
 
 const SERIF = "font-[family-name:var(--font-newsreader-book)] font-normal";
 const CREAM = "bg-[#F7F4EE]";
@@ -57,10 +60,11 @@ export function ShadeTemplate({ site }: { site: LiveSite }) {
   const tone = bookTone(online);
   const bandPhoto = site.rooms.find((room) => room.photos[0])?.photos[0] ?? site.gallery[0];
   const nav = [
-    { href: "#rooms", label: "Rooms" },
-    site.gallery.length > 0 ? { href: "#gallery", label: "Gallery" } : null,
-    { href: "#location", label: "Location" },
-    { href: "#contact", label: "Contact" },
+    { href: pageOr(site, "rooms", "#rooms"), label: "Rooms" },
+    site.gallery.length > 0 ? { href: pageOr(site, "gallery", "#gallery"), label: "Gallery" } : null,
+    // With a Contact page, Location is on it
+    hasPage(site, "contact") ? null : { href: "#location", label: "Location" },
+    { href: pageOr(site, "contact", "#contact"), label: "Contact" },
   ].filter((link) => link !== null);
 
   return (
@@ -166,30 +170,33 @@ export function ShadeTemplate({ site }: { site: LiveSite }) {
               {site.rooms.length === 0 ? (
                 <p className="mt-6 text-white/80">{roomsEmpty(site)}</p>
               ) : (
-                <ul className="mt-6 flex flex-col divide-y divide-white/15 border-t border-white/15">
-                  {site.rooms.map((room) => {
-                    const roomBook = bookingUrl(site, room.name);
-                    const facts = [`Sleeps ${room.sleeps}`, room.beds, amenityLine(room.amenities, 3)].filter(Boolean).join(" · ");
-                    return (
-                      <li key={room.id} className="flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-                        <div className="flex min-w-0 flex-col gap-1">
-                          <h3 className={cn(SERIF, "text-[26px] leading-8")}>{room.name}</h3>
-                          <p className="text-[14px] text-white/75">{facts}</p>
-                          {room.description ? <ClampedText text={room.description} className="mt-1 text-[14px] leading-6 text-white/75" /> : null}
-                        </div>
-                        <div className="flex shrink-0 items-center gap-4">
-                          <span className="text-[16px] font-semibold whitespace-nowrap">{formatPrice(room.price)} / night</span>
-                          {roomBook ? (
-                            <BookLink roomId={room.id} href={roomBook} className={cn("inline-flex h-11 items-center gap-2 rounded-lg px-4 text-[15px] font-semibold", online ? "bg-white text-[var(--theme)]" : tone)}>
-                              <BookLabel online={online} size={16} short />
-                            </BookLink>
-                          ) : null}
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
+                <RoomFilters rooms={filterRooms(site.rooms)} control="rounded-lg">
+                  <ul className="mt-6 flex flex-col divide-y divide-white/15 border-t border-white/15">
+                    {site.rooms.map((room) => {
+                      const roomBook = bookingUrl(site, room.name);
+                      const facts = [`Sleeps ${room.sleeps}`, room.beds, amenityLine(room.amenities, 3)].filter(Boolean).join(" · ");
+                      return (
+                        <li key={room.id} data-room-id={room.id} className="flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+                          <div className="flex min-w-0 flex-col gap-1">
+                            <h3 className={cn(SERIF, "text-[26px] leading-8")}>{room.name}</h3>
+                            <p className="text-[14px] text-white/75">{facts}</p>
+                            {room.description ? <ClampedText text={room.description} className="mt-1 text-[14px] leading-6 text-white/75" /> : null}
+                          </div>
+                          <div className="flex shrink-0 items-center gap-4">
+                            <span className="text-[16px] font-semibold whitespace-nowrap">{formatPrice(room.price)} / night</span>
+                            {roomBook ? (
+                              <BookLink roomId={room.id} href={roomBook} className={cn("inline-flex h-11 items-center gap-2 rounded-lg px-4 text-[15px] font-semibold", online ? "bg-white text-[var(--theme)]" : tone)}>
+                                <BookLabel online={online} size={16} short />
+                              </BookLink>
+                            ) : null}
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </RoomFilters>
               )}
+              <AllRoomsLink site={site} className="mt-10" />
             </div>
           </div>
         </section>

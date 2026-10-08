@@ -40,6 +40,7 @@ const site: LiveSite = {
   reviews: null,
   journal: [],
   samples: NO_SAMPLES,
+  pages: ["home"],
 };
 
 describe("bookingUrl", () => {

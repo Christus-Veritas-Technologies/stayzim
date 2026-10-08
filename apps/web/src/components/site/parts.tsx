@@ -1,5 +1,5 @@
 import { cn } from "@stayzim/ui/lib/utils";
-import { ArrowUpRight, CalendarDays, Check, ChevronDown, LogIn, LogOut, MapPin } from "lucide-react";
+import { ArrowRight, ArrowUpRight, CalendarDays, Check, ChevronDown, LogIn, LogOut, MapPin } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { WhatsAppIcon } from "@/components/landing/brand";
@@ -10,6 +10,7 @@ import { AMENITIES, formatPhone, lodgePlace } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
 import { amenitySummary, emphasis, hasStayInfo, PHOTO_FALLBACK, roomStats } from "@/lib/site-content";
 import { MAIN_URL } from "@/lib/site-host";
+import { hasPage, pageUrl } from "@/lib/site-pages";
 
 /*
  * Pieces every lodge template shares (docs/cms/README.md, "The template
@@ -384,6 +385,17 @@ export function MobileBookBar({ site, className, button }: { site: LiveSite; cla
         <BookLabel online />
       </BookLink>
     </div>
+  );
+}
+
+/** "See all rooms" under the home page's rooms, where the site has a Rooms page (Growth and Pro). */
+export function AllRoomsLink({ site, className }: { site: LiveSite; className?: string }) {
+  if (!hasPage(site, "rooms") || site.rooms.length === 0) return null;
+  return (
+    <a href={pageUrl(site, "rooms")} className={cn("group inline-flex w-fit items-center gap-2 text-[15px] font-semibold underline-offset-4 hover:underline", className)}>
+      See all rooms, with filters
+      <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5 motion-reduce:transform-none" aria-hidden="true" />
+    </a>
   );
 }
 

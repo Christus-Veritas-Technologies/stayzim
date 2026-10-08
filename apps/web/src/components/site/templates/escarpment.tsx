@@ -11,6 +11,7 @@ import { SampleBadge } from "@/components/site/sample-badge";
 import { journalUrl } from "@/components/site/journal";
 import { Parallax } from "@/components/site/parallax";
 import {
+  AllRoomsLink,
   AmenityIcon,
   BookLabel,
   bookTone,
@@ -34,6 +35,7 @@ import { BookLink } from "@/components/site/tracking";
 import { AMENITIES, formatPhone, formatPrice } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
 import { countWords, roomsEmpty, scoreWord, splitIntro } from "@/lib/site-content";
+import { pageOr } from "@/lib/site-pages";
 
 const SERIF = "font-[family-name:var(--font-cormorant)] font-normal";
 
@@ -58,23 +60,23 @@ export function EscarpmentTemplate({ site }: { site: LiveSite }) {
   const spreads = site.rooms.slice(0, 2);
   const others = site.rooms.slice(2);
   const tiles = [
-    { href: "#rooms", label: "Stay", line: stats ? `${countWords(stats.count, "room")}, one long view.` : "Rooms with a view.", photo: site.rooms[0]?.photos[0] ?? site.gallery[0] },
-    site.gallery.length > 0 ? { href: "#gallery", label: "See", line: "The house, room by room.", photo: site.gallery[0] ?? site.gallery[1] } : null,
+    { href: pageOr(site, "rooms", "#rooms"), label: "Stay", line: stats ? `${countWords(stats.count, "room")}, one long view.` : "Rooms with a view.", photo: site.rooms[0]?.photos[0] ?? site.gallery[0] },
+    site.gallery.length > 0 ? { href: pageOr(site, "gallery", "#gallery"), label: "See", line: "The house, room by room.", photo: site.gallery[0] ?? site.gallery[1] } : null,
     site.journal.length > 0
       ? { href: journalUrl(site), label: "Read", line: `Notes from ${site.town ?? "the mountains"}.`, photo: site.journal[0]?.cover ?? site.gallery[2] }
-      : { href: "#location", label: "Find", line: place ? `How to reach ${place.split(",")[0]}.` : "How to reach us.", photo: site.gallery[2] ?? site.gallery[1] },
+      : { href: pageOr(site, "contact", "#location"), label: "Find", line: place ? `How to reach ${place.split(",")[0]}.` : "How to reach us.", photo: site.gallery[2] ?? site.gallery[1] },
   ].filter((tile) => tile !== null);
   const index = [
-    { href: "#rooms", label: "Stay" },
-    site.gallery.length > 0 ? { href: "#gallery", label: "See" } : null,
+    { href: pageOr(site, "rooms", "#rooms"), label: "Stay" },
+    site.gallery.length > 0 ? { href: pageOr(site, "gallery", "#gallery"), label: "See" } : null,
     site.journal.length > 0 ? { href: "#journal", label: "Read" } : null,
-    { href: "#location", label: "Find" },
+    { href: pageOr(site, "contact", "#location"), label: "Find" },
   ].filter((link) => link !== null);
   const nav = [
-    { href: "#rooms", label: "Stay" },
-    site.gallery.length > 0 ? { href: "#gallery", label: "Gallery" } : null,
+    { href: pageOr(site, "rooms", "#rooms"), label: "Stay" },
+    site.gallery.length > 0 ? { href: pageOr(site, "gallery", "#gallery"), label: "Gallery" } : null,
     site.journal.length > 0 ? { href: journalUrl(site), label: "Journal" } : null,
-    { href: "#location", label: "Find us" },
+    { href: pageOr(site, "contact", "#location"), label: "Find us" },
   ].filter((link) => link !== null);
   const [first, ...rest] = site.name.split(" ");
 
@@ -261,6 +263,7 @@ export function EscarpmentTemplate({ site }: { site: LiveSite }) {
               })}
             </ul>
           ) : null}
+          <AllRoomsLink site={site} className="mt-10" />
         </section>
 
         {/* See */}

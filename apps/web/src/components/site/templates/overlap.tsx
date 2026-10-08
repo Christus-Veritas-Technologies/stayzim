@@ -8,6 +8,7 @@ import { EnquiryBar } from "@/components/site/enquiry-bar";
 import { SampleBadge } from "@/components/site/sample-badge";
 import { SiteGallery } from "@/components/site/gallery";
 import {
+  AllRoomsLink,
   amenityLine,
   BookLabel,
   bookTone,
@@ -30,6 +31,7 @@ import { BookLink } from "@/components/site/tracking";
 import { AMENITIES, formatPhone, formatPrice } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
 import { roomsEmpty } from "@/lib/site-content";
+import { pageOr } from "@/lib/site-pages";
 
 const DISPLAY = "font-[family-name:var(--font-gloock)] font-normal";
 
@@ -69,9 +71,9 @@ export function OverlapTemplate({ site }: { site: LiveSite }) {
   const panels = [site.gallery[0], site.gallery[1] ?? site.rooms[0]?.photos[0], site.gallery[2] ?? site.rooms[1]?.photos[0]];
   const nav = [
     { href: "#top", label: "Home" },
-    { href: "#rooms", label: "Rooms" },
-    site.gallery.length > 0 ? { href: "#gallery", label: "Gallery" } : null,
-    { href: "#location", label: "Find us" },
+    { href: pageOr(site, "rooms", "#rooms"), label: "Rooms" },
+    site.gallery.length > 0 ? { href: pageOr(site, "gallery", "#gallery"), label: "Gallery" } : null,
+    { href: pageOr(site, "contact", "#location"), label: "Find us" },
   ].filter((link) => link !== null);
 
   return (
@@ -222,6 +224,7 @@ export function OverlapTemplate({ site }: { site: LiveSite }) {
                 })}
               </Carousel>
             )}
+            <AllRoomsLink site={site} className="mt-10" />
           </div>
         </section>
 

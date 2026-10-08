@@ -8,6 +8,7 @@ import { ClampedText } from "@/components/site/clamped-text";
 import { EnquiryBar } from "@/components/site/enquiry-bar";
 import { RoomPhotos, SiteGallery } from "@/components/site/gallery";
 import {
+  AllRoomsLink,
   AmenityIcon,
   BookLabel,
   bookTone,
@@ -29,6 +30,7 @@ import { BookLink } from "@/components/site/tracking";
 import { AMENITIES, formatPrice } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
 import { highlightWords, roomFacts, roomsEmpty, roomsIntro } from "@/lib/site-content";
+import { pageOr } from "@/lib/site-pages";
 
 function Heading({ children, className }: { children: ReactNode; className?: string }) {
   return <h2 className={cn("text-[34px] leading-10 font-bold tracking-[-0.025em] sm:text-[48px] sm:leading-[54px]", className)}>{children}</h2>;
@@ -63,9 +65,9 @@ export function ShorelineTemplate({ site }: { site: LiveSite }) {
   const top = amenities.slice(0, 3);
   const nav = [
     { href: "#top", label: "Home" },
-    { href: "#rooms", label: "Rooms" },
-    site.gallery.length > 0 ? { href: "#gallery", label: "Gallery" } : null,
-    { href: "#location", label: "Location" },
+    { href: pageOr(site, "rooms", "#rooms"), label: "Rooms" },
+    site.gallery.length > 0 ? { href: pageOr(site, "gallery", "#gallery"), label: "Gallery" } : null,
+    { href: pageOr(site, "contact", "#location"), label: "Location" },
   ].filter((link) => link !== null);
 
   return (
@@ -226,6 +228,7 @@ export function ShorelineTemplate({ site }: { site: LiveSite }) {
                 })}
               </Carousel>
             )}
+            <AllRoomsLink site={site} className="mt-10" />
           </div>
         </section>
 

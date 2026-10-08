@@ -50,3 +50,19 @@ export function lodgeStructuredData(site: LiveSite) {
 export function jsonLd(data: unknown) {
   return JSON.stringify(data).replace(/</g, "\\u003c");
 }
+
+/** schema.org data for one room's page (/rooms/{room}). */
+export function roomStructuredData(site: LiveSite, room: LiveSite["rooms"][number]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "HotelRoom",
+    name: room.name,
+    description: room.description ?? undefined,
+    bed: room.beds ?? undefined,
+    occupancy: { "@type": "QuantitativeValue", maxValue: room.sleeps },
+    floorSize: room.size === null ? undefined : { "@type": "QuantitativeValue", value: room.size, unitCode: "MTK" },
+    image: room.photos.map((photo) => photo.url),
+    containedInPlace: { "@type": "LodgingBusiness", name: site.name, url: siteUrl(site) },
+    offers: { "@type": "Offer", price: room.price, priceCurrency: "USD", unitText: "night" },
+  };
+}
