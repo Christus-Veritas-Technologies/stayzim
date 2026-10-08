@@ -42,5 +42,10 @@ export const instrumentSerif = Instrument_Serif({
   display: "swap",
 });
 
-/** Shade: Newsreader's regular weight (the app loads only its semibold) */
-export const newsreaderBook = Newsreader({ variable: "--font-newsreader-book", subsets: ["latin"], weight: ["400", "500"], preload: false, display: "swap" });
+/**
+ * Shade: Newsreader's regular weights (the app loads only its semibold), as the
+ * whole variable font with its optical-size axis. Asking Google for fixed weights
+ * makes it cut instances, which some of its servers send from /l/font?kit=…&…
+ * addresses that break the build ("next/font/google queries have exactly one entry").
+ */
+export const newsreaderBook = Newsreader({ variable: "--font-newsreader-book", subsets: ["latin"], axes: ["opsz"], preload: false, display: "swap" });
