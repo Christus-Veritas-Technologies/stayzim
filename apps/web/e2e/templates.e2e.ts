@@ -50,7 +50,8 @@ test.describe("Pro sites", () => {
   test("the team's reviews and journal post show on a Pro site", async ({ page }) => {
     const title = `A walk to the falls ${Date.now().toString(36)}`;
     await page.goto(`/admin/lodges/${E2E.proLodge}`);
-    // Start from no quotes, so repeated runs stay under the limit
+    // Start from no quotes, so repeated runs stay under the limit (once the saved ones have loaded)
+    await expect(page.getByLabel("Score").first()).toBeVisible();
     const remove = page.getByRole("button", { name: /^Remove quote/ });
     while ((await remove.count()) > 0) await remove.first().click();
     await page.getByLabel("Score").first().fill("9.4");
