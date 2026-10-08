@@ -1,5 +1,6 @@
 import type { Plan } from "../index";
 import type { AmenityKey } from "./amenities";
+import type { SiteCopy } from "../copy";
 import type { LodgeKind, Setting } from "./facts";
 import type { FaqEntry, SocialKey, SocialLinks } from "./guest-info";
 
@@ -56,9 +57,15 @@ export type LiveSite = {
   /** Template key, already checked against the plan */
   template: string;
   hero: { headline: string; subline: string };
+  /** The owner's description, or a generated welcome until they write one */
   description: string;
   town: string | null;
   region: string | null;
+  country: string;
+  kind: LodgeKind | null;
+  setting: Setting | null;
+  /** Generated text for every section (../copy), written from the lodge's facts */
+  copy: SiteCopy;
   whatsapp: string | null;
   phone: string | null;
   email: string | null;
@@ -174,6 +181,8 @@ export type DashboardLodge = {
   roomsHint: number | null;
   priceHint: number | null;
   copySeed: number;
+  /** The generated text the site shows wherever the owner hasn't written their own */
+  copy: SiteCopy;
   whatsapp: string | null;
   phone: string | null;
   email: string | null;

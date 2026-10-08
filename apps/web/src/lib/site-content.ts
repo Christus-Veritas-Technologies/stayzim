@@ -137,3 +137,13 @@ const COUNT_WORDS = ["No", "One", "Two", "Three", "Four", "Five", "Six", "Seven"
 export function countWords(count: number, noun: string, plural = `${noun}s`) {
   return `${COUNT_WORDS[count] ?? count} ${count === 1 ? noun : plural}`;
 }
+
+/** What a site says when it has no rooms to show (generated, with a plain fallback). */
+export function roomsEmpty(site: Pick<LiveSite, "copy">) {
+  return site.copy.rooms.empty || "Rooms are coming soon. Message us on WhatsApp to book.";
+}
+
+/** The line under a rooms heading: generated for the lodge, or the plain one. */
+export function roomsIntro(site: Pick<LiveSite, "copy">) {
+  return site.copy.rooms.intro || "Prices are per room, per night.";
+}

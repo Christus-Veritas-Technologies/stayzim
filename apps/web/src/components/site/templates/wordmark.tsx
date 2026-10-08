@@ -27,7 +27,7 @@ import { bricolageGrotesque } from "@/components/site/template-fonts";
 import { BookLink } from "@/components/site/tracking";
 import { AMENITIES, formatPhone, formatPrice } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
-import { highlightWords } from "@/lib/site-content";
+import { highlightWords, roomsEmpty } from "@/lib/site-content";
 
 const DISPLAY = "font-[family-name:var(--font-bricolage)]";
 
@@ -157,7 +157,7 @@ export function WordmarkTemplate({ site }: { site: LiveSite }) {
             {stats ? <p className="text-[16px] text-[#6E6459]">Prices per room, per night, from {formatPrice(stats.from)}.</p> : null}
           </div>
           {site.rooms.length === 0 ? (
-            <p className="text-center text-[#6E6459]">Rooms are coming soon. Message us on WhatsApp to book.</p>
+            <p className="text-center text-[#6E6459]">{roomsEmpty(site)}</p>
           ) : (
             <Carousel
               label="Rooms"

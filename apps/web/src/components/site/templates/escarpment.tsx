@@ -32,7 +32,7 @@ import { cormorantGaramond } from "@/components/site/template-fonts";
 import { BookLink } from "@/components/site/tracking";
 import { AMENITIES, formatPhone, formatPrice } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
-import { countWords, scoreWord, splitIntro } from "@/lib/site-content";
+import { countWords, roomsEmpty, scoreWord, splitIntro } from "@/lib/site-content";
 
 const SERIF = "font-[family-name:var(--font-cormorant)] font-normal";
 
@@ -186,7 +186,7 @@ export function EscarpmentTemplate({ site }: { site: LiveSite }) {
               <p className="text-[17px] leading-7 text-[#6B6458]">{intro.body ?? site.description}</p>
             ) : null}
           </div>
-          {site.rooms.length === 0 ? <p className="text-[#6B6458]">Rooms are coming soon. Message us on WhatsApp to book.</p> : null}
+          {site.rooms.length === 0 ? <p className="text-[#6B6458]">{roomsEmpty(site)}</p> : null}
           {spreads.map((room, position) => {
             const roomBook = bookingUrl(site, room.name);
             return (

@@ -1,4 +1,4 @@
-import { findTemplate } from "@stayzim/sites";
+import { findTemplate, siteCopy } from "@stayzim/sites";
 import { describe, expect, test } from "bun:test";
 
 import { bookingUrl, withTemplate, type LiveSite } from "./site";
@@ -14,6 +14,10 @@ const site: LiveSite = {
   description: "",
   town: "Nyanga",
   region: "Manicaland",
+  country: "Zimbabwe",
+  kind: null,
+  setting: null,
+  copy: siteCopy({ slug: "mistvalley", name: "Mist Valley Lodge", town: "Nyanga", region: "Manicaland", country: "Zimbabwe", kind: null, setting: null, roomCount: null, priceFrom: null, seed: 0 }),
   whatsapp: "263771234567",
   phone: null,
   email: null,

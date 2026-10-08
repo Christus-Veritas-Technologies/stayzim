@@ -28,6 +28,7 @@ import { gloock } from "@/components/site/template-fonts";
 import { BookLink } from "@/components/site/tracking";
 import { AMENITIES, formatPhone, formatPrice } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
+import { roomsEmpty } from "@/lib/site-content";
 
 const DISPLAY = "font-[family-name:var(--font-gloock)] font-normal";
 
@@ -182,7 +183,7 @@ export function OverlapTemplate({ site }: { site: LiveSite }) {
               </p>
             </div>
             {site.rooms.length === 0 ? (
-              <p className="text-center text-white/80">Rooms are coming soon. Message us on WhatsApp to book.</p>
+              <p className="text-center text-white/80">{roomsEmpty(site)}</p>
             ) : (
               <Carousel
                 label="Rooms"

@@ -287,11 +287,12 @@ export function MapView({ site, className, pin, dark = false }: { site: LiveSite
   );
 }
 
-/** "Find us" lines: the place, Open in Google Maps, and the WhatsApp number. */
+/** "Find us" lines: how to get here (generated), Open in Google Maps, and the WhatsApp number. */
 export function FindUsLinks({ site, className, link }: { site: LiveSite; className?: string; link?: string }) {
   const { mapsLink } = siteBasics(site);
   return (
     <ul className={cn("flex flex-col gap-2.5 text-[15px]", className)}>
+      {site.copy.location.intro ? <li className={cn("max-w-[440px] leading-6 opacity-80", link)}>{site.copy.location.intro}</li> : null}
       {mapsLink ? (
         <li>
           <a href={mapsLink} target="_blank" rel="noreferrer" className={cn("inline-flex items-center gap-2 font-medium hover:underline", link)}>

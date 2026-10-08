@@ -34,6 +34,7 @@ import { tenorSans } from "@/components/site/template-fonts";
 import { BookLink } from "@/components/site/tracking";
 import { AMENITIES, formatPhone, formatPrice } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
+import { roomsEmpty } from "@/lib/site-content";
 
 const DISPLAY = "font-[family-name:var(--font-tenor)] font-normal uppercase";
 
@@ -161,7 +162,7 @@ export function CourtyardTemplate({ site }: { site: LiveSite }) {
             <span className="font-sans text-[18px] tracking-normal text-[var(--tan)]">{String(site.rooms.length).padStart(2, "0")}</span>
           </h2>
           {site.rooms.length === 0 ? (
-            <p className="text-[#CFC7BA]">Rooms are coming soon. Message us on WhatsApp to book.</p>
+            <p className="text-[#CFC7BA]">{roomsEmpty(site)}</p>
           ) : (
             <div className="border-t border-white/10">
               {site.rooms.map((room, position) => {

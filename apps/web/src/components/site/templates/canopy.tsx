@@ -33,7 +33,7 @@ import { instrumentSerif } from "@/components/site/template-fonts";
 import { BookLink } from "@/components/site/tracking";
 import { AMENITIES, formatPhone, formatPrice } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
-import { scoreWord, splitIntro } from "@/lib/site-content";
+import { roomsEmpty, scoreWord, splitIntro } from "@/lib/site-content";
 
 const SERIF = "font-[family-name:var(--font-instrument-serif)] font-normal";
 
@@ -213,7 +213,7 @@ export function CanopyTemplate({ site }: { site: LiveSite }) {
           {site.rooms.length === 0 ? (
             <div className="flex flex-col gap-4">
               <Heading>Our rooms</Heading>
-              <p className="text-[#6D6457]">Rooms are coming soon. Message us on WhatsApp to book.</p>
+              <p className="text-[#6D6457]">{roomsEmpty(site)}</p>
             </div>
           ) : (
             <Carousel

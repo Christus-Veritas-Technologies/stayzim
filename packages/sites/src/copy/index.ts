@@ -137,3 +137,47 @@ export function siteCopy(facts: CopyFacts, fallback?: { headline: string; sublin
 export { LINES, EXPERIENCES, FAQS } from "./lines";
 export { SETTING_WORDS, KIND_WORDS } from "./words";
 export { hash } from "./fill";
+
+/** What `copyForLodge` reads from a lodge (the dashboard's JSON has all of it). */
+export type CopyLodge = {
+  slug: string;
+  name: string;
+  town: string | null;
+  region: string | null;
+  country: string | null;
+  kind: LodgeKind | null;
+  setting: Setting | null;
+  roomsHint: number | null;
+  priceHint: number | null;
+  copySeed: number;
+  rooms: { visible: boolean; price: number }[];
+};
+
+/**
+ * A lodge's copy: its real rooms set the count and the "from" price, and the
+ * owner's guesses from /create stand in until there are any. `fallback` is the
+ * template's own hero text, for names too long for any generated headline.
+ */
+export function copyForLodge(lodge: CopyLodge, fallback?: { headline: string; subline: string }) {
+  const rooms = lodge.rooms.filter((room) => room.visible);
+  return siteCopy(
+    {
+      slug: lodge.slug,
+      name: lodge.name,
+      town: lodge.town,
+      region: lodge.region,
+      country: lodge.country,
+      kind: lodge.kind,
+      setting: lodge.setting,
+      roomCount: rooms.length || lodge.roomsHint,
+      priceFrom: rooms.length > 0 ? Math.min(...rooms.map((room) => room.price)) : lodge.priceHint,
+      seed: lodge.copySeed,
+    },
+    fallback,
+  );
+}
+
+/** The welcome as one description (heading sentence, then a paragraph), for templates that show the lodge's description. */
+export function welcomeDescription(copy: SiteCopy) {
+  return [copy.welcome.title && `${copy.welcome.title.replace(/[.!?]$/, "")}.`, copy.welcome.body[0]].filter(Boolean).join(" ");
+}

@@ -27,7 +27,7 @@ import { hankenGrotesk } from "@/components/site/template-fonts";
 import { BookLink } from "@/components/site/tracking";
 import { AMENITIES, formatPhone, formatPrice } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
-import { splitIntro } from "@/lib/site-content";
+import { roomsEmpty, roomsIntro, splitIntro } from "@/lib/site-content";
 
 /** "— WELCOME": a short rule, then spaced capitals. */
 function Eyebrow({ children, className }: { children: ReactNode; className?: string }) {
@@ -174,10 +174,10 @@ export function RondavelTemplate({ site }: { site: LiveSite }) {
                 <Eyebrow className="text-[#3C3B37]">Stay with us</Eyebrow>
                 <Heading>Our rooms</Heading>
               </div>
-              <span className="text-[14px] text-[#6B6A64]">Prices per room, per night</span>
+              <span className="text-[14px] text-[#6B6A64]">{roomsIntro(site)}</span>
             </div>
             {site.rooms.length === 0 ? (
-              <p className="text-[#6B6A64]">Rooms are coming soon. Message us on WhatsApp to book.</p>
+              <p className="text-[#6B6A64]">{roomsEmpty(site)}</p>
             ) : (
               <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {site.rooms.map((room) => {

@@ -12,7 +12,9 @@ import {
   formatDay,
   formatStay,
   fullNights,
+  copyForLodge,
   heroText,
+  welcomeDescription,
   isDateString,
   nightsBetween,
   SOCIAL_KEYS,
@@ -125,6 +127,8 @@ export const sites = new Hono<{ Variables: AuthVariables }>()
       return c.json({ status: full.demoEnded ? "DEMO_ENDED" : "SUSPENDED", slug: full.slug, name: full.name } satisfies PublicSite);
     }
     const place = [full.town, full.region].filter(Boolean).join(", ") || null;
+    // Generated text for every section; the owner's own hero and description win
+    const copy = copyForLodge(full, heroText(findTemplate(full.siteTemplate)!, { ...full, place }));
     return c.json({
       status: "LIVE",
       demo: lodge.status === "DEMO",
@@ -132,10 +136,14 @@ export const sites = new Hono<{ Variables: AuthVariables }>()
       customDomain: full.customDomain,
       name: full.name,
       template: full.siteTemplate,
-      hero: heroText(findTemplate(full.siteTemplate)!, { ...full, place }),
-      description: full.description,
+      hero: { headline: full.heroHeadline?.trim() || copy.hero.headline, subline: full.heroSubline?.trim() || copy.hero.subline },
+      description: full.description.trim() || welcomeDescription(copy),
       town: full.town,
       region: full.region,
+      country: full.country,
+      kind: full.kind,
+      setting: full.setting,
+      copy,
       whatsapp: full.whatsapp,
       phone: full.phone,
       email: full.email,

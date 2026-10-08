@@ -24,7 +24,7 @@ import { urbanist } from "@/components/site/template-fonts";
 import { BookLink } from "@/components/site/tracking";
 import { AMENITIES, formatPrice } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
-import { roomFacts, splitIntro } from "@/lib/site-content";
+import { roomFacts, roomsEmpty, roomsIntro, splitIntro } from "@/lib/site-content";
 
 /** A soft tint of the lodge's colour, for chips and panels. */
 const TINT = "bg-[color-mix(in_oklab,var(--theme)_7%,white)]";
@@ -156,10 +156,10 @@ export function VerandaTemplate({ site }: { site: LiveSite }) {
           <section id="rooms" className="scroll-mt-6">
             <div className="mb-7 flex flex-wrap items-end justify-between gap-2">
               <Heading>Rooms</Heading>
-              <span className="text-[15px] text-[var(--muted)]">Prices are per room, per night</span>
+              <span className="max-w-[420px] text-[15px] text-[var(--muted)]">{roomsIntro(site)}</span>
             </div>
             {site.rooms.length === 0 ? (
-              <p className="text-[var(--muted)]">Rooms are coming soon. Message us on WhatsApp to book.</p>
+              <p className="text-[var(--muted)]">{roomsEmpty(site)}</p>
             ) : (
               <ul className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
                 {site.rooms.map((room) => {

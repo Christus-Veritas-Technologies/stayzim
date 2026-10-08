@@ -280,6 +280,35 @@ const sitePost = z.object({
 export const sitePostSchema = sitePost;
 export const sitePostFullSchema = sitePost.extend({ body: z.string() });
 
+const titled = z.object({ title: z.string().default(""), intro: z.string().default("") }).default({ title: "", intro: "" });
+
+/** The generated copy (../copy): every field defaults, so an older API still renders. */
+const copyShape = z.object({
+    hero: z.object({ headline: z.string().default(""), subline: z.string().default("") }).default({ headline: "", subline: "" }),
+    welcome: z.object({ title: z.string().default(""), body: z.array(z.string()).default([]) }).default({ title: "", body: [] }),
+    highlights: z.array(z.string()).default([]),
+    rooms: z.object({ intro: z.string().default(""), empty: z.string().default("") }).default({ intro: "", empty: "" }),
+    gallery: titled,
+    location: titled,
+    contact: titled,
+    about: z.object({ title: z.string().default(""), body: z.array(z.string()).default([]) }).default({ title: "", body: [] }),
+    experiences: z
+      .object({
+        title: z.string().default(""),
+        intro: z.string().default(""),
+        items: z.array(z.object({ title: z.string(), text: z.string() })).default([]),
+      })
+      .default({ title: "", intro: "", items: [] }),
+    reviews: titled,
+    journal: titled,
+    bookCta: z.string().default(""),
+    meta: z.object({ description: z.string().default("") }).default({ description: "" }),
+    faq: z.array(z.object({ q: z.string(), a: z.string() })).default([]),
+    houseRules: z.array(z.string()).default([]),
+    cancellation: z.string().default(""),
+  });
+const siteCopySchema = copyShape.catch(() => copyShape.parse({}));
+
 const liveSite = z.object({
   status: z.literal("LIVE"),
   demo: z.boolean().default(false),
@@ -291,6 +320,10 @@ const liveSite = z.object({
   description: z.string().default(""),
   town: z.string().nullable().default(null),
   region: z.string().nullable().default(null),
+  country: z.string().default(DEFAULT_COUNTRY),
+  kind: z.enum(LODGE_KIND_KEYS).nullable().catch(null).default(null),
+  setting: z.enum(SETTING_KEYS).nullable().catch(null).default(null),
+  copy: siteCopySchema.default(() => copyShape.parse({})),
   whatsapp: z.string().nullable().default(null),
   phone: z.string().nullable().default(null),
   email: z.string().nullable().default(null),

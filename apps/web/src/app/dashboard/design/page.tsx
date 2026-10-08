@@ -21,7 +21,7 @@ import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHea
 import { Textarea } from "@stayzim/ui/components/textarea";
 import { cn } from "@stayzim/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowUpRight, ChevronRight, Eye, Info, Lock, RotateCcw, Sparkles, Type } from "lucide-react";
+import { ArrowUpRight, ChevronRight, Eye, Info, Lock, RotateCcw, Shuffle, Sparkles, Type } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -238,10 +238,21 @@ function HeroText({ lodge, live }: { lodge: Lodge; live: Template }) {
   const [previewOpen, setPreviewOpen] = useState(false);
 
   const place = lodgePlace(lodge);
+  // Written for this lodge from its type, setting and place (packages/sites copy engine)
   const defaults = {
-    headline: fillCopy(live.defaults.headline, { name: lodge.name, place }),
-    subline: fillCopy(live.defaults.subline, { name: lodge.name, place }),
+    headline: lodge.copy.hero.headline || fillCopy(live.defaults.headline, { name: lodge.name, place }),
+    subline: lodge.copy.hero.subline || fillCopy(live.defaults.subline, { name: lodge.name, place }),
   };
+  const [shuffling, setShuffling] = useState(false);
+
+  /** "Try other wording": every generated line on the site picks another variant. */
+  async function onShuffle() {
+    setShuffling(true);
+    const shuffleError = await save("", "PATCH", { copySeed: lodge.copySeed + 1 });
+    setShuffling(false);
+    if (shuffleError) toast.error(shuffleError);
+    else toast.success("New wording on your site", { description: "Every section we wrote for you now reads differently." });
+  }
   const dirty = headline.trim() !== (lodge.heroHeadline ?? "") || subline.trim() !== (lodge.heroSubline ?? "");
   const custom = Boolean(headline.trim() || subline.trim());
 
@@ -258,7 +269,7 @@ function HeroText({ lodge, live }: { lodge: Lodge; live: Template }) {
     setSaving(true);
     setError(null);
     justSaved.current = true;
-    // An empty string goes back to the template's own text
+    // An empty string goes back to the wording written for the lodge
     const saveError = await save("", "PATCH", { heroHeadline: headline.trim(), heroSubline: subline.trim() });
     setSaving(false);
     if (saveError) {
@@ -359,7 +370,7 @@ function HeroText({ lodge, live }: { lodge: Lodge; live: Template }) {
                       }}
                     >
                       <RotateCcw />
-                      Reset to template text
+                      Use our wording
                     </Button>
                   </motion.span>
                 ) : (
@@ -367,9 +378,13 @@ function HeroText({ lodge, live }: { lodge: Lodge; live: Template }) {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="text-[13px] text-muted-2"
+                    className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted-2"
                   >
-                    Showing the {live.name} template&apos;s text.
+                    Written for {lodge.name}.
+                    <Button variant="ghost" size="sm" className="-ml-1" onClick={onShuffle} loading={shuffling} disabled={!online}>
+                      <Shuffle />
+                      Try other wording
+                    </Button>
                   </motion.span>
                 )}
               </AnimatePresence>

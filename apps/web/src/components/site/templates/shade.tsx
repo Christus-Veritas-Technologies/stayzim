@@ -28,7 +28,7 @@ import { newsreaderBook } from "@/components/site/template-fonts";
 import { BookLink } from "@/components/site/tracking";
 import { AMENITIES, formatPrice } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
-import { splitIntro } from "@/lib/site-content";
+import { roomsEmpty, splitIntro } from "@/lib/site-content";
 
 const SERIF = "font-[family-name:var(--font-newsreader-book)] font-normal";
 const CREAM = "bg-[#F7F4EE]";
@@ -164,7 +164,7 @@ export function ShadeTemplate({ site }: { site: LiveSite }) {
                 </p>
               ) : null}
               {site.rooms.length === 0 ? (
-                <p className="mt-6 text-white/80">Rooms are coming soon. Message us on WhatsApp to book.</p>
+                <p className="mt-6 text-white/80">{roomsEmpty(site)}</p>
               ) : (
                 <ul className="mt-6 flex flex-col divide-y divide-white/15 border-t border-white/15">
                   {site.rooms.map((room) => {

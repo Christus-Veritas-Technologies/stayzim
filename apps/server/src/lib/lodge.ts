@@ -1,7 +1,9 @@
 import prisma from "@stayzim/db";
 import {
+  copyForLodge,
   demoEnded,
   effectiveTemplate,
+  heroText,
   isAmenity,
   isLodgeKind,
   isSetting,
@@ -79,6 +81,16 @@ export async function lodgeJson(lodgeId: string): Promise<DashboardLodge> {
   const gallery = lodge.photos.map(photoJson);
   const hero = gallery.find((photo) => photo.id === lodge.heroPhotoId) ?? gallery[0] ?? null;
 
+  const kind = isLodgeKind(lodge.kind) ? lodge.kind : null;
+  const setting = isSetting(lodge.setting) ? lodge.setting : null;
+  const template = effectiveTemplate(lodge.template, lodge.plan);
+  const place = [lodge.town, lodge.region].filter(Boolean).join(", ") || null;
+  // What the site says where the owner hasn't written their own (the Design screen shows it as the placeholder)
+  const copy = copyForLodge(
+    { ...lodge, kind, setting, rooms: lodge.rooms },
+    heroText(template, { name: lodge.name, place, heroHeadline: null, heroSubline: null }),
+  );
+
   return {
     id: lodge.id,
     slug: lodge.slug,
@@ -89,8 +101,9 @@ export async function lodgeJson(lodgeId: string): Promise<DashboardLodge> {
     town: lodge.town,
     region: lodge.region,
     country: lodge.country,
-    kind: isLodgeKind(lodge.kind) ? lodge.kind : null,
-    setting: isSetting(lodge.setting) ? lodge.setting : null,
+    kind,
+    setting,
+    copy,
     roomsHint: lodge.roomsHint,
     priceHint: lodge.priceHint,
     copySeed: lodge.copySeed,
@@ -102,7 +115,7 @@ export async function lodgeJson(lodgeId: string): Promise<DashboardLodge> {
     longitude: lodge.longitude,
     themeColor: lodge.themeColor,
     template: lodge.template,
-    siteTemplate: effectiveTemplate(lodge.template, lodge.plan).key,
+    siteTemplate: template.key,
     heroHeadline: lodge.heroHeadline,
     heroSubline: lodge.heroSubline,
     logoUrl: lodge.logoKey ? uploadUrl(lodge.logoKey) : null,

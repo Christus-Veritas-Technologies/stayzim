@@ -28,7 +28,7 @@ import { urbanist } from "@/components/site/template-fonts";
 import { BookLink } from "@/components/site/tracking";
 import { AMENITIES, formatPrice } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
-import { highlightWords, roomFacts } from "@/lib/site-content";
+import { highlightWords, roomFacts, roomsEmpty, roomsIntro } from "@/lib/site-content";
 
 function Heading({ children, className }: { children: ReactNode; className?: string }) {
   return <h2 className={cn("text-[34px] leading-10 font-bold tracking-[-0.025em] sm:text-[48px] sm:leading-[54px]", className)}>{children}</h2>;
@@ -172,7 +172,7 @@ export function ShorelineTemplate({ site }: { site: LiveSite }) {
             {site.rooms.length === 0 ? (
               <div className="flex flex-col gap-3">
                 <Heading>Choose your room</Heading>
-                <p className="text-[#5F6B72]">Rooms are coming soon. Message us on WhatsApp to book.</p>
+                <p className="text-[#5F6B72]">{roomsEmpty(site)}</p>
               </div>
             ) : (
               <Carousel
@@ -183,7 +183,7 @@ export function ShorelineTemplate({ site }: { site: LiveSite }) {
                 header={
                   <div className="flex flex-col gap-2">
                     <Heading>Choose your room</Heading>
-                    <p className="text-[16px] text-[#5F6B72]">Prices per room, per night.</p>
+                    <p className="text-[16px] text-[#5F6B72]">{roomsIntro(site)}</p>
                   </div>
                 }
               >
