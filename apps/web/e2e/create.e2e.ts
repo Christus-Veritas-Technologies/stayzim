@@ -58,6 +58,14 @@ test("a lodge goes live from an advert in four steps, then the owner claims it",
   await expect(guest.getByText("Demo site.")).toBeVisible();
   await expect(guest.locator('a[href^="https://wa.me/"]').first()).toBeAttached();
   await expect(guest.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+  // A new site shows example rooms, marked, that can't be booked
+  const example = guest.locator("#rooms [data-room-id^='sample-']");
+  await expect(example).toHaveCount(4);
+  await expect(example.first().getByText("Example", { exact: true })).toBeVisible();
+  await example.first().getByRole("link", { name: /book/i }).click();
+  await expect(guest.getByRole("dialog", { name: "This is an example room" })).toBeVisible();
+  expect(guest.context().pages()).toHaveLength(2);
+  await guest.getByRole("button", { name: "Got it" }).click();
   await guest.close();
 
   // Claim my site: an email and password for the guest account, and the site stays

@@ -6,6 +6,8 @@ Playwright tests for the whole stack:
 - `smoke.e2e.ts` checks the landing page, the owner's rooms, and a lodge site's Book on WhatsApp links.
 - `cms.e2e.ts` checks the CMS end to end: room details and hiding, guest info, an owner's booking and cancel, a guest's booking the owner confirms, instant bookings (Confirm bookings automatically), and a Starter site that stays on WhatsApp. Dates are picked at random far ahead, so repeated runs don't collide.
 - `templates.e2e.ts` opens each of the nine designed templates (in the preview) at 360px: the rooms, a Book link and Find us are there, and nothing scrolls sideways. It also checks that the enquiry bar opens the booking sheet with the dates picked, and that the review score, a guest's quote and a journal post the team adds show on a Pro site.
+- `pages.e2e.ts` checks pages per plan: a Starter site is one page with room filters (its other pages 404), a Growth site has Rooms (sorting, a page per room), Gallery and Contact but no Pro pages, and a Pro site adds Our story, Things to do, Reviews and the compare table; every new page fits a 360px phone.
+- `create.e2e.ts` also checks that a new demo shows example rooms, marked Example, and that Book on one explains it's an example instead of opening WhatsApp.
 - `mobile.e2e.ts` checks that public pages, a lodge site and every dashboard screen fit a 360px phone without scrolling sideways. They run against apps that are already running, so start them first.
 
 ```bash
