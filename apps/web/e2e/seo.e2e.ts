@@ -55,8 +55,12 @@ test.describe("owner", () => {
   test("a '?' explains a field on hover", async ({ page }) => {
     await page.goto("/dashboard/design");
     const headline = page.locator('[data-slot="field"]').filter({ has: page.getByLabel("Headline", { exact: true }) });
-    await headline.getByRole("button", { name: "More info" }).hover();
-    await expect(page.getByText(/The big line guests read first/)).toBeVisible();
+    // A hover before the page has hydrated does nothing, so move away and hover again until it opens
+    await expect(async () => {
+      await page.mouse.move(0, 0);
+      await headline.getByRole("button", { name: "More info" }).hover();
+      await expect(page.getByText(/The big line guests read first/)).toBeVisible({ timeout: 1500 });
+    }).toPass({ timeout: 15_000 });
   });
 
   test("the hero preview shows a headline before it's saved", async ({ page }) => {
