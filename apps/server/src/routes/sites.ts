@@ -2,6 +2,7 @@ import { zValidator } from "@hono/zod-validator";
 import prisma from "@stayzim/db";
 import { bookingConfirmedEmail, bookingReceivedEmail, bookingRequestEmail } from "@stayzim/mail/templates";
 import {
+  type DirectoryLodge,
   BOOKING_LIMITS,
   canHold,
   dateAdd,
@@ -41,7 +42,7 @@ import { sendQuietly } from "../lib/billing";
 import { bookingReference, bookingsEnabled, checkWindow, claimRooms, HOLDING, holdsFor } from "../lib/bookings";
 import { clientIp } from "../lib/ip";
 import { proContent, publishedPost, publishedPosts } from "../lib/content";
-import { lodgeJson } from "../lib/lodge";
+import { lodgeJson, photoJson } from "../lib/lodge";
 import { withSession, type AuthVariables } from "../lib/session";
 import { isOwnerVisitKey } from "../lib/owner-key";
 import { newReference } from "../lib/reference";
@@ -126,6 +127,60 @@ export const sites = new Hono<{ Variables: AuthVariables }>()
     if (!slug) return c.json({ error: "No lodge on this domain" }, 404);
     c.header("Cache-Control", "public, max-age=60");
     return c.json({ slug });
+  })
+
+  /**
+   * The lodge's own domain, for the web app's proxy to send its subdomain there
+   * (one address per site): { customDomain } or null. Cached a minute, like /domain.
+   */
+  .get("/address/:slug", async (c) => {
+    const lodge = await prisma.lodge.findUnique({ where: { slug: c.req.param("slug").toLowerCase() }, select: { customDomain: true } });
+    c.header("Cache-Control", "public, max-age=60");
+    return c.json({ customDomain: lodge?.customDomain ?? null });
+  })
+
+  /**
+   * Every paid lodge whose site is up (not demos), for StayZim's /lodges directory
+   * and sitemap: name, place, setting, the hero photo and the lowest room price.
+   */
+  .get("/", async (c) => {
+    const lodges = await prisma.lodge.findMany({
+      where: { status: { in: ["ACTIVE", "OVERDUE"] } },
+      orderBy: [{ town: "asc" }, { name: "asc" }],
+      select: {
+        slug: true,
+        customDomain: true,
+        name: true,
+        town: true,
+        region: true,
+        setting: true,
+        themeColor: true,
+        updatedAt: true,
+        heroPhotoId: true,
+        photos: { where: { roomId: null }, orderBy: { position: "asc" }, take: 12 },
+        rooms: { where: { visible: true }, select: { price: true } },
+      },
+    });
+    c.header("Cache-Control", "public, max-age=300");
+    return c.json(
+      lodges.map((lodge) => {
+        const stored = lodge.photos.find((photo) => photo.id === lodge.heroPhotoId) ?? lodge.photos[0];
+        const hero = stored ? photoJson(stored) : null;
+        const prices = lodge.rooms.map((room) => room.price).filter((price) => price > 0);
+        return {
+          slug: lodge.slug,
+          customDomain: lodge.customDomain,
+          name: lodge.name,
+          town: lodge.town,
+          region: lodge.region,
+          setting: isSetting(lodge.setting) ? lodge.setting : null,
+          themeColor: lodge.themeColor,
+          hero: hero ? { url: hero.url, srcSet: hero.srcSet, width: hero.width, height: hero.height } : null,
+          priceFrom: prices.length > 0 ? Math.min(...prices) : null,
+          updatedAt: lodge.updatedAt.toISOString(),
+        };
+      }) satisfies DirectoryLodge[],
+    );
   })
 
   /** The lodge's site content. 404 for an unknown lodge; a short answer for a suspended one or an ended demo. */

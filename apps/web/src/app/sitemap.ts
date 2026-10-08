@@ -3,11 +3,12 @@ import { normalizeDomain } from "@stayzim/sites";
 import { headers } from "next/headers";
 
 import { slugForCustomDomain } from "@/lib/custom-domains";
+import { getDirectory } from "@/lib/directory";
 import { getJournal, getSite } from "@/lib/site";
 import { lodgeSlugFromHost, MAIN_URL, siteUrl } from "@/lib/site-host";
 import { hasPage, journalUrl, pageUrl, roomUrl } from "@/lib/site-pages";
 
-/** A lodge site lists its plan's pages (packages/sites content/pages.ts); StayZim's own domain has the landing page and the legal pages. */
+/** A lodge site lists its plan's pages (packages/sites content/pages.ts); StayZim's own domain has its pages, /lodges and every paid lodge's home page. */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const host = (await headers()).get("host");
   const subdomain = lodgeSlugFromHost(host);
@@ -34,10 +35,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         : []),
     ];
   }
+  // StayZim's pages, then every paid lodge's home page (one Search Console Domain property covers the subdomains)
+  const lodges = await getDirectory();
   return [
     { url: MAIN_URL, changeFrequency: "weekly", priority: 1 },
-    { url: `${MAIN_URL}/signup`, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${MAIN_URL}/create`, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${MAIN_URL}/lodges`, changeFrequency: "daily", priority: 0.8 },
     { url: `${MAIN_URL}/privacy`, changeFrequency: "yearly", priority: 0.3 },
     { url: `${MAIN_URL}/terms`, changeFrequency: "yearly", priority: 0.3 },
+    ...lodges.map((lodge) => ({ url: siteUrl(lodge), lastModified: lodge.updatedAt, changeFrequency: "weekly" as const, priority: 0.7 })),
   ];
 }

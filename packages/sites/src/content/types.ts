@@ -137,6 +137,21 @@ export type SitePost = {
 /** A whole post: plain text, blank lines between paragraphs, "## " for headings */
 export type SitePostFull = SitePost & { body: string };
 
+/** GET /api/sites: a paid lodge in StayZim's /lodges directory (never demos). */
+export type DirectoryLodge = {
+  slug: string;
+  customDomain: string | null;
+  name: string;
+  town: string | null;
+  region: string | null;
+  setting: Setting | null;
+  themeColor: string;
+  hero: SitePhoto | null;
+  /** The cheapest shown room, a night in dollars */
+  priceFrom: number | null;
+  updatedAt: string;
+};
+
 export type PublicSite = { status: "SUSPENDED" | "DEMO_ENDED"; slug: string; name: string } | LiveSite;
 
 // --- What the dashboard receives (GET /api/lodge, and every lodge edit) ---
