@@ -3,6 +3,9 @@ import type { Metadata } from "next";
 import { LodgesDirectory } from "@/components/lodges-directory";
 import { byTown, getDirectory } from "@/lib/directory";
 
+// Rendered per request: the list comes from the API, which isn't there while the app builds
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Lodges in Zimbabwe, booked direct",
   description: "Lodges, guesthouses and holiday homes across Zimbabwe on StayZim. Each has its own website: book with them directly, on their site or on WhatsApp.",

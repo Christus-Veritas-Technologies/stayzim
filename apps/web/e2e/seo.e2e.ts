@@ -54,7 +54,8 @@ test.describe("owner", () => {
 
   test("a '?' explains a field on hover", async ({ page }) => {
     await page.goto("/dashboard/design");
-    await page.getByRole("button", { name: "More info" }).first().hover();
+    const headline = page.locator('[data-slot="field"]').filter({ has: page.getByLabel("Headline", { exact: true }) });
+    await headline.getByRole("button", { name: "More info" }).hover();
     await expect(page.getByText(/The big line guests read first/)).toBeVisible();
   });
 
