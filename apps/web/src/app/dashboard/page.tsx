@@ -8,6 +8,7 @@ import { ArrowUpRight, RotateCcw } from "lucide-react";
 import { useState } from "react";
 
 import { ComingUpCard } from "@/components/dashboard/coming-up";
+import { DemoCountdownCard } from "@/components/dashboard/demo-countdown";
 import { useLodge } from "@/components/dashboard/lodge-provider";
 import { ActivityCard, RoomsSummaryCard } from "@/components/dashboard/overview-cards";
 import { Page, PageHeader, PageSection } from "@/components/dashboard/page";
@@ -68,6 +69,10 @@ export default function DashboardPage() {
         description={`Here is how ${lodge.name} is doing.`}
         actions={locked ? null : <PeriodTabs value={period} onChange={setPeriod} className="hidden sm:flex" />}
       />
+
+      <PageSection>
+        <DemoCountdownCard />
+      </PageSection>
 
       <PageSection className="lg:hidden">
         <MobileSiteCard />

@@ -17,12 +17,12 @@ import { WhatsAppIcon } from "@/components/landing/brand";
 import { EASE_OUT } from "@/components/motion";
 import { PayCard } from "@/components/dashboard/pay-card";
 import { ClaimButton } from "@/components/dashboard/claim";
+import { CountdownUnits, useDemoLeft } from "@/components/dashboard/demo-countdown";
 import { api } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
 import { formatCents, formatMoney, type BillingOverview } from "@/lib/billing";
 import { formatClock, formatDate, formatLongDate } from "@/lib/format";
-import { demoTimeLeft, dueDate, formatTimeLeft, offlineDate, PLAN_ORDER, PLANS, type Lodge, type PlanKey } from "@/lib/lodge";
-import { useNow } from "@/lib/use-now";
+import { dueDate, offlineDate, PLAN_ORDER, PLANS, type Lodge, type PlanKey } from "@/lib/lodge";
 import { stayzimChatUrl } from "@/lib/whatsapp";
 
 const STATUS = {
@@ -54,8 +54,7 @@ function statusLine(lodge: Lodge) {
 function PlanCard({ lodge }: { lodge: Lodge }) {
   const plan = PLANS[lodge.plan];
   const status = STATUS[lodge.status];
-  const now = useNow();
-  const left = demoTimeLeft(lodge, now);
+  const left = useDemoLeft(lodge);
   const due = dueDate(lodge);
 
   return (
@@ -84,8 +83,8 @@ function PlanCard({ lodge }: { lodge: Lodge }) {
 
         {lodge.status === "DEMO" && !lodge.demoEnded ? (
           <div className="flex flex-col gap-2 lg:min-w-56 lg:items-end">
-            <span className="font-display text-[28px] leading-8 font-semibold">{formatTimeLeft(left)} left</span>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/15 lg:w-56" aria-hidden="true">
+            {lodge.demoEndsAt ? <CountdownUnits ms={left} endsAt={lodge.demoEndsAt} tone="dark" /> : null}
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/15" aria-hidden="true">
               <motion.span
                 className="block h-full origin-left rounded-full bg-brand-sky"
                 initial={{ scaleX: 0 }}

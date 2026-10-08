@@ -131,6 +131,19 @@ export function formatTimeLeft(ms: number) {
   return `${Math.max(1, Math.ceil(ms / MINUTE))} min`;
 }
 
+/** Time left split for a countdown: whole days, then hours, minutes and seconds. */
+export function splitTimeLeft(ms: number) {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  return { days: Math.floor(total / 86_400), hours: Math.floor((total % 86_400) / 3600), minutes: Math.floor((total % 3600) / 60), seconds: total % 60 };
+}
+
+/** "1 day 08:12:45", "08:12:45": a demo's time left to the second. */
+export function formatCountdown(ms: number) {
+  const { days, hours, minutes, seconds } = splitTimeLeft(ms);
+  const clock = [hours, minutes, seconds].map((part) => String(part).padStart(2, "0")).join(":");
+  return days > 0 ? `${days} ${days === 1 ? "day" : "days"} ${clock}` : clock;
+}
+
 export { GRACE_DAYS };
 
 /** When the next payment is due: the end of the demo or of the paid period. */

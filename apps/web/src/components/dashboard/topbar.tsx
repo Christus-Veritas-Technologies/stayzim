@@ -11,11 +11,11 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 
 import { AccountMenu } from "@/components/dashboard/account-menu";
+import { DemoClock } from "@/components/dashboard/demo-countdown";
 import { NavIcon } from "@/components/dashboard/link-pending";
 import { useLodge } from "@/components/dashboard/lodge-provider";
 import { breadcrumb, isActive, lodgeStatus, navLinks } from "@/components/dashboard/nav";
-import { demoTimeLeft, formatTimeLeft, ownerSiteUrl, PLANS, siteHost, siteUrl, type Lodge } from "@/lib/lodge";
-import { useNow } from "@/lib/use-now";
+import { ownerSiteUrl, PLANS, siteHost, siteUrl, type Lodge } from "@/lib/lodge";
 
 /** A demo that's still live: purple, with the time left. Everything else that isn't Active is a payment warning. */
 function isLiveDemo(lodge: Lodge) {
@@ -24,7 +24,6 @@ function isLiveDemo(lodge: Lodge) {
 
 /** "Growth demo: 1 day 4 h left [Pay to keep it]", or a payment warning once the demo or the paid period is over. */
 function PlanPill({ lodge, compact = false }: { lodge: Lodge; compact?: boolean }) {
-  const now = useNow();
   if (lodge.status === "ACTIVE") return null;
 
   if (isLiveDemo(lodge)) {
@@ -37,7 +36,7 @@ function PlanPill({ lodge, compact = false }: { lodge: Lodge; compact?: boolean 
       >
         <Clock className="size-4 text-purple" />
         <span>
-          <strong className="font-semibold">{PLANS[lodge.plan].name} demo:</strong> {formatTimeLeft(demoTimeLeft(lodge, now))} left
+          <strong className="font-semibold">{PLANS[lodge.plan].name} demo:</strong> <DemoClock lodge={lodge} />
         </span>
         {compact ? null : (
           <Link href="/dashboard/billing" className={buttonVariants({ variant: "accent", size: "xs", className: "rounded-full" })}>
