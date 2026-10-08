@@ -130,16 +130,6 @@ export const sites = new Hono<{ Variables: AuthVariables }>()
   })
 
   /**
-   * The lodge's own domain, for the web app's proxy to send its subdomain there
-   * (one address per site): { customDomain } or null. Cached a minute, like /domain.
-   */
-  .get("/address/:slug", async (c) => {
-    const lodge = await prisma.lodge.findUnique({ where: { slug: c.req.param("slug").toLowerCase() }, select: { customDomain: true } });
-    c.header("Cache-Control", "public, max-age=60");
-    return c.json({ customDomain: lodge?.customDomain ?? null });
-  })
-
-  /**
    * Every paid lodge whose site is up (not demos), for StayZim's /lodges directory
    * and sitemap: name, place, setting, the hero photo and the lowest room price.
    */

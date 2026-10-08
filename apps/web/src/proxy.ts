@@ -1,3 +1,4 @@
+import { normalizeDomain } from "@stayzim/sites";
 import { getSessionCookie } from "better-auth/cookies";
 import { NextResponse, type NextRequest } from "next/server";
 
@@ -38,8 +39,13 @@ export async function proxy(request: NextRequest) {
   if (slug) return lodgeSite(request, slug);
 
   if (!isStayZimHost(host)) {
+    const own = await slugForCustomDomain(host);
+    // One address per site: www.{domain} goes to {domain}, which the canonical tags name too
+    if (own && host?.toLowerCase().startsWith("www.")) {
+      return NextResponse.redirect(`${siteUrl({ slug: own, customDomain: normalizeDomain(host) })}${pathname === "/" ? "" : pathname}${request.nextUrl.search}`, 308);
+    }
     // "-" is never a lodge, so an unknown domain shows the not-found page
-    return lodgeSite(request, (await slugForCustomDomain(host)) ?? "-");
+    return lodgeSite(request, own ?? "-");
   }
 
   // A lodge site opened by path on the main domain: send it to its own address
