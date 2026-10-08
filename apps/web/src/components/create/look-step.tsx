@@ -3,6 +3,7 @@
 import { DEFAULT_TEMPLATE, findTemplate, TEMPLATES, type Template, type TemplateKey } from "@stayzim/sites";
 import { Button, buttonVariants } from "@stayzim/ui/components/button";
 import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@stayzim/ui/components/sheet";
+import { Tabs, TabsList, TabsTab } from "@stayzim/ui/components/tabs";
 import { cn } from "@stayzim/ui/lib/utils";
 import { motion } from "framer-motion";
 import { ArrowRight, ArrowUpRight, Check, Eye } from "lucide-react";
@@ -14,7 +15,7 @@ import { PreviewWidthTabs, TemplatePreviewFrame, type PreviewWidth } from "@/com
 import { TemplateThumb } from "@/components/dashboard/template-thumb";
 import { LODGES } from "@/components/landing/content";
 import { api } from "@/lib/api";
-import { PLANS, type PlanKey } from "@/lib/lodge";
+import { PLAN_ORDER, PLANS, type PlanKey } from "@/lib/lodge";
 
 /** A few words each, so the tiles stay small. The design screen has the long descriptions. */
 const LOOKS: Record<TemplateKey, string> = {
@@ -122,12 +123,36 @@ export function LookStep({ value, onChange, onNext }: { value: TemplateKey; onCh
   const plan = PLANS[picked.plan];
   const example = useExampleLodge();
   const [previewing, setPreviewing] = useState<Template | null>(null);
+  // The plan whose designs are showing: the picked design's, until another tab is opened
+  const [tab, setTab] = useState<PlanKey>(picked.plan);
   return (
     <>
       <CreateHeading title="First, pick a look">Every design works with your rooms and photos. You can switch any time.</CreateHeading>
 
-      <div role="radiogroup" aria-label="Site design" className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
-        {TEMPLATES.map((template) => {
+      <Tabs value={tab} onValueChange={(next) => setTab(next as PlanKey)} className="mb-4 gap-2.5">
+        <TabsList variant="track" aria-label="Plans" className="sm:w-full">
+          {PLAN_ORDER.map((key) => (
+            <TabsTab key={key} value={key} className="gap-1 px-3">
+              {PLANS[key].name}
+              <span className="text-[11.5px] font-medium opacity-70 tabular-nums">${PLANS[key].price}</span>
+            </TabsTab>
+          ))}
+        </TabsList>
+        <p className="px-1 text-[13px] leading-[19px] text-muted">
+          <span className="font-semibold text-ink-2">{PLANS[tab].tagline}.</span> {PLANS[tab].pitch}
+        </p>
+      </Tabs>
+
+      <motion.div
+        key={tab}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+        role="radiogroup"
+        aria-label={`${PLANS[tab].name} designs`}
+        className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4"
+      >
+        {TEMPLATES.filter((template) => template.plan === tab).map((template) => {
           const selected = template.key === value;
           return (
             <div key={template.key} className="group/look relative">
@@ -165,10 +190,7 @@ export function LookStep({ value, onChange, onNext }: { value: TemplateKey; onCh
                   ) : null}
                 </span>
                 <span className={cn("truncate px-1.5 pt-2.5 text-[14.5px] font-semibold", selected ? "text-brand-dark" : "text-ink")}>{template.name}</span>
-                <span className="flex items-baseline justify-between gap-2 px-1.5 pb-1.5">
-                  <span className="truncate text-[12.5px] leading-[18px] text-muted">{LOOKS[template.key]}</span>
-                  <span className="shrink-0 text-[11.5px] text-muted-2 tabular-nums">${PLANS[template.plan].price}/mo</span>
-                </span>
+                <span className="truncate px-1.5 pb-1.5 text-[12.5px] leading-[18px] text-muted">{LOOKS[template.key]}</span>
               </button>
               {/* Beside the tile, not in it: a button can't hold another. Always shown on touch screens */}
               {example ? (
@@ -185,7 +207,7 @@ export function LookStep({ value, onChange, onNext }: { value: TemplateKey; onCh
             </div>
           );
         })}
-      </div>
+      </motion.div>
 
       {example ? <LookPreview slug={example} template={previewing} onClose={() => setPreviewing(null)} onUse={onChange} /> : null}
 

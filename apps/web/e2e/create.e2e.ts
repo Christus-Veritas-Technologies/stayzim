@@ -19,6 +19,9 @@ test("a lodge goes live from an advert in three steps, then the owner claims it"
   await page.goto("/create?utm_source=meta&utm_campaign=registration_test");
   await expect(page.getByText(/Step 1 of 3/)).toBeVisible();
   await expect(page.getByRole("radio", { name: /Shoreline/ })).toHaveAttribute("aria-checked", "true");
+  // Designs come in plan tabs, cheapest first
+  await expect(page.getByRole("radio", { name: /Rondavel/ })).toHaveCount(0);
+  await page.getByRole("tab", { name: /Starter/ }).click();
   await page.getByRole("radio", { name: /Rondavel/ }).click();
   await page.getByRole("button", { name: /Next: your lodge/ }).click();
 
