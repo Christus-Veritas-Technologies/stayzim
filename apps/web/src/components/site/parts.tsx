@@ -2,7 +2,7 @@ import { cn } from "@stayzim/ui/lib/utils";
 import { ArrowRight, ArrowUpRight, CalendarDays, Check, ChevronDown, LogIn, LogOut, MapPin } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { WhatsAppIcon } from "@/components/landing/brand";
+import { LogoMark, WhatsAppIcon } from "@/components/landing/brand";
 import { SampleBadge } from "@/components/site/sample-badge";
 import { SocialIcon } from "@/components/site/social-icons";
 import { BookLink } from "@/components/site/tracking";
@@ -253,11 +253,30 @@ export function SocialLinks({ site, className, button }: { site: LiveSite; class
   );
 }
 
+/** Where a demo's map points until the owner sets their pin. */
+const EXAMPLE_MAP_PLACE = "Reserve Bank of Zimbabwe, Harare";
+
 /**
- * The map: Google's embed when the lodge has a pin, else a drawn map with the
- * lodge's name on it (it still links to Google Maps beside it).
+ * The map: Google's embed when the lodge has a pin (on a demo without one, an
+ * example pointing at Harare), else a drawn map with the lodge's name on it
+ * (it still links to Google Maps beside it).
  */
 export function MapView({ site, className, pin, dark = false }: { site: LiveSite; className?: string; pin?: string; dark?: boolean }) {
+  if (site.samples.map) {
+    // A demo with no pin yet: a real map, on the Reserve Bank in Harare, marked as an example
+    return (
+      <div className={cn("relative min-h-[280px] overflow-hidden", className)}>
+        <iframe
+          title="Example map"
+          src={`https://maps.google.com/maps?q=${encodeURIComponent(EXAMPLE_MAP_PLACE)}&z=15&output=embed`}
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+          className="absolute inset-0 size-full border-0"
+        />
+        <SampleBadge label="Example location: add your pin" className="absolute top-3 left-3" />
+      </div>
+    );
+  }
   if (site.latitude !== null && site.longitude !== null) {
     return (
       <iframe
@@ -406,7 +425,8 @@ export function MadeWith({ className, strong }: { className?: string; strong?: s
       <a href={`${MAIN_URL}/privacy`} className="hover:underline">
         Privacy
       </a>
-      <a href="https://stayzim.co.zw" className="hover:underline">
+      <a href="https://stayzim.co.zw" className="inline-flex items-center gap-1.5 hover:underline">
+        <LogoMark size={16} />
         Made with <strong className={cn("font-semibold", strong)}>StayZim</strong>
       </a>
     </span>
