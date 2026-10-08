@@ -216,7 +216,7 @@ export function PayCard({
               <Field label="Plan" hint={planChangeHint(lodge, plan, months, now)}>
                 <PlanPicker value={plan} onChange={onPlanChange} disabled={starting} />
               </Field>
-              <Field label="How long">
+              <Field label="How long" help="Pay for 1, 3 or 12 months at a time. Paying early adds to the time you have left, and 12 months costs less.">
                 <div role="radiogroup" aria-label="How long" className="grid grid-cols-3 gap-2">
                   {MONTHS.map((count) => (
                     <button

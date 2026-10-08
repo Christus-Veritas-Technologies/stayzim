@@ -2,6 +2,7 @@
 
 import { FACT_LIMITS, LODGE_KINDS, PRICE_HINTS, SETTINGS, type LodgeKind, type Setting } from "@stayzim/sites";
 import { Button } from "@stayzim/ui/components/button";
+import { InfoTip } from "@stayzim/ui/components/info-tip";
 import { NumberField } from "@stayzim/ui/components/number-field";
 import { cn } from "@stayzim/ui/lib/utils";
 import { motion } from "framer-motion";
@@ -115,11 +116,14 @@ function Tile({ icon: Icon, label, hint, selected, onSelect, ringId }: { icon: L
   );
 }
 
-function Question({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
+function Question({ title, hint, help, children }: { title: string; hint?: string; help?: string; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-3">
       <div className="flex flex-col gap-0.5">
-        <h2 className="text-[16px] leading-6 font-semibold text-ink">{title}</h2>
+        <h2 className="flex items-center gap-1.5 text-[16px] leading-6 font-semibold text-ink">
+          {title}
+          {help ? <InfoTip label={`More about: ${title}`}>{help}</InfoTip> : null}
+        </h2>
         {hint ? <p className="text-[13px] leading-[19px] text-muted">{hint}</p> : null}
       </div>
       {children}
@@ -139,7 +143,7 @@ export function PlaceStep({ facts, onChange, onNext, onBack }: { facts: CreateFa
       <CreateHeading title="Tell us about your place">A few taps. We write your site from them, with example rooms you can change later.</CreateHeading>
 
       <div className="flex flex-col gap-8">
-        <Question title="What kind of place is it?">
+        <Question title="What kind of place is it?" help="It sets the words your site uses: rooms or tents, guests or campers, your hosts or the team.">
           <div role="radiogroup" aria-label="Type of place" className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {(Object.keys(LODGE_KINDS) as LodgeKind[]).map((key) => (
               <Tile key={key} icon={KIND_ICONS[key]} label={LODGE_KINDS[key].label} selected={facts.kind === key} onSelect={() => set({ kind: key })} ringId="create-kind-ring" />
@@ -147,7 +151,7 @@ export function PlaceStep({ facts, onChange, onNext, onBack }: { facts: CreateFa
           </div>
         </Question>
 
-        <Question title="Where is it?" hint="The view guests wake up to.">
+        <Question title="Where is it?" hint="The view guests wake up to." help="Your welcome, the things to do and the example photos follow it. You can change it later in Lodge info.">
           <div role="radiogroup" aria-label="Setting" className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {(Object.keys(SETTINGS) as Setting[]).map((key) => (
               <Tile
@@ -174,7 +178,7 @@ export function PlaceStep({ facts, onChange, onNext, onBack }: { facts: CreateFa
               className="sm:max-w-[200px]"
             />
           </Question>
-          <Question title="A typical price a night">
+          <Question title="A typical price a night" help="Roughly what a room costs a night. Your example rooms are priced around it until you add your own.">
             <div role="radiogroup" aria-label="Typical price a night" className="flex flex-wrap gap-2">
               {PRICE_HINTS.map((price, index) => {
                 const selected = facts.priceHint === price;

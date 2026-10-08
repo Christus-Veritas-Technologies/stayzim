@@ -232,7 +232,7 @@ export default function GuestInfoPage() {
             defaultOpen
           >
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Check-in from">
+              <Field label="Check-in from" help="The earliest time guests can arrive. It shows on your site and in the booking form.">
                 <NativeSelect value={draft.checkInFrom} onChange={(event) => set("checkInFrom", event.target.value)}>
                   <option value="">Not set</option>
                   {STAY_TIMES.map((time) => (
@@ -265,7 +265,7 @@ export default function GuestInfoPage() {
                 itemLabel="House rule"
               />
             </Field>
-            <Field label="Cancellation policy" count={{ value: draft.cancellationPolicy.length, max: GUEST_INFO_LIMITS.policy }}>
+            <Field label="Cancellation policy" count={{ value: draft.cancellationPolicy.length, max: GUEST_INFO_LIMITS.policy }} help="What happens if a guest cancels: how much notice they give, and whether they get money back. Keep it to a sentence or two.">
               <Textarea
                 value={draft.cancellationPolicy}
                 onChange={(event) => set("cancellationPolicy", event.target.value)}

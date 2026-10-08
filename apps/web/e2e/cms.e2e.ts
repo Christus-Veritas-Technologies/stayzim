@@ -67,7 +67,7 @@ test.describe("owner", () => {
 
   test("guest info shows on the site", async ({ page, browser }) => {
     await page.goto("/dashboard/guest-info");
-    await page.getByLabel("Check-in from").selectOption("15:00");
+    await page.getByLabel("Check-in from", { exact: true }).selectOption("15:00");
     // The questions section starts closed once there are some
     const questions = page.getByRole("button", { name: /Questions guests ask/ });
     if ((await questions.getAttribute("aria-expanded")) === "false") await questions.click();
@@ -94,7 +94,7 @@ test.describe("owner", () => {
     await page.goto("/dashboard/guest-info");
     const save = page.getByRole("button", { name: "Save changes" }).filter({ visible: true }).first();
     await expect(save).toBeDisabled();
-    const policy = page.getByLabel("Cancellation policy");
+    const policy = page.getByLabel("Cancellation policy", { exact: true });
     const before = await policy.inputValue();
     await policy.fill(`${before} Back test.`);
     await page.goBack();

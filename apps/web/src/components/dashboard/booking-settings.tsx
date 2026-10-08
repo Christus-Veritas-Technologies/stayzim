@@ -1,5 +1,6 @@
 "use client";
 
+import { InfoTip } from "@stayzim/ui/components/info-tip";
 import { Switch } from "@stayzim/ui/components/switch";
 import { Zap } from "lucide-react";
 import { useState } from "react";
@@ -34,7 +35,10 @@ export function BookingSettings() {
         <Zap className="size-4" />
       </span>
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className="text-[14px] font-semibold">Confirm bookings automatically</span>
+        <span className="flex items-center gap-1.5 text-[14px] font-semibold">
+          Confirm bookings automatically
+          <InfoTip label="More about confirming automatically">When it's on, a guest who asks for free nights is booked at once. When it's off, you confirm each one in Requests.</InfoTip>
+        </span>
         <span className="text-[12.5px] text-muted">
           {lodge.autoConfirmBookings
             ? "On: free nights are booked straight away. You can still cancel."

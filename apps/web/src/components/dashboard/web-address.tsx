@@ -3,6 +3,7 @@
 import { Badge } from "@stayzim/ui/components/badge";
 import { buttonVariants } from "@stayzim/ui/components/button";
 import { CopyButton } from "@stayzim/ui/components/copy-button";
+import { InfoTip } from "@stayzim/ui/components/info-tip";
 import { includesFreeDomain } from "@stayzim/sites";
 import { ArrowUpRight, Globe } from "lucide-react";
 import Link from "next/link";
@@ -31,6 +32,7 @@ export function WebAddress({ lodge }: { lodge: Lodge }) {
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="flex flex-wrap items-center gap-2 text-[13px] font-semibold text-muted">
           Your web address
+          <InfoTip label="More about your web address">Guests find your site here. On a paid plan you can use your own domain, like yourlodge.co.zw; this address keeps working underneath.</InfoTip>
           {own ? (
             <Badge status variant="success">
               Your own domain

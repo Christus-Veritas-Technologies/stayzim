@@ -4,6 +4,7 @@ import { Badge } from "@stayzim/ui/components/badge";
 import { Button } from "@stayzim/ui/components/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@stayzim/ui/components/collapsible";
 import { Field, FormMessage } from "@stayzim/ui/components/field";
+import { InfoTip } from "@stayzim/ui/components/info-tip";
 import { Input, InputGroup, InputGroupAddon, InputGroupInput } from "@stayzim/ui/components/input";
 import { NumberField } from "@stayzim/ui/components/number-field";
 import { Spinner } from "@stayzim/ui/components/spinner";
@@ -248,7 +249,7 @@ export function RoomSheet({
                     <InputGroupAddon align="end">/ night</InputGroupAddon>
                   </InputGroup>
                 </Field>
-                <Field label="Sleeps">
+                <Field label="Sleeps" help="The most guests this room takes, children included. Guests filter rooms by it.">
                   <NumberField
                     value={draft.sleeps}
                     min={1}
@@ -261,6 +262,7 @@ export function RoomSheet({
               <Field
                 label="How many of this room do you have?"
                 hint="Guests see it once. We use the number for bookings."
+                help="Three identical cottages? Add the room once and set 3. Your site shows one card, and the calendar can book all three on the same night."
               >
                 <NumberField
                   value={draft.units}
@@ -322,6 +324,7 @@ export function RoomSheet({
 
               <Field
                 label="Amenities"
+                help="What's in or with this room. The first few show on its card, and guests can filter rooms by them."
                 action={<span className="text-xs text-muted-2">Up to {AMENITIES_ON_CARD} show on the card</span>}
               >
                 <ToggleGroup
@@ -344,7 +347,10 @@ export function RoomSheet({
 
               <label className="flex items-center gap-3 rounded-xl border border-line px-3.5 py-3">
                 <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="text-[13px] font-semibold text-ink-2">Show on site</span>
+                  <span className="flex items-center gap-1.5 text-[13px] font-semibold text-ink-2">
+                    Show on site
+                    <InfoTip label="More about Show on site">Turn it off for a room you're not letting for now, like during repairs. It keeps its photos and bookings.</InfoTip>
+                  </span>
                   <span className="text-xs text-muted-2">
                     {draft.visible ? "Guests see this room and can book it." : "Hidden rooms stay here. Guests don't see them."}
                   </span>

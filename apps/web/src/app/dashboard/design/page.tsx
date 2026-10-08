@@ -16,6 +16,7 @@ import { Badge } from "@stayzim/ui/components/badge";
 import { Button, buttonVariants } from "@stayzim/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@stayzim/ui/components/card";
 import { Field, FormMessage } from "@stayzim/ui/components/field";
+import { InfoTip } from "@stayzim/ui/components/info-tip";
 import { Input } from "@stayzim/ui/components/input";
 import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@stayzim/ui/components/sheet";
 import { Textarea } from "@stayzim/ui/components/textarea";
@@ -340,7 +341,7 @@ function HeroText({ lodge, live }: { lodge: Lodge; live: Template }) {
                 </motion.div>
               ) : null}
             </AnimatePresence>
-            <Field label="Headline" count={{ value: headline.length, max: HERO_LIMITS.headline }} hint="Put *stars* around a word or two to make them stand out.">
+            <Field label="Headline" count={{ value: headline.length, max: HERO_LIMITS.headline }} hint="Put *stars* around a word or two to make them stand out." help="The big line guests read first. Leave it empty to use the wording we wrote for your lodge.">
               <Input value={headline} onChange={(event) => setHeadline(event.target.value)} maxLength={HERO_LIMITS.headline} placeholder={defaults.headline} />
             </Field>
             <Field
@@ -381,6 +382,7 @@ function HeroText({ lodge, live }: { lodge: Lodge; live: Template }) {
                     className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted-2"
                   >
                     Written for {lodge.name}.
+                    <InfoTip label="More about our wording">We write your site's text from your type of place, setting, town and rooms. Try other wording picks different sentences; nothing you typed is lost.</InfoTip>
                     <Button variant="ghost" size="sm" className="-ml-1" onClick={onShuffle} loading={shuffling} disabled={!online}>
                       <Shuffle />
                       Try other wording

@@ -381,7 +381,11 @@ export function BookingSheet({
               </Field>
 
               {room && room.units > 1 ? (
-                <Field label={draft.block ? "How many to close" : "How many rooms"} hint={`You have ${room.units}`}>
+                <Field
+                  label={draft.block ? "How many to close" : "How many rooms"}
+                  hint={`You have ${room.units}`}
+                  help={draft.block ? "Closing 1 of 3 cottages leaves 2 for guests to book on those nights." : undefined}
+                >
                   <NumberField value={draft.quantity} min={1} max={room.units} onValueChange={(value) => set("quantity", value ?? 1)} className="max-w-40" />
                 </Field>
               ) : null}

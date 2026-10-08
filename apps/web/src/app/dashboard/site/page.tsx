@@ -317,7 +317,7 @@ export default function LodgeInfoPage() {
                   </Field>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Type of place" hint="Your site's wording is written from these two.">
+                  <Field label="Type of place" hint="Your site's wording is written from these two." help="Changes the words your site uses, like rooms or tents, and your hosts.">
                     <NativeSelect value={draft.kind} onChange={(event) => set("kind", event.target.value)}>
                       <option value="">Not set</option>
                       {(Object.keys(LODGE_KINDS) as LodgeKind[]).map((key) => (
@@ -327,7 +327,7 @@ export default function LodgeInfoPage() {
                       ))}
                     </NativeSelect>
                   </Field>
-                  <Field label="Setting">
+                  <Field label="Setting" help="Where you are: mountains, a lake, the bush. Your site's welcome, things to do and example photos follow it.">
                     <NativeSelect value={draft.setting} onChange={(event) => set("setting", event.target.value)}>
                       <option value="">Not set</option>
                       {(Object.keys(SETTINGS) as Setting[]).map((key) => (
@@ -610,7 +610,7 @@ function LocationSections({
         state={sectionState("mapsUrl" in changes, Boolean(lodge.mapsUrl || lodge.latitude !== null))}
         defaultOpen
       >
-        <Field label="Google Maps link" error={findError ?? undefined} hint="Paste the link from Share in Google Maps.">
+        <Field label="Google Maps link" error={findError ?? undefined} hint="Paste the link from Share in Google Maps." help="We read your pin from the link, so guests get a map and directions. In Google Maps, find your lodge, tap Share, then Copy link.">
           <div className="flex gap-2">
             <InputGroup>
               <InputGroupAddon>
@@ -644,7 +644,7 @@ function LocationSections({
       >
         {/* The full keyboard on purpose: iPhone's number pad has no minus key, and every Zimbabwean latitude is negative */}
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Latitude" error={errors.latitude}>
+          <Field label="Latitude" error={errors.latitude} help="Your pin's position north or south. In Zimbabwe it starts with a minus, like -18.2869. Filled in from your Maps link.">
             <Input value={draft.latitude} onChange={(event) => set("latitude", event.target.value)} placeholder="-18.2869" />
           </Field>
           <Field label="Longitude" error={errors.longitude}>

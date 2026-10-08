@@ -1,5 +1,6 @@
 "use client";
 
+import { InfoTip } from "@stayzim/ui/components/info-tip";
 import { Label } from "@stayzim/ui/components/label";
 import { cn } from "@stayzim/ui/lib/utils";
 import { CircleAlertIcon } from "lucide-react";
@@ -37,6 +38,8 @@ type FieldProps = Omit<React.ComponentProps<"div">, "children"> & {
   /** Help under the control. Replaced by `error` when there is one. */
   hint?: React.ReactNode;
   error?: React.ReactNode;
+  /** A sentence or two behind a "?" beside the label, for fields whose name doesn't explain them */
+  help?: React.ReactNode;
   /** Shown at the right of the label, e.g. a "Forgot password?" link */
   action?: React.ReactNode;
   /** Character count at the right of the label, e.g. 118 / 300 */
@@ -48,7 +51,7 @@ type FieldProps = Omit<React.ComponentProps<"div">, "children"> & {
 };
 
 /** A label, one control, and its hint or error. The control picks up the wiring from context. */
-function Field({ label, hint, error, action, count, required = false, controlId, className, children, ...props }: FieldProps) {
+function Field({ label, hint, help, error, action, count, required = false, controlId, className, children, ...props }: FieldProps) {
   const generatedId = React.useId();
   const id = controlId ?? generatedId;
   const hintId = `${id}-hint`;
@@ -61,7 +64,14 @@ function Field({ label, hint, error, action, count, required = false, controlId,
     <FieldContext.Provider value={{ id, describedBy, invalid, required }}>
       <div data-slot="field" data-invalid={invalid || undefined} className={cn("flex flex-col gap-1.5", className)} {...props}>
         <div className="flex min-h-5 items-center justify-between gap-3">
-          <Label htmlFor={id}>{label}</Label>
+          {help ? (
+            <span className="flex min-w-0 items-center gap-1.5">
+              <Label htmlFor={id}>{label}</Label>
+              <InfoTip label={typeof label === "string" ? `More about ${label}` : "More about this"}>{help}</InfoTip>
+            </span>
+          ) : (
+            <Label htmlFor={id}>{label}</Label>
+          )}
           {action}
           {count ? (
             <span className={cn("text-xs tabular-nums text-muted-foreground", over && "font-semibold text-destructive")}>
