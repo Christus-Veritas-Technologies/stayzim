@@ -188,7 +188,7 @@ export async function applyPayment(paymentId: string, extra: { paynowReference?:
   return true;
 }
 
-/** Records a payment StayZim received another way (cash, bank, merchant code) and applies it. */
+/** Records a payment the team confirmed on Paynow outside the app (mark-paid) and applies it. */
 export async function recordManualPayment(input: { lodgeId: string; plan: Plan; months: number; amountCents?: number; channel: string; note?: string }) {
   const invoice = await prisma.invoice.findFirst({ where: { lodgeId: input.lodgeId, status: "OPEN" }, orderBy: { dueAt: "asc" } });
   const payment = await prisma.payment.create({

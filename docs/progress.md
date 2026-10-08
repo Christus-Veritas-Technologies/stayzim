@@ -100,7 +100,7 @@ Story IDs refer to the designer brief.
 - [x] N5 Owner visits excluded (server skips events from the owner's or an admin's session; works in production where cookies are shared on .stayzim.co.zw)
 - [x] B1–B5 Plan, status pill and due date, how to pay, "I have paid" and plan-change WhatsApp buttons
 - [x] B6 Overdue and suspended warnings
-- [ ] Real Paynow credentials and EcoCash/InnBucks merchant codes (`PAYNOW_*`, `ECOCASH_MERCHANT_CODE`, `INNBUCKS_MERCHANT_CODE`; the code is ready)
+- [ ] Real Paynow credentials (`PAYNOW_*`; the code is ready). Every payment goes through Paynow
 
 ### Shared states
 
@@ -385,7 +385,6 @@ Built (web):
 - **SMTP credentials** for hello@stayzim.co.zw (Spacemail). Welcome emails, invoices, receipts and resets all need them.
 - **Cloudflare R2:** a bucket, API token and public domain for lodge photos.
 - **Google OAuth client** (ID and secret), to switch on and test Google sign-in and sign-up.
-- **Merchant codes:** EcoCash and InnBucks, for owners who pay outside Paynow. Set them as `ECOCASH_MERCHANT_CODE` and `INNBUCKS_MERCHANT_CODE`; the cards stay hidden until then.
 - **Sales WhatsApp number,** for the landing page and the demo lodges (`seed-demos --whatsapp`).
 - **Demo lodge photos,** and a check of the demo copy in `packages/auth/scripts/seed-demos.ts`.
 - **Hosting:** the VPS, Coolify, the Cloudflare zone, and the origin certificate ([deployment.md](deployment.md)).

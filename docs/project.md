@@ -56,7 +56,7 @@ StayZim gives Zimbabwean lodges, guesthouses, cottages and Airbnbs their own web
 - **No commission** on any plan.
 - **Paying:**
   - Owners pay online through Paynow: EcoCash, InnBucks or OneMoney (a prompt on the phone or a code), or card. They can pay for 1, 3 or 12 months.
-  - They can also pay to the EcoCash or InnBucks merchant code; StayZim records it with `mark-paid`.
+  - Every payment goes through Paynow; there's no other way in. If one doesn't reach us, the team records it with `mark-paid`.
   - Invoices are emailed 3 days before, the day before and on the day the paid time ends; receipts on payment.
 - **Missed payment:** Active → Overdue when the paid time ends (the site stays up 3 more days) → Suspended (the site shows "temporarily unavailable"; the dashboard still works so they can pay) → Active once paid. This all happens automatically.
 - **Paying for a year:** 12 months cost 10% less on Starter ($216), 17% on Growth ($398) and 30% on Pro ($630), rounded down to whole dollars (`ANNUAL_DISCOUNT`).

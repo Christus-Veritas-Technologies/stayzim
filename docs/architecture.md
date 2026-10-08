@@ -225,8 +225,8 @@ The `resolve-request` script does the same from a terminal (`pnpm --filter @stay
   - Paynow also posts to `POST /api/paynow/result`. The hash is checked, then we poll Paynow ourselves with the stored poll URL and check the amount before applying.
   - `applyPayment()` (`lib/billing.ts`) is idempotent: it moves the lodge to the plan paid for, `ACTIVE`, sets `paidUntil` with `paidUntilAfterPayment()` (`packages/sites`: the time left, moved to the new plan at the two monthly prices in whole days rounded down, then the months paid for), closes open invoices, and emails the receipt.
 - **Prices** (`packages/sites/src/plans.ts`): `planPrice(plan, months)` is the monthly price times the months, except 12 months, which take `ANNUAL_DISCOUNT` (Starter 10%, Growth 17%, Pro 30%) and round down to whole dollars: $216, $398, $630. Paynow amounts, `mark-paid`, the pay card, Billing and the pricing page all use it.
-  - Without `PAYNOW_INTEGRATION_*`, the Paynow buttons are hidden and the merchant codes remain.
-- **Merchant codes:** `ECOCASH_MERCHANT_CODE` and `INNBUCKS_MERCHANT_CODE` on the server. `GET /api/lodge/billing` returns the ones that are set, and Billing shows a card for each. With none, it shows "Message us" instead. They're runtime settings, so changing them needs no rebuild.
+  - Every payment goes through Paynow: EcoCash, InnBucks and OneMoney with `remotetransaction` (a prompt, or an InnBucks code), cards and the rest on Paynow's page (`initiatetransaction`). There's no other payment handler.
+  - Without `PAYNOW_INTEGRATION_*`, Billing hides the pay card and shows "Message us" (the team sends a Paynow link and records it with `mark-paid`).
 - **Manual payments:** `pnpm --filter server mark-paid --slug … [--months 3] [--plan pro] [--channel cash]` records one with the same `applyPayment` (receipt included). `--status` sets a status by hand; `--list` shows everyone.
 - **The job** (`apps/server/src/jobs/billing.ts`) runs a minute after the server starts and then hourly, under a lease, so only one server runs it. `pnpm --filter server run-billing [--now …]` runs it by hand. Each run:
   1. **Invoices:** for paying lodges within 3 days of `paidUntil`, it makes the next invoice and sends the reminder for the current window (3 days before, the day before, on the day, in Harare dates). Demos get their reminders the day before and on the day.
@@ -285,7 +285,7 @@ Both databases get the whole schema; each app only uses its own tables. Changes 
 
 | App | File | Key settings |
 | --- | --- | --- |
-| server | `apps/server/.env` | `DATABASE_URL`, `CORS_ORIGIN` (comma-separated), `SITES_DOMAIN`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `WEB_URL`, `COOKIE_DOMAIN`, `GOOGLE_*`, `R2_*`, `SMTP_*`, `BILLING_SMTP_*`, `PAYNOW_*`, `ECOCASH_MERCHANT_CODE`, `INNBUCKS_MERCHANT_CODE`. See [.env.example](../apps/server/.env.example). |
+| server | `apps/server/.env` | `DATABASE_URL`, `CORS_ORIGIN` (comma-separated), `SITES_DOMAIN`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `WEB_URL`, `COOKIE_DOMAIN`, `GOOGLE_*`, `R2_*`, `SMTP_*`, `BILLING_SMTP_*`, `PAYNOW_*`. See [.env.example](../apps/server/.env.example). |
 | web | `apps/web/.env` | `NEXT_PUBLIC_SERVER_URL`, `NEXT_PUBLIC_SITES_DOMAIN`, `NEXT_PUBLIC_WHATSAPP_NUMBER`, `NEXT_PUBLIC_META_PIXEL` (optional, `off` to leave the Pixel out). See [.env.example](../apps/web/.env.example). |
 | outreach | `apps/outreach/.env` | `DATABASE_URL`, `OUTREACH_PASSWORD`, `WHATSAPP_*`. See [.env.example](../apps/outreach/.env.example). |
 

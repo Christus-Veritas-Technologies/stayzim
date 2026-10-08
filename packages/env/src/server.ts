@@ -85,9 +85,9 @@ export const env = createEnv({
     // e.g. "StayZim Billing <billing@stayzim.co.zw>"; defaults to that, from BILLING_SMTP_USER
     BILLING_SMTP_FROM: z.string().min(1).optional(),
 
-    // Paynow (apps/server/src/lib/paynow.ts). Without both, owners pay the manual
-    // way (EcoCash or InnBucks merchant codes, then "I have paid") and StayZim
-    // records it with mark-paid.
+    // Paynow (apps/server/src/lib/paynow.ts): every payment goes through it
+    // (EcoCash, InnBucks, OneMoney, cards). Without both, Billing says "Message
+    // us", and StayZim records a payment made on Paynow with mark-paid.
     PAYNOW_INTEGRATION_ID: z.string().min(1).optional(),
     PAYNOW_INTEGRATION_KEY: z.string().min(1).optional(),
     // In Paynow's test mode, payments must use the merchant account's email.
@@ -95,11 +95,6 @@ export const env = createEnv({
     PAYNOW_AUTH_EMAIL: z.email().optional(),
     // Tests only: a stand-in for https://www.paynow.co.zw
     PAYNOW_API_URL: z.url().default("https://www.paynow.co.zw"),
-
-    // For owners who pay outside Paynow: StayZim's merchant codes, shown on
-    // Billing. Without one, its card isn't shown.
-    ECOCASH_MERCHANT_CODE: z.string().min(1).optional(),
-    INNBUCKS_MERCHANT_CODE: z.string().min(1).optional(),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,

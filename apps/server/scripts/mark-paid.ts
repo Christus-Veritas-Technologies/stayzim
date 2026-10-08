@@ -1,7 +1,7 @@
 /**
- * Records a payment StayZim received outside Paynow (EcoCash or InnBucks to the
- * merchant code, cash, bank), puts the lodge on its plan, paid up for the
- * months, and emails the owner a receipt. Also sets a lodge's status by hand,
+ * Records a payment the team confirmed by hand (a Paynow payment whose result
+ * never reached us, or one agreed with an owner), puts the lodge on its plan,
+ * paid up for the months, and emails the owner a receipt. Also sets a lodge's status by hand,
  * and lists every lodge with what it owes.
  *
  *   pnpm --filter server mark-paid --slug mistvalley [--months 1] [--plan growth] [--amount 40] \

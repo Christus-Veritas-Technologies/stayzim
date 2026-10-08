@@ -1,9 +1,3 @@
-/** Tones for the merchant code cards (the codes come from the API: ECOCASH_MERCHANT_CODE, INNBUCKS_MERCHANT_CODE). */
-export const MERCHANT_TONES = {
-  ecocash: { short: "Ec", tone: "bg-danger-tint text-danger" },
-  innbucks: { short: "Ib", tone: "bg-warning-tint text-warning" },
-} as const;
-
 export function formatMoney(dollars: number) {
   return `$${dollars.toFixed(2)}`;
 }
@@ -36,10 +30,8 @@ export type Payment = {
   createdAt: string;
 };
 
-/** StayZim's merchant codes for paying outside Paynow; only those set on the server. */
-export type MerchantCode = { key: keyof typeof MERCHANT_TONES; name: string; code: string };
 
-export type BillingOverview = { paynow: boolean; merchantCodes: MerchantCode[]; invoices: Invoice[]; payments: Payment[] };
+export type BillingOverview = { paynow: boolean; invoices: Invoice[]; payments: Payment[] };
 
 /** Who issues invoices and receipts (apps/server/src/lib/business.ts). */
 export type Issuer = { name: string; website: string; email: string; phone: string };
@@ -66,11 +58,12 @@ export type BillingDocument = {
   channelName?: string;
 };
 
+/** The ways to pay, all through Paynow: a prompt on the phone, an InnBucks code, or Paynow's own page (cards and more). */
 export const PAY_CHANNELS = [
-  { key: "ecocash", name: "EcoCash", short: "Ec", tone: "bg-danger-tint text-danger", prompt: true },
-  { key: "innbucks", name: "InnBucks", short: "Ib", tone: "bg-warning-tint text-warning", prompt: true },
-  { key: "onemoney", name: "OneMoney", short: "1M", tone: "bg-brand-wash text-brand", prompt: true },
-  { key: "web", name: "Card & more", short: "Pn", tone: "bg-surface-2 text-slate", prompt: false },
+  { key: "ecocash", name: "EcoCash", how: "Prompt on your phone", prompt: true },
+  { key: "innbucks", name: "InnBucks", how: "Code for the app", prompt: true },
+  { key: "onemoney", name: "OneMoney", how: "Prompt on your phone", prompt: true },
+  { key: "web", name: "Card & more", how: "On Paynow's page", prompt: false },
 ] as const;
 export type PayChannel = (typeof PAY_CHANNELS)[number]["key"];
 

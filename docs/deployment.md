@@ -81,7 +81,7 @@ Owners pay from Billing through Paynow:
 - InnBucks: a code for the app;
 - cards and the rest: Paynow's own page.
 
-Without Paynow set up, Billing shows only the merchant codes and "I have paid", and you record payments with `mark-paid`.
+Every payment goes through Paynow. Without it set up, Billing shows "Message us": send the owner a Paynow link and record the payment with `mark-paid`.
 
 1. In the Paynow merchant account, go to Receive Payments → New integration → "3rd party shopping cart or link". Note the **Integration ID** and **Integration Key**, which become `PAYNOW_INTEGRATION_ID` and `PAYNOW_INTEGRATION_KEY`.
 2. A new integration starts in **test mode**:
@@ -94,8 +94,6 @@ Without Paynow set up, Billing shows only the merchant codes and "I have paid", 
 **Invoices and receipts:**
 
 - Invoices, receipts and their emails carry the issuer details hard-coded in `apps/server/src/lib/business.ts`: StayZim Platform Inc, stayzim.co.zw, hello@stayzim.co.zw, +263 77 510 1506. Add a street address or tax number there when there is one.
-- `ECOCASH_MERCHANT_CODE` and `INNBUCKS_MERCHANT_CODE` add the pay-by-merchant-code cards on Billing; without them, owners see "Message us". They aren't in `deploy/compose.yaml` today: to use them, add `ECOCASH_MERCHANT_CODE: ${ECOCASH_MERCHANT_CODE:-}` (and the InnBucks one) to the server's environment there, then set them in Coolify.
-- These are server settings: change them and restart the server, with no rebuild.
 - The billing job runs inside the server container every hour, so there's nothing to schedule.
 
 ## 3. Coolify

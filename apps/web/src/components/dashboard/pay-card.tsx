@@ -6,7 +6,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from "@stayzim/ui/compon
 import { Spinner } from "@stayzim/ui/components/spinner";
 import { cn } from "@stayzim/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowUpRight, CircleCheck, CircleX, Smartphone } from "lucide-react";
+import { ArrowUpRight, CircleCheck, CircleX, CreditCard, Smartphone, Ticket } from "lucide-react";
 import Link from "next/link";
 import { ANNUAL_DISCOUNT, carriedOverMs, paidUntilAfterPayment, planPriceCents } from "@stayzim/sites";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
@@ -253,8 +253,19 @@ export function PayCard({
                         channel === item.key ? "border-brand bg-brand-wash shadow-[0_0_0_1px_var(--color-brand)]" : "border-input hover:border-[#cfd8dd]",
                       )}
                     >
-                      <span className={cn("flex size-7 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold", item.tone)}>{item.short}</span>
-                      <span className="min-w-0 truncate">{item.name}</span>
+                      <span
+                        className={cn(
+                          "flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors",
+                          channel === item.key ? "bg-white text-brand shadow-xs" : "bg-surface-2 text-slate",
+                        )}
+                        aria-hidden="true"
+                      >
+                        {item.key === "web" ? <CreditCard className="size-4" /> : item.key === "innbucks" ? <Ticket className="size-4" /> : <Smartphone className="size-4" />}
+                      </span>
+                      <span className="flex min-w-0 flex-col">
+                        <span className="truncate">{item.name}</span>
+                        <span className="truncate text-[11.5px] font-medium text-muted">{item.how}</span>
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -275,7 +286,7 @@ export function PayCard({
               <Button type="submit" size="lg" className="w-full" loading={starting} disabled={!online}>
                 {starting ? "Starting payment" : `Pay ${formatCents(total)}`}
               </Button>
-              <p className="text-center text-[12px] text-muted-2">Payments go through Paynow. StayZim never sees your PIN or card.</p>
+              <p className="text-center text-[12px] text-muted-2">Every payment goes through Paynow, whichever way you pay. StayZim never sees your PIN or card.</p>
             </fieldset>
           </motion.form>
         )}
