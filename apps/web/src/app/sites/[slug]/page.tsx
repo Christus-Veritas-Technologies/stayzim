@@ -5,6 +5,7 @@ import { SiteTemplate } from "@/components/site/templates";
 import { DemoEndedSite, SuspendedSite } from "@/components/site/site-states";
 import { lodgePlace } from "@/lib/lodge";
 import { getSite } from "@/lib/site";
+import { lodgeShareMetadata } from "@/lib/share-metadata";
 import { siteUrl } from "@/lib/site-host";
 import { jsonLd, lodgeStructuredData } from "@/lib/structured-data";
 
@@ -22,7 +23,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description,
     // One address for search engines: the lodge's own domain when it has one
     alternates: { canonical: siteUrl(site) },
-    openGraph: { title: site.name, description, type: "website", url: siteUrl(site), images: site.heroUrl ? [{ url: site.heroUrl }] : undefined },
+    ...lodgeShareMetadata(site, { title: place ? `${site.name} · ${place}` : site.name, description, url: siteUrl(site) }),
     other: { "theme-color": site.themeColor },
     // Demos come and go in 2 days: only paid sites go in search results
     ...(site.demo ? { robots: { index: false, follow: false } } : {}),

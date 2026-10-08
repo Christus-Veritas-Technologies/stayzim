@@ -5,6 +5,7 @@ import { permanentRedirect } from "next/navigation";
 import { getSite, type LiveSite } from "@/lib/site";
 import { siteUrl } from "@/lib/site-host";
 import { hasPage } from "@/lib/site-pages";
+import { lodgeShareMetadata } from "@/lib/share-metadata";
 
 /*
  * Shared by the pages under app/sites/[slug]/ beyond the home page: the site
@@ -26,7 +27,7 @@ export function sitePageMetadata(site: LiveSite | null, { title, description, ur
     title: { absolute: `${title} · ${site.name}` },
     description,
     alternates: { canonical: url },
-    openGraph: { title: `${title} · ${site.name}`, description, type: "website", url, images: site.heroUrl ? [{ url: site.heroUrl }] : undefined },
+    ...lodgeShareMetadata(site, { title: `${title} · ${site.name}`, description, url }),
     other: { "theme-color": site.themeColor },
     // Demos come and go in 2 days: only paid sites go in search results
     ...(site.demo ? { robots: { index: false, follow: false } } : {}),

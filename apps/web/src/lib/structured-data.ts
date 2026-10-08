@@ -1,7 +1,8 @@
-import type { LiveSite } from "@stayzim/sites";
+import type { LiveSite, SitePostFull } from "@stayzim/sites";
 
 import { lodgePlace } from "@/lib/lodge";
-import { siteUrl } from "@/lib/site-host";
+import { MAIN_URL, siteUrl } from "@/lib/site-host";
+import { journalUrl } from "@/lib/site-pages";
 
 /**
  * schema.org data for search engines: the lodge, its rooms and its questions.
@@ -25,6 +26,11 @@ export function lodgeStructuredData(site: LiveSite) {
     checkoutTime: site.checkOutBy ?? undefined,
     sameAs: site.socialLinks.length > 0 ? site.socialLinks.map((link) => link.url) : undefined,
     priceRange: site.rooms.length > 0 ? `$${Math.min(...site.rooms.map((room) => room.price))}+` : undefined,
+    // The score guests gave on Google, Booking.com or the like (Pro), never the example reviews on a demo
+    aggregateRating:
+      site.reviews?.score && site.reviews.count && !site.samples.reviews
+        ? { "@type": "AggregateRating", ratingValue: site.reviews.score, reviewCount: site.reviews.count, bestRating: 5 }
+        : undefined,
     containsPlace: site.rooms.map((room) => ({
       "@type": "HotelRoom",
       name: room.name,
@@ -65,4 +71,40 @@ export function roomStructuredData(site: LiveSite, room: LiveSite["rooms"][numbe
     containedInPlace: { "@type": "LodgingBusiness", name: site.name, url: siteUrl(site) },
     offers: { "@type": "Offer", price: room.price, priceCurrency: "USD", unitText: "night" },
   };
+}
+
+/** schema.org data for a journal post (Pro): the article, by the lodge. */
+export function postStructuredData(site: LiveSite, post: SitePostFull) {
+  const lodge = { "@type": "LodgingBusiness", name: site.name, url: siteUrl(site) };
+  return {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: post.excerpt ?? undefined,
+    datePublished: post.publishedOn,
+    url: journalUrl(site, post.slug),
+    image: post.cover?.url,
+    author: lodge,
+    publisher: lodge,
+    mainEntityOfPage: journalUrl(site, post.slug),
+  };
+}
+
+/** schema.org data for StayZim's landing page: the company, and the site. */
+export function stayzimStructuredData() {
+  return [
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "StayZim",
+      legalName: "StayZim Platform Inc",
+      url: MAIN_URL,
+      logo: `${MAIN_URL}/email/stayzim-mark.png`,
+      email: "hello@stayzim.co.zw",
+      telephone: "+263775101506",
+      address: { "@type": "PostalAddress", addressLocality: "Mutare", addressCountry: "ZW" },
+      areaServed: "ZW",
+    },
+    { "@context": "https://schema.org", "@type": "WebSite", name: "StayZim", url: MAIN_URL, inLanguage: "en-ZW" },
+  ];
 }
