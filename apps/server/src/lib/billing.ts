@@ -3,6 +3,7 @@ import { sendEmail } from "@stayzim/mail";
 import { demoWelcomeEmail, receiptEmail } from "@stayzim/mail/templates";
 import {
   addMonths,
+  findTemplate,
   formatCents,
   formatHarareDate,
   formatHarareDateTime,
@@ -170,6 +171,7 @@ export async function applyPayment(paymentId: string, extra: { paynowReference?:
   if (!applied) return false;
 
   const { payment, paidUntil } = applied;
+  const fresh = await prisma.payment.findUniqueOrThrow({ where: { id: payment.id }, select: { previousPlan: true, template: true } });
   const lodge = await prisma.lodge.findUniqueOrThrow({ where: { id: payment.lodgeId }, select: { name: true, owner: { select: { name: true, email: true } } } });
   await sendOnce(
     `payment:${payment.id}:RECEIPT`,
@@ -188,6 +190,8 @@ export async function applyPayment(paymentId: string, extra: { paynowReference?:
       paidUntil: formatHarareDate(paidUntil),
       receiptUrl: `${BILLING_URL}/${payment.receiptNumber}`,
       issuedBy: issuerLine(),
+      change: fresh.previousPlan ? `Moved from ${PLANS_LABEL[fresh.previousPlan]} to ${PLANS_LABEL[payment.plan]}` : undefined,
+      design: fresh.template ? findTemplate(fresh.template)?.name : undefined,
     }),
   );
   return true;

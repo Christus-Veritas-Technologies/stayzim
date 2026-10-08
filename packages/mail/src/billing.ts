@@ -131,11 +131,17 @@ export function receiptEmail(input: {
   paidUntil: string;
   receiptUrl: string;
   issuedBy?: string;
+  /** "Moved from Pro to Starter", when the payment changed the plan */
+  change?: string;
+  /** The design that went live with it, when one was picked */
+  design?: string;
 }): Email {
   const rows: [string, string][] = [
     ["Receipt", input.number],
     ["Paid on", input.paidOn],
     ["Plan", `${input.plan}, ${input.months} ${input.months === 1 ? "month" : "months"}`],
+    ...(input.change ? ([["Plan change", input.change]] as [string, string][]) : []),
+    ...(input.design ? ([["Design", input.design]] as [string, string][]) : []),
     ["Paid with", input.method],
     ["Site live until", input.paidUntil],
     ["Amount", input.amount],

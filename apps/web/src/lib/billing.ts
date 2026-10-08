@@ -56,6 +56,12 @@ export type BillingDocument = {
   dueAt?: string;
   reference?: string;
   channelName?: string;
+  /** Receipts: the site is live until then thanks to this payment */
+  coversUntil?: string | null;
+  /** Receipts: the plan the lodge moved from, when this payment changed it */
+  previousPlan?: "STARTER" | "GROWTH" | "PRO" | null;
+  /** Receipts: the design that went live with it (picked for a cheaper plan) */
+  template?: string | null;
 };
 
 /** The ways to pay, all through Paynow: a prompt on the phone, an InnBucks code, or Paynow's own page (cards and more). */

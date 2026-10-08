@@ -181,5 +181,9 @@ export const billing = new Hono<{ Variables: LodgeVariables }>()
       channelName: paymentJson(payment).channelName,
       status: "PAID" as const,
       paidAt: payment.paidAt,
+      // What it paid for: live until then, and the plan it moved from (when it changed)
+      coversUntil: payment.coversUntil,
+      previousPlan: payment.previousPlan,
+      template: payment.template ? (findTemplate(payment.template)?.name ?? null) : null,
     });
   });
