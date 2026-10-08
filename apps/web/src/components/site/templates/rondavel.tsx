@@ -30,7 +30,7 @@ import { BookLink } from "@/components/site/tracking";
 import { AMENITIES, formatPhone, formatPrice } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
 import { filterRooms, roomsEmpty, roomsIntro, splitIntro } from "@/lib/site-content";
-import { pageOr } from "@/lib/site-pages";
+import { hasPage, pageOr, pageUrl } from "@/lib/site-pages";
 
 /** "— WELCOME": a short rule, then spaced capitals. */
 function Eyebrow({ children, className }: { children: ReactNode; className?: string }) {
@@ -62,6 +62,7 @@ export function RondavelTemplate({ site }: { site: LiveSite }) {
   const nav = [
     { href: pageOr(site, "rooms", "#rooms"), label: "Rooms" },
     site.gallery.length > 0 ? { href: pageOr(site, "gallery", "#gallery"), label: "Gallery" } : null,
+    hasPage(site, "about") ? { href: pageUrl(site, "about"), label: "Our story" } : null,
     { href: pageOr(site, "contact", "#location"), label: "Location" },
   ].filter((link) => link !== null);
 

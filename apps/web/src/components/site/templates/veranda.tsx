@@ -27,7 +27,7 @@ import { BookLink } from "@/components/site/tracking";
 import { AMENITIES, formatPrice } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
 import { filterRooms, roomFacts, roomsEmpty, roomsIntro, splitIntro } from "@/lib/site-content";
-import { pageOr } from "@/lib/site-pages";
+import { hasPage, pageOr, pageUrl } from "@/lib/site-pages";
 
 /** A soft tint of the lodge's colour, for chips and panels. */
 const TINT = "bg-[color-mix(in_oklab,var(--theme)_7%,white)]";
@@ -48,6 +48,7 @@ export function VerandaTemplate({ site }: { site: LiveSite }) {
   const nav = [
     { href: pageOr(site, "rooms", "#rooms"), label: "Rooms" },
     site.gallery.length > 0 ? { href: pageOr(site, "gallery", "#gallery"), label: "Gallery" } : null,
+    hasPage(site, "about") ? { href: pageUrl(site, "about"), label: "Our story" } : null,
     { href: pageOr(site, "contact", "#location"), label: "Location" },
   ].filter((link) => link !== null);
 

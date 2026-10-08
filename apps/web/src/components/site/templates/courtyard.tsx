@@ -37,7 +37,7 @@ import { BookLink } from "@/components/site/tracking";
 import { AMENITIES, formatPhone, formatPrice } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
 import { roomsEmpty } from "@/lib/site-content";
-import { pageOr } from "@/lib/site-pages";
+import { hasPage, pageOr, pageUrl } from "@/lib/site-pages";
 
 const DISPLAY = "font-[family-name:var(--font-tenor)] font-normal uppercase";
 
@@ -71,6 +71,7 @@ export function CourtyardTemplate({ site }: { site: LiveSite }) {
     site.description ? { href: "#house", label: "The house" } : null,
     site.gallery.length > 0 ? { href: pageOr(site, "gallery", "#gallery"), label: "Gallery" } : null,
     site.journal.length > 0 ? { href: journalUrl(site), label: "Journal" } : null,
+    hasPage(site, "about") ? { href: pageUrl(site, "about"), label: "Our story" } : null,
     { href: pageOr(site, "contact", "#location"), label: "Find us" },
   ].filter((link) => link !== null);
 

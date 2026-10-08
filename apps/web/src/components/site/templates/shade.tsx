@@ -31,7 +31,7 @@ import { BookLink } from "@/components/site/tracking";
 import { AMENITIES, formatPrice } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
 import { filterRooms, roomsEmpty, splitIntro } from "@/lib/site-content";
-import { hasPage, pageOr } from "@/lib/site-pages";
+import { hasPage, pageOr, pageUrl } from "@/lib/site-pages";
 
 const SERIF = "font-[family-name:var(--font-newsreader-book)] font-normal";
 const CREAM = "bg-[#F7F4EE]";
@@ -64,6 +64,7 @@ export function ShadeTemplate({ site }: { site: LiveSite }) {
     site.gallery.length > 0 ? { href: pageOr(site, "gallery", "#gallery"), label: "Gallery" } : null,
     // With a Contact page, Location is on it
     hasPage(site, "contact") ? null : { href: "#location", label: "Location" },
+    hasPage(site, "about") ? { href: pageUrl(site, "about"), label: "Our story" } : null,
     { href: pageOr(site, "contact", "#contact"), label: "Contact" },
   ].filter((link) => link !== null);
 

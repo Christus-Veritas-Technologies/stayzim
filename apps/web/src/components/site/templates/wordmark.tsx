@@ -29,7 +29,7 @@ import { BookLink } from "@/components/site/tracking";
 import { AMENITIES, formatPhone, formatPrice } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
 import { highlightWords, roomsEmpty } from "@/lib/site-content";
-import { pageOr } from "@/lib/site-pages";
+import { hasPage, pageOr, pageUrl } from "@/lib/site-pages";
 
 const DISPLAY = "font-[family-name:var(--font-bricolage)]";
 
@@ -69,8 +69,9 @@ export function WordmarkTemplate({ site }: { site: LiveSite }) {
   const nav = [
     { href: "#top", label: "Home" },
     { href: pageOr(site, "rooms", "#rooms"), label: "Rooms" },
-    site.description ? { href: "#about", label: "About" } : null,
+    site.description && !hasPage(site, "about") ? { href: "#about", label: "About" } : null,
     site.gallery.length > 0 ? { href: pageOr(site, "gallery", "#gallery"), label: "Gallery" } : null,
+    hasPage(site, "about") ? { href: pageUrl(site, "about"), label: "Our story" } : null,
     { href: pageOr(site, "contact", "#location"), label: "Find us" },
   ].filter((link) => link !== null);
 

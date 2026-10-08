@@ -6,7 +6,7 @@ import { isStayZimHost, lodgeSlugFromHost, mainSiteRedirect, siteUrl } from "@/l
 
 const SIGNED_IN_ONLY = ["/dashboard", "/set-password", "/admin"];
 
-/** Shows a lodge's site: /sites/{slug} (lodge sites are one page; other paths 404 there). */
+/** Shows a lodge's site: /sites/{slug}, and its other pages under it (paths its plan doesn't have 404 there). */
 function lodgeSite(request: NextRequest, slug: string) {
   const url = request.nextUrl.clone();
   url.pathname = request.nextUrl.pathname === "/" ? `/sites/${slug}` : `/sites/${slug}${request.nextUrl.pathname}`;

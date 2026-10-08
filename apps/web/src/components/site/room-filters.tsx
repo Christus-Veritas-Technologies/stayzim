@@ -1,12 +1,13 @@
 "use client";
 
-import type { AmenityKey } from "@stayzim/sites";
+import { BOOKING_LIMITS, dateAdd, nightsBetween, todayInHarare, type AmenityKey, type SiteAvailability } from "@stayzim/sites";
 import { cn } from "@stayzim/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
-import { SlidersHorizontal } from "lucide-react";
+import { CalendarDays, SlidersHorizontal } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { AMENITIES } from "@/lib/lodge";
+import { env } from "@/lib/public-env";
 
 export type FilterRoom = { id: string; price: number; sleeps: number; size: number | null; amenities: AmenityKey[] };
 
@@ -30,6 +31,32 @@ function priceSteps(prices: number[]) {
   return steps.slice(0, 5);
 }
 
+/** The nights already full in each room, for the dates a guest picked (Pro sites that take bookings). */
+function useFullRooms(slug: string | undefined, checkIn: string, checkOut: string) {
+  const [full, setFull] = useState<Set<string> | null>(null);
+  const nights = checkIn && checkOut ? nightsBetween(checkIn, checkOut) : 0;
+  useEffect(() => {
+    if (!slug || nights < 1 || nights > BOOKING_LIMITS.maxNights) {
+      setFull(null);
+      return;
+    }
+    let current = true;
+    void fetch(`${env.NEXT_PUBLIC_SERVER_URL}/api/sites/${encodeURIComponent(slug)}/availability?from=${checkIn}&days=${Math.min(nights, BOOKING_LIMITS.availabilityDays)}`)
+      .then((response) => (response.ok ? (response.json() as Promise<SiteAvailability>) : Promise.reject(new Error(String(response.status)))))
+      .then((data) => {
+        if (!current) return;
+        const stay = Array.from({ length: nights }, (_, index) => dateAdd(checkIn, index));
+        setFull(new Set(data.rooms.filter((room) => room.full.some((night) => stay.includes(night))).map((room) => room.id)));
+      })
+      // Can't check right now: show every room rather than none
+      .catch(() => current && setFull(null));
+    return () => {
+      current = false;
+    };
+  }, [slug, checkIn, nights]);
+  return full;
+}
+
 /**
  * Guests, a top price, a sort and (on the Rooms page) amenities, above a list
  * of rooms the server already drew: each item carries data-room-id, and the
@@ -40,6 +67,7 @@ export function RoomFilters({
   rooms,
   amenities = false,
   control,
+  datesFor,
   className,
   children,
 }: {
@@ -48,6 +76,8 @@ export function RoomFilters({
   amenities?: boolean;
   /** The design's look for the selects and chips */
   control?: string;
+  /** Pro sites that take bookings: "Check dates" hides rooms already full (the site's slug) */
+  datesFor?: string;
   className?: string;
   children: ReactNode;
 }) {
@@ -55,7 +85,11 @@ export function RoomFilters({
   const [maxPrice, setMaxPrice] = useState(0);
   const [sort, setSort] = useState<Sort>("order");
   const [wanted, setWanted] = useState<AmenityKey[]>([]);
+  const [checkIn, setCheckIn] = useState("");
+  const [checkOut, setCheckOut] = useState("");
+  const full = useFullRooms(datesFor, checkIn, checkOut);
   const list = useRef<HTMLDivElement>(null);
+  const today = todayInHarare();
 
   const most = Math.max(...rooms.map((room) => room.sleeps));
   const steps = useMemo(() => priceSteps(rooms.map((room) => room.price)), [rooms]);
@@ -68,14 +102,15 @@ export function RoomFilters({
 
   const shown = useMemo(() => {
     const matches = rooms.filter(
-      (room) => room.sleeps >= guests && (!maxPrice || room.price <= maxPrice) && wanted.every((key) => room.amenities.includes(key)),
+      (room) =>
+        room.sleeps >= guests && (!maxPrice || room.price <= maxPrice) && wanted.every((key) => room.amenities.includes(key)) && !full?.has(room.id),
     );
     const sorted = [...matches];
     if (sort === "price-up") sorted.sort((a, b) => a.price - b.price);
     if (sort === "price-down") sorted.sort((a, b) => b.price - a.price);
     if (sort === "space") sorted.sort((a, b) => (b.size ?? 0) - (a.size ?? 0) || b.sleeps - a.sleeps);
     return sorted.map((room) => room.id);
-  }, [rooms, guests, maxPrice, wanted, sort]);
+  }, [rooms, guests, maxPrice, wanted, sort, full]);
 
   useEffect(() => {
     const items = list.current?.querySelectorAll<HTMLElement>("[data-room-id]") ?? [];
@@ -94,7 +129,10 @@ export function RoomFilters({
     setMaxPrice(0);
     setSort("order");
     setWanted([]);
+    setCheckIn("");
+    setCheckOut("");
   };
+  const dateInput = cn("h-11 min-w-0 border border-current/15 bg-transparent px-3 text-[14.5px] font-medium outline-none focus-visible:ring-3 focus-visible:ring-[var(--theme)]/30", control ?? "rounded-full");
 
   return (
     <div className={cn("flex flex-col gap-6", className)}>
@@ -127,6 +165,28 @@ export function RoomFilters({
             ))}
           </select>
         </div>
+        {datesFor ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <CalendarDays className="size-4 shrink-0 opacity-60" aria-hidden="true" />
+            <label className="flex items-center gap-2 text-[14px]">
+              <span className="opacity-75">Arrive</span>
+              <input
+                type="date"
+                value={checkIn}
+                min={today}
+                onChange={(event) => {
+                  setCheckIn(event.target.value);
+                  if (checkOut && event.target.value >= checkOut) setCheckOut(dateAdd(event.target.value, 1));
+                }}
+                className={dateInput}
+              />
+            </label>
+            <label className="flex items-center gap-2 text-[14px]">
+              <span className="opacity-75">Leave</span>
+              <input type="date" value={checkOut} min={checkIn ? dateAdd(checkIn, 1) : dateAdd(today, 1)} onChange={(event) => setCheckOut(event.target.value)} className={dateInput} />
+            </label>
+          </div>
+        ) : null}
         {amenities && shared.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {shared.map((key) => {
@@ -154,7 +214,7 @@ export function RoomFilters({
         <AnimatePresence initial={false}>
           {filtered ? (
             <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} role="status" className="text-[14px] opacity-75">
-              {shown.length === 0 ? "No rooms match." : `Showing ${shown.length} of ${rooms.length} rooms.`}{" "}
+              {shown.length === 0 ? (full ? "Every room is full on those dates." : "No rooms match.") : `Showing ${shown.length} of ${rooms.length} rooms${full ? " free on your dates" : ""}.`}{" "}
               <button type="button" onClick={reset} className="font-semibold text-[var(--theme)] underline-offset-2 hover:underline">
                 Show all rooms
               </button>

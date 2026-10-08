@@ -30,7 +30,7 @@ import { BookLink } from "@/components/site/tracking";
 import { AMENITIES, formatPrice } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
 import { highlightWords, roomFacts, roomsEmpty, roomsIntro } from "@/lib/site-content";
-import { pageOr } from "@/lib/site-pages";
+import { hasPage, pageOr, pageUrl } from "@/lib/site-pages";
 
 function Heading({ children, className }: { children: ReactNode; className?: string }) {
   return <h2 className={cn("text-[34px] leading-10 font-bold tracking-[-0.025em] sm:text-[48px] sm:leading-[54px]", className)}>{children}</h2>;
@@ -67,6 +67,7 @@ export function ShorelineTemplate({ site }: { site: LiveSite }) {
     { href: "#top", label: "Home" },
     { href: pageOr(site, "rooms", "#rooms"), label: "Rooms" },
     site.gallery.length > 0 ? { href: pageOr(site, "gallery", "#gallery"), label: "Gallery" } : null,
+    hasPage(site, "about") ? { href: pageUrl(site, "about"), label: "Our story" } : null,
     { href: pageOr(site, "contact", "#location"), label: "Location" },
   ].filter((link) => link !== null);
 
