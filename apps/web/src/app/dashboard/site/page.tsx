@@ -1,9 +1,11 @@
 "use client";
 
+import { COUNTRIES, DEFAULT_COUNTRY, LODGE_KINDS, SETTINGS, type LodgeKind, type Setting } from "@stayzim/sites";
 import { Avatar } from "@stayzim/ui/components/avatar";
 import { Button, buttonVariants } from "@stayzim/ui/components/button";
 import { Field, FormMessage } from "@stayzim/ui/components/field";
 import { Input, InputGroup, InputGroupAddon, InputGroupInput } from "@stayzim/ui/components/input";
+import { NativeSelect } from "@stayzim/ui/components/native-select";
 import { Sheet, SheetBody, SheetContent, SheetHeader, SheetTitle } from "@stayzim/ui/components/sheet";
 import { Tabs, TabsList, TabsPanel, TabsTab } from "@stayzim/ui/components/tabs";
 import { Textarea } from "@stayzim/ui/components/textarea";
@@ -63,6 +65,9 @@ type Draft = {
   description: string;
   town: string;
   region: string;
+  country: string;
+  kind: string;
+  setting: string;
   whatsapp: string;
   phone: string;
   email: string;
@@ -79,6 +84,9 @@ function draftFrom(lodge: Lodge): Draft {
     description: lodge.description,
     town: lodge.town ?? "",
     region: lodge.region ?? "",
+    country: lodge.country,
+    kind: lodge.kind ?? "",
+    setting: lodge.setting ?? "",
     whatsapp: phoneToInput(lodge.whatsapp),
     phone: phoneToInput(lodge.phone),
     email: lodge.email ?? "",
@@ -119,6 +127,9 @@ function changesFrom(draft: Draft, lodge: Lodge) {
     description: draft.description.trim(),
     town: draft.town.trim() || null,
     region: draft.region.trim() || null,
+    country: draft.country.trim() || DEFAULT_COUNTRY,
+    kind: (draft.kind || null) as LodgeKind | null,
+    setting: (draft.setting || null) as Setting | null,
     whatsapp: whatsapp.error ? lodge.whatsapp : whatsapp.digits,
     phone: phone.error ? lodge.phone : phone.digits,
     email: draft.email.trim() || null,
@@ -274,7 +285,7 @@ export default function LodgeInfoPage() {
                 title="Basics"
                 summary="Name and the short intro at the top of your site"
                 state={sectionState(
-                  ["name", "description", "town", "region"].some((key) => key in changes),
+                  ["name", "description", "town", "region", "country", "kind", "setting"].some((key) => key in changes),
                   Boolean(lodge.name && lodge.description),
                 )}
                 defaultOpen
@@ -295,6 +306,36 @@ export default function LodgeInfoPage() {
                   </Field>
                   <Field label="Province">
                     <Input value={draft.region} onChange={(event) => set("region", event.target.value)} placeholder="Manicaland" maxLength={60} />
+                  </Field>
+                  <Field label="Country">
+                    <Input value={draft.country} onChange={(event) => set("country", event.target.value)} maxLength={60} list="lodge-countries" autoComplete="country-name" />
+                    <datalist id="lodge-countries">
+                      {COUNTRIES.map((country) => (
+                        <option key={country} value={country} />
+                      ))}
+                    </datalist>
+                  </Field>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Type of place" hint="Your site's wording is written from these two.">
+                    <NativeSelect value={draft.kind} onChange={(event) => set("kind", event.target.value)}>
+                      <option value="">Not set</option>
+                      {(Object.keys(LODGE_KINDS) as LodgeKind[]).map((key) => (
+                        <option key={key} value={key}>
+                          {LODGE_KINDS[key].label}
+                        </option>
+                      ))}
+                    </NativeSelect>
+                  </Field>
+                  <Field label="Setting">
+                    <NativeSelect value={draft.setting} onChange={(event) => set("setting", event.target.value)}>
+                      <option value="">Not set</option>
+                      {(Object.keys(SETTINGS) as Setting[]).map((key) => (
+                        <option key={key} value={key}>
+                          {SETTINGS[key].label}
+                        </option>
+                      ))}
+                    </NativeSelect>
                   </Field>
                 </div>
               </FormSection>

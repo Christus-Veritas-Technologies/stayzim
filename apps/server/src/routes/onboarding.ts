@@ -1,5 +1,6 @@
 import prisma from "@stayzim/db";
-import { addDays, DEFAULT_TEMPLATE, DEMO_DAYS, findTemplate, isPlan, slugFromName, slugProblem, TEMPLATE_KEYS, templateAllowed } from "@stayzim/sites";
+import { addDays, DEFAULT_COUNTRY, DEFAULT_TEMPLATE, DEMO_DAYS, findTemplate, isPlan, slugFromName, slugProblem, TEMPLATE_KEYS, templateAllowed } from "@stayzim/sites";
+import { lodgeFacts } from "@stayzim/sites/schemas";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { rateLimiter } from "hono-rate-limiter";
@@ -44,6 +45,12 @@ const lodgeSchema = z.object({
     .optional()
     .transform((value) => value || null),
   whatsapp: phoneNumber("WhatsApp").refine((value) => value !== null, "Add the WhatsApp number guests should message"),
+  // What kind of place it is, for the site's copy and the example rooms (all optional)
+  country: lodgeFacts.country.optional(),
+  kind: lodgeFacts.kind.optional(),
+  setting: lodgeFacts.setting.optional(),
+  roomsHint: lodgeFacts.roomsHint.optional(),
+  priceHint: lodgeFacts.priceHint.optional(),
   // Left out by /create: the address is made from the name
   slug: z.string().trim().toLowerCase().optional(),
   utmSource: source(100),
@@ -128,6 +135,11 @@ export const onboarding = new Hono<{ Variables: AuthVariables }>()
           name: input.name,
           town: input.town,
           region: input.region,
+          country: input.country ?? DEFAULT_COUNTRY,
+          kind: input.kind ?? null,
+          setting: input.setting ?? null,
+          roomsHint: input.roomsHint ?? null,
+          priceHint: input.priceHint ?? null,
           whatsapp: input.whatsapp,
           plan,
           template: input.template ?? DEFAULT_TEMPLATE[plan],

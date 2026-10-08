@@ -8,6 +8,7 @@ import { z } from "zod";
 
 import { HERO_LIMITS } from "../index";
 import { AMENITY_KEYS } from "./amenities";
+import { DEFAULT_COUNTRY, FACT_LIMITS, LODGE_KIND_KEYS, SETTING_KEYS } from "./facts";
 import { isDateString, nightsBetween } from "./dates";
 import { SOCIAL_KEYS, socialLink, STAY_TIMES, type SocialLinks } from "./guest-info";
 import { BOOKING_LIMITS, CONTENT_LIMITS, GUEST_INFO_LIMITS, LODGE_LIMITS, ROOM_LIMITS } from "./limits";
@@ -82,6 +83,20 @@ const guestInfo = {
   socialLinks,
 };
 
+/** What /create asks about the place, for the copy and the example rooms (facts.ts). */
+export const lodgeFacts = {
+  country: z
+    .string()
+    .trim()
+    .max(FACT_LIMITS.country, `The country is too long (${FACT_LIMITS.country} characters at most)`)
+    .nullable()
+    .transform((value) => value || DEFAULT_COUNTRY),
+  kind: z.enum(LODGE_KIND_KEYS).nullable(),
+  setting: z.enum(SETTING_KEYS).nullable(),
+  roomsHint: z.number().int().min(1).max(FACT_LIMITS.roomsMax, "Check how many rooms").nullable(),
+  priceHint: z.number().int().min(FACT_LIMITS.priceMin, "Check the price").max(FACT_LIMITS.priceMax, "Check the price").nullable(),
+};
+
 /** PATCH /api/lodge: send only what changed. */
 export const lodgePatch = z
   .object({
@@ -101,6 +116,9 @@ export const lodgePatch = z
     heroHeadline: optionalText(HERO_LIMITS.headline, "The headline"),
     heroSubline: optionalText(HERO_LIMITS.subline, "The line under the headline"),
     ...guestInfo,
+    ...lodgeFacts,
+    /** "Try other wording": every generated line picks another variant */
+    copySeed: z.number().int().min(0).max(1_000_000),
     autoConfirmBookings: z.boolean(),
   })
   .partial();

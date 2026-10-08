@@ -11,31 +11,40 @@ const PHOTO = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAEAAAAAwCAIAAAAuKetIAAAAVElEQ
  * badges, before any email. Then Claim my site. Automated, the live site
  * comes well inside the 90 seconds a person has.
  */
-test("a lodge goes live from an advert in three steps, then the owner claims it", async ({ page }) => {
+test("a lodge goes live from an advert in four steps, then the owner claims it", async ({ page }) => {
   test.setTimeout(120_000);
   const started = Date.now();
   const stamp = Date.now().toString(36);
 
   await page.goto("/create?utm_source=meta&utm_campaign=registration_test");
-  await expect(page.getByText(/Step 1 of 3/)).toBeVisible();
+  await expect(page.getByText(/Step 1 of 4/)).toBeVisible();
   await expect(page.getByRole("radio", { name: /Shoreline/ })).toHaveAttribute("aria-checked", "true");
   // Designs come in plan tabs, cheapest first
   await expect(page.getByRole("radio", { name: /Rondavel/ })).toHaveCount(0);
   await page.getByRole("tab", { name: /Starter/ }).click();
   await page.getByRole("radio", { name: /Rondavel/ }).click();
-  await page.getByRole("button", { name: /Next: your lodge/ }).click();
+  await page.getByRole("button", { name: /Next: your place/ }).click();
 
-  await expect(page.getByText(/Step 2 of 3/)).toBeVisible();
-  // Back keeps the look picked, then on again
+  // The place: type, setting, rooms and price, for the copy and the example rooms
+  await expect(page.getByText(/Step 2 of 4/)).toBeVisible();
+  await page.getByRole("radio", { name: /Guesthouse/ }).click();
+  await page.getByRole("radio", { name: /Mountains/ }).click();
+  await page.getByRole("radio", { name: "$50" }).click();
+  // Back keeps the look picked, then on again; the answers stay
   await page.getByRole("button", { name: "Back" }).first().click();
   await expect(page.getByRole("radio", { name: /Rondavel/ })).toHaveAttribute("aria-checked", "true");
+  await page.getByRole("button", { name: /Next: your place/ }).click();
+  await expect(page.getByRole("radio", { name: /Guesthouse/ })).toHaveAttribute("aria-checked", "true");
   await page.getByRole("button", { name: /Next: your lodge/ }).click();
+
+  await expect(page.getByText(/Step 3 of 4/)).toBeVisible();
   await page.getByLabel("Lodge name").fill(`Farai Rest ${stamp}`);
+  await page.getByLabel("Town or city").fill("Nyanga");
   await page.getByLabel("WhatsApp number").fill("077 444 5555");
   await page.getByRole("button", { name: /Next: add photos/ }).click();
 
   await expect(page.getByRole("heading", { name: "Add 3 photos" })).toBeVisible();
-  await expect(page.getByText(/Step 3 of 3/)).toBeVisible();
+  await expect(page.getByText(/Step 4 of 4/)).toBeVisible();
   await page.locator('input[type="file"]').first().setInputFiles({ name: "lodge.png", mimeType: "image/png", buffer: PHOTO });
   await expect(page.getByText("Top", { exact: true })).toBeVisible({ timeout: 30_000 });
   await page.getByRole("button", { name: /Go live/ }).click();

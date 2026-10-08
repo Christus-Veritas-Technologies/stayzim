@@ -35,6 +35,19 @@ model Lodge {
   town         String?
   /// e.g. "Manicaland"
   region       String?
+  country      String  @default("Zimbabwe")
+
+  /// What /create asked about the place (@stayzim/sites facts.ts), for the
+  /// site's generated copy and the example rooms on a demo
+  /// "lodge" | "guesthouse" | "bnb" | "holiday-home" | "camp" | "hotel" | "self-catering"
+  kind      String?
+  /// "mountains" | "lake" | "bush" | "river" | "city" | "farm"
+  setting   String?
+  /// How many rooms and a typical price a night, as the owner guessed them
+  roomsHint Int?    @map("rooms_hint")
+  priceHint Int?    @map("price_hint")
+  /// Bumped by "Try other wording": generated copy picks other variants
+  copySeed  Int     @default(0) @map("copy_seed")
 
   /// Digits only with country code, e.g. 263771234567. Every Book on WhatsApp button opens this chat.
   whatsapp String?

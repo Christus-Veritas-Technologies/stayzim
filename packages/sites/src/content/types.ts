@@ -1,5 +1,6 @@
 import type { Plan } from "../index";
 import type { AmenityKey } from "./amenities";
+import type { LodgeKind, Setting } from "./facts";
 import type { FaqEntry, SocialKey, SocialLinks } from "./guest-info";
 
 /**
@@ -166,6 +167,13 @@ export type DashboardLodge = {
   description: string;
   town: string | null;
   region: string | null;
+  country: string;
+  /** What /create asked about the place (facts.ts): the copy is written from these */
+  kind: LodgeKind | null;
+  setting: Setting | null;
+  roomsHint: number | null;
+  priceHint: number | null;
+  copySeed: number;
   whatsapp: string | null;
   phone: string | null;
   email: string | null;

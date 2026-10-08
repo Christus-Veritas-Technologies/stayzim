@@ -9,15 +9,19 @@ import type { ReactNode } from "react";
 import { Wordmark } from "@/components/landing/brand";
 import { EASE_OUT } from "@/components/motion";
 
-/** Three steps, then the site is live. The time left keeps people going: they can see the end. */
+/** Four steps, then the site is live. The time left keeps people going: they can see the end. */
 export const CREATE_STEPS = [
-  { title: "Pick a look", detail: "Nine designs to choose from", left: "about 90 seconds left" },
-  { title: "Your lodge", detail: "Its name and WhatsApp", left: "about 60 seconds left" },
+  { title: "Pick a look", detail: "Nine designs to choose from", left: "about 2 minutes left" },
+  { title: "Your place", detail: "Its type, setting and rooms", left: "about 90 seconds left" },
+  { title: "Your lodge", detail: "Name, town and WhatsApp", left: "about 60 seconds left" },
   { title: "Photos", detail: "Three from your phone", left: "about 30 seconds left" },
 ] as const;
 
-/** 0–2: the steps above. 3: the site is live. */
-export type CreateStepIndex = 0 | 1 | 2 | 3;
+/** 0–3: the steps above. 4: the site is live. */
+export type CreateStepIndex = 0 | 1 | 2 | 3 | 4;
+
+/** The index past the last step: the site is live. */
+const LIVE = CREATE_STEPS.length;
 
 /** Number, title and detail for each step, joined by a line: the frame's sidebar on wide screens. */
 function StepList({ step }: { step: CreateStepIndex }) {
@@ -25,7 +29,7 @@ function StepList({ step }: { step: CreateStepIndex }) {
   return (
     <ol className="flex flex-col" aria-label="Steps">
       {items.map((item, index) => {
-        const done = index < step || step === 3;
+        const done = index < step || step === LIVE;
         const current = index === step;
         const last = index === items.length - 1;
         return (
@@ -70,7 +74,7 @@ function StepList({ step }: { step: CreateStepIndex }) {
 
 /** Phones: a pill of dots, the current step drawn longer. */
 function StepDots({ step }: { step: CreateStepIndex }) {
-  if (step === 3) {
+  if (step === LIVE) {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full bg-success-wash px-3 py-1.5 text-[12.5px] font-semibold text-success">
         <Check className="size-3.5" strokeWidth={2.5} />
@@ -96,7 +100,7 @@ function StepDots({ step }: { step: CreateStepIndex }) {
 /**
  * /create's frame, after the step-by-step forms owners already know: the
  * steps down the side on wide screens (a pill of dots on phones), then the
- * step's card with "Step 1 of 3 · about 90 seconds left" and a thin bar, and
+ * step's card with "Step 1 of 4 · about 2 minutes left" and a thin bar, and
  * the live preview on the right once there is something to show. Phones get
  * the whole white screen, with Back at the top.
  */
@@ -112,7 +116,7 @@ export function CreateFrame({
   onBack?: () => void;
   children: ReactNode;
 }) {
-  const live = step === 3;
+  const live = step === LIVE;
   return (
     <div className="min-h-svh bg-white sm:bg-surface-2">
       <div
@@ -127,7 +131,7 @@ export function CreateFrame({
           </Link>
           <div className="flex flex-col gap-1">
             <p className="font-display text-[19px] leading-6 font-semibold tracking-[-0.01em] text-ink">Your lodge&apos;s website</p>
-            <p className="text-[13px] leading-[19px] text-muted">Live in about 90 seconds, made from your phone.</p>
+            <p className="text-[13px] leading-[19px] text-muted">Live in about two minutes, made from your phone.</p>
           </div>
           <StepList step={step} />
           <p className="flex items-start gap-2 border-t border-line-3 pt-4 text-[12.5px] leading-[18px] text-muted-2">

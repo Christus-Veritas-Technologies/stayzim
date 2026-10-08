@@ -220,7 +220,7 @@ export function LookStep({ value, onChange, onNext }: { value: TemplateKey; onCh
         }
       >
         <Button size="lg" className="w-full" onClick={onNext}>
-          Next: your lodge
+          Next: your place
           <ArrowRight />
         </Button>
       </CreateActions>

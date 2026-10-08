@@ -1,14 +1,15 @@
 "use client";
 
+import { COUNTRIES, ZIMBABWE_TOWNS, type TemplateKey } from "@stayzim/sites";
 import { Button } from "@stayzim/ui/components/button";
 import { Field, FormMessage } from "@stayzim/ui/components/field";
 import { Input, InputGroup, InputGroupAddon, InputGroupInput } from "@stayzim/ui/components/input";
-import type { TemplateKey } from "@stayzim/sites";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 
 import { CreateActions, CreateHeading } from "@/components/create/frame";
+import type { CreateFacts } from "@/components/create/place-step";
 import { MiniPreview } from "@/components/create/preview";
 import { WhatsAppIcon } from "@/components/landing/brand";
 import { api } from "@/lib/api";
@@ -23,17 +24,23 @@ function whatsappDigits(text: string) {
   return phoneFromInput(/^0\d{9}$/.test(local) ? local.slice(1) : text);
 }
 
+/** Where the lodge is: the town feeds its copy ("Slow days in Nyanga"). */
+export type CreatePlace = { town: string; country: string };
+
 /**
- * Step 2 of 3: the lodge's name and WhatsApp number, nothing else. No email
- * yet: a guest account is made on Next, and the demo goes live straight away
- * in the look picked on step 1. The town, rooms, logo and the rest come
- * later, from the dashboard.
+ * Step 3 of 4: the lodge's name, town and WhatsApp number. No email yet: a
+ * guest account is made on Next, and the demo goes live straight away in the
+ * look picked on step 1, written from what step 2 said about the place. Rooms,
+ * the logo and the rest come later, from the dashboard.
  */
 export function LodgeStep({
   plan,
   template,
   name,
   onName,
+  place,
+  onPlace,
+  facts,
   signedIn,
   onCreated,
   onBack,
@@ -42,6 +49,9 @@ export function LodgeStep({
   template: TemplateKey;
   name: string;
   onName: (name: string) => void;
+  place: CreatePlace;
+  onPlace: (place: CreatePlace) => void;
+  facts: CreateFacts;
   /** Already has an account (a guest one or a real one) */
   signedIn: boolean;
   onCreated: (lodge: Lodge | null) => void;
@@ -74,7 +84,16 @@ export function LodgeStep({
     }
     const result = await api<Lodge>("/api/onboarding/lodge", {
       method: "POST",
-      json: { plan, template, name: name.trim(), whatsapp: phone.digits, ...signupSource() },
+      json: {
+        plan,
+        template,
+        name: name.trim(),
+        town: place.town.trim() || null,
+        country: place.country.trim() || null,
+        whatsapp: phone.digits,
+        ...facts,
+        ...signupSource(),
+      },
     });
     if (result.data) {
       metaEvent("StartTrial", { value: 0, currency: "USD", predicted_ltv: PLANS[plan].price * 12, content_name: plan.toLowerCase() });
@@ -112,6 +131,39 @@ export function LodgeStep({
               className="h-12 text-[16px] sm:h-12 sm:text-[15px]"
             />
           </Field>
+          <div className="grid gap-5 sm:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] sm:gap-4">
+            <Field label="Town or city" hint="Guests search for it, and your site mentions it.">
+              <Input
+                value={place.town}
+                onChange={(event) => onPlace({ ...place, town: event.target.value })}
+                placeholder="Nyanga"
+                autoComplete="address-level2"
+                maxLength={60}
+                list="create-towns"
+                className="h-12 text-[16px] sm:h-12 sm:text-[15px]"
+              />
+            </Field>
+            <Field label="Country">
+              <Input
+                value={place.country}
+                onChange={(event) => onPlace({ ...place, country: event.target.value })}
+                autoComplete="country-name"
+                maxLength={60}
+                list="create-countries"
+                className="h-12 text-[16px] sm:h-12 sm:text-[15px]"
+              />
+            </Field>
+            <datalist id="create-towns">
+              {ZIMBABWE_TOWNS.map((town) => (
+                <option key={town} value={town} />
+              ))}
+            </datalist>
+            <datalist id="create-countries">
+              {COUNTRIES.map((country) => (
+                <option key={country} value={country} />
+              ))}
+            </datalist>
+          </div>
           <Field label="WhatsApp number" error={errors.whatsapp} hint="Guests tap Book and message you here.">
             <InputGroup className="h-12 sm:h-12">
               <InputGroupAddon>

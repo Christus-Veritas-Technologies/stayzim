@@ -13,7 +13,7 @@ import { parseArgs } from "node:util";
 import prisma from "@stayzim/db";
 
 /** In order; the same names as CreateStep in apps/web/src/lib/track.ts */
-const STEPS = ["open", "look", "lodge", "photo", "live", "claim"] as const;
+const STEPS = ["open", "look", "place", "lodge", "photo", "live", "claim"] as const;
 
 const { values } = parseArgs({ options: { days: { type: "string", default: "7" }, source: { type: "string" } } });
 const days = Number(values.days);

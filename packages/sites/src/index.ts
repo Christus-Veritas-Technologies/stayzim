@@ -201,4 +201,5 @@ export * from "./content/dates";
 export * from "./content/availability";
 export * from "./content/guest-info";
 export * from "./content/journal";
+export * from "./content/facts";
 export type * from "./content/types";

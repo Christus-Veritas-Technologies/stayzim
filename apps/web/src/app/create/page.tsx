@@ -4,13 +4,14 @@ import { Skeleton } from "@stayzim/ui/components/skeleton";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 
-import { findTemplate, type TemplateKey } from "@stayzim/sites";
+import { DEFAULT_COUNTRY, findTemplate, type TemplateKey } from "@stayzim/sites";
 
 import { CreateFrame, type CreateStepIndex } from "@/components/create/frame";
 import { LiveStep } from "@/components/create/live-step";
-import { LodgeStep } from "@/components/create/lodge-step";
+import { LodgeStep, type CreatePlace } from "@/components/create/lodge-step";
 import { lookFromParams, LookStep } from "@/components/create/look-step";
 import { PhotosStep, previewPhotos } from "@/components/create/photos-step";
+import { factsFromParams, factsParams, PlaceStep, type CreateFacts } from "@/components/create/place-step";
 import { CreatePreview } from "@/components/create/preview";
 import { LodgeProvider, useLodge } from "@/components/dashboard/lodge-provider";
 import { usePhotoUploads } from "@/components/dashboard/use-photo-uploads";
@@ -20,9 +21,9 @@ import { siteHost } from "@/lib/lodge";
 import { metaCreateStep } from "@/lib/meta-pixel";
 import { signupSource, trackCreateStep } from "@/lib/track";
 
-type Step = "look" | "lodge" | "photos" | "live";
+type Step = "look" | "place" | "lodge" | "photos" | "live";
 
-const STEPS: Step[] = ["look", "lodge", "photos", "live"];
+const STEPS: Step[] = ["look", "place", "lodge", "photos", "live"];
 
 function stepFromParam(value: string | null): Step {
   return STEPS.includes(value as Step) ? (value as Step) : "look";
@@ -57,6 +58,8 @@ function CreateFlow() {
   const [name, setName] = useState("");
   const [step, setStep] = useState<Step>(() => stepFromParam(params.get("step")));
   const [look, setLook] = useState<TemplateKey>(() => lookFromParams(params.get("look"), planFromParam(params.get("plan"))));
+  const [facts, setFacts] = useState<CreateFacts>(() => factsFromParams(params));
+  const [place, setPlace] = useState<CreatePlace>({ town: "", country: DEFAULT_COUNTRY });
   // Bumped when the lodge is made, so the provider loads it
   const [version, setVersion] = useState(0);
   const opened = useRef(false);
@@ -69,28 +72,56 @@ function CreateFlow() {
     metaCreateStep("open");
   }, []);
 
+  /** The URL for a step, carrying the look and the answers so far (a reload keeps them). */
+  function stepUrl(next: Step, picked = look, answers = facts) {
+    const query = factsParams(answers);
+    query.set("step", next);
+    query.set("look", picked);
+    return `/create?${query.toString()}` as const;
+  }
+
   function go(next: Step, picked = look) {
     setStep(next);
-    router.replace(`/create?step=${next}&look=${picked}`, { scroll: false });
+    router.replace(stepUrl(next, picked), { scroll: false });
     window.scrollTo({ top: 0 });
   }
 
   if (isPending) return <Loading step={0} />;
 
   // Before there's a lodge: the look, then the name and WhatsApp
+  // Before there's a lodge: the look, the place, then the name, town and WhatsApp
   const lodgeStep =
     step === "lodge" ? (
-      <CreateFrame step={1} preview={<CreatePreview name={name} photos={[]} />} onBack={() => go("look")}>
+      <CreateFrame step={2} preview={<CreatePreview name={name} photos={[]} />} onBack={() => go("place")}>
         <LodgeStep
           plan={findTemplate(look)!.plan}
           template={look}
           name={name}
           onName={setName}
+          place={place}
+          onPlace={setPlace}
+          facts={facts}
           signedIn={Boolean(session)}
-          onBack={() => go("look")}
+          onBack={() => go("place")}
           onCreated={() => {
             go("photos");
             setVersion((value) => value + 1);
+          }}
+        />
+      </CreateFrame>
+    ) : step === "place" ? (
+      <CreateFrame step={1} onBack={() => go("look")}>
+        <PlaceStep
+          facts={facts}
+          onChange={(answers) => {
+            setFacts(answers);
+            router.replace(stepUrl("place", look, answers), { scroll: false });
+          }}
+          onBack={() => go("look")}
+          onNext={() => {
+            trackCreateStep("place");
+            metaCreateStep("place");
+            go("lodge");
           }}
         />
       </CreateFrame>
@@ -100,12 +131,12 @@ function CreateFlow() {
           value={look}
           onChange={(key) => {
             setLook(key);
-            router.replace(`/create?step=look&look=${key}`, { scroll: false });
+            router.replace(stepUrl("look", key), { scroll: false });
           }}
           onNext={() => {
             trackCreateStep("look");
             metaCreateStep("look");
-            go("lodge");
+            go("place");
           }}
         />
       </CreateFrame>
@@ -113,7 +144,7 @@ function CreateFlow() {
   if (!session) return lodgeStep;
 
   return (
-    <LodgeProvider key={version} loading={<Loading step={2} />} missing={lodgeStep}>
+    <LodgeProvider key={version} loading={<Loading step={3} />} missing={lodgeStep}>
       <AfterLodge step={step} guest={session.user.isAnonymous === true} resuming={step === "photos" || step === "live"} onGo={go} />
     </LodgeProvider>
   );
@@ -133,15 +164,15 @@ function AfterLodge({ step, guest, resuming, onGo }: { step: Step; guest: boolea
   useEffect(() => {
     if (leave) router.replace("/dashboard");
   }, [leave, router]);
-  if (leave) return <Loading step={2} />;
+  if (leave) return <Loading step={3} />;
 
   const preview = <CreatePreview name={lodge.name} host={siteHost(lodge)} themeColor={lodge.themeColor} photos={previewPhotos(lodge, uploads)} />;
   return step === "live" ? (
-    <CreateFrame step={3} preview={preview}>
+    <CreateFrame step={4} preview={preview}>
       <LiveStep />
     </CreateFrame>
   ) : (
-    <CreateFrame step={2} preview={preview}>
+    <CreateFrame step={3} preview={preview}>
       <PhotosStep uploads={uploads} onLive={() => onGo("live")} />
     </CreateFrame>
   );
