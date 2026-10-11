@@ -121,7 +121,11 @@ export const PLANS: Plan[] = [
 export const QUESTIONS = [
   {
     q: "How do guests book?",
-    a: "On Starter, every room has a Book on WhatsApp button. On Growth and Pro, guests pick their dates on your site and send a booking you confirm in one tap (or automatically), with WhatsApp one tap away too.",
+    a: "On Starter, every room has a Book on WhatsApp button. On Growth and Pro, guests can also pick their dates on your site, and you confirm in one tap.",
+  },
+  {
+    q: "What happens at the end of the free build?",
+    a: "You decide. Your free preview stays live for 2 days. Love it? Pay and launch. Not happy? Walk away and pay nothing.",
   },
   {
     q: "Do I have to leave Booking.com?",
@@ -129,11 +133,11 @@ export const QUESTIONS = [
   },
   {
     q: "How do I pay?",
-    a: "Monthly, by Paynow, EcoCash or InnBucks. Send your proof of payment on WhatsApp and we mark you as paid.",
+    a: "Monthly or for a year, by Paynow: EcoCash, InnBucks, OneMoney or card, straight from your dashboard.",
   },
   {
     q: "What if I want to cancel?",
-    a: "Message us. Your site stays live until the end of the month you paid for.",
+    a: "Cancel any time on WhatsApp. Your site stays live until the end of the month you paid for.",
   },
 ];
 
@@ -158,7 +162,7 @@ export const FOOTER_COLUMNS = [
   },
   {
     title: "Where we work",
-    links: [{ label: "Nyanga and Vumba" }, { label: "Kariba" }, { label: "Victoria Falls" }, { label: "Harare" }],
+    links: [{ label: "Nyanga and Vumba" }, { label: "Mutare" }, { label: "Kariba" }, { label: "Victoria Falls" }, { label: "Harare" }, { label: "Bulawayo" }],
   },
   {
     title: "Pay with",
