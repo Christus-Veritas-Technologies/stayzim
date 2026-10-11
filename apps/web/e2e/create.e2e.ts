@@ -78,7 +78,7 @@ test("a lodge goes live from an advert in four steps, then the owner claims it",
 
   // The site went live in the look picked first
   await page.goto("/dashboard/design");
-  await expect(page.getByLabel("Starter templates").locator("div").filter({ hasText: /^Rondavel/ }).getByText("Live", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Starter designs").locator("div").filter({ hasText: /^Rondavel/ }).getByText("Live", { exact: true })).toBeVisible();
 
   await page.goto("/dashboard/billing");
   await expect(page.getByText("Your site is live as a free demo")).toBeVisible();

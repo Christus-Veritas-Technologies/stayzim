@@ -63,7 +63,7 @@ export function navLinks(lodge: Lodge): NavLink[] {
         {
           href: "/dashboard/design",
           label: "Design",
-          attention: lodge.template && lodge.template !== lodge.siteTemplate ? "Your template isn't in your plan" : undefined,
+          attention: lodge.template && lodge.template !== lodge.siteTemplate ? "Your design isn't in your plan" : undefined,
         },
         { href: "/dashboard/requests", label: "Requests" },
       ],

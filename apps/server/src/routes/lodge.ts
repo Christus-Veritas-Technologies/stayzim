@@ -41,7 +41,7 @@ export const lodge = new Hono<{ Variables: LodgeVariables }>()
     }
     if (data.template) {
       const template = findTemplate(data.template);
-      if (!template) throw new HTTPException(400, { message: "Pick one of the templates" });
+      if (!template) throw new HTTPException(400, { message: "Pick one of the designs" });
       const { plan } = await prisma.lodge.findUniqueOrThrow({ where: { id: c.var.lodgeId }, select: { plan: true } });
       if (!templateAllowed(template, plan)) {
         throw new HTTPException(403, { message: `${template.name} comes with the ${PLANS_LABEL[template.plan]} plan` });

@@ -109,9 +109,9 @@ export default function DesignPage() {
       <PageSection className="flex flex-col gap-5">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div className="flex flex-col gap-0.5">
-            <h2 className="font-display text-lg leading-6 font-semibold tracking-[-0.01em]">Templates</h2>
+            <h2 className="font-display text-lg leading-6 font-semibold tracking-[-0.01em]">Designs</h2>
             <p className="text-[13.5px] text-muted">
-              Your site uses <span className="font-semibold text-ink">{live.name}</span>. Tap a template to preview it with your lodge.
+              Your site uses <span className="font-semibold text-ink">{live.name}</span>. Tap a design to see it with your lodge.
             </p>
           </div>
           <Badge variant={PLAN_BADGE[lodge.plan]}>{PLANS[lodge.plan].name} plan</Badge>
@@ -142,7 +142,7 @@ function TemplateGroup({
   const templates = TEMPLATES.filter((template) => template.plan === plan);
   const included = templateAllowed({ plan }, lodge.plan);
   return (
-    <section className="flex flex-col gap-3" aria-label={`${PLANS_LABEL[plan]} templates`}>
+    <section className="flex flex-col gap-3" aria-label={`${PLANS_LABEL[plan]} designs`}>
       <div className="flex items-center gap-2">
         <span className="text-[13px] font-semibold text-ink-2">{PLANS_LABEL[plan]}</span>
         <span className="text-xs text-muted-2">{included ? "Included in your plan" : `Comes with ${PLANS_LABEL[plan]}`}</span>
@@ -323,7 +323,7 @@ function HeroText({ lodge, live }: { lodge: Lodge; live: Template }) {
           </span>
           <div className="flex min-w-0 flex-col">
             <CardTitle>Hero text</CardTitle>
-            <CardDescription>The big words at the top of your site. Leave them empty to use the {live.name} template&apos;s.</CardDescription>
+            <CardDescription>The big words at the top of your site. Leave them empty to use the {live.name} design&apos;s own words.</CardDescription>
           </div>
         </CardHeader>
         <CardContent>
@@ -442,7 +442,7 @@ function TemplateSheet({
   const reason = !shown
     ? null
     : live
-      ? "Your site already uses this template"
+      ? "Your site already uses this design"
       : locked
         ? `Comes with ${PLANS_LABEL[shown.plan]}`
         : !online
@@ -468,7 +468,7 @@ function TemplateSheet({
         onClick: async () => {
           const undoError = await save("", "PATCH", { template: previous });
           if (undoError) toast.error(undoError);
-          else toast.success(`Back to ${findTemplate(previous)?.name ?? "your last template"}`);
+          else toast.success(`Back to ${findTemplate(previous)?.name ?? "your last design"}`);
         },
       },
     });
