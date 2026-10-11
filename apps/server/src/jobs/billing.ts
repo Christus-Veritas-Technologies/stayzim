@@ -1,16 +1,21 @@
 import prisma from "@stayzim/db";
-import { demoEndedEmail, domainReadyEmail, invoiceEmail, siteOfflineEmail } from "@stayzim/mail/templates";
+import { demoEndedEmail, domainReadyEmail, foundingDeadlineEmail, invoiceEmail, previewReminderEmail, siteOfflineEmail } from "@stayzim/mail/templates";
 import {
   addDays,
   calendarDaysUntil,
+  DEMO_DAYS,
   DEMO_KEEP_DAYS,
   demoEnded,
   formatCents,
   formatHarareDate,
   formatHarareDay,
+  foundingReminderDue,
+  monthlyPrice,
   noticeFor,
+  PLAN_PRICES,
   planPriceCents,
   PLANS_LABEL,
+  previewReminderFor,
   statusFor,
 } from "@stayzim/sites";
 
@@ -36,6 +41,10 @@ const GUEST_DATA_DAYS = 365;
  * 4. Demos that ended 30 days ago and were never paid for: deleted.
  * 5. Guests' details, 12 months after their stay: removed.
  * 6. Claimed free domains that set-domain has set up: marked ready, owner emailed.
+ *
+ * Free previews (step 1) also get reminders while they aren't launched: 3 and
+ * 10 days after sign-up, and on 20 October (two days before founding prices
+ * end). Guests who haven't claimed their site have no address yet, so get none.
  */
 export async function runBilling(now = new Date()) {
   const report = { invoices: 0, notices: 0, overdue: 0, suspended: 0, checked: 0, deleted: 0, anonymised: 0, domains: 0 };
@@ -99,10 +108,23 @@ export async function runBilling(now = new Date()) {
   // 1 and 2: demos
   const demos = await prisma.lodge.findMany({
     where: { status: "DEMO", demoEndsAt: { not: null } },
-    select: { id: true, name: true, plan: true, status: true, demoEndsAt: true, owner: { select: { name: true, email: true } } },
+    select: {
+      id: true,
+      name: true,
+      plan: true,
+      founding: true,
+      status: true,
+      demoEndsAt: true,
+      createdAt: true,
+      owner: { select: { name: true, email: true, isAnonymous: true } },
+    },
   });
   for (const lodge of demos) {
     const endsAt = lodge.demoEndsAt!;
+    // Reminders while it isn't launched, unless another email about it just went
+    const remind = async () => {
+      if (!lodge.owner.isAnonymous) report.notices += await sendPreviewReminders({ ...lodge, demoEndsAt: endsAt }, now);
+    };
     if (demoEnded(lodge, now)) {
       // Long gone (step 4 deletes it): no point telling them now
       if (endsAt < addDays(now, -DEMO_KEEP_DAYS)) continue;
@@ -113,11 +135,15 @@ export async function runBilling(now = new Date()) {
         demoEndedEmail({ to: lodge.owner.email, name: lodge.owner.name, lodgeName: lodge.name, payUrl: BILLING_URL, keptUntil: formatHarareDate(addDays(endsAt, DEMO_KEEP_DAYS)) }),
       );
       if (sent) report.notices += 1;
+      else await remind();
       continue;
     }
-    // A 2-day demo has no 3-days-before reminder: the welcome email covers it
+    // A 2-day preview has no 3-days-before reminder: the welcome email covers it
     const notice = noticeFor(endsAt, now);
-    if (!notice || notice === "DUE_IN_3") continue;
+    if (!notice || notice === "DUE_IN_3") {
+      await remind();
+      continue;
+    }
     let invoice = await prisma.invoice.findFirst({ where: { lodgeId: lodge.id, status: "OPEN" }, orderBy: { dueAt: "asc" } });
     if (!invoice) {
       invoice = await createInvoice(lodge.id, lodge.plan, endsAt);
@@ -235,4 +261,54 @@ async function tick() {
 export function startBillingJob() {
   setTimeout(() => void tick(), 60 * 1000);
   setInterval(() => void tick(), HOUR);
+}
+
+/**
+ * A free preview that isn't launched: the founding-deadline email on 20 October
+ * (founding lodges), else the day 3 or day 10 reminder. One email a run at most.
+ */
+async function sendPreviewReminders(
+  lodge: { id: string; name: string; plan: keyof typeof PLAN_PRICES; founding: boolean; demoEndsAt: Date; createdAt: Date; owner: { name: string; email: string } },
+  now: Date,
+) {
+  const keptUntil = formatHarareDate(addDays(lodge.demoEndsAt, DEMO_KEEP_DAYS));
+  const price = formatCents(monthlyPrice(lodge.plan, lodge.founding) * 100);
+  if (lodge.founding && foundingReminderDue(now)) {
+    const sent = await sendOnce(
+      `lodge:${lodge.id}:FOUNDING_DEADLINE`,
+      lodge.id,
+      "FOUNDING_DEADLINE",
+      foundingDeadlineEmail({
+        to: lodge.owner.email,
+        name: lodge.owner.name,
+        lodgeName: lodge.name,
+        plan: PLANS_LABEL[lodge.plan],
+        price,
+        normalPrice: formatCents(PLAN_PRICES[lodge.plan] * 100),
+        keptUntil,
+        payUrl: BILLING_URL,
+      }),
+    );
+    if (sent) return 1;
+  }
+  // The day 10 window ends with the preview's 30 kept days
+  const day = previewReminderFor(lodge.createdAt, now);
+  if (!day || now > addDays(lodge.createdAt, DEMO_DAYS + DEMO_KEEP_DAYS)) return 0;
+  const sent = await sendOnce(
+    `lodge:${lodge.id}:PREVIEW_${day}`,
+    lodge.id,
+    `PREVIEW_${day}`,
+    previewReminderEmail({
+      to: lodge.owner.email,
+      name: lodge.owner.name,
+      lodgeName: lodge.name,
+      day,
+      plan: PLANS_LABEL[lodge.plan],
+      price,
+      founding: lodge.founding,
+      keptUntil,
+      payUrl: BILLING_URL,
+    }),
+  );
+  return sent ? 1 : 0;
 }

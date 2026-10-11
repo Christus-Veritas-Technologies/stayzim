@@ -10,6 +10,7 @@ import {
   demoEnded,
   extendPaidUntil,
   foundingOpen,
+  foundingReminderDue,
   canClaimDomain,
   domainStillFree,
   freeDomainName,
@@ -19,6 +20,7 @@ import {
   paidUntilAfterPayment,
   planPrice,
   planPriceCents,
+  previewReminderFor,
   slugFromName,
   slugProblem,
   statusFor,
@@ -50,6 +52,21 @@ describe("plans", () => {
     expect([planPrice("STARTER", 12, true), planPrice("GROWTH", 12, true), planPrice("PRO", 12, true)]).toEqual([150, 300, 500]);
     expect([annualSaving("STARTER", true), annualSaving("GROWTH", true), annualSaving("PRO", true)]).toEqual([30, 60, 100]);
     expect(annualDeal("PRO", true)).toBe("2 months free");
+  });
+
+  test("free preview reminders: day 3, then day 10, in Harare days", () => {
+    const signedUp = at("2026-10-11T20:30:00Z"); // 22:30 on the 11th in Harare
+    expect(previewReminderFor(signedUp, at("2026-10-13T09:00:00Z"))).toBeNull();
+    expect(previewReminderFor(signedUp, at("2026-10-14T06:00:00Z"))).toBe("DAY_3");
+    expect(previewReminderFor(signedUp, at("2026-10-19T09:00:00Z"))).toBe("DAY_3");
+    expect(previewReminderFor(signedUp, at("2026-10-21T06:00:00Z"))).toBe("DAY_10");
+  });
+
+  test("the founding reminder goes on 20 October, Harare time", () => {
+    expect(foundingReminderDue(at("2026-10-19T21:59:00Z"))).toBe(false); // 23:59 on the 19th
+    expect(foundingReminderDue(at("2026-10-19T22:00:00Z"))).toBe(true); // midnight, the 20th
+    expect(foundingReminderDue(at("2026-10-20T21:59:00Z"))).toBe(true);
+    expect(foundingReminderDue(at("2026-10-20T22:00:00Z"))).toBe(false);
   });
 
   test("founding prices end at 23:59 on 22 October, Harare time", () => {

@@ -1,6 +1,18 @@
 import { describe, expect, test } from "bun:test";
 
-import { bookingReceivedEmail, domainClaimedEmail, domainClaimTeamEmail, domainReadyEmail, invoiceEmail, passwordChangedEmail, receiptEmail, resetPasswordEmail } from "./templates";
+import {
+  bookingReceivedEmail,
+  demoWelcomeEmail,
+  domainClaimedEmail,
+  domainClaimTeamEmail,
+  domainReadyEmail,
+  foundingDeadlineEmail,
+  invoiceEmail,
+  passwordChangedEmail,
+  previewReminderEmail,
+  receiptEmail,
+  resetPasswordEmail,
+} from "./templates";
 
 describe("resetPasswordEmail", () => {
   const url = "https://api.stayzim.co.zw/api/auth/reset-password/abc?callbackURL=https%3A%2F%2Fapp.stayzim.co.zw%2Freset-password";
@@ -39,7 +51,7 @@ describe("billing emails", () => {
     const base = { to: "rudo@x.test", name: "Rudo Moyo", lodgeName: "Mist Valley", number: "SZ-2026-00042", plan: "Growth", amount: "$40.00", period: "8 Oct – 8 Nov", due: "Thursday 8 October", payUrl: "https://app.stayzim.co.zw/dashboard/billing" };
     expect(invoiceEmail({ ...base, notice: "DUE_IN_3", demo: false }).subject).toBe("Invoice SZ-2026-00042: $40.00 due on Thursday 8 October");
     expect(invoiceEmail({ ...base, notice: "DUE_IN_1", demo: false }).subject).toBe("Invoice SZ-2026-00042: $40.00 due tomorrow");
-    expect(invoiceEmail({ ...base, notice: "DUE_TODAY", demo: true }).subject).toBe("Your Mist Valley demo ends today");
+    expect(invoiceEmail({ ...base, notice: "DUE_TODAY", demo: true }).subject).toBe("Your Mist Valley free preview ends today");
     const email = invoiceEmail({ ...base, notice: "DUE_IN_1", demo: false });
     expect(email.text).toContain("Amount: $40.00");
     expect(email.html).toContain("Pay $40.00");
@@ -57,6 +69,31 @@ describe("billing emails", () => {
     const email = receiptEmail({ to: "a@b.test", name: "Rudo", lodgeName: "<b>Lodge</b>", number: "R-2026-00007", amount: "$120.00", plan: "Growth", months: 3, paidOn: "Tue 6 Oct", method: "EcoCash", paidUntil: "Wednesday 6 January", receiptUrl: "https://x.test/r" });
     expect(email.html).toContain("&lt;b&gt;Lodge&lt;/b&gt;");
     expect(email.text).toContain("Plan: Growth, 3 months");
+  });
+});
+
+describe("free preview emails", () => {
+  test("the welcome says the site is ready, and how to launch it at the founding price", () => {
+    const email = demoWelcomeEmail({ to: "rudo@x.test", name: "Rudo", lodgeName: "Mist Valley", siteUrl: "https://mistvalley.stayzim.co.zw", dashboardUrl: "https://stayzim.co.zw/dashboard", plan: "Growth", price: "$30.00", endsAt: "Tuesday 13 October at 09:46", founding: true });
+    expect(email.subject).toBe("Welcome to StayZim: Mist Valley is ready");
+    expect(email.text).toContain("free preview until Tuesday 13 October at 09:46");
+    expect(email.text).toContain("Growth is $30.00 a month, your founding price for life");
+    expect(email.html).toContain("https://stayzim.co.zw/dashboard/billing");
+  });
+
+  test("day 3 and day 10 reminders", () => {
+    const base = { to: "rudo@x.test", name: "Rudo", lodgeName: "Mist Valley", plan: "Growth", price: "$40.00", founding: false, keptUntil: "Thursday 12 November", payUrl: "https://x.test/billing" };
+    expect(previewReminderEmail({ ...base, day: "DAY_3" }).subject).toBe("Mist Valley is waiting for you");
+    const day10 = previewReminderEmail({ ...base, day: "DAY_10" });
+    expect(day10.subject).toBe("Still thinking about Mist Valley?");
+    expect(day10.text).toContain("until Thursday 12 November");
+    expect(day10.text).not.toContain("founding");
+  });
+
+  test("the founding deadline email", () => {
+    const email = foundingDeadlineEmail({ to: "rudo@x.test", name: "Rudo", lodgeName: "Mist Valley", plan: "Growth", price: "$30.00", normalPrice: "$40.00", keptUntil: "Thursday 12 November", payUrl: "https://x.test/billing" });
+    expect(email.subject).toBe("Founding prices end on 22 October");
+    expect(email.text).toContain("Growth at $30.00 a month instead of $40.00");
   });
 });
 

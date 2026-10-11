@@ -106,7 +106,7 @@ export async function onDemoCreated(lodgeId: string) {
   await sendDemoWelcome(lodgeId);
 }
 
-/** "Your site is live": on sign-up, or once a guest from /create claims the site (guest addresses get nothing). */
+/** "Welcome to StayZim: your site is ready": on sign-up, or once a guest from /create claims the site (guest addresses get nothing). */
 export async function sendDemoWelcome(lodgeId: string) {
   const lodge = await prisma.lodge.findUniqueOrThrow({
     where: { id: lodgeId },
@@ -121,6 +121,7 @@ export async function sendDemoWelcome(lodgeId: string) {
       dashboardUrl: DASHBOARD_URL,
       plan: PLANS_LABEL[lodge.plan],
       price: formatCents(planPriceCents(lodge.plan, 1, lodge.founding)),
+      founding: lodge.founding,
       endsAt: lodge.demoEndsAt ? formatHarareDateTime(lodge.demoEndsAt) : "in 2 days",
     }),
     "the welcome email",

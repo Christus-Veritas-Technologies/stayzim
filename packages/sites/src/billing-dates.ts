@@ -1,5 +1,5 @@
 import type { Plan } from "./index";
-import { GRACE_DAYS, monthlyPrice } from "./plans";
+import { FOUNDING_ENDS_AT, GRACE_DAYS, monthlyPrice } from "./plans";
 
 /**
  * Date rules for billing, in Zimbabwe time (Africa/Harare is UTC+2 all year,
@@ -93,6 +93,25 @@ export function statusFor(lodge: { status: BillingStatus; paidUntil: Date | null
 /** A demo whose time is up. Its site is offline until it's paid for. */
 export function demoEnded(lodge: { status: BillingStatus; demoEndsAt: Date | null }, now: Date) {
   return lodge.status === "DEMO" && lodge.demoEndsAt !== null && lodge.demoEndsAt.getTime() <= now.getTime();
+}
+
+export type PreviewReminder = "DAY_3" | "DAY_10";
+
+/**
+ * Which "your site is waiting" reminder a free preview that isn't launched is
+ * due, by whole days in Harare since sign-up: day 3, then day 10. Each in its
+ * own window, so a late run never sends a stale one.
+ */
+export function previewReminderFor(createdAt: Date, now: Date): PreviewReminder | null {
+  const days = -calendarDaysUntil(createdAt, now);
+  if (days >= 10) return "DAY_10";
+  if (days >= 3) return "DAY_3";
+  return null;
+}
+
+/** 20 October in Harare: two days before the last day of founding prices, when unlaunched founding previews are reminded. */
+export function foundingReminderDue(now: Date) {
+  return calendarDaysUntil(new Date(FOUNDING_ENDS_AT.getTime() - 1), now) === 2;
 }
 
 const HARARE = "Africa/Harare";

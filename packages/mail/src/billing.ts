@@ -12,7 +12,10 @@ function issuedBy(line: string | undefined) {
 }
 
 
-/** Right after sign-up: the site is live, the demo's end, and how to keep it. */
+/**
+ * Welcome, and "your site is ready": right after sign-up, or once a guest from
+ * /create claims the site. The free preview's end, and how to launch it.
+ */
 export function demoWelcomeEmail(input: {
   to: string;
   name: string;
@@ -22,29 +25,32 @@ export function demoWelcomeEmail(input: {
   plan: string;
   price: string;
   endsAt: string;
+  /** A founding lodge: its price stays for life */
+  founding?: boolean;
 }): Email {
+  const price = `${input.plan} is ${input.price} a month${input.founding ? ", your founding price for life" : ""}`;
   return {
     to: input.to,
-    subject: `${input.lodgeName} is live`,
+    subject: `Welcome to StayZim: ${input.lodgeName} is ready`,
     text: [
       `Hi ${input.name},`,
       "",
-      `${input.lodgeName} has its own website now: ${input.siteUrl}`,
+      `Welcome to StayZim. ${input.lodgeName} has its own website now: ${input.siteUrl}`,
       "",
-      `It's a free demo until ${input.endsAt}. Add your photos and rooms from your dashboard, share the link, and see the visits come in.`,
-      `To keep it live after that, pay for the ${input.plan} plan (${input.price} a month) from Billing: ${input.dashboardUrl}/billing`,
+      `It's a free preview until ${input.endsAt}. Check it on your phone, add your photos and rooms from your dashboard, and share the link.`,
+      `Love it? Launch it from Billing to keep it live: ${input.dashboardUrl}/billing (${price}). Not for you? Do nothing, and pay nothing.`,
       "",
       `Your dashboard: ${input.dashboardUrl}`,
     ].join("\n"),
     html: layout({
-      preview: `Your site is live. It's a free demo until ${input.endsAt}.`,
-      body: `${heading(`${input.lodgeName} is live`)}
+      preview: `Your site is ready. It's a free preview until ${input.endsAt}.`,
+      body: `${heading("Welcome to StayZim")}
 ${greeting(input.name)}
 <p style="margin:0 0 16px"><strong>${escapeHtml(input.lodgeName)}</strong> has its own website now:<br><a href="${escapeHtml(input.siteUrl)}" style="color:${BRAND};font-weight:600">${escapeHtml(input.siteUrl.replace(/^https?:\/\//, ""))}</a></p>
-<p style="margin:0 0 16px">It's a free demo until <strong>${escapeHtml(input.endsAt)}</strong>. Add your photos and rooms, share the link with past guests, and watch the visits come in.</p>
-<p style="margin:0">To keep it live after that, pay for the ${escapeHtml(input.plan)} plan (${escapeHtml(input.price)} a month) from Billing. The demo badges go as soon as you do.</p>
-${button(input.dashboardUrl, "Open your dashboard")}
-${linkFallback(input.dashboardUrl)}`,
+<p style="margin:0 0 16px">It's a free preview until <strong>${escapeHtml(input.endsAt)}</strong>. Check it on your phone, add your photos and rooms, and share the link with past guests.</p>
+<p style="margin:0">Love it? Launch it to keep it live: ${escapeHtml(price)}. The preview marks go as soon as you do. Not for you? Do nothing, and pay nothing.</p>
+${button(`${input.dashboardUrl}/billing`, "Launch my site")}
+${small(`Or open your dashboard: <a href="${escapeHtml(input.dashboardUrl)}" style="color:${BRAND}">${escapeHtml(input.dashboardUrl.replace(/^https?:\/\//, ""))}</a>`)}`,
     }),
   };
 }
@@ -53,7 +59,7 @@ export type InvoiceNotice = "DUE_IN_3" | "DUE_IN_1" | "DUE_TODAY";
 
 /**
  * The invoice, sent 3 days before, the day before, and on the day it's due.
- * For a demo it's the first payment, due when the demo ends.
+ * For a free preview it's the first payment (launching it), due when the preview ends.
  */
 export function invoiceEmail(input: {
   to: string;
@@ -73,11 +79,11 @@ export function invoiceEmail(input: {
   const when = input.notice === "DUE_TODAY" ? "today" : input.notice === "DUE_IN_1" ? "tomorrow" : `on ${input.due}`;
   const subject = input.demo
     ? input.notice === "DUE_TODAY"
-      ? `Your ${input.lodgeName} demo ends today`
-      : `Your ${input.lodgeName} demo ends ${when}`
+      ? `Your ${input.lodgeName} free preview ends today`
+      : `Your ${input.lodgeName} free preview ends ${when}`
     : `Invoice ${input.number}: ${input.amount} due ${when}`;
   const lead = input.demo
-    ? `Your free demo of ${input.lodgeName} ends ${when}, and the site goes offline then. Pay for your first month to keep it live, just as it is.`
+    ? `Your free preview of ${input.lodgeName} ends ${when}, and the site goes offline then. Love it? Launch it to keep it live, just as it is.`
     : `Your StayZim plan for ${input.lodgeName} renews ${when}. Pay before then so your site stays up without a break.`;
   const rows: [string, string][] = [
     ["Invoice", input.number],
@@ -105,11 +111,11 @@ export function invoiceEmail(input: {
     html: layout({
       preview: lead,
       label: "Billing",
-      body: `${heading(input.demo ? "Keep your site live" : `Invoice ${input.number}`)}
+      body: `${heading(input.demo ? "Launch your site" : `Invoice ${input.number}`)}
 ${greeting(input.name)}
 <p style="margin:0">${escapeHtml(lead)}</p>
 ${summary(rows)}
-${button(input.payUrl, `Pay ${input.amount}`)}
+${button(input.payUrl, input.demo ? `Launch for ${input.amount}` : `Pay ${input.amount}`)}
 ${small("Every payment goes through Paynow: EcoCash, InnBucks, OneMoney, card and more. Already paid? Thank you, you can ignore this email.")}
 ${linkFallback(input.payUrl)}
 ${issuedBy(input.issuedBy)}`,
@@ -164,26 +170,101 @@ ${issuedBy(input.issuedBy)}`,
   };
 }
 
-/** A demo's time is up: the site is offline, and it's kept for a while. */
+/** A free preview's time is up: the site is offline, and it's kept for a while. */
 export function demoEndedEmail(input: { to: string; name: string; lodgeName: string; payUrl: string; keptUntil: string }): Email {
   return {
     to: input.to,
     sender: "billing",
-    subject: `Your ${input.lodgeName} demo has ended`,
+    subject: `Your ${input.lodgeName} free preview has ended`,
     text: [
       `Hi ${input.name},`,
       "",
-      `Your free demo of ${input.lodgeName} has ended, so the site is offline for now.`,
-      `We keep everything until ${input.keptUntil}. Pay for a plan and it's back live straight away, just as you left it: ${input.payUrl}`,
+      `Your free preview of ${input.lodgeName} has ended, so the site is offline for now.`,
+      `We keep everything until ${input.keptUntil}. Launch it and it's back live straight away, just as you left it: ${input.payUrl}`,
     ].join("\n"),
     html: layout({
-      preview: `Pay for a plan and ${input.lodgeName} is back live straight away.`,
+      preview: `Launch ${input.lodgeName} and it's back live straight away.`,
       label: "Billing",
-      body: `${heading("Your demo has ended")}
+      body: `${heading("Your free preview has ended")}
 ${greeting(input.name)}
-<p style="margin:0 0 16px">Your free demo of <strong>${escapeHtml(input.lodgeName)}</strong> has ended, so the site is offline for now.</p>
-<p style="margin:0">We keep your photos, rooms and everything else until <strong>${escapeHtml(input.keptUntil)}</strong>. Pay for a plan and it's back live straight away, just as you left it.</p>
-${button(input.payUrl, "Put my site back live")}
+<p style="margin:0 0 16px">Your free preview of <strong>${escapeHtml(input.lodgeName)}</strong> has ended, so the site is offline for now.</p>
+<p style="margin:0">We keep your photos, rooms and everything else until <strong>${escapeHtml(input.keptUntil)}</strong>. Launch it and it's back live straight away, just as you left it.</p>
+${button(input.payUrl, "Launch my site")}
+${linkFallback(input.payUrl)}`,
+    }),
+  };
+}
+
+export type PreviewReminder = "DAY_3" | "DAY_10";
+
+/**
+ * 3 and 10 days after sign-up, while the site still isn't launched: it's
+ * waiting, everything is kept until `keptUntil`, and launching brings it back.
+ */
+export function previewReminderEmail(input: {
+  to: string;
+  name: string;
+  lodgeName: string;
+  day: PreviewReminder;
+  plan: string;
+  price: string;
+  founding: boolean;
+  keptUntil: string;
+  payUrl: string;
+}): Email {
+  const price = `${input.plan} is ${input.price} a month${input.founding ? ", the founding price you joined on, for life" : ""}`;
+  const subject = input.day === "DAY_3" ? `${input.lodgeName} is waiting for you` : `Still thinking about ${input.lodgeName}?`;
+  const lead =
+    input.day === "DAY_3"
+      ? `Your site for ${input.lodgeName} is built and waiting. Launch it and guests can find you and book you on WhatsApp today.`
+      : `We're keeping ${input.lodgeName} just as you left it until ${input.keptUntil}. After that it's deleted. Launch it any time before then.`;
+  return {
+    to: input.to,
+    sender: "billing",
+    subject,
+    text: [`Hi ${input.name},`, "", lead, "", `${price}. No commission on bookings.`, "", `Launch it: ${input.payUrl}`, "", "Not for you? Do nothing, and pay nothing."].join("\n"),
+    html: layout({
+      preview: lead,
+      label: "Your site",
+      body: `${heading(input.day === "DAY_3" ? "Your site is waiting" : "Still thinking about it?")}
+${greeting(input.name)}
+<p style="margin:0 0 16px">${escapeHtml(lead)}</p>
+<p style="margin:0">${escapeHtml(price)}. No commission on bookings.</p>
+${button(input.payUrl, "Launch my site")}
+${small("Not for you? Do nothing, and pay nothing.")}
+${linkFallback(input.payUrl)}`,
+    }),
+  };
+}
+
+/**
+ * On 20 October, two days before founding prices end, to sites that aren't
+ * launched yet: they joined in time, so they keep the founding price for life.
+ */
+export function foundingDeadlineEmail(input: {
+  to: string;
+  name: string;
+  lodgeName: string;
+  plan: string;
+  price: string;
+  normalPrice: string;
+  keptUntil: string;
+  payUrl: string;
+}): Email {
+  const lead = `Founding prices end on 22 October. ${input.lodgeName} joined in time, so it keeps its founding price for life: ${input.plan} at ${input.price} a month instead of ${input.normalPrice}.`;
+  return {
+    to: input.to,
+    sender: "billing",
+    subject: "Founding prices end on 22 October",
+    text: [`Hi ${input.name},`, "", lead, "", `We keep your site until ${input.keptUntil}. Launch it before then and the price is yours: ${input.payUrl}`].join("\n"),
+    html: layout({
+      preview: lead,
+      label: "Your site",
+      body: `${heading("Founding prices end on 22 October")}
+${greeting(input.name)}
+<p style="margin:0 0 16px">${escapeHtml(lead)}</p>
+<p style="margin:0">We keep your site until <strong>${escapeHtml(input.keptUntil)}</strong>. Launch it before then and the price is yours.</p>
+${button(input.payUrl, "Launch my site")}
 ${linkFallback(input.payUrl)}`,
     }),
   };
