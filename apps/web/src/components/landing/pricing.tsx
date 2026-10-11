@@ -1,12 +1,13 @@
 "use client";
 
-import { annualSaving, foundingOpen, planPrice, type Plan as PlanKey } from "@stayzim/sites";
+import { annualDeal, monthlyPrice, PLAN_PRICES, planPrice, type Plan as PlanKey } from "@stayzim/sites";
 import { motion, type Variants } from "framer-motion";
-import { ArrowRight, BadgePercent, CircleCheck, CreditCard, Globe, Star } from "lucide-react";
+import { ArrowRight, BadgePercent, CircleCheck, Clock, CreditCard, HandCoins, Star } from "lucide-react";
 
 import { Eyebrow } from "./brand";
 import { PLANS, type Plan } from "./content";
 import { TrackedLink } from "./cta";
+import { FOUNDING_END_SHORT, FoundingCountdown, useFounding } from "@/components/founding";
 import { EASE_OUT, Item, Stagger } from "@/components/motion";
 
 const PLAN_KEYS: Record<Plan["id"], PlanKey> = { starter: "STARTER", growth: "GROWTH", pro: "PRO" };
@@ -24,6 +25,7 @@ const feature: Variants = {
 function PlanCard({ plan }: { plan: Plan }) {
   const featured = plan.featured === true;
   const key = PLAN_KEYS[plan.id];
+  const { open } = useFounding();
   return (
     <motion.div
       variants={planCard}
@@ -54,16 +56,32 @@ function PlanCard({ plan }: { plan: Plan }) {
         <p className="text-[14.5px] leading-[21px] text-muted">{plan.description}</p>
       </div>
 
-      <div className="flex items-baseline gap-1.5">
-        <span
-          className={`font-display leading-none font-bold tracking-[-0.04em] ${featured ? "text-[52px] lg:text-6xl" : "text-[52px]"}`}
-        >
-          {plan.price}
-        </span>
-        <span className="text-[15px] text-muted">/month</span>
+      <div className="flex flex-col gap-2">
+        <div className="flex items-baseline gap-1.5">
+          <span
+            className={`font-display leading-none font-bold tracking-[-0.04em] ${featured ? "text-[52px] lg:text-6xl" : "text-[52px]"}`}
+          >
+            ${monthlyPrice(key, open)}
+          </span>
+          <span className="text-[15px] text-muted">/month</span>
+          {open ? (
+            <span className="ml-1 text-[22px] font-semibold text-muted-2 line-through decoration-2" aria-label={`Normal price $${PLAN_PRICES[key]}`}>
+              ${PLAN_PRICES[key]}
+            </span>
+          ) : null}
+        </div>
+        {open ? (
+          <p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[13.5px] leading-5 text-purple-ink">
+            <span className="font-semibold">Founding price, yours for life.</span>
+            <span className="inline-flex items-center gap-1 text-purple">
+              <Clock size={13} strokeWidth={2} />
+              Ends in <FoundingCountdown />
+            </span>
+          </p>
+        ) : null}
       </div>
       <p className="-mt-3 text-[14px] leading-5 text-muted">
-        Or ${planPrice(key, 12, foundingOpen(new Date()))} for a year: <strong className="font-semibold text-success">save ${annualSaving(key, foundingOpen(new Date()))}</strong>
+        Or ${planPrice(key, 12, open)} for a year: <strong className="font-semibold text-success">{annualDeal(key, open)}</strong>
       </p>
 
       <TrackedLink
@@ -96,11 +114,12 @@ function PlanCard({ plan }: { plan: Plan }) {
 
 const PROMISES = [
   { icon: CreditCard, text: "Pay monthly by Paynow, EcoCash or InnBucks" },
+  { icon: HandCoins, text: "Pay nothing until you're happy. Cancel any time." },
   { icon: BadgePercent, text: "0% commission on every booking" },
-  { icon: Globe, text: "Your site stays yours while you are with us" },
 ];
 
 export function Pricing() {
+  const { open } = useFounding();
   return (
     <section id="pricing" className="bg-[linear-gradient(180deg,#EFF9FD_0%,#FFFFFF_60%)] px-4 py-16 lg:bg-[linear-gradient(180deg,#EFF9FD_0%,#FFFFFF_70%)] lg:px-6 lg:py-[120px]">
       <div className="mx-auto max-w-[1120px]">
@@ -110,15 +129,27 @@ export function Pricing() {
           </Item>
           <Item>
             <h2 className="font-display text-[34px] leading-[37px] font-semibold tracking-[-0.03em] text-balance lg:text-center lg:text-[52px] lg:leading-[56px]">
-              Try any plan free for 2 days
+              Build free. Launch from ${monthlyPrice("STARTER", open)}.
             </h2>
           </Item>
           <Item>
             <p className="text-base leading-relaxed text-pretty text-muted lg:text-center lg:text-lg lg:leading-7">
-              Your site is live in about a minute. Keep it live for the price of your plan. No commission on any plan. For lodges, guesthouses and holiday homes only.
+              We build your site free, and you pay only when you launch it. No commission on any plan. For lodges, guesthouses and holiday homes only.
             </p>
           </Item>
         </Stagger>
+
+        {open ? (
+          <Stagger className="mb-12 flex flex-col items-start gap-3 rounded-3xl bg-white p-5 shadow-card ring-1 ring-purple-line sm:flex-row sm:items-center sm:justify-between lg:mb-14 lg:px-7">
+            <Item className="flex flex-col gap-1">
+              <span className="text-[15.5px] font-semibold text-purple-ink">Founding prices end {FOUNDING_END_SHORT}</span>
+              <span className="text-[14px] leading-5 text-muted">Sign up before then and keep your price for life, on any plan.</span>
+            </Item>
+            <Item>
+              <FoundingCountdown variant="boxes" />
+            </Item>
+          </Stagger>
+        ) : null}
 
         <Stagger
           stagger={0.14}
@@ -132,7 +163,7 @@ export function Pricing() {
 
         <Stagger
           stagger={0.1}
-          className="mt-8 flex flex-col items-start gap-3 text-[15px] text-slate lg:mt-7 lg:flex-row lg:items-center lg:justify-center lg:gap-7"
+          className="mt-8 flex flex-col items-start gap-3 text-[15px] text-slate lg:mt-7 lg:flex-row lg:flex-wrap lg:items-center lg:justify-center lg:gap-x-7"
         >
           {PROMISES.map(({ icon: Icon, text }) => (
             <Item key={text} className="inline-flex items-center gap-2">

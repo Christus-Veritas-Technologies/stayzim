@@ -78,26 +78,25 @@ export type Plan = {
   name: string;
   tagline: string;
   description: string;
-  price: string;
   cta: string;
   features: string[];
   featured?: boolean;
 };
 
+/** Prices come from @stayzim/sites (founding or normal, by the server's clock). */
 export const PLANS: Plan[] = [
   {
     id: "starter",
     name: "Starter",
-    tagline: "Get found",
+    tagline: "Get online",
     description: "For new guesthouses and Airbnbs that need to be online.",
-    price: "$20",
-    cta: "Try Starter free",
+    cta: "Build free on Starter",
     features: [
-      "Lodge site on yourlodge.stayzim.co.zw",
-      "Rooms, gallery and map on one page",
-      "Book on WhatsApp button",
-      "Google Business setup",
+      "Your own website",
       "A free .co.zw domain, like yourlodge.co.zw",
+      "Rooms, gallery and map",
+      "Book on WhatsApp buttons",
+      "Hosting and support",
     ],
   },
   {
@@ -105,13 +104,8 @@ export const PLANS: Plan[] = [
     name: "Growth",
     tagline: "Get booked",
     description: "For most lodges. Know who visits and book them direct.",
-    price: "$40",
-    cta: "Try Growth free for 2 days",
-    features: [
-      "Everything in Starter",
-      "Booking calendar: guests pick dates on your site, you confirm",
-      "Visitor analytics",
-    ],
+    cta: "Build my free site",
+    features: ["Everything in Starter", "A booking calendar: guests pick dates on your site, you confirm", "Visitor stats"],
     featured: true,
   },
   {
@@ -119,14 +113,8 @@ export const PLANS: Plan[] = [
     name: "Pro",
     tagline: "Get full",
     description: "For busy lodges with 5+ rooms, or owners living abroad.",
-    price: "$75",
-    cta: "Try Pro free",
-    features: [
-      "Everything in Growth",
-      "We look after your Booking.com and Airbnb photos and text",
-      "2 SEO blog posts a month",
-      "Priority WhatsApp support",
-    ],
+    cta: "Build free on Pro",
+    features: ["Everything in Growth", "We manage your Booking.com and Airbnb photos and text", "Priority WhatsApp support"],
   },
 ];
 
