@@ -7,7 +7,7 @@ const PHOTO = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAEAAAAAwCAIAAAAuKetIAAAAVElEQ
 
 /**
  * The path from an advert: /create with the ad's tags, a look, the lodge's
- * name and WhatsApp, a photo, and the site is live in that look with its demo
+ * name and WhatsApp, a photo, and the site is live in that look with its preview
  * badges, before any email. Then Claim my site. Automated, the live site
  * comes well inside the 90 seconds a person has.
  */
@@ -55,7 +55,7 @@ test("a lodge goes live from an advert in four steps, then the owner claims it",
 
   const guest = await page.context().newPage();
   await guest.goto(lodgeSiteUrl(slug));
-  await expect(guest.getByText("Demo site.")).toBeVisible();
+  await expect(guest.getByText("Free preview.")).toBeVisible();
   await expect(guest.locator('a[href^="https://wa.me/"]').first()).toBeAttached();
   await expect(guest.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
   // A new site shows example rooms, marked, that can't be booked
@@ -75,13 +75,16 @@ test("a lodge goes live from an advert in four steps, then the owner claims it",
   await page.getByLabel("Password", { exact: true }).fill("farai-pass-123");
   await page.getByRole("button", { name: "Claim my site" }).click();
   await expect(page.getByText(`Log in with ${email} from now on`)).toBeVisible();
+  // Claimed: love it, launch it
+  await expect(page.getByRole("heading", { name: "Love it? Launch it." })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Launch my site" })).toHaveAttribute("href", "/dashboard/billing");
 
   // The site went live in the look picked first
   await page.goto("/dashboard/design");
   await expect(page.getByLabel("Starter designs").locator("div").filter({ hasText: /^Rondavel/ }).getByText("Live", { exact: true })).toBeVisible();
 
   await page.goto("/dashboard/billing");
-  await expect(page.getByText("Your site is live as a free demo")).toBeVisible();
+  await expect(page.getByText("Your site is live as a free preview")).toBeVisible();
   await expect(page.getByText("Your site isn't saved to an email yet.")).toHaveCount(0);
 });
 

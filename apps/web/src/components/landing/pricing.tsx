@@ -65,9 +65,9 @@ function PlanCard({ plan }: { plan: Plan }) {
           </span>
           <span className="text-[15px] text-muted">/month</span>
           {open ? (
-            <span className="ml-1 text-[22px] font-semibold text-muted-2 line-through decoration-2" aria-label={`Normal price $${PLAN_PRICES[key]}`}>
-              ${PLAN_PRICES[key]}
-            </span>
+            <del className="ml-1 text-[22px] font-semibold text-muted-2 decoration-2">
+              <span className="sr-only">Normal price </span>${PLAN_PRICES[key]}
+            </del>
           ) : null}
         </div>
         {open ? (
