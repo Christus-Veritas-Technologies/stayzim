@@ -4,7 +4,7 @@ import { DEMO_KEEP_DAYS, monthlyPrice } from "@stayzim/sites";
 import { buttonVariants } from "@stayzim/ui/components/button";
 import { cn } from "@stayzim/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
-import { Clock, TriangleAlert } from "lucide-react";
+import { CircleCheck, Clock, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -138,6 +138,37 @@ export function DemoCountdownCard() {
         </Link>
         <span className="text-center text-[12.5px] text-muted lg:text-right">{PLANS[lodge.plan].name}, {formatMoney(monthlyPrice(lodge.plan, lodge.founding))} a month, by EcoCash, InnBucks or card</span>
       </div>
+    </motion.section>
+  );
+}
+
+/** On the dashboard home once the site is launched: the plan, its price and the next payment date. */
+export function LaunchedPlanCard() {
+  const { lodge } = useLodge();
+  if (lodge.status !== "ACTIVE" || !lodge.paidUntil) return null;
+  return (
+    <motion.section
+      aria-label="Your plan"
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      className="flex flex-col gap-3 rounded-[20px] bg-white p-4 shadow-card sm:flex-row sm:items-center sm:justify-between sm:p-5"
+    >
+      <div className="flex items-center gap-3">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-success-wash text-success">
+          <CircleCheck className="size-5" />
+        </span>
+        <div className="flex flex-col">
+          <p className="text-[14px] font-semibold text-ink">
+            {PLANS[lodge.plan].name} plan · {formatMoney(monthlyPrice(lodge.plan, lodge.founding))} a month
+            {lodge.founding ? <span className="ml-1.5 text-[12.5px] font-semibold text-purple">Founding price, locked for life</span> : null}
+          </p>
+          <p className="text-[13px] text-muted">Next payment {formatLongDate(lodge.paidUntil)}</p>
+        </div>
+      </div>
+      <Link href="/dashboard/billing" className={buttonVariants({ variant: "outline", size: "sm", className: "w-full sm:w-auto" })}>
+        Billing
+      </Link>
     </motion.section>
   );
 }

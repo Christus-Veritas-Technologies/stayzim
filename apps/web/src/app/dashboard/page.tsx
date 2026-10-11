@@ -8,7 +8,7 @@ import { ArrowUpRight, RotateCcw } from "lucide-react";
 import { useState } from "react";
 
 import { ComingUpCard } from "@/components/dashboard/coming-up";
-import { DemoCountdownCard } from "@/components/dashboard/demo-countdown";
+import { DemoCountdownCard, LaunchedPlanCard } from "@/components/dashboard/demo-countdown";
 import { DomainClaimCard } from "@/components/dashboard/domain-claim";
 import { useLodge } from "@/components/dashboard/lodge-provider";
 import { ActivityCard, RoomsSummaryCard } from "@/components/dashboard/overview-cards";
@@ -73,6 +73,7 @@ export default function DashboardPage() {
 
       <PageSection>
         <DemoCountdownCard />
+        <LaunchedPlanCard />
         <DomainClaimCard />
       </PageSection>
 

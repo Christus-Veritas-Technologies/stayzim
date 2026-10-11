@@ -82,21 +82,21 @@ export const PLANS: Record<
 > = {
   STARTER: {
     name: "Starter",
-    tagline: "Get found",
+    tagline: "Get online",
     pitch: "For guesthouses that just need to be online.",
-    features: ["Lodge site on stayzim.co.zw", "Rooms, gallery and map", "Book on WhatsApp button", "Google Business setup", "A free .co.zw domain"],
+    features: ["Your own website", "A free .co.zw domain", "Rooms, gallery and map", "Book on WhatsApp buttons", "Hosting and support"],
   },
   GROWTH: {
     name: "Growth",
     tagline: "Get booked",
     pitch: "For most lodges. See who visits.",
-    features: ["Everything in Starter", "Booking calendar: guests request dates on your site", "Visitor analytics"],
+    features: ["Everything in Starter", "Booking calendar: guests pick dates on your site", "Visitor stats"],
   },
   PRO: {
     name: "Pro",
     tagline: "Get full",
     pitch: "For busy lodges with 5 or more rooms.",
-    features: ["Everything in Growth", "We manage your Booking.com and Airbnb listings", "Priority WhatsApp support"],
+    features: ["Everything in Growth", "We manage your Booking.com and Airbnb photos and text", "Priority WhatsApp support"],
   },
 };
 

@@ -4,26 +4,57 @@
     {
       "name": "web",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "web", "dev"],
+      "runtimeArgs": [
+        "--filter",
+        "web",
+        "dev"
+      ],
       "port": 9999
     },
     {
       "name": "server",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "server", "dev"],
+      "runtimeArgs": [
+        "--filter",
+        "server",
+        "dev"
+      ],
       "port": 9998
     },
     {
       "name": "outreach",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "outreach", "dev"],
+      "runtimeArgs": [
+        "--filter",
+        "outreach",
+        "dev"
+      ],
       "port": 9997
     },
     {
       "name": "designs",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "9988", "--directory", "designs"],
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "9988",
+        "--directory",
+        "designs"
+      ],
       "port": 9988
+    },
+    {
+      "name": "server-preview",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--filter",
+        "server",
+        "dev"
+      ],
+      "port": 9998,
+      "env": {
+        "DATABASE_URL": "postgresql://postgres:admin@localhost:5432/stayzim_preview"
+      }
     }
   ]
 }
