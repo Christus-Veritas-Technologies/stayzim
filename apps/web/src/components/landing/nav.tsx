@@ -96,12 +96,6 @@ export function Nav() {
                     }`}
                   >
                     {link.label}
-                    {"badge" in link ? (
-                      // No room for the badge between lg and xl; the pricing section says it anyway
-                      <span className="hidden h-5 items-center rounded-full bg-[#FDE6DA] px-[7px] text-xs font-semibold text-rust xl:inline-flex">
-                        {link.badge}
-                      </span>
-                    ) : null}
                   </a>
                 </li>
               );
@@ -121,7 +115,7 @@ export function Nav() {
               track={{ cta: "nav_signup", section: "nav" }}
               className="inline-flex h-10 items-center rounded-full bg-brand px-4 text-[13.5px] font-semibold whitespace-nowrap text-white no-underline hover:bg-brand-dark hover:text-white lg:h-11 lg:px-5 lg:text-[15px]"
             >
-              Try it free
+              Build my free site
             </TrackedLink>
             <button
               type="button"
@@ -169,11 +163,6 @@ export function Nav() {
                         }`}
                       >
                         {link.label}
-                        {"badge" in link ? (
-                          <span className="inline-flex h-5 items-center rounded-full bg-[#FDE6DA] px-[7px] text-xs font-semibold text-rust">
-                            {link.badge}
-                          </span>
-                        ) : null}
                       </a>
                     </motion.li>
                   ))}

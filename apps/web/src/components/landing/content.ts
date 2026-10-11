@@ -3,7 +3,7 @@
 export const NAV_LINKS = [
   { id: "how-it-works", label: "How it works" },
   { id: "examples", label: "Examples" },
-  { id: "pricing", label: "Pricing", badge: "2 days free" },
+  { id: "pricing", label: "Pricing" },
   { id: "questions", label: "Questions" },
 ] as const;
 
@@ -164,7 +164,7 @@ export const FOOTER_COLUMNS = [
     title: "For owners",
     links: [
       { label: "Log in", href: "/login" },
-      { label: "Try it free", href: "/create" },
+      { label: "Build my free site", href: "/create" },
       { label: "Message us", whatsapp: "general" },
     ],
   },
