@@ -1,9 +1,11 @@
 "use client";
 
+import { monthlyPrice } from "@stayzim/sites";
 import { motion } from "framer-motion";
-import { ArrowDown, ArrowRight } from "lucide-react";
+import { ArrowDown, ArrowRight, Tag } from "lucide-react";
 
 import { Eyebrow } from "./brand";
+import { useFounding } from "@/components/founding";
 import { CountUp, EASE_OUT, Item, Reveal, Stagger } from "@/components/motion";
 
 /** A bar that grows to its width when scrolled into view. */
@@ -22,6 +24,8 @@ function GrowBar({ width, delay, className, children }: { width: string; delay: 
 }
 
 export function Maths() {
+  const { open } = useFounding();
+  const growth = monthlyPrice("GROWTH", open);
   return (
     <section className="bg-white px-4 py-16 lg:px-6 lg:py-[120px]">
       <div className="mx-auto max-w-[1120px]">
@@ -41,6 +45,14 @@ export function Maths() {
                 the full price.
               </p>
             </Item>
+            {open ? (
+              <Item>
+                <span className="inline-flex items-center gap-2 rounded-full bg-purple-tint px-3.5 py-1.5 text-[14.5px] font-semibold text-purple-ink ring-1 ring-purple-line">
+                  <Tag size={15} strokeWidth={2} className="text-purple" />
+                  Founding price: from ${monthlyPrice("STARTER", true)}/month
+                </span>
+              </Item>
+            ) : null}
           </Stagger>
 
           <Reveal className="flex flex-col gap-6 rounded-3xl border border-[#EAEFF2] bg-surface p-5 lg:gap-7 lg:p-8">
@@ -80,7 +92,7 @@ export function Maths() {
           </Reveal>
         </div>
 
-        {/* The ticket: $85 covers $40 */}
+        {/* The ticket: $85 covers a month of Growth */}
         <Reveal className="mt-10 lg:mt-14" amount={0.4}>
           <div className="relative grid items-center gap-5 overflow-hidden rounded-[28px] bg-[linear-gradient(150deg,#0096BE_0%,#007DA2_50%,#006483_100%)] px-6 py-8 text-white lg:grid-cols-[1fr_120px_1fr] lg:px-16 lg:py-11">
             {[420, 280, 160].map((size, i) => (
@@ -118,9 +130,9 @@ export function Maths() {
               <span className="text-[13px] font-semibold tracking-[0.04em] text-brand-tint uppercase">covers</span>
             </div>
             <div className="relative flex flex-col gap-1.5 lg:text-right">
-              <span className="text-[15px] text-brand-tint lg:text-[17px]">A month of Growth</span>
+              <span className="text-[15px] text-brand-tint lg:text-[17px]">A month of Growth{open ? " (founding price)" : ""}</span>
               <span className="font-display text-[64px] leading-none font-bold tracking-[-0.04em] lg:text-8xl">
-                <CountUp to={40} prefix="$" duration={1.2} delay={0.6} />
+                <CountUp to={growth} prefix="$" duration={1.2} delay={0.6} />
               </span>
             </div>
           </div>
