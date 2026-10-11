@@ -28,7 +28,7 @@ const SECTIONS: LegalSection[] = [
     ),
   },
   {
-    title: "Plans, the demo and paying",
+    title: "Plans, the free preview and paying",
     body: (
       <>
         <ul>
@@ -42,12 +42,12 @@ const SECTIONS: LegalSection[] = [
             move to, for as long as they stay with us.
           </li>
           <li>
-            When you sign up, your site goes live as a free demo on the plan you choose, for {DEMO_DAYS} days, with small &quot;demo&quot;
-            badges on it. Nothing is charged for the demo.
+            When you sign up, we build your site free and it goes live as a free preview on the plan you choose, for {DEMO_DAYS} days, with
+            small &quot;preview&quot; marks on it. Nothing is charged for the preview.
           </li>
           <li>
-            To keep the site live after the demo, pay for a plan. If you don&apos;t, the site goes offline when the demo ends, and we
-            delete the demo, its photos and your account {DEMO_KEEP_DAYS} days later.
+            To keep the site live, launch it by paying for a plan. If you don&apos;t, the site goes offline when the preview ends, and we
+            delete it, its photos and your account {DEMO_KEEP_DAYS} days later. You pay nothing if you don&apos;t launch.
           </li>
           <li>
             You pay in advance, for 1, 3 or 12 months (founding lodges pay for 10 months when they pay for 12; otherwise 12 months cost {ANNUAL_DISCOUNT.STARTER}% less on
@@ -145,7 +145,7 @@ export default function TermsPage() {
     <MarketingPage>
       <LegalPage
         title="Terms"
-        updated="6 October 2026"
+        updated="11 October 2026"
         intro="The agreement between StayZim and the lodges that use it. We've kept it short and in plain words; if anything is unclear, ask us."
         sections={SECTIONS}
       />

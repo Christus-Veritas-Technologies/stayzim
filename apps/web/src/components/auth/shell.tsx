@@ -117,13 +117,13 @@ export function BackToLogin() {
   );
 }
 
-/** "New to StayZim?" line under the login form: sign up for a free demo. */
+/** "New to StayZim?" line under the login form: build a site free. */
 export function NewToStayZim() {
   return (
     <p className="text-[13.5px] leading-5 text-muted">
       New to StayZim?{" "}
       <Link href="/create" className="-my-2.5 py-2.5 font-semibold text-brand hover:text-brand-dark">
-        Make your lodge's site free
+        Build your lodge&apos;s site free
       </Link>
     </p>
   );

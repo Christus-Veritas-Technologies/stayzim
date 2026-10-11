@@ -85,7 +85,7 @@ const SECTIONS: LegalSection[] = [
         addresses for these visits. When you make a site, we keep the advert or website that sent you with it, and which steps you finished, so we
         know which adverts bring lodges.
         We also use the Meta (Facebook) Pixel on stayzim.co.zw, sign-up and the owner dashboard, so we can tell which Facebook and Instagram
-        adverts work: it tells Meta when you view a page, sign up, make your demo or pay (the plan and amount, never card or mobile money
+        adverts work: it tells Meta when you view a page, sign up, make your site or pay (the plan and amount, never card or mobile money
         details). Lodge sites never use it.
       </p>
     ),
@@ -124,7 +124,7 @@ const SECTIONS: LegalSection[] = [
     title: "How long we keep it",
     body: (
       <p>
-        We keep owner accounts and lodge content while the lodge uses StayZim. A demo that was never paid for is deleted, with its photos,
+        We keep owner accounts and lodge content while the lodge uses StayZim. A free preview that was never launched is deleted, with its photos,
         content, visit records and the account, 30 days after it ended. When a paying lodge leaves, we take its site down and, if the
         owner asks, delete its photos, content and visit records. We keep invoices and receipts as long as the law asks us to.
       </p>
@@ -151,7 +151,7 @@ export default function PrivacyPage() {
     <MarketingPage>
       <LegalPage
         title="Privacy"
-        updated="6 October 2026"
+        updated="11 October 2026"
         intro="What we collect about lodge owners and the guests who visit their sites, why, and what you can ask us to do with it. In plain words."
         sections={SECTIONS}
       />

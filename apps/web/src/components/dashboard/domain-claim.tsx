@@ -153,7 +153,7 @@ export function ClaimDomainButton({ className, size = "sm", onClick }: { classNa
 
 /**
  * On the dashboard home for a paid lodge: claim the free .co.zw, or, once claimed,
- * when it'll be ready. Hidden once the domain is live, on demos, and when domains aren't free.
+ * when it'll be ready. Hidden once the domain is live, on free previews, and when domains aren't free.
  */
 export function DomainClaimCard({ className }: { className?: string }) {
   const { lodge } = useLodge();

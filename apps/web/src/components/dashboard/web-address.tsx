@@ -19,7 +19,7 @@ export const OWN_DOMAIN_REQUEST = "I have my own domain and I'd like my lodge si
  * Where guests find the site. A lodge's own domain shows as connected, with the
  * stayzim.co.zw address that keeps working underneath. Without one: a paid lodge
  * claims its free .co.zw (while DOMAIN_STILL_FREE isn't "false"), or asks us to
- * connect a domain it has, and a demo learns that domains come once it's paid for.
+ * connect a domain it has, and a free preview learns that we register its domain when it launches.
  */
 export function WebAddress({ lodge }: { lodge: Lodge }) {
   const own = Boolean(lodge.customDomain);
@@ -48,10 +48,10 @@ export function WebAddress({ lodge }: { lodge: Lodge }) {
         ) : lodge.status === "DEMO" ? (
           <span className="text-[13px] text-muted">
             {lodge.freeDomain.free
-              ? `A free .co.zw domain, like ${lodge.slug}.co.zw, comes with any plan once you've paid.`
-              : `Your own domain, like ${lodge.slug}.co.zw, can be connected once you've paid.`}{" "}
+              ? `A free .co.zw domain, like ${lodge.slug}.co.zw, comes with every plan. We register it for you when you launch.`
+              : `Your own domain, like ${lodge.slug}.co.zw, can be connected once you launch.`}{" "}
             <Link href="/dashboard/billing" className="-my-2.5 py-2.5 font-semibold text-brand hover:text-brand-dark">
-              Billing
+              Launch my site
             </Link>
           </span>
         ) : lodge.freeDomain.claimable || lodge.freeDomain.claim?.status === "REQUESTED" ? (
