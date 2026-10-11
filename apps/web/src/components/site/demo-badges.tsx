@@ -3,44 +3,44 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { LogoMark } from "@/components/landing/brand";
 import { MAIN_URL } from "@/lib/site-host";
 
-// Straight to /create, tagged so the funnel shows sign-ups from demo sites
+// Straight to /create, tagged so the funnel shows sign-ups from free previews ("demo_site", as before)
 const SIGNUP = `${MAIN_URL}/create?utm_source=demo_site&utm_medium=referral`;
 
 /**
- * The "This is a demo" marks on a lodge site that isn't paid for yet: a ribbon
- * on top, a pill that stays on screen, and a band at the end. Plain HTML and
- * CSS, so they add nothing to guests' data. They go once the lodge pays.
+ * The "Free preview" marks on a lodge site that isn't launched (paid for) yet:
+ * a ribbon on top, a pill that stays on screen, and a band at the end. Plain
+ * HTML and CSS, so they add nothing to guests' data. They go once it launches.
  */
 export function DemoRibbon() {
   return (
     <div role="note" className="relative z-40 bg-[#0C181F] px-4 py-2 text-center text-[12.5px] leading-[18px] text-white/85">
       <Sparkles className="mr-1.5 inline size-3.5 -translate-y-px text-[#78CBE7]" aria-hidden="true" />
-      <strong className="font-semibold text-white">Demo site.</strong> This lodge is trying StayZim.{" "}
+      <strong className="font-semibold text-white">Free preview.</strong> This lodge is trying StayZim.{" "}
       <a href={SIGNUP} className="-my-2 inline-block py-2 font-semibold whitespace-nowrap text-[#78CBE7] underline-offset-2 hover:underline">
-        Make yours free
+        Build yours free
       </a>
     </div>
   );
 }
 
 /**
- * The pill that stays on screen: StayZim's mark, "Demo site", and Make yours
+ * The pill that stays on screen: StayZim's mark, "Preview", and Build yours
  * free, bottom left (above the phone booking bar), clear of the WhatsApp button.
  */
 export function DemoPill() {
   return (
     <a
       href={SIGNUP}
-      aria-label="Demo site, made with StayZim. Make yours free"
+      aria-label="Free preview, made with StayZim. Build yours free"
       className="group fixed bottom-[calc(5.75rem+env(safe-area-inset-bottom))] left-3 z-40 inline-flex items-center gap-2.5 rounded-full bg-[#0C181F] py-1.5 pr-4 pl-1.5 text-white shadow-[0_14px_32px_-12px_rgba(12,24,31,0.65)] ring-1 ring-white/10 transition-transform hover:-translate-y-0.5 motion-reduce:transform-none lg:bottom-5 lg:left-5"
     >
       <LogoMark size={30} />
       <span className="flex flex-col leading-tight">
         <span className="text-[12.5px] font-semibold">
-          Demo site<span className="hidden font-normal text-white/70 sm:inline"> · Made with StayZim</span>
+          Preview<span className="hidden font-normal text-white/70 sm:inline"> · Made with StayZim</span>
         </span>
         <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#78CBE7]">
-          Make yours free
+          Build yours free
           <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5 motion-reduce:transform-none" aria-hidden="true" />
         </span>
       </span>
@@ -49,7 +49,7 @@ export function DemoPill() {
 }
 
 /**
- * The band at the end of a demo site: StayZim's mark and name, what this is,
+ * The band at the end of a free preview: StayZim's mark and name, what this is,
  * and the way to get one. Brand blue on ink: clearly ours, not the lodge's.
  */
 export function DemoBand() {
@@ -61,14 +61,14 @@ export function DemoBand() {
           <LogoMark size={44} />
           <div className="flex flex-col gap-1">
             <p className="font-display text-[20px] leading-7 font-semibold tracking-[-0.01em]">Made with StayZim</p>
-            <p className="max-w-md text-[14.5px] leading-6 text-white/75">This free demo site was made in about two minutes. Get one like it for your lodge, with bookings on WhatsApp.</p>
+            <p className="max-w-md text-[14.5px] leading-6 text-white/75">This free preview was built in about a minute. Get a site like it for your lodge, with bookings on WhatsApp.</p>
           </div>
         </div>
         <a
           href={SIGNUP}
           className="inline-flex h-12 shrink-0 items-center gap-2 rounded-full bg-[#0096BE] px-6 text-[15px] font-semibold text-white shadow-[0_10px_24px_-10px_rgba(0,150,190,0.8)] transition-colors hover:bg-[#007DA2]"
         >
-          Make a site like this, free
+          Build a site like this, free
           <ArrowRight className="size-4" />
         </a>
       </div>

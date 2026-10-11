@@ -29,15 +29,15 @@ export function SuspendedSite({ name }: { name: string }) {
   );
 }
 
-/** A demo whose 2 days are up, until the owner pays. */
+/** A free preview whose 2 days are up, until the owner launches it. */
 export function DemoEndedSite({ name }: { name: string }) {
   return (
     <StatePage icon={<Hourglass className="size-6" />} title={`${name} isn't online right now`}>
-      This lodge&apos;s demo site has ended. Is it yours?{" "}
+      This lodge&apos;s free preview has ended. Is it yours?{" "}
       <a href={`${MAIN_URL}/login`} className="font-semibold text-[#0C181F] underline underline-offset-2">
         Log in
       </a>{" "}
-      and choose a plan to put it back live, just as you left it.
+      and launch it to put it back live, just as you left it.
     </StatePage>
   );
 }

@@ -418,16 +418,28 @@ export function AllRoomsLink({ site, className }: { site: LiveSite; className?: 
   );
 }
 
-/** "Made with StayZim" and the privacy link, in every footer. */
+// Every lodge site is an advert for StayZim: tagged so the funnel shows sign-ups from them
+const BUILD_YOURS = `${MAIN_URL}/create?utm_source=lodge_site&utm_medium=referral`;
+
+/**
+ * "Made with StayZim", "Build your lodge's website" and the privacy link, in
+ * every footer. Inline, so a line that wraps on a phone follows the footer's
+ * own alignment (centred or not).
+ */
 export function MadeWith({ className, strong }: { className?: string; strong?: string }) {
   return (
-    <span className={cn("flex items-center gap-4", className)}>
-      <a href={`${MAIN_URL}/privacy`} className="hover:underline">
+    <span className={cn("block leading-7", className)}>
+      <a href={`${MAIN_URL}/privacy`} className="mr-4 hover:underline">
         Privacy
       </a>
-      <a href="https://stayzim.co.zw" className="inline-flex items-center gap-1.5 hover:underline">
+      <a href="https://stayzim.co.zw" className="mr-4 inline-flex items-center gap-1.5 align-middle hover:underline">
         <LogoMark size={16} />
-        Made with <strong className={cn("font-semibold", strong)}>StayZim</strong>
+        <span>
+          Made with <strong className={cn("font-semibold", strong)}>StayZim</strong>
+        </span>
+      </a>
+      <a href={BUILD_YOURS} className="whitespace-nowrap hover:underline">
+        Build your lodge&apos;s website
       </a>
     </span>
   );
