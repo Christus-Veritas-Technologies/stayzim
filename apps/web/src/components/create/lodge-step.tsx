@@ -1,6 +1,6 @@
 "use client";
 
-import { COUNTRIES, foundingOpen, monthlyPrice, ZIMBABWE_TOWNS, type TemplateKey } from "@stayzim/sites";
+import { COUNTRIES, monthlyPrice, ZIMBABWE_TOWNS, type TemplateKey } from "@stayzim/sites";
 import { Button } from "@stayzim/ui/components/button";
 import { Field, FormMessage } from "@stayzim/ui/components/field";
 import { Input, InputGroup, InputGroupAddon, InputGroupInput } from "@stayzim/ui/components/input";
@@ -11,10 +11,11 @@ import { useState, type FormEvent } from "react";
 import { CreateActions, CreateHeading } from "@/components/create/frame";
 import type { CreateFacts } from "@/components/create/place-step";
 import { MiniPreview } from "@/components/create/preview";
+import { useFounding } from "@/components/founding";
 import { WhatsAppIcon } from "@/components/landing/brand";
 import { api } from "@/lib/api";
 import { authClient, authErrorMessage } from "@/lib/auth-client";
-import { dialPrefix, phoneFromInput, PLANS, type Lodge, type PlanKey } from "@/lib/lodge";
+import { dialPrefix, phoneFromInput, type Lodge, type PlanKey } from "@/lib/lodge";
 import { metaCreateStep, metaEvent } from "@/lib/meta-pixel";
 import { signupSource, trackCreateStep } from "@/lib/track";
 
@@ -57,6 +58,7 @@ export function LodgeStep({
   onCreated: (lodge: Lodge | null) => void;
   onBack: () => void;
 }) {
+  const { open: founding } = useFounding();
   const [whatsapp, setWhatsapp] = useState("");
   const [errors, setErrors] = useState<{ name?: string; whatsapp?: string }>({});
   const [error, setError] = useState<string | null>(null);
@@ -96,7 +98,7 @@ export function LodgeStep({
       },
     });
     if (result.data) {
-      metaEvent("StartTrial", { value: 0, currency: "USD", predicted_ltv: monthlyPrice(plan, foundingOpen(new Date())) * 12, content_name: plan.toLowerCase() });
+      metaEvent("StartTrial", { value: 0, currency: "USD", predicted_ltv: monthlyPrice(plan, founding) * 12, content_name: plan.toLowerCase() });
       trackCreateStep("lodge");
       metaCreateStep("lodge");
       onCreated(result.data);
@@ -181,7 +183,7 @@ export function LodgeStep({
             </InputGroup>
           </Field>
         </fieldset>
-        <CreateActions onBack={saving ? undefined : onBack} note="Free for 2 days. No card, and no email needed yet.">
+        <CreateActions onBack={saving ? undefined : onBack} note="Free to build. No card, and no email needed yet.">
           <Button type="submit" size="lg" className="w-full" loading={saving}>
             {saving ? "Making your site" : "Next: add photos"}
             {saving ? null : <ArrowRight />}

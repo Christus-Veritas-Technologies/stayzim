@@ -136,7 +136,7 @@ export function CreateFrame({
           <StepList step={step} />
           <p className="flex items-start gap-2 border-t border-line-3 pt-4 text-[12.5px] leading-[18px] text-muted-2">
             <ShieldCheck className="mt-px size-4 shrink-0 text-success" />
-            Free for 2 days. No card, and no email until you claim it.
+            Free to build. No card, and no email until you claim it.
           </p>
         </aside>
 

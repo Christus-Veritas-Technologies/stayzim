@@ -1,16 +1,17 @@
 "use client";
 
-import { DEFAULT_TEMPLATE, findTemplate, foundingOpen, monthlyPrice, TEMPLATES, type Template, type TemplateKey } from "@stayzim/sites";
+import { DEFAULT_TEMPLATE, findTemplate, monthlyPrice, PLAN_PRICES, TEMPLATES, type Template, type TemplateKey } from "@stayzim/sites";
 import { Button } from "@stayzim/ui/components/button";
 import { Tabs, TabsList, TabsTab } from "@stayzim/ui/components/tabs";
 import { cn } from "@stayzim/ui/lib/utils";
 import { motion } from "framer-motion";
-import { ArrowRight, Check, Eye } from "lucide-react";
+import { ArrowRight, Check, Clock, Eye } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { CreateActions, CreateHeading } from "@/components/create/frame";
 import { DEFAULT_THEME } from "@/components/create/preview";
 import { TemplateThumb } from "@/components/dashboard/template-thumb";
+import { FoundingCountdown, useFounding } from "@/components/founding";
 import { LODGES } from "@/components/landing/content";
 import { PreviewSheet } from "@/components/preview/preview-sheet";
 import { api } from "@/lib/api";
@@ -62,6 +63,7 @@ function useExampleLodge() {
 
 /** A design on the example lodge, in an iPhone or a browser, and "Use {name}". */
 function LookPreview({ slug, template, onClose, onUse }: { slug: string; template: Template | null; onClose: () => void; onUse: (key: TemplateKey) => void }) {
+  const { open: founding } = useFounding();
   // Keep the last design while the sheet slides out
   const [shown, setShown] = useState<Template | null>(template);
   useEffect(() => {
@@ -78,7 +80,7 @@ function LookPreview({ slug, template, onClose, onUse }: { slug: string; templat
         <div className="flex items-center gap-3">
           {plan ? (
             <span className="hidden text-[12.5px] text-muted-2 sm:inline">
-              {plan.name} · ${monthlyPrice(shown!.plan, foundingOpen(new Date()))}/mo
+              {plan.name} · ${monthlyPrice(shown!.plan, founding)}/mo
             </span>
           ) : null}
           <Button
@@ -103,6 +105,7 @@ function LookPreview({ slug, template, onClose, onUse }: { slug: string; templat
  * changed later, from Design and Billing.
  */
 export function LookStep({ value, onChange, onNext }: { value: TemplateKey; onChange: (key: TemplateKey) => void; onNext: () => void }) {
+  const { open } = useFounding();
   const picked = findTemplate(value)!;
   const plan = PLANS[picked.plan];
   const example = useExampleLodge();
@@ -118,13 +121,22 @@ export function LookStep({ value, onChange, onNext }: { value: TemplateKey; onCh
           {PLAN_ORDER.map((key) => (
             <TabsTab key={key} value={key} className="gap-1 px-3">
               {PLANS[key].name}
-              <span className="text-[11.5px] font-medium opacity-70 tabular-nums">${monthlyPrice(key, foundingOpen(new Date()))}</span>
+              <span className="text-[11.5px] font-medium opacity-70 tabular-nums">${monthlyPrice(key, open)}</span>
             </TabsTab>
           ))}
         </TabsList>
         <p className="px-1 text-[13px] leading-[19px] text-muted">
           <span className="font-semibold text-ink-2">{PLANS[tab].tagline}.</span> {PLANS[tab].pitch}
         </p>
+        {open ? (
+          <p className="flex flex-wrap items-center gap-x-1.5 px-1 text-[12.5px] leading-[18px] text-purple-ink">
+            <Clock className="size-3.5 shrink-0 text-purple" />
+            <span>
+              Founding prices: ${monthlyPrice(tab, true)} instead of <span className="line-through">${PLAN_PRICES[tab]}</span>, yours for life. Ends in
+            </span>
+            <FoundingCountdown />
+          </p>
+        ) : null}
       </Tabs>
 
       <motion.div
@@ -199,7 +211,7 @@ export function LookStep({ value, onChange, onNext }: { value: TemplateKey; onCh
         sticky
         note={
           <>
-            <span className="font-semibold text-ink-2">{picked.name}</span> comes with {plan.name}, ${monthlyPrice(picked.plan, foundingOpen(new Date()))} a month once your free 2 days are up.
+            <span className="font-semibold text-ink-2">{picked.name}</span> comes with {plan.name}: ${monthlyPrice(picked.plan, open)} a month when you launch it.
           </>
         }
       >

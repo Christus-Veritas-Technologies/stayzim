@@ -1,10 +1,10 @@
 "use client";
 
-import { includesBookingCalendar } from "@stayzim/sites";
+import { includesBookingCalendar, monthlyPrice } from "@stayzim/sites";
 import { buttonVariants } from "@stayzim/ui/components/button";
 import { CopyButton } from "@stayzim/ui/components/copy-button";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowRight, ArrowUpRight, CircleCheck, PartyPopper, ShieldCheck } from "lucide-react";
+import { ArrowRight, ArrowUpRight, CircleCheck, PartyPopper, Rocket, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
@@ -15,7 +15,8 @@ import { WhatsAppIcon } from "@/components/landing/brand";
 import { EASE_OUT } from "@/components/motion";
 import { authClient } from "@/lib/auth-client";
 import { formatClock, formatLongDate } from "@/lib/format";
-import { shareMessage, siteHost, siteUrl } from "@/lib/lodge";
+import { formatMoney } from "@/lib/billing";
+import { PLANS, shareMessage, siteHost, siteUrl } from "@/lib/lodge";
 import { metaCreateStep } from "@/lib/meta-pixel";
 import { trackCreateStep } from "@/lib/track";
 import { whatsappTextUrl } from "@/lib/whatsapp";
@@ -47,8 +48,9 @@ function Burst() {
 
 /**
  * The site is live: open it, share it, and "Claim my site" (an email and
- * password, or Google) so it's theirs to log in to from any phone. Rooms,
- * the logo and the rest are on the dashboard's checklist.
+ * password, or Google) so it's theirs to log in to from any phone. Once
+ * claimed: Love it? Launch it (Billing). Rooms, the logo and the rest are on
+ * the dashboard's checklist.
  */
 export function LiveStep() {
   const { lodge } = useLodge();
@@ -80,7 +82,7 @@ export function LiveStep() {
       </div>
       <CreateHeading title={`${lodge.name} is live`}>
         {includesBookingCalendar(lodge.plan) ? "Guests can book on your site or on WhatsApp right now." : "Guests can book on WhatsApp right now."}
-        {lodge.demoEndsAt ? ` It's a free demo until ${formatLongDate(lodge.demoEndsAt)} at ${formatClock(lodge.demoEndsAt)}.` : null}
+        {lodge.demoEndsAt ? ` It's a free preview until ${formatLongDate(lodge.demoEndsAt)} at ${formatClock(lodge.demoEndsAt)}.` : null}
       </CreateHeading>
 
       <div className="flex items-center gap-2 rounded-2xl border border-line bg-surface-2 p-2 pl-4">
@@ -121,12 +123,33 @@ export function LiveStep() {
         </p>
       ) : null}
 
-      <Link href="/dashboard" className={buttonVariants({ size: "lg", variant: guest ? "ghost" : "default", className: "mt-4 w-full" })}>
-        {guest ? "Not now, open my dashboard" : "Go to my dashboard"}
+      {guest ? null : (
+        <section className="mt-6 rounded-2xl border border-line bg-white p-4 shadow-card sm:p-5" aria-labelledby="launch-title">
+          <div className="flex gap-3">
+            <Rocket className="mt-0.5 size-5 shrink-0 text-brand" />
+            <div className="flex flex-col gap-1">
+              <h2 id="launch-title" className="text-[16px] font-semibold text-ink">
+                Love it? Launch it.
+              </h2>
+              <p className="text-[13.5px] leading-5 text-muted">
+                Check your site first. When you love it, launch it: {PLANS[lodge.plan].name} is {formatMoney(monthlyPrice(lodge.plan, lodge.founding))} a month
+                {lodge.founding ? ", a founding price that stays yours for life" : ""}. Not for you? Do nothing, and pay nothing.
+              </p>
+            </div>
+          </div>
+          <Link href="/dashboard/billing" className={buttonVariants({ size: "lg", className: "mt-4 w-full" })}>
+            <Rocket />
+            Launch my site
+          </Link>
+        </section>
+      )}
+
+      <Link href="/dashboard" className={buttonVariants({ size: "lg", variant: "ghost", className: "mt-3 w-full" })}>
+        {guest ? "Not now, open my dashboard" : "Not yet, open my dashboard"}
         <ArrowRight />
       </Link>
       <p className="mt-3 text-center text-[12.5px] leading-[18px] text-muted-2">
-        Rooms, prices, your town and logo are next, on your dashboard. Small &quot;demo&quot; badges show until you pay for a plan.
+        Rooms, prices, your town and logo are next, on your dashboard. Small &quot;preview&quot; marks show on your site until you launch it.
       </p>
     </>
   );
