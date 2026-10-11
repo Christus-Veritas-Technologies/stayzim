@@ -193,30 +193,34 @@ Anything owners can't change themselves goes through change requests. Room detai
 
 The `resolve-request` script does the same from a terminal (`pnpm --filter @stayzim/db resolve-request --list`, or `--ref R-XXXX --status done --reply "…"`).
 
-## Sign-up and the demo
+## Sign-up and the free preview
+
+An unpaid site is a **free preview** to owners and guests (the code and database still call it `DEMO`): built free, live for 2 days with preview marks, and launched by paying for a plan.
+
 
 - **`/create`** (`app/create/page.tsx`, steps in `components/create/`) is the one way in, for ads and organic visitors alike: `stayzim.co.zw/create?utm_source=meta&utm_campaign=…`. About 90 seconds from Get started to a live site:
   1. **Step 1 of 3, Pick a look (about 90 seconds left):** the nine designs as tiles (`TemplateThumb`), each with its plan's price shown small and a Preview on one of the landing page's example lodges. One is always picked: Shoreline, or the default design of the plan on the link (`?plan=`). The plan comes with the design.
   2. **Step 2 of 3, the lodge (about 60 seconds left):** lodge name and WhatsApp number, nothing else. On Next, a guest account is made (better-auth's anonymous plugin, `POST /api/auth/sign-in/anonymous`) and `POST /api/onboarding/lodge` creates the lodge as a `DEMO` in the picked `template` on that design's plan. It gets an address made from the name, `demoEndsAt` 2 days ahead, its first invoice, and the link's utm_* and referrer. The API refuses a design the plan doesn't include.
   3. **Step 3 of 3, photos (about 30 seconds left):** 3 photos through the shared `PhotoDropzone` (1 is enough; "go live without them" is there as a way out), each removable with ✕. Resized on the phone; one that drops on a weak line retries once by itself, smaller.
-  4. **Live:** open, share, and **Claim my site**: name, email and password (or Google). Signing up from the guest account moves the lodge to the new account (`onLinkAccount` in `packages/auth`) and deletes the guest; `POST /api/onboarding/claimed` then sends the welcome email.
+  4. **Live:** open, share, and **Claim my site**: name, email and password (or Google). Signing up from the guest account moves the lodge to the new account (`onLinkAccount` in `packages/auth`) and deletes the guest; `POST /api/onboarding/claimed` then sends the welcome email. Once claimed, **Love it? Launch it.** shows the lodge's price and Launch my site (Billing).
 
   The frame (`components/create/frame.tsx`) has the steps down the side on wide screens and a pill of dots with a round Back on phones, "Step N of 3" with a thin bar, one big question per screen, and Next kept in view on long steps. The site takes shape beside the form as they type and upload (`components/create/preview.tsx`; the right column at `xl` and up, a strip above the form below that). Town, rooms, logo and guest info come after, from the dashboard checklist. The step and the look are in the URL (`?step=&look=`), so a reload carries on. The plan for this redesign, and what's left, is in [create-redesign.md](create-redesign.md). `/signup` and `/start` redirect here with their query (plan, utm_*).
 - **Guest accounts** (`user.is_anonymous`): their email is a placeholder at `guest.stayzim.co.zw`, which `sendEmail` never sends to. Until they claim, the dashboard shows a "Claim my site" banner, the account menu has Claim instead of Log out, and Billing asks them to claim before paying (the pay route refuses guests). Logging in to an existing account from a guest session also moves the demo across, if that account has no lodge.
 - **Where lodges come from:** `lodge.utm_source`, `utm_medium`, `utm_campaign`, `utm_content` and `signup_referrer`, from the first page of the visit (`signupSource()` in `lib/track.ts`). The team's lodge list (`/admin/lodges`) shows "via meta · registration_test".
 - **The funnel:** each step is a `CTA_CLICK` landing event in the `create` section (`create_open`, `create_look`, `create_lodge`, `create_photo`, `create_live`, `create_claim`) and a custom Pixel event (`CreateStep`, with `step`), plus Meta's `StartTrial` when the demo is made and `CompleteRegistration` on claim. Drop-off between steps reads straight off `landing_event`; `pnpm --filter server funnel` prints it per advert source.
 - **Per-IP limits** are generous (30 guest sign-ins per 10 minutes, 30 demos an hour), because many phones on one mobile network share an IP address.
-- **Demo sites:**
-  - They carry badges, added around any template in `components/site/templates/index.tsx` (`demo-badges.tsx`).
+- **Free previews (demo sites):**
+  - They carry "Free preview" marks (a ribbon, the Preview pill and a band at the end, each with Build yours free), added around any template in `components/site/templates/index.tsx` (`demo-badges.tsx`).
   - They're `noindex`, and robots and the sitemap leave them out.
   - Their own domains aren't served.
   - Once `demoEndsAt` passes, the API answers `DEMO_ENDED` and the site shows "isn't online right now". This is worked out when the site is served, so it's on time without the job.
-- **Rules** (prices, `DEMO_DAYS`, `GRACE_DAYS`, `DEMO_KEEP_DAYS`, slugs, billing dates in Zimbabwe time) live in `@stayzim/sites` (`plans.ts`, `slugs.ts`, `billing-dates.ts`) for the server, the web app and the scripts.
+- **Every lodge site's footer** has Made with StayZim and "Build your lodge's website" (to `/create?utm_source=lodge_site`), in `MadeWith` (`components/site/parts.tsx`).
+- **Rules** (prices, founding prices and their deadline, `DEMO_DAYS`, `GRACE_DAYS`, `DEMO_KEEP_DAYS`, slugs, billing dates in Zimbabwe time) live in `@stayzim/sites` (`plans.ts`, `slugs.ts`, `billing-dates.ts`) for the server, the web app and the scripts.
 
 ## Billing
 
 - **Statuses:**
-  - `DEMO`: free for 2 days. When it ends, the site is offline; the lodge is deleted 30 days after that if never paid.
+  - `DEMO` (a free preview): free for 2 days. When it ends, the site is offline; the lodge is deleted 30 days after that if never launched (paid for).
   - `ACTIVE`: paid until `paidUntil`.
   - `OVERDUE`: past `paidUntil`, and the site stays up.
   - `SUSPENDED`: 3 days later, and the site is offline.
@@ -232,13 +236,17 @@ The `resolve-request` script does the same from a terminal (`pnpm --filter @stay
   - The Billing screen polls `GET /api/lodge/billing/payments/:id`, which asks Paynow at most every 5 seconds.
   - Paynow also posts to `POST /api/paynow/result`. The hash is checked, then we poll Paynow ourselves with the stored poll URL and check the amount before applying.
   - `applyPayment()` (`lib/billing.ts`) is idempotent: it moves the lodge to the plan paid for, `ACTIVE`, sets `paidUntil` with `paidUntilAfterPayment()` (`packages/sites`: the time left, moved to the new plan at the two monthly prices in whole days rounded down, then the months paid for), closes open invoices, and emails the receipt.
-- **Prices** (`packages/sites/src/plans.ts`): `planPrice(plan, months)` is the monthly price times the months, except 12 months, which take `ANNUAL_DISCOUNT` (Starter 10%, Growth 17%, Pro 30%) and round down to whole dollars: $216, $398, $630. Paynow amounts, `mark-paid`, the pay card, Billing and the pricing page all use it.
+- **Prices** (`packages/sites/src/plans.ts`):
+  - Normal prices (`PLAN_PRICES`) are $25, $40 and $75 a month; founding prices (`FOUNDING_PRICES`) are $15, $30 and $50.
+  - **Founding lodges** (`Lodge.founding`, migration `founding_price`) pay the founding price of any plan for life. The flag is set when a lodge is made before `FOUNDING_ENDS_AT` (22 October 2026, 23:59 Harare time; `foundingOpen(now)`) at `/create` or by `create-lodge`, and the migration marked every lodge made before it. Billing reads the flag, never today's date, so the deadline never changes a founding lodge's bill. The team can set it by hand in the database.
+  - `planPrice(plan, months, founding)` is the monthly price times the months, except 12: a founding lodge pays 10 months (2 months free: $150, $300, $500); others take `ANNUAL_DISCOUNT` (Starter 10%, Growth 17%, Pro 30%), rounded down ($270, $398, $630). Plan changes carry paid time over at the lodge's own two prices. Paynow amounts, invoices, `mark-paid`, the pay card, Billing, the dashboard and Terms all use it.
   - Every payment goes through Paynow: EcoCash, InnBucks and OneMoney with `remotetransaction` (a prompt, or an InnBucks code), cards and the rest on Paynow's page (`initiatetransaction`). There's no other payment handler.
   - Without `PAYNOW_INTEGRATION_*`, Billing hides the pay card and shows "Message us" (the team sends a Paynow link and records it with `mark-paid`).
 - **Manual payments:** `pnpm --filter server mark-paid --slug … [--months 3] [--plan pro] [--channel cash]` records one with the same `applyPayment` (receipt included). `--status` sets a status by hand; `--list` shows everyone.
 - **The job** (`apps/server/src/jobs/billing.ts`) runs a minute after the server starts and then hourly, under a lease, so only one server runs it. `pnpm --filter server run-billing [--now …]` runs it by hand. Each run:
-  1. **Invoices:** for paying lodges within 3 days of `paidUntil`, it makes the next invoice and sends the reminder for the current window (3 days before, the day before, on the day, in Harare dates). Demos get their reminders the day before and on the day.
-  2. **Status:** `ACTIVE` → `OVERDUE` → `SUSPENDED`, with the "site offline" email, plus the "demo ended" email.
+  1. **Invoices:** for paying lodges within 3 days of `paidUntil`, it makes the next invoice and sends the reminder for the current window (3 days before, the day before, on the day, in Harare dates). Free previews get theirs ("ends tomorrow", "ends today", Launch for $X) the day before and on the day.
+  2. **Status:** `ACTIVE` → `OVERDUE` → `SUSPENDED`, with the "site offline" email, plus the "free preview has ended" email.
+  - **Reminders while a preview isn't launched** (claimed owners only, one email a run at most, none on the run that sends another about it): day 3 after sign-up ("is waiting for you"), day 10 ("Still thinking about it?", with the date it's deleted), and on 20 October to founding previews ("Founding prices end on 22 October"). The day rules (`previewReminderFor`, `foundingReminderDue`) are in `packages/sites/src/billing-dates.ts`.
   3. **Missed callbacks:** it re-checks Paynow payments still pending.
   4. **Clean-up:** it deletes demos never paid for 30 days after they ended (photos, lodge, account).
 - **Moving to a cheaper plan:**
@@ -249,7 +257,8 @@ The `resolve-request` script does the same from a terminal (`pnpm --filter @stay
   - `POST /api/lodge/domain-claim` stores a `DomainClaim` and emails the owner and `hello@`.
   - The job marks a claim ready once `set-domain` has given the lodge its domain, and emails the owner.
   - `DOMAIN_STILL_FREE` and `canClaimDomain` (`packages/sites/src/plans.ts`) decide who sees the offer.
-- **The demo countdown** to the second is on the dashboard home (`DemoCountdownCard`), on Billing, and in the top bar and phone strip of every page (`components/dashboard/demo-countdown.tsx`).
+- **The free preview's countdown** to the second is on the dashboard home ("Your site is a preview. Launch it to keep it live", `DemoCountdownCard`), on Billing, and in the top bar and phone strip of every page (`components/dashboard/demo-countdown.tsx`). Once launched, the dashboard home shows the plan, its price and the next payment date instead (`LaunchedPlanCard`).
+- **The founding countdown** is on StayZim's marketing pages only, never in the dashboard: the strip at the top of the landing page, `/lodges`, Privacy and Terms (`FoundingBar`, `MarketingPage`), under the hero buttons, above and on the pricing cards, in the closing call, the phone bar beside WhatsApp, and in `/create`'s plan tabs. It runs on the server's clock: `FoundingProvider` (`components/founding.tsx`) starts from the time the page was made and corrects it with `GET /server-time`, so a wrong phone clock can't move it. At the deadline every countdown and "founding" label goes and the prices turn into the normal ones without a reload; the landing page is made again every minute (`revalidate = 60`), the meta description and share card (`/og`, hourly) follow.
 - **Documents:** `/dashboard/billing/[number]` shows an invoice or receipt in StayZim's brand (brand band, PAID or DUE stamp, plan-change line, A4 print CSS), laid out to print or save as PDF (no PDF library). The issuer details (StayZim Platform Inc, stayzim.co.zw, hello@stayzim.co.zw, +263 77 510 1506; no street address yet) are hard-coded in `apps/server/src/lib/business.ts`. They're sent with each document and printed in invoice and receipt emails.
 
 ## Meta Pixel (ads)
@@ -277,7 +286,7 @@ The `resolve-request` script does the same from a terminal (`pnpm --filter @stay
 | `@stayzim/db` | Prisma schema, split by area in `prisma/schema/`, the shared client (`import prisma from "@stayzim/db"`), and the `create-lodge` and `resolve-request` scripts |
 | `@stayzim/auth` | better-auth config (`auth`), `MIN_PASSWORD_LENGTH`, `googleSignInEnabled`, and `scripts/create-owner.ts` |
 | `@stayzim/sites` | The template catalog and its rules (`templateAllowed`, `effectiveTemplate`, `DEFAULT_TEMPLATE`, `HERO_LIMITS`, `heroText`), plan prices and inclusions (`plans.ts`), slug rules (`slugs.ts`), and billing dates in Zimbabwe time (`billing-dates.ts`). Shared by server, web and scripts. And the CMS content contract (`content/`: limits, amenities, guest-info rules, dates and availability, types; zod schemas at `@stayzim/sites/schemas`) |
-| `@stayzim/mail` | `sendEmail()` over SMTP with Nodemailer, `verifyMailConnection()`, and templates on one branded layout (`layout.ts`: a 480px card, near edge to edge on phones, the StayZim mark hosted at `/email/stayzim-mark.png`, the app's fonts where mail apps load them, and shared parts: heading, button, summary, note). Account emails are in `templates.ts`; welcome, invoice, receipt, demo ended and site offline in `billing.ts`; booking emails to owners and guests in `bookings.ts`; free-domain emails in `domains.ts`. `bun scripts/preview-emails.ts <dir>` writes each to HTML. Two senders: the main one (`SMTP_*`, no-reply@) and billing@ (`BILLING_SMTP_*`) for emails marked `sender: "billing"`; every email replies to hello@ unless it sets its own `replyTo` |
+| `@stayzim/mail` | `sendEmail()` over SMTP with Nodemailer, `verifyMailConnection()`, and templates on one branded layout (`layout.ts`: a 480px card, near edge to edge on phones, the StayZim mark hosted at `/email/stayzim-mark.png`, the app's fonts where mail apps load them, and shared parts: heading, button, summary, note). Account emails are in `templates.ts`; welcome ("your site is ready"), invoice, receipt, free preview ended, the day 3 and day 10 reminders, the founding deadline and site offline in `billing.ts`; booking emails to owners and guests in `bookings.ts`; free-domain emails in `domains.ts`. `bun scripts/preview-emails.ts <dir>` writes each to HTML. Two senders: the main one (`SMTP_*`, no-reply@) and billing@ (`BILLING_SMTP_*`) for emails marked `sender: "billing"`; every email replies to hello@ unless it sets its own `replyTo` |
 | `@stayzim/env` | Validated env per app: `server`, `web`, `outreach`, `native` |
 | `@stayzim/ui` | StayZim design tokens and shadcn-style components on Base UI (buttons, fields, dialogs, sheets, tabs, menus, …) |
 | `@stayzim/config` | Base `tsconfig` |

@@ -1,6 +1,6 @@
 # StayZim: the project
 
-_Last updated 6 October 2026. Based on the designer brief of the same date, corrected where the build has moved on (see [What changed from the brief](#what-changed-from-the-brief))._
+_Last updated 11 October 2026 (founding prices and the free preview, from "StayZim: Landing Page and App Changes"). First written 6 October 2026, Based on the designer brief of the same date, corrected where the build has moved on (see [What changed from the brief](#what-changed-from-the-brief))._
 
 **Owner:** Kin, Where They Are (Mutare) · **Domain:** stayzim.co.zw
 
@@ -10,7 +10,7 @@ StayZim gives Zimbabwean lodges, guesthouses, cottages and Airbnbs their own web
 
 **The problem.** Lodges pay Booking.com 15–20% commission on every booking, and many smaller places can barely be found on Google at all.
 
-**The pitch.** "Stop paying 20% to Booking.com." A night costs $80–$250 at most lodges, so one extra direct booking a month pays for StayZim.
+**The pitch.** "Get your lodge a website from $15 a month." Built free; the owner pays only once they love it. A night costs $80–$250 at most lodges, so one extra direct booking a month pays for StayZim, and none of it goes to a 15–20% commission. (Until 11 October 2026 it was "Stop paying 20% to Booking.com.")
 
 **What it is not.** StayZim does not replace Booking.com; lodges keep their listings there. StayZim turns guests who already found them (repeat guests, Facebook and Instagram followers, WhatsApp forwards, Google searches) into direct bookings with no commission.
 
@@ -40,28 +40,31 @@ StayZim gives Zimbabwean lodges, guesthouses, cottages and Airbnbs their own web
 - **Walking into lodges** with a demo of their own site already built.
 - **WhatsApp outreach** to leads who opted in or replied to the ads, sent from 3 StayZim numbers with daily limits (`apps/outreach`).
 - **Facebook ads** to `/create?utm_source=meta&…`: owners make their own live demo in about 90 seconds (name, WhatsApp, 3 photos), the same flow as everyone else, with the ad's tags saved on the lodge.
-- **Free .co.zw domains** on Growth and Pro, registered by StayZim.
+- **Free .co.zw domains** on every plan, registered by StayZim when the site launches.
 
 ## Plans
 
 | | Starter | Growth (most popular) | Pro |
 | --- | --- | --- | --- |
-| Price | $20/month | $40/month | $75/month |
-| Tagline | Get found | Get booked | Get full |
+| Founding price (lodges that join before 22 October 2026, for life) | $15/month | $30/month | $50/month |
+| Normal price | $25/month | $40/month | $75/month |
+| Tagline | Get online | Get booked | Get full |
 | For | New Airbnbs and small guesthouses | About 80% of lodges; the plan to sell | Busy lodges with 5+ rooms, diaspora owners |
-| Includes | Site on {slug}.stayzim.co.zw (hero, rooms, gallery, map), Book on WhatsApp button, Google Business setup, connect a domain they have | Starter + booking calendar + visitor analytics + a free .co.zw domain | Growth + StayZim manages Booking.com and Airbnb photos and text, channel sync, 2 SEO blog posts a month, priority WhatsApp support |
+| Includes | Website, free .co.zw domain, rooms, gallery and map, Book on WhatsApp buttons, hosting and support | Starter + booking calendar + visitor stats | Growth + StayZim manages Booking.com and Airbnb photos and text, priority WhatsApp support |
 
-- **Three plans, no free plan.** Owners sign up and pick a plan. Their site is live straight away as a **free 2-day demo** on that plan, with "demo" badges.
-- **Unpaid demos:** the site goes offline when the demo ends, and the demo is deleted 30 days later.
+- **The offer:** we build the site free, and the owner pays only once they love it ("launch it"). They can cancel any time.
+- **Three plans, no free plan.** Owners sign up and pick a design (the plan comes with it). Their site is live straight away as a **free preview** for 2 days, with "Free preview" marks.
+- **Unlaunched previews:** the site goes offline when the preview ends, and it's deleted 30 days later. Reminders go on day 3 and day 10, and on 20 October.
+- **Founding prices:** lodges that sign up before 22 October 2026 at 23:59 (Harare time) keep $15, $30 or $50 a month for life, on any plan they move to (`Lodge.founding`). The deadline is real: the site switches to normal prices by itself, and the timer is never restarted. Every lodge made before this change is a founding lodge. The countdown is on the marketing pages only, never the dashboard.
 - **No commission** on any plan.
 - **Paying:**
   - Owners pay online through Paynow: EcoCash, InnBucks or OneMoney (a prompt on the phone or a code), or card. They can pay for 1, 3 or 12 months.
   - Every payment goes through Paynow; there's no other way in. If one doesn't reach us, the team records it with `mark-paid`.
   - Invoices are emailed 3 days before, the day before and on the day the paid time ends; receipts on payment.
 - **Missed payment:** Active → Overdue when the paid time ends (the site stays up 3 more days) → Suspended (the site shows "temporarily unavailable"; the dashboard still works so they can pay) → Active once paid. This all happens automatically.
-- **Paying for a year:** 12 months cost 10% less on Starter ($216), 17% on Growth ($398) and 30% on Pro ($630), rounded down to whole dollars (`ANNUAL_DISCOUNT`).
-- **Changing plan:** the paid time left moves to the new plan at the two monthly prices (12 days of Growth become 6 of Pro), then the months paid for start.
-- **Own domains** on every plan, once paid. Every paid plan includes a free `.co.zw`, claimed from the dashboard, while `DOMAIN_STILL_FREE` isn't `false`.
+- **Paying for a year:** founding lodges get 2 months free ($150, $300, $500). Others pay 10% less on Starter ($270), 17% on Growth ($398) and 30% on Pro ($630), rounded down to whole dollars (`ANNUAL_DISCOUNT`).
+- **Changing plan:** the paid time left moves to the new plan at the lodge's two monthly prices (12 days of Growth become 6 of Pro), then the months paid for start.
+- **Own domains** on every plan, once launched. Every plan includes a free `.co.zw`, registered by StayZim when the site launches (claimed from the dashboard), while `DOMAIN_STILL_FREE` isn't `false`.
 - **Bookings:** Growth and Pro. Guests book on the site first (WhatsApp second); owners confirm, or turn on Confirm bookings automatically, and decline, cancel, add bookings and close dates ([docs/cms/bookings.md](cms/bookings.md)). Starter keeps Book on WhatsApp.
 - **The CMS** (room details, hide, duplicate, guest info, FAQ, links) is for every plan ([docs/cms/](cms/README.md)).
 
@@ -70,11 +73,12 @@ StayZim gives Zimbabwean lodges, guesthouses, cottages and Airbnbs their own web
 | Topic | Decision |
 | --- | --- |
 | Pricing page | Lists only what's built; no "Coming soon" box. |
+| Founding offer (11 October 2026) | Founding prices until 22 October 2026, 23:59 Harare time; the date is the only limit (no cap on spots). Left out until after the MVP: ChatGPT, GEO, Google visibility and the 30-day ChatGPT guarantee. Words owners see stay plain: no developer language (e.g. "reserve a domain" is "we register it when you launch"). |
 | Grace period | 3 days after the paid time ends, then the site goes offline. |
 | Niche | Lodges, guesthouses and Airbnbs only. Restaurants were considered and rejected (may be taken on by referral, not marketed to). |
 | Booking | WhatsApp first. No card payments by guests in the MVP. On Growth and Pro, guests book on the site first (dates, then their details) and WhatsApp is the second way; the owner confirms each booking, or lets free nights confirm automatically. |
 | Content (CMS) | One fixed data shape for every lodge and template; only the rendering differs. Owners edit rooms, guest info and bookings themselves. Rooms are room types with a count ("Standard Room × 6"). |
-| Sign-up | One flow for everyone (`/create`): pick a look (the nine designs; the plan comes with the design, its price shown small), then lodge name and WhatsApp, then 3 photos, and the 2-day demo is live; the email comes after (Claim my site). No separate funnel for ads: the utm_* tags tell them apart. The copy says it's for lodges, guesthouses, B&Bs and holiday homes, to keep others out. StayZim can still create accounts with a temporary password (`create-owner`). |
+| Sign-up | One flow for everyone (`/create`): pick a look (the nine designs; the plan comes with the design, its price shown small), then lodge name and WhatsApp, then 3 photos, and the 2-day free preview is live; the email comes after (Claim my site), then Love it? Launch it. The design (and plan) stays first, not last: decided 11 October 2026. No separate funnel for ads: the utm_* tags tell them apart. The copy says it's for lodges, guesthouses, B&Bs and holiday homes, to keep others out. StayZim can still create accounts with a temporary password (`create-owner`). |
 | Analytics | Basic visit tracking (date, IP, page, country). Shown on Growth and Pro only, as the reason to upgrade. |
 | Admin | One team screen, for answering owners' change requests (`/admin/requests`). Everything else (creating owners and lodges, domains, payments made outside Paynow) stays in scripts and the database. |
 | Email | Nodemailer over SMTP with a Spacemail address. |

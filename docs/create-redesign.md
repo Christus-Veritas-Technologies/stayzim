@@ -54,7 +54,7 @@ Commits on `main`: `ddea09e` (server) and `d04ee19` (web).
 - **Layout by width:**
   - Below `sm`: a white screen, no card. Round Back and the dots at the top. Big question, then full-width Next, kept in view at the bottom on long steps.
   - `sm` to `lg`: the same, inside a white card on `surface-2`.
-  - `lg` to `xl`: adds the steps sidebar (wordmark, "Your lodge's website", the 4 steps with ticks, "Free for 2 days").
+  - `lg` to `xl`: adds the steps sidebar (wordmark, "Your lodge's website", the 4 steps with ticks, "Free to build").
   - `xl` and up: adds the live phone preview on the right (not on the look step: the tiles are the preview there).
 - **Motion** (framer-motion; the app's `MotionConfig reducedMotion="user"` turns it off):
   - each step rises in;

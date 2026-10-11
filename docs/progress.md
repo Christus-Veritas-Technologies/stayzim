@@ -2,13 +2,13 @@
 
 _What's built, what's next, and what's blocking. Update this file whenever a piece of work lands. For what StayZim is and why, see [project.md](project.md)._
 
-**Last updated:** 8 October 2026 (value-first sites: plan tabs, a real preview, pages per plan, generated copy and example content; see [cms/pages.md](cms/pages.md), [cms/copy.md](cms/copy.md) and [cms/examples.md](cms/examples.md))
+**Last updated:** 11 October 2026 (founding prices until 22 October, the free preview, the landing page rewrite and the new emails; see the [log](#11-october-2026))
 
 ## At a glance
 
 | Area | Status |
 | --- | --- |
-| Marketing landing page | ✅ Built |
+| Marketing landing page | ✅ Built; rewritten 11 October for the founding offer ("Get your lodge a website from $15 a month", countdown in six places) |
 | Landing page analytics (CTA clicks, page views) | ✅ Built |
 | Privacy and Terms pages | ✅ Drafted in plain language; need a review before launch |
 | WhatsApp outreach tool (internal) | ✅ Built |
@@ -171,7 +171,9 @@ The rule behind all of it: every lodge and every template has the same data shap
 
 ## Next up
 
-**Start with [create-redesign.md](create-redesign.md#whats-left):**
+**Before 22 October:** deploy the founding offer, paste the new WhatsApp messages into the outreach tool ([outreach-messages.md](outreach-messages.md)), and check the countdown on a real phone.
+
+**Then [create-redesign.md](create-redesign.md#whats-left):**
 
 - Redeploy, then run `deploy/check-routing.sh` on the VPS for the "no available server" on lodge subdomains, and fix what it reports.
 - Seed the example lodges in production. The landing page's examples and the design previews on `/create` use them.
@@ -397,6 +399,18 @@ Built (web):
 ## Log
 
 Newest first. One line per piece of work that landed on `main`.
+
+### 11 October 2026
+
+"StayZim: Landing Page and App Changes" (founding prices, from the user), all on `main`. The user's answers: the free preview stays 2 days and is called a free preview; the design is still picked first; the cut-off is 22 October 23:59 Harare time; founding is for life on any plan; a year is 2 months free for founding lodges and the old discounts otherwise; every lodge made before this is founding; no developer words ("reserve a domain" is "we register it when you launch").
+
+- **Prices:** $25, $40 and $75 a month; founding lodges (`Lodge.founding`, set at sign-up before `FOUNDING_ENDS_AT`) pay $15, $30 and $50 for life, and $150, $300, $500 a year. Billing, invoices, Paynow and `mark-paid` read the flag, never the date.
+- **Founding countdown** on the server's clock (`FoundingProvider`, `/server-time`) in six places on the marketing pages, never the dashboard; it and the founding labels go at the deadline by themselves.
+- **Landing page:** the new headline and subheading, Build my free site, How it works in three new steps, Example lodges with Build mine like this, the maths at the founding price, the pricing cards with crossed-out prices, new questions, the closing call, Mutare and Bulawayo, the phone bar, the description and share card. Counting numbers show their real value in the HTML (the "$0" a scraper saw).
+- **App:** "free preview" instead of demo everywhere owners and guests look; "Your site is a preview. Launch it to keep it live" and Launch my site; the plan and next payment date once launched; founding prices "locked for life" on Billing; Love it? Launch it. on `/create`; the free .co.zw "registered when you launch"; designs, not templates; "Build your lodge's website" in every lodge site's footer.
+- **Emails:** the welcome ("your site is ready"), free preview reminders, and new day 3, day 10 and 20 October reminders.
+- **Not done here:** the outreach campaign texts live in the outreach tool's database, so they're drafts in [outreach-messages.md](outreach-messages.md) to paste in.
+- **Checked:** types, unit tests in every package, the landing page, `/create`, the dashboard, Billing and all nine designs' footers at 360px in a browser (against a separate local database, `stayzim_preview`), and the billing job run at 14, 20 and 21 October. Browser tests updated but not run locally (no Playwright browsers here); CI runs them.
 
 ### 8 October 2026 (later)
 
