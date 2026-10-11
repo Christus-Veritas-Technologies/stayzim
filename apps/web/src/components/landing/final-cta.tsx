@@ -5,6 +5,7 @@ import { ArrowRight, Sparkles, TrendingUp } from "lucide-react";
 
 import { WhatsAppIcon } from "./brand";
 import { TrackedLink, WhatsAppLink } from "./cta";
+import { FoundingCountdown, useFounding } from "@/components/founding";
 import { CountUp, EASE_OUT, Item, Stagger } from "@/components/motion";
 
 const VISIT_BARS = [14, 22, 18, 30, 26, 40, 34];
@@ -12,6 +13,7 @@ const DARK_CARD =
   "box-border rounded-[18px] bg-ink p-4 text-white shadow-[0_24px_48px_-12px_rgba(0,30,45,0.55),inset_0_0_0_1px_rgba(255,255,255,0.08)]";
 
 export function FinalCta() {
+  const { open } = useFounding();
   return (
     <section className="relative bg-[linear-gradient(180deg,#FFFFFF_0%,#FFFFFF_60%,#0C181F_60%,#0C181F_100%)] px-3 pt-6 lg:bg-[linear-gradient(180deg,#FFFFFF_0%,#FFFFFF_58%,#0C181F_58%,#0C181F_100%)] lg:px-6 lg:pt-12">
       <motion.div
@@ -38,19 +40,25 @@ export function FinalCta() {
                     <Sparkles size={13} strokeWidth={1.75} />
                   </motion.span>
                 </span>
-                Free for 2 days, live in about a minute
+                Free to build, live in about a minute
               </span>
             </Item>
             <Item>
               <h2 className="font-display text-[38px] leading-10 font-semibold tracking-[-0.03em] text-balance lg:text-6xl lg:leading-[62px] lg:tracking-[-0.035em]">
-                Your lodge, booked direct
+                Build your lodge&apos;s website today
               </h2>
             </Item>
             <Item>
               <p className="max-w-[400px] text-base leading-relaxed text-muted lg:text-lg lg:leading-7">
-                Your lodge's name, WhatsApp number and 3 photos: your site is live in about a minute, before you pay anything. Made for lodges, guesthouses and holiday homes.
+                Your lodge&apos;s name, WhatsApp number and 3 photos. We build it free, and you pay only when you launch it. Made for lodges, guesthouses and holiday homes.
               </p>
             </Item>
+            {open ? (
+              <Item className="flex flex-col gap-2">
+                <span className="text-[14.5px] font-semibold text-purple-ink">Founding prices end in</span>
+                <FoundingCountdown variant="boxes" />
+              </Item>
+            ) : null}
           </div>
           <Item className="flex flex-col gap-2.5 sm:flex-row sm:gap-3">
             <TrackedLink
@@ -58,7 +66,7 @@ export function FinalCta() {
               track={{ cta: "final_signup", section: "final_cta" }}
               className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-brand px-7 text-[17px] font-semibold whitespace-nowrap text-white no-underline shadow-[0_10px_24px_-10px_rgba(0,125,162,0.8)] hover:bg-brand-dark hover:text-white"
             >
-              Make my free site
+              Build my free site
               <ArrowRight size={19} strokeWidth={2} />
             </TrackedLink>
             <WhatsAppLink
@@ -145,7 +153,7 @@ export function FinalCta() {
                   <span className="text-[12.5px] text-dim">Visits this week</span>
                   <span className="inline-flex h-[22px] items-center gap-[3px] rounded-md bg-[rgba(31,122,77,0.25)] px-[7px] text-xs font-semibold text-[#7EE2A8]">
                     <TrendingUp size={12} strokeWidth={2} />
-                    18%
+                    13 more
                   </span>
                 </div>
                 <div className="mt-2 font-display text-[34px] leading-9 font-semibold tracking-[-0.03em]">

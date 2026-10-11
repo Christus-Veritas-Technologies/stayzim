@@ -145,7 +145,7 @@ export function ProductPanel() {
           </span>
           <Badge variant="success">
             <TrendingUp />
-            18%
+            13 more
           </Badge>
         </div>
         <div className="mt-3 flex h-10 items-end gap-1.5">
