@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { LegalPage, type LegalSection } from "@/components/legal-page";
+import { MarketingPage } from "@/components/marketing-page";
 import { CONTACT_EMAIL } from "@/lib/whatsapp";
 
 export const metadata: Metadata = {
@@ -147,11 +148,13 @@ const SECTIONS: LegalSection[] = [
 
 export default function PrivacyPage() {
   return (
-    <LegalPage
-      title="Privacy"
-      updated="6 October 2026"
-      intro="What we collect about lodge owners and the guests who visit their sites, why, and what you can ask us to do with it. In plain words."
-      sections={SECTIONS}
-    />
+    <MarketingPage>
+      <LegalPage
+        title="Privacy"
+        updated="6 October 2026"
+        intro="What we collect about lodge owners and the guests who visit their sites, why, and what you can ask us to do with it. In plain words."
+        sections={SECTIONS}
+      />
+    </MarketingPage>
   );
 }

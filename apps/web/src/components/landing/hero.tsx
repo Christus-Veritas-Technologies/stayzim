@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { WhatsAppIcon } from "./brand";
 import { LOCATIONS, LODGES, type Lodge } from "./content";
 import { TrackedLink, WhatsAppLink } from "./cta";
+import { useFounding } from "@/components/founding";
 import { EASE_OUT, fadeUp } from "@/components/motion";
 
 const RINGS = [
@@ -97,6 +98,7 @@ function LodgePhone({ lodge, centre }: { lodge: Lodge; centre?: boolean }) {
 const [mistValley, msasaRidge, lakeview] = LODGES as [Lodge, Lodge, Lodge];
 
 export function Hero() {
+  const founding = useFounding();
   const ref = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
   const centreY = useTransform(scrollYProgress, [0, 1], [0, -70]);
@@ -152,7 +154,7 @@ export function Hero() {
       </div>
 
       <motion.div
-        className="relative mx-auto flex max-w-[1120px] flex-col items-center px-5 pt-[110px] lg:pt-[144px]"
+        className={`relative mx-auto flex max-w-[1120px] flex-col items-center px-5 ${founding.open ? "pt-[146px] lg:pt-[180px]" : "pt-[110px] lg:pt-[144px]"}`}
         initial="hidden"
         animate="show"
         variants={{ hidden: {}, show: { transition: { staggerChildren: 0.1, delayChildren: 0.15 } } }}

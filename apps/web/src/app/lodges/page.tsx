@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { LodgesDirectory } from "@/components/lodges-directory";
+import { MarketingPage } from "@/components/marketing-page";
 import { byTown, getDirectory } from "@/lib/directory";
 
 // Rendered per request: the list comes from the API, which isn't there while the app builds
@@ -14,5 +15,9 @@ export const metadata: Metadata = {
 
 /** stayzim.co.zw/lodges: every paid lodge, by town, linking to its own site (and helping search engines find them). */
 export default async function LodgesPage() {
-  return <LodgesDirectory groups={byTown(await getDirectory())} />;
+  return (
+    <MarketingPage>
+      <LodgesDirectory groups={byTown(await getDirectory())} />
+    </MarketingPage>
+  );
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { FoundingProvider } from "@/components/founding";
 import { DemoLodges } from "@/components/landing/demo-lodges";
 import { FinalCta } from "@/components/landing/final-cta";
 import { FloatingWhatsApp } from "@/components/landing/floating-whatsapp";
@@ -16,9 +17,12 @@ import { jsonLd, stayzimStructuredData } from "@/lib/structured-data";
 
 export const metadata: Metadata = { alternates: { canonical: "/" } };
 
+// Made again every minute, so the prices on it turn over at the founding deadline
+export const revalidate = 60;
+
 export default function Home() {
   return (
-    <>
+    <FoundingProvider serverNow={Date.now()}>
       {/* eslint-disable-next-line react/no-danger -- our own JSON, with "<" escaped */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(stayzimStructuredData()) }} />
       <Nav />
@@ -35,6 +39,6 @@ export default function Home() {
       <FloatingWhatsApp />
       <PageView />
       <MetaPixel />
-    </>
+    </FoundingProvider>
   );
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { LegalPage, type LegalSection } from "@/components/legal-page";
+import { MarketingPage } from "@/components/marketing-page";
 import { ANNUAL_DISCOUNT, DEMO_DAYS, DEMO_KEEP_DAYS, FOUNDING_PRICES, PLAN_PRICES } from "@stayzim/sites";
 
 import { GRACE_DAYS, PLANS } from "@/lib/lodge";
@@ -141,11 +142,13 @@ const SECTIONS: LegalSection[] = [
 
 export default function TermsPage() {
   return (
-    <LegalPage
-      title="Terms"
-      updated="6 October 2026"
-      intro="The agreement between StayZim and the lodges that use it. We've kept it short and in plain words; if anything is unclear, ask us."
-      sections={SECTIONS}
-    />
+    <MarketingPage>
+      <LegalPage
+        title="Terms"
+        updated="6 October 2026"
+        intro="The agreement between StayZim and the lodges that use it. We've kept it short and in plain words; if anything is unclear, ask us."
+        sections={SECTIONS}
+      />
+    </MarketingPage>
   );
 }
