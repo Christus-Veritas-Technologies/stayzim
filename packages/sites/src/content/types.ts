@@ -231,6 +231,8 @@ export type DashboardLodge = {
   /** A demo whose time is up: its site is offline until it's paid for */
   demoEnded: boolean;
   paidUntil: string | null;
+  /** Joined before founding prices ended: pays the founding price of any plan for life */
+  founding: boolean;
   linkSharedAt: string | null;
   /** The free .co.zw domain (DOMAIN_STILL_FREE): whether it's on offer, whether this lodge can claim it now, and its claim */
   freeDomain: { free: boolean; claimable: boolean; claim: { domain: string; status: "REQUESTED" | "READY"; createdAt: string; readyBy: string } | null };

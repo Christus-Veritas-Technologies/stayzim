@@ -101,6 +101,9 @@ model Lodge {
   demoEndsAt DateTime?   @map("demo_ends_at")
   /// End of the period the last payment covers
   paidUntil  DateTime?   @map("paid_until")
+  /// Joined before founding prices ended (FOUNDING_ENDS_AT): pays the founding price
+  /// of any plan for life. Billing reads this, never today's date.
+  founding   Boolean     @default(false)
 
   /// Set the first time the owner copies or shares their link (setup checklist)
   linkSharedAt DateTime? @map("link_shared_at")

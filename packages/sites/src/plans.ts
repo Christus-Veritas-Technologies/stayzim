@@ -10,6 +10,18 @@ export const PLAN_PRICES: Record<Plan, number> = { STARTER: 20, GROWTH: 40, PRO:
 
 export const PLAN_ORDER: Plan[] = ["STARTER", "GROWTH", "PRO"];
 
+/**
+ * Founding prices end at 23:59 on 22 October 2026, Harare time (UTC+2): from
+ * this moment on, new lodges pay the normal prices. Never moved, so the next
+ * deadline stays believable.
+ */
+export const FOUNDING_ENDS_AT = new Date("2026-10-22T22:00:00Z");
+
+/** Whether a lodge made at `now` is a founding lodge. */
+export function foundingOpen(now: Date) {
+  return now.getTime() < FOUNDING_ENDS_AT.getTime();
+}
+
 /** A self-signed-up lodge is live as a demo for this long before it has to be paid for. */
 export const DEMO_DAYS = 2;
 /** After the paid period ends, the site stays up this many days (Payment due) before going offline. */

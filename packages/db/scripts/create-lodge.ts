@@ -12,7 +12,7 @@
  */
 import { parseArgs } from "node:util";
 
-import { addDays, addMonths, DEMO_DAYS, isPlan, slugProblem } from "@stayzim/sites";
+import { addDays, addMonths, DEMO_DAYS, foundingOpen, isPlan, slugProblem } from "@stayzim/sites";
 
 import prisma from "../src/index";
 
@@ -76,6 +76,7 @@ const lodge = await prisma.lodge.create({
     status: paidMonths > 0 ? "ACTIVE" : "DEMO",
     demoEndsAt: paidMonths > 0 ? null : addDays(new Date(), DEMO_DAYS),
     paidUntil: paidMonths > 0 ? addMonths(new Date(), paidMonths) : null,
+    founding: foundingOpen(new Date()),
     ownerId: owner.id,
     rooms: values["sample-rooms"] ? { create: SAMPLE_ROOMS.map((room, position) => ({ ...room, position })) } : undefined,
   },

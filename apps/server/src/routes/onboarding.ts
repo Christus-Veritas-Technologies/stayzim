@@ -1,5 +1,5 @@
 import prisma from "@stayzim/db";
-import { addDays, DEFAULT_COUNTRY, DEFAULT_TEMPLATE, DEMO_DAYS, findTemplate, isPlan, slugFromName, slugProblem, TEMPLATE_KEYS, templateAllowed } from "@stayzim/sites";
+import { addDays, DEFAULT_COUNTRY, DEFAULT_TEMPLATE, DEMO_DAYS, findTemplate, foundingOpen, isPlan, slugFromName, slugProblem, TEMPLATE_KEYS, templateAllowed } from "@stayzim/sites";
 import { lodgeFacts } from "@stayzim/sites/schemas";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -145,6 +145,7 @@ export const onboarding = new Hono<{ Variables: AuthVariables }>()
           template: input.template ?? DEFAULT_TEMPLATE[plan],
           status: "DEMO",
           demoEndsAt: addDays(new Date(), DEMO_DAYS),
+          founding: foundingOpen(new Date()),
           ownerId: user.id,
           utmSource: input.utmSource,
           utmMedium: input.utmMedium,

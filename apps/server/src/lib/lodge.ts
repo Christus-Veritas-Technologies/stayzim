@@ -154,6 +154,7 @@ export async function lodgeJson(lodgeId: string): Promise<DashboardLodge> {
     demoEndsAt: lodge.demoEndsAt?.toISOString() ?? null,
     demoEnded: demoEnded(lodge, new Date()),
     paidUntil: lodge.paidUntil?.toISOString() ?? null,
+    founding: lodge.founding,
     linkSharedAt: lodge.linkSharedAt?.toISOString() ?? null,
     freeDomain: freeDomainJson(lodge),
     updatedAt: lodge.updatedAt.toISOString(),
