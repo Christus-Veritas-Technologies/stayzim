@@ -1,11 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowUpRight, MapPin } from "lucide-react";
+import { ArrowRight, ArrowUpRight, MapPin } from "lucide-react";
 
 import { Eyebrow, WhatsAppIcon } from "./brand";
 import { LODGES, type Lodge } from "./content";
-import { TrackedLink, WhatsAppLink } from "./cta";
+import { TrackedLink } from "./cta";
 import { EASE_OUT, Item, Reveal, Stagger } from "@/components/motion";
 
 function LodgeCard({ lodge }: { lodge: Lodge }) {
@@ -96,7 +96,7 @@ export function DemoLodges() {
         <Stagger className="mb-9 flex flex-col gap-3.5 lg:mb-16 lg:items-center lg:gap-[18px]">
           <Item>
             <Eyebrow index="02" tone="sky">
-              Demo lodges
+              Example lodges
             </Eyebrow>
           </Item>
           <Item>
@@ -128,15 +128,15 @@ export function DemoLodges() {
         </Stagger>
 
         <Reveal className="mt-10 flex flex-col items-center justify-center gap-4 text-center sm:flex-row lg:mt-14">
-          <span className="text-base text-[#CED6DA]">Want to see your own lodge? We build a demo for you first.</span>
-          <WhatsAppLink
-            message="demo"
-            track={{ cta: "examples_demo", section: "examples" }}
-            className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-white/40 bg-white/[0.08] px-[22px] text-[15px] font-semibold whitespace-nowrap text-white no-underline transition-colors hover:bg-white/15 hover:text-white"
+          <span className="text-base text-[#CED6DA]">Like what you see? Yours is free to build.</span>
+          <TrackedLink
+            href="/create"
+            track={{ cta: "examples_build", section: "examples" }}
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-white px-[22px] text-[15px] font-semibold whitespace-nowrap text-ink no-underline hover:text-ink"
           >
-            <WhatsAppIcon size={18} color="#FFFFFF" />
-            Ask for a demo
-          </WhatsAppLink>
+            Build mine like this
+            <ArrowRight size={17} strokeWidth={2} />
+          </TrackedLink>
         </Reveal>
       </div>
     </section>

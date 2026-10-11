@@ -154,7 +154,7 @@ export const FOOTER_COLUMNS = [
     title: "Product",
     links: [
       { label: "How it works", href: "#how-it-works" },
-      { label: "Demo lodges", href: "#examples" },
+      { label: "Example lodges", href: "#examples" },
       { label: "Lodges on StayZim", href: "/lodges" },
       { label: "Pricing", href: "#pricing" },
       { label: "Questions", href: "#questions" },

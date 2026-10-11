@@ -3,7 +3,6 @@ import { env } from "@/lib/public-env";
 /** Pre-written first messages, so the team knows where a chat came from. */
 export const WHATSAPP_MESSAGES = {
   general: "Hi StayZim, I'd like a website for my lodge. My lodge is called: ",
-  demo: "Hi StayZim, can you build a demo site for my lodge first? My lodge is called: ",
   question: "Hi StayZim, I have a question: ",
   starter: "Hi StayZim, I'd like to ask about the Starter plan.",
   growth: "Hi StayZim, I'd like to ask about the Growth plan.",
