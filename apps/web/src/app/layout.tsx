@@ -1,37 +1,45 @@
 import type { Metadata, Viewport } from "next";
 
+import { foundingOpen, monthlyPrice } from "@stayzim/sites";
+
 import "../index.css";
 import Providers from "@/components/providers";
 import { fontVariables } from "@/lib/fonts";
 import { MAIN_URL } from "@/lib/site-host";
 
-const SHARE_CARD = { url: "/og", width: 1200, height: 630, alt: "StayZim: your own lodge website, booked on WhatsApp" };
+const SHARE_CARD = { url: "/og", width: 1200, height: 630, alt: "StayZim: get your lodge a website, built free" };
 
-export const metadata: Metadata = {
-  // Relative addresses in metadata (the share card, canonicals) are on stayzim.co.zw
-  metadataBase: new URL(MAIN_URL),
-  title: {
-    default: "StayZim: your own lodge website, booked on WhatsApp",
-    template: "%s · StayZim",
-  },
-  description:
-    "Stop paying 20% to Booking.com. StayZim builds your lodge its own website where guests book you directly on WhatsApp. Made in Mutare for Zimbabwean lodges, guesthouses and holiday homes. Live in about a minute, free for 2 days.",
-  openGraph: {
-    title: "StayZim: your own lodge website",
-    description: "Your own lodge website. Guests book on WhatsApp. 0% commission.",
-    siteName: "StayZim",
-    locale: "en_ZW",
-    type: "website",
-    url: "/",
-    images: [SHARE_CARD],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "StayZim: your own lodge website",
-    description: "Your own lodge website. Guests book on WhatsApp. 0% commission.",
-    images: [SHARE_CARD],
-  },
-};
+/** Made with the page, so the price in it turns over at the founding deadline. */
+export function generateMetadata(): Metadata {
+  const from = `$${monthlyPrice("STARTER", foundingOpen(new Date()))}`;
+  const description = `Build your lodge a website free. Pay only when you love it. From ${from}/month.`;
+  const shareTitle = `Get your lodge a website from ${from} a month`;
+  const shareDescription = "Build it free, then pay only when you love it. Guests book you on WhatsApp and you keep 100%.";
+  return {
+    // Relative addresses in metadata (the share card, canonicals) are on stayzim.co.zw
+    metadataBase: new URL(MAIN_URL),
+    title: {
+      default: "StayZim: your own lodge website, booked on WhatsApp",
+      template: "%s · StayZim",
+    },
+    description,
+    openGraph: {
+      title: shareTitle,
+      description: shareDescription,
+      siteName: "StayZim",
+      locale: "en_ZW",
+      type: "website",
+      url: "/",
+      images: [SHARE_CARD],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: shareTitle,
+      description: shareDescription,
+      images: [SHARE_CARD],
+    },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: "#007DA2",

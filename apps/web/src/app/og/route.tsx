@@ -1,6 +1,10 @@
+import { foundingOpen, monthlyPrice } from "@stayzim/sites";
 import { ImageResponse } from "next/og";
 
 import { OG_HEADERS, OG_SIZE, ogFonts, ogMark } from "@/lib/og";
+
+// Drawn again every hour, so the price on it turns over at the founding deadline
+export const revalidate = 3600;
 
 /** StayZim's own share card (/og), for the landing page and every page on stayzim.co.zw. */
 export async function GET() {
@@ -27,13 +31,13 @@ export async function GET() {
         </div>
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", fontFamily: "Familjen Grotesk", fontSize: 84, fontWeight: 700, lineHeight: 1.02, letterSpacing: "-0.025em", maxWidth: 940 }}>
-            Your own lodge website, booked on WhatsApp.
+            Get your lodge a website from ${monthlyPrice("STARTER", foundingOpen(new Date()))} a month.
           </div>
-          <div style={{ display: "flex", marginTop: 26, fontSize: 32, color: "rgba(255,255,255,0.86)" }}>0% commission · Live in about a minute · Made in Mutare</div>
+          <div style={{ display: "flex", marginTop: 26, fontSize: 32, color: "rgba(255,255,255,0.86)" }}>Built free · Pay only when you love it · 0% commission</div>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 28 }}>
           <div style={{ display: "flex", fontWeight: 600 }}>stayzim.co.zw</div>
-          <div style={{ display: "flex", padding: "12px 26px", borderRadius: 999, background: "#FFFFFF", color: "#006483", fontWeight: 600 }}>Free for 2 days</div>
+          <div style={{ display: "flex", padding: "12px 26px", borderRadius: 999, background: "#FFFFFF", color: "#006483", fontWeight: 600 }}>Build my free site</div>
         </div>
       </div>
     ),
