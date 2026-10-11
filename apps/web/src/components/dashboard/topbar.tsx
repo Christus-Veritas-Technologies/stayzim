@@ -15,14 +15,14 @@ import { DemoClock } from "@/components/dashboard/demo-countdown";
 import { NavIcon } from "@/components/dashboard/link-pending";
 import { useLodge } from "@/components/dashboard/lodge-provider";
 import { breadcrumb, isActive, lodgeStatus, navLinks } from "@/components/dashboard/nav";
-import { ownerSiteUrl, PLANS, siteHost, siteUrl, type Lodge } from "@/lib/lodge";
+import { ownerSiteUrl, siteHost, siteUrl, type Lodge } from "@/lib/lodge";
 
-/** A demo that's still live: purple, with the time left. Everything else that isn't Active is a payment warning. */
+/** A free preview that's still live: purple, with the time left. Everything else that isn't Active is a payment warning. */
 function isLiveDemo(lodge: Lodge) {
   return lodge.status === "DEMO" && !lodge.demoEnded;
 }
 
-/** "Growth demo: 1 day 4 h left [Pay to keep it]", or a payment warning once the demo or the paid period is over. */
+/** "Free preview: 1 day 4 h left [Launch my site]", or a payment warning once the preview or the paid period is over. */
 function PlanPill({ lodge, compact = false }: { lodge: Lodge; compact?: boolean }) {
   if (lodge.status === "ACTIVE") return null;
 
@@ -36,11 +36,11 @@ function PlanPill({ lodge, compact = false }: { lodge: Lodge; compact?: boolean 
       >
         <Clock className="size-4 text-purple" />
         <span>
-          <strong className="font-semibold">{PLANS[lodge.plan].name} demo:</strong> <DemoClock lodge={lodge} />
+          <strong className="font-semibold">Free preview:</strong> <DemoClock lodge={lodge} />
         </span>
         {compact ? null : (
           <Link href="/dashboard/billing" className={buttonVariants({ variant: "accent", size: "xs", className: "rounded-full" })}>
-            Pay to keep it
+            Launch my site
           </Link>
         )}
       </span>
@@ -55,10 +55,10 @@ function PlanPill({ lodge, compact = false }: { lodge: Lodge; compact?: boolean 
       )}
     >
       <TriangleAlert className="size-4" />
-      <strong className="font-semibold">{lodge.status === "DEMO" ? "Demo ended" : lodge.status === "SUSPENDED" ? "Site offline" : "Payment due"}</strong>
+      <strong className="font-semibold">{lodge.status === "DEMO" ? "Preview ended" : lodge.status === "SUSPENDED" ? "Site offline" : "Payment due"}</strong>
       {compact ? null : (
         <Link href="/dashboard/billing" className={buttonVariants({ variant: "destructive", size: "xs", className: "rounded-full" })}>
-          Pay now
+          {lodge.status === "DEMO" ? "Launch my site" : "Pay now"}
         </Link>
       )}
     </span>
@@ -137,7 +137,7 @@ export function MobileHeader({ user }: { user: { name: string; email: string; gu
             href="/dashboard/billing"
             className={cn("-my-2.5 py-2.5 font-semibold underline underline-offset-2", isLiveDemo(lodge) ? "text-purple" : "text-danger")}
           >
-            {isLiveDemo(lodge) ? "Pay to keep it" : "Pay now"}
+            {lodge.status === "DEMO" ? "Launch my site" : "Pay now"}
           </Link>
         </div>
       )}

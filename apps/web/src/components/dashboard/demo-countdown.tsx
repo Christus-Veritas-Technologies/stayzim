@@ -95,20 +95,20 @@ export function CountdownUnits({ ms, endsAt, tone = "light", className }: { ms: 
 }
 
 /**
- * On the dashboard home while the lodge is a demo: how long until the site
- * goes offline, to the second, and the way to keep it. Turns red in the last hour.
+ * On the dashboard home while the site is a free preview: "Your site is a
+ * preview. Launch it to keep it live", how long until it goes offline (to the
+ * second), and Launch my site. Turns red in the last hour.
  */
 export function DemoCountdownCard() {
   const { lodge } = useLodge();
   const left = useDemoLeft(lodge);
   if (lodge.status !== "DEMO" || !lodge.demoEndsAt) return null;
-  const plan = PLANS[lodge.plan];
   const ended = left <= 0;
   const urgent = !ended && left < HOUR;
 
   return (
     <motion.section
-      aria-label="Demo time left"
+      aria-label="Free preview time left"
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
@@ -120,13 +120,13 @@ export function DemoCountdownCard() {
       <div className="flex flex-col gap-3">
         <p className={cn("flex items-center gap-2 text-[14px] font-semibold", ended || urgent ? "text-danger" : "text-purple-ink")}>
           {ended ? <TriangleAlert className="size-4" /> : <Clock className="size-4" />}
-          {ended ? `Your ${plan.name} demo has ended` : `Your ${plan.name} demo ends in`}
+          {ended ? "Your free preview has ended" : "Your site is a preview. Launch it to keep it live."}
         </p>
         {ended ? null : <CountdownUnits ms={left} endsAt={lodge.demoEndsAt} />}
         <p className="max-w-[460px] text-[13px] leading-5 text-muted">
           {ended
-            ? `Your site is offline. Pay to bring it back; we keep everything you added for ${DEMO_KEEP_DAYS} days.`
-            : `Ends ${formatLongDate(lodge.demoEndsAt)} at ${formatClock(lodge.demoEndsAt)}. Then your site goes offline until you pay; we keep everything for ${DEMO_KEEP_DAYS} days.`}
+            ? `Your site is offline. Launch it to bring it back, just as you left it; we keep everything you added for ${DEMO_KEEP_DAYS} days.`
+            : `Your free preview ends ${formatLongDate(lodge.demoEndsAt)} at ${formatClock(lodge.demoEndsAt)}. Then your site goes offline until you launch it; we keep everything for ${DEMO_KEEP_DAYS} days.`}
         </p>
       </div>
       <div className="flex flex-col gap-1.5 lg:items-end">
@@ -134,9 +134,9 @@ export function DemoCountdownCard() {
           href="/dashboard/billing"
           className={buttonVariants({ variant: ended || urgent ? "destructive" : "accent", size: "lg", className: "w-full lg:w-auto" })}
         >
-          {ended ? "Pay to bring it back" : "Pay to keep it"}
+          {ended ? "Launch to bring it back" : "Launch my site"}
         </Link>
-        <span className="text-center text-[12.5px] text-muted lg:text-right">{formatMoney(monthlyPrice(lodge.plan, lodge.founding))} a month, by EcoCash, InnBucks or card</span>
+        <span className="text-center text-[12.5px] text-muted lg:text-right">{PLANS[lodge.plan].name}, {formatMoney(monthlyPrice(lodge.plan, lodge.founding))} a month, by EcoCash, InnBucks or card</span>
       </div>
     </motion.section>
   );

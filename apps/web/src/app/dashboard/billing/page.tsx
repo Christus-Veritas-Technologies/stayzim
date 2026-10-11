@@ -2,7 +2,7 @@
 
 import { Badge } from "@stayzim/ui/components/badge";
 import { CopyButton } from "@stayzim/ui/components/copy-button";
-import { annualSaving, DEMO_DAYS, includesBookingCalendar, monthlyPrice, planPrice } from "@stayzim/sites";
+import { annualSaving, DEMO_DAYS, includesBookingCalendar, monthlyPrice, PLAN_PRICES, planPrice } from "@stayzim/sites";
 import { cn } from "@stayzim/ui/lib/utils";
 import { motion } from "framer-motion";
 import { Button, buttonVariants } from "@stayzim/ui/components/button";
@@ -26,7 +26,7 @@ import { dueDate, offlineDate, PLAN_ORDER, PLANS, type Lodge, type PlanKey } fro
 import { stayzimChatUrl } from "@/lib/whatsapp";
 
 const STATUS = {
-  DEMO: { label: "Demo", badge: "bg-white/12 text-white", dot: "bg-[#B9A7F0]" },
+  DEMO: { label: "Free preview", badge: "bg-white/12 text-white", dot: "bg-[#B9A7F0]" },
   ACTIVE: { label: "Active", badge: "bg-success-wash text-success", dot: "bg-success" },
   OVERDUE: { label: "Overdue", badge: "bg-warning-tint text-warning", dot: "bg-[#e8833a]" },
   SUSPENDED: { label: "Suspended", badge: "bg-danger-tint text-danger", dot: "bg-danger" },
@@ -40,8 +40,8 @@ function statusLine(lodge: Lodge) {
   switch (lodge.status) {
     case "DEMO":
       return lodge.demoEnded
-        ? `Your demo has ended and your site is offline. Pay ${formatMoney(price)} to put it back live, just as you left it.`
-        : `Your site is live as a free demo. Pay ${formatMoney(price)} for the first month to keep it live and remove the demo badges.`;
+        ? `Your free preview has ended and your site is offline. Launch it for ${formatMoney(price)} to put it back live, just as you left it.`
+        : `Your site is live as a free preview. Launch it for ${formatMoney(price)} for the first month to keep it live and take the preview marks off.`;
     case "ACTIVE":
       return lodge.paidUntil ? `Paid until ${formatLongDate(lodge.paidUntil)}. Nothing to do.` : "Paid up. Nothing to do.";
     case "OVERDUE":
@@ -94,7 +94,7 @@ function PlanCard({ lodge }: { lodge: Lodge }) {
             </div>
             {lodge.demoEndsAt ? (
               <span className="text-[13px] text-[#C6D3D9]">
-                Demo ends {formatLongDate(lodge.demoEndsAt)} at {formatClock(lodge.demoEndsAt)}
+                Free preview ends {formatLongDate(lodge.demoEndsAt)} at {formatClock(lodge.demoEndsAt)}
               </span>
             ) : null}
           </div>
@@ -104,7 +104,13 @@ function PlanCard({ lodge }: { lodge: Lodge }) {
       <dl className="relative mt-6 grid overflow-hidden rounded-[14px] border border-white/10 bg-white/5 sm:grid-cols-3">
         <div className="flex flex-col gap-1 border-b border-white/10 p-4 sm:border-r sm:border-b-0">
           <dt className="text-xs text-[#9FB2BB]">{lodge.status === "DEMO" ? "First payment" : "Amount"}</dt>
-          <dd className="font-display text-xl font-semibold">{formatMoney(monthlyPrice(lodge.plan, lodge.founding))}</dd>
+          <dd className="flex flex-col">
+            <span className="font-display text-xl font-semibold">
+              {formatMoney(monthlyPrice(lodge.plan, lodge.founding))}
+              {lodge.founding ? <span className="ml-2 text-[15px] font-medium text-[#9FB2BB] line-through">{formatMoney(PLAN_PRICES[lodge.plan])}</span> : null}
+            </span>
+            {lodge.founding ? <span className="text-xs font-semibold text-[#C9BCF5]">Founding price, locked for life</span> : null}
+          </dd>
         </div>
         <div className="flex flex-col gap-1 border-b border-white/10 p-4 sm:border-r sm:border-b-0">
           <dt className="text-xs text-[#9FB2BB]">{lodge.status === "ACTIVE" ? "Next payment" : "Due"}</dt>
@@ -238,13 +244,15 @@ function Plans({ lodge, onPick, canPay }: { lodge: Lodge; onPick: (plan: PlanKey
                 <span className="text-[13px] font-semibold text-slate">
                   {plan.name} · {plan.tagline}
                 </span>
-                {current ? <Badge className="border-ink bg-ink text-white">{lodge.status === "DEMO" ? "Your demo" : "Current plan"}</Badge> : null}
+                {current ? <Badge className="border-ink bg-ink text-white">{lodge.status === "DEMO" ? "Your preview" : "Current plan"}</Badge> : null}
               </div>
               <div>
                 <p>
                   <span className="font-display text-[28px] font-semibold tracking-[-0.02em]">${price}</span>
                   <span className="text-[13px] text-muted">/month</span>
+                  {lodge.founding ? <span className="ml-1.5 text-[15px] font-medium text-muted-2 line-through">${PLAN_PRICES[key]}</span> : null}
                 </p>
+                {lodge.founding ? <p className="text-[12.5px] font-semibold text-purple">Founding price, locked for life</p> : null}
                 <p className="text-[13px] text-muted">
                   Or ${planPrice(key, 12, lodge.founding)} a year, <span className="font-semibold text-success">save ${annualSaving(key, lodge.founding)}</span>
                 </p>
@@ -273,7 +281,7 @@ function Plans({ lodge, onPick, canPay }: { lodge: Lodge; onPick: (plan: PlanKey
               <div className="mt-auto">
                 {canPay ? (
                   <Button variant={current ? "default" : "outline"} className="w-full" onClick={() => onPick(key)}>
-                    {current ? (lodge.status === "ACTIVE" ? "Pay ahead" : "Pay for this plan") : `Pay for ${plan.name}`}
+                    {lodge.status === "DEMO" ? (current ? "Launch on this plan" : `Launch on ${plan.name}`) : current ? (lodge.status === "ACTIVE" ? "Pay ahead" : "Pay for this plan") : `Pay for ${plan.name}`}
                   </Button>
                 ) : current ? (
                   <span className="flex h-10 items-center justify-center rounded-[10px] bg-surface-2 text-sm font-semibold text-muted">Your plan</span>
@@ -338,7 +346,7 @@ export default function BillingPage() {
           <div role="alert" className="flex items-start gap-3 rounded-[14px] border border-danger-line bg-danger-tint px-4 py-3 text-[13.5px] text-danger">
             <TriangleAlert className="mt-0.5 size-4 shrink-0" />
             {lodge.demoEnded
-              ? "Your demo has ended, so your site is offline. Pay for a plan to put it back live, just as you left it."
+              ? "Your free preview has ended, so your site is offline. Launch it to put it back live, just as you left it."
               : lodge.status === "SUSPENDED"
                 ? "Your site is offline. Guests see “temporarily unavailable” until you pay."
                 : `Your payment is late. Pay by ${offline ? formatLongDate(offline) : "soon"} to keep your site live.`}

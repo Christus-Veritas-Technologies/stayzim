@@ -89,12 +89,12 @@ export function isCurrent(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-/** "Live · Growth demo", with the colour of the dot beside it. */
+/** "Live · Growth preview", with the colour of the dot beside it. */
 export function lodgeStatus(lodge: Pick<Lodge, "status" | "plan" | "demoEnded">) {
   const plan = PLANS[lodge.plan].name;
   switch (lodge.status) {
     case "DEMO":
-      return lodge.demoEnded ? { label: "Offline · Demo ended", dot: "bg-destructive" } : { label: `Live · ${plan} demo`, dot: "bg-purple" };
+      return lodge.demoEnded ? { label: "Offline · Preview ended", dot: "bg-destructive" } : { label: `Live · ${plan} preview`, dot: "bg-purple" };
     case "ACTIVE":
       return { label: `Live · ${plan}`, dot: "bg-success" };
     case "OVERDUE":
