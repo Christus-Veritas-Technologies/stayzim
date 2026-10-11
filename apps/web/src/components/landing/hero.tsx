@@ -1,13 +1,14 @@
 "use client";
 
-import { animate, motion, useMotionValue, useScroll, useTransform } from "framer-motion";
-import { ArrowRight, MapPin } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { monthlyPrice } from "@stayzim/sites";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { ArrowRight, Clock, MapPin } from "lucide-react";
+import { useRef } from "react";
 
 import { WhatsAppIcon } from "./brand";
 import { LOCATIONS, LODGES, type Lodge } from "./content";
 import { TrackedLink, WhatsAppLink } from "./cta";
-import { useFounding } from "@/components/founding";
+import { FoundingCountdown, useFounding } from "@/components/founding";
 import { EASE_OUT, fadeUp } from "@/components/motion";
 
 const RINGS = [
@@ -16,19 +17,6 @@ const RINGS = [
   { size: 1300, color: "#EAEEF1" },
   { size: 1680, color: "#EFF2F4" },
 ];
-
-/** "20%" counts up from 0 once, when the headline lands. */
-function CountUp({ to, delay }: { to: number; delay: number }) {
-  const value = useMotionValue(0);
-  const [display, setDisplay] = useState(0);
-
-  useEffect(() => {
-    const controls = animate(value, to, { duration: 1.2, delay, ease: EASE_OUT, onUpdate: (v) => setDisplay(Math.round(v)) });
-    return () => controls.stop();
-  }, [delay, to, value]);
-
-  return <>{display}%</>;
-}
 
 function LocationPill({ name, color, featured, small }: { name: string; color: string; featured: boolean; small?: boolean }) {
   return (
@@ -174,22 +162,18 @@ export function Hero() {
           variants={fadeUp}
           className="mt-4 text-center font-display text-[44px] leading-[46px] font-bold tracking-[-0.035em] text-balance sm:text-[56px] sm:leading-[60px] lg:mt-[18px] lg:text-[72px] lg:leading-[78px] lg:tracking-[-0.03em]"
         >
-          Stop paying{" "}
-          <span className="text-brand tabular-nums">
-            <CountUp to={20} delay={0.5} />
-          </span>{" "}
-          to
-          <br className="hidden lg:block" /> Booking.com
+          Get your lodge a website
+          <br className="hidden lg:block" /> from <span className="text-brand tabular-nums">${monthlyPrice("STARTER", founding.open)}</span> a month
         </motion.h1>
 
         <motion.p
           variants={fadeUp}
-          className="mt-3.5 text-center text-[17px] leading-[26px] text-slate lg:mt-5 lg:text-xl lg:leading-[30px]"
+          className="mt-3.5 max-w-[640px] text-center text-[17px] leading-[26px] text-pretty text-slate lg:mt-5 lg:text-xl lg:leading-[30px]"
         >
-          Your own lodge website. Guests book on your site or on WhatsApp.
+          Build it free, then pay only when you love it. Guests book you on WhatsApp and you keep 100%.
         </motion.p>
         <motion.p variants={fadeUp} className="mt-1.5 text-center text-[13.5px] leading-5 text-muted lg:text-[14.5px]">
-          For lodges, guesthouses, B&amp;Bs and holiday homes. Live in about a minute, free for 2 days.
+          For lodges, guesthouses, B&amp;Bs and holiday homes.
         </motion.p>
 
         <motion.div
@@ -201,7 +185,7 @@ export function Hero() {
             track={{ cta: "hero_signup", section: "hero" }}
             className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-brand px-7 text-[17px] font-semibold whitespace-nowrap text-white no-underline shadow-[0_10px_24px_-10px_rgba(0,125,162,0.8)] hover:bg-brand-dark hover:text-white"
           >
-            Make my free site
+            Build my free site
             <ArrowRight size={19} strokeWidth={2} />
           </TrackedLink>
           <WhatsAppLink
@@ -213,6 +197,16 @@ export function Hero() {
             Chat on WhatsApp
           </WhatsAppLink>
         </motion.div>
+
+        {founding.open ? (
+          <motion.p
+            variants={fadeUp}
+            className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-purple-tint px-3.5 py-1.5 text-[13.5px] text-purple-ink ring-1 ring-purple-line lg:text-[14.5px]"
+          >
+            <Clock size={15} strokeWidth={2} className="shrink-0 text-purple" />
+            Founding price ends in <FoundingCountdown />
+          </motion.p>
+        ) : null}
 
         {/* Location pills as a row, below xl */}
         <motion.div

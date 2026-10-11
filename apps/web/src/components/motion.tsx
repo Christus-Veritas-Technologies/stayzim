@@ -1,7 +1,7 @@
 "use client";
 
 import { animate, motion, useInView, type HTMLMotionProps, type Variants } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 export const EASE_OUT = [0.22, 1, 0.36, 1] as const;
 
@@ -67,6 +67,7 @@ export function Reveal({
 /**
  * Counts from `from` to `to` the first time it scrolls into view. When `to`
  * changes later (e.g. 7 days → 30 days), it counts on from the number shown.
+ * Before scripts run (and for anything reading the HTML) it shows `to`.
  */
 export function CountUp({
   to,
@@ -87,8 +88,16 @@ export function CountUp({
 }) {
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true, amount: 0.6 });
-  const [value, setValue] = useState(from);
-  const shown = useRef(from);
+  // The page's HTML has the real number, for search engines, link previews and
+  // anyone reading before scripts run; the count starts once the page is live
+  const [value, setValue] = useState(to);
+  const shown = useRef(to);
+  useLayoutEffect(() => {
+    shown.current = from;
+    setValue(from);
+    // Once, on the first paint: later changes to `to` count on from the number shown
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!inView) return;
