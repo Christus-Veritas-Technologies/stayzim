@@ -5,8 +5,11 @@ import type { Plan } from "./index";
  * invoices), the web app (pricing, Billing) and the scripts.
  */
 
-/** Monthly price in whole US dollars. */
-export const PLAN_PRICES: Record<Plan, number> = { STARTER: 20, GROWTH: 40, PRO: 75 };
+/** Monthly price in whole US dollars, for lodges that joined after founding prices ended. */
+export const PLAN_PRICES: Record<Plan, number> = { STARTER: 25, GROWTH: 40, PRO: 75 };
+
+/** Monthly price for founding lodges (`Lodge.founding`), on any plan, for life. */
+export const FOUNDING_PRICES: Record<Plan, number> = { STARTER: 15, GROWTH: 30, PRO: 50 };
 
 export const PLAN_ORDER: Plan[] = ["STARTER", "GROWTH", "PRO"];
 
@@ -37,27 +40,44 @@ export function isPlan(value: unknown): value is Plan {
   return value === "STARTER" || value === "GROWTH" || value === "PRO";
 }
 
-/** Percent off when paying for 12 months at once. */
+/** What a month of `plan` costs a lodge: the founding price if it's a founding lodge. */
+export function monthlyPrice(plan: Plan, founding: boolean) {
+  return (founding ? FOUNDING_PRICES : PLAN_PRICES)[plan];
+}
+
+/** Percent off when paying for 12 months at once, at the normal prices. */
 export const ANNUAL_DISCOUNT: Record<Plan, number> = { STARTER: 10, GROWTH: 17, PRO: 30 };
+/** Founding lodges pay for 10 months when they pay for 12 (2 months free). */
+export const FOUNDING_FREE_MONTHS = 2;
 
-/** What `months` cost, in whole dollars: 12 months take the plan's discount, rounded down. */
-export function planPrice(plan: Plan, months = 1) {
-  const full = PLAN_PRICES[plan] * months;
-  return months === 12 ? Math.floor((full * (100 - ANNUAL_DISCOUNT[plan])) / 100) : full;
+/**
+ * What `months` cost, in whole dollars. 12 months are 10 months' price for a
+ * founding lodge ($150, $300, $500); otherwise they take the plan's discount,
+ * rounded down ($270, $398, $630).
+ */
+export function planPrice(plan: Plan, months: number, founding: boolean) {
+  const monthly = monthlyPrice(plan, founding);
+  if (months !== 12) return monthly * months;
+  return founding ? monthly * (12 - FOUNDING_FREE_MONTHS) : Math.floor((monthly * 12 * (100 - ANNUAL_DISCOUNT[plan])) / 100);
 }
 
-export function planPriceCents(plan: Plan, months = 1) {
-  return planPrice(plan, months) * 100;
+export function planPriceCents(plan: Plan, months: number, founding: boolean) {
+  return planPrice(plan, months, founding) * 100;
 }
 
-/** A year's price per month, rounded down ($216 a year is $18 a month). */
-export function annualMonthlyPrice(plan: Plan) {
-  return Math.floor(planPrice(plan, 12) / 12);
+/** A year's price per month, rounded down ($270 a year is $22 a month). */
+export function annualMonthlyPrice(plan: Plan, founding: boolean) {
+  return Math.floor(planPrice(plan, 12, founding) / 12);
 }
 
 /** Dollars saved by paying for 12 months at once instead of month by month. */
-export function annualSaving(plan: Plan) {
-  return PLAN_PRICES[plan] * 12 - planPrice(plan, 12);
+export function annualSaving(plan: Plan, founding: boolean) {
+  return monthlyPrice(plan, founding) * 12 - planPrice(plan, 12, founding);
+}
+
+/** "2 months free" or "10% off": what paying for a year gets a lodge. */
+export function annualDeal(plan: Plan, founding: boolean) {
+  return founding ? `${FOUNDING_FREE_MONTHS} months free` : `${ANNUAL_DISCOUNT[plan]}% off`;
 }
 
 /**

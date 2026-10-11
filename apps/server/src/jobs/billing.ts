@@ -43,7 +43,7 @@ export async function runBilling(now = new Date()) {
   // 1 and 2: lodges that pay
   const paying = await prisma.lodge.findMany({
     where: { status: { in: ["ACTIVE", "OVERDUE", "SUSPENDED"] }, paidUntil: { not: null } },
-    select: { id: true, name: true, plan: true, status: true, paidUntil: true, owner: { select: { name: true, email: true } } },
+    select: { id: true, name: true, plan: true, founding: true, status: true, paidUntil: true, owner: { select: { name: true, email: true } } },
   });
   for (const lodge of paying) {
     const paidUntil = lodge.paidUntil!;
@@ -89,7 +89,7 @@ export async function runBilling(now = new Date()) {
           `lodge:${lodge.id}:SITE_OFFLINE:${paidUntil.toISOString()}`,
           lodge.id,
           "SITE_OFFLINE",
-          siteOfflineEmail({ to: lodge.owner.email, name: lodge.owner.name, lodgeName: lodge.name, amount: formatCents(planPriceCents(lodge.plan)), payUrl: BILLING_URL }),
+          siteOfflineEmail({ to: lodge.owner.email, name: lodge.owner.name, lodgeName: lodge.name, amount: formatCents(planPriceCents(lodge.plan, 1, lodge.founding)), payUrl: BILLING_URL }),
         );
         if (sent) report.notices += 1;
       }

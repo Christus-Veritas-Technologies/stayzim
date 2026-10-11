@@ -8,7 +8,7 @@ import { cn } from "@stayzim/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUpRight, CircleCheck, CircleX, CreditCard, Smartphone, Ticket } from "lucide-react";
 import Link from "next/link";
-import { ANNUAL_DISCOUNT, carriedOverMs, paidUntilAfterPayment, planPriceCents, type TemplateKey } from "@stayzim/sites";
+import { annualDeal, carriedOverMs, paidUntilAfterPayment, planPriceCents, type TemplateKey } from "@stayzim/sites";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 
 import { useLodge } from "@/components/dashboard/lodge-provider";
@@ -45,8 +45,8 @@ function planChangeHint(lodge: Lodge, plan: PlanKey, months: number, now: number
   const at = new Date(now);
   const left = paidUntil ? Math.floor((paidUntil.getTime() - now) / DAY_MS) : 0;
   if (left < 1) return moves;
-  const carried = Math.round(carriedOverMs(paidUntil, at, lodge.plan, plan) / DAY_MS);
-  const until = formatLongDate(paidUntilAfterPayment({ paidUntil, plan: lodge.plan }, plan, months, at));
+  const carried = Math.round(carriedOverMs(paidUntil, at, lodge.plan, plan, lodge.founding) / DAY_MS);
+  const until = formatLongDate(paidUntilAfterPayment({ paidUntil, plan: lodge.plan, founding: lodge.founding }, plan, months, at));
   return `${moves} Your ${days(left)} left on ${PLANS[lodge.plan].name} become ${days(carried)} of ${PLANS[plan].name}, then the ${months === 1 ? "month" : `${months} months`} you pay for: live until ${until}.`;
 }
 
@@ -79,7 +79,7 @@ export function PayCard({
   const pickedDesign = design?.plan === plan ? design.key : null;
   const designMissing = needsDesign(lodge, plan) && !pickedDesign;
   const upcoming = lodge.rooms.reduce((sum, room) => sum + room.upcomingBookings, 0);
-  const total = planPriceCents(plan, months);
+  const total = planPriceCents(plan, months, lodge.founding);
   const prompt = PAY_CHANNELS.find((item) => item.key === channel)!.prompt;
 
   const watch = useCallback((payment: Payment, extra: { instructions?: string | null; innbucksCode?: string | null } = {}) => {
@@ -221,7 +221,7 @@ export function PayCard({
               ) : null}
               <FormMessage>{error}</FormMessage>
               <Field label="Plan" hint={planChangeHint(lodge, plan, months, now)}>
-                <PlanPicker value={plan} onChange={onPlanChange} disabled={starting} />
+                <PlanPicker value={plan} onChange={onPlanChange} founding={lodge.founding} disabled={starting} />
               </Field>
               <PlanSwitch lodge={lodge} plan={plan} design={pickedDesign} onDesign={(key) => setDesign({ plan, key })} upcomingBookings={upcoming} />
               <Field label="How long" help="Pay for 1, 3 or 12 months at a time. Paying early adds to the time you have left, and 12 months costs less.">
@@ -241,8 +241,8 @@ export function PayCard({
                       <span className="text-[13.5px] font-semibold">
                         {count} {count === 1 ? "month" : "months"}
                       </span>
-                      <span className="text-[12.5px] text-muted">{formatCents(planPriceCents(plan, count))}</span>
-                      {count === 12 ? <span className="text-[11.5px] font-semibold text-success">{ANNUAL_DISCOUNT[plan]}% off</span> : null}
+                      <span className="text-[12.5px] text-muted">{formatCents(planPriceCents(plan, count, lodge.founding))}</span>
+                      {count === 12 ? <span className="text-[11.5px] font-semibold text-success">{annualDeal(plan, lodge.founding)}</span> : null}
                     </button>
                   ))}
                 </div>

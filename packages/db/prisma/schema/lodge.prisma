@@ -1,11 +1,11 @@
 // Lodges (the owner dashboard and, later, {slug}.stayzim.co.zw sites).
 
 enum LodgePlan {
-  /// $20/month: the site and the WhatsApp button
+  /// $25/month ($15 founding): the site and the WhatsApp button
   STARTER
-  /// $40/month: + visitor analytics and a free .co.zw domain
+  /// $40/month ($30 founding): + the booking calendar and visitor analytics
   GROWTH
-  /// $75/month: + we manage Booking.com and Airbnb
+  /// $75/month ($50 founding): + we manage Booking.com and Airbnb
   PRO
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { DEMO_KEEP_DAYS } from "@stayzim/sites";
+import { DEMO_KEEP_DAYS, monthlyPrice } from "@stayzim/sites";
 import { buttonVariants } from "@stayzim/ui/components/button";
 import { cn } from "@stayzim/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
@@ -136,7 +136,7 @@ export function DemoCountdownCard() {
         >
           {ended ? "Pay to bring it back" : "Pay to keep it"}
         </Link>
-        <span className="text-center text-[12.5px] text-muted lg:text-right">{formatMoney(plan.price)} a month, by EcoCash, InnBucks or card</span>
+        <span className="text-center text-[12.5px] text-muted lg:text-right">{formatMoney(monthlyPrice(lodge.plan, lodge.founding))} a month, by EcoCash, InnBucks or card</span>
       </div>
     </motion.section>
   );

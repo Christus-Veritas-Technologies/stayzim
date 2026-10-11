@@ -57,7 +57,7 @@ if (values.list) {
 
 const slug = values.slug?.trim().toLowerCase();
 if (!slug) fail("Pass --slug, e.g. --slug mistvalley (or --list).");
-const lodge = await prisma.lodge.findUnique({ where: { slug }, select: { id: true, name: true, plan: true, status: true } });
+const lodge = await prisma.lodge.findUnique({ where: { slug }, select: { id: true, name: true, plan: true, founding: true, status: true } });
 if (!lodge) fail(`No lodge with the slug "${slug}".`);
 
 if (values.status) {
@@ -76,7 +76,7 @@ if (!isPlan(plan)) fail("--plan is starter, growth or pro.");
 // A plan without the lodge's design: --template picks one of its designs, else the plan's default shows
 const design = values.template ? findTemplate(values.template) : undefined;
 if (values.template && (!design || !templateAllowed(design, plan))) fail(`--template is one of ${PLANS_LABEL[plan]}'s designs (or a cheaper plan's), e.g. ${DEFAULT_TEMPLATE[plan]}.`);
-const amountCents = values.amount ? Math.round(Number(values.amount) * 100) : planPriceCents(plan, months);
+const amountCents = values.amount ? Math.round(Number(values.amount) * 100) : planPriceCents(plan, months, lodge.founding);
 if (!Number.isFinite(amountCents) || amountCents <= 0) fail("--amount is in dollars, e.g. --amount 40.");
 
 const payment = await recordManualPayment({

@@ -5,9 +5,9 @@ export const WHATSAPP_MESSAGES = {
   general: "Hi StayZim, I'd like a website for my lodge. My lodge is called: ",
   demo: "Hi StayZim, can you build a demo site for my lodge first? My lodge is called: ",
   question: "Hi StayZim, I have a question: ",
-  starter: "Hi StayZim, I'd like to ask about the Starter plan ($20/month).",
-  growth: "Hi StayZim, I'd like to ask about the Growth plan ($40/month).",
-  pro: "Hi StayZim, I'd like to ask about the Pro plan ($75/month).",
+  starter: "Hi StayZim, I'd like to ask about the Starter plan.",
+  growth: "Hi StayZim, I'd like to ask about the Growth plan.",
+  pro: "Hi StayZim, I'd like to ask about the Pro plan.",
   help: "Hi StayZim, I need help with my lodge dashboard: ",
   login: "Hi StayZim, I can't log in to my lodge dashboard. My email is: ",
 } as const;

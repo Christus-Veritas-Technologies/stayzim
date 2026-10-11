@@ -16,7 +16,6 @@ import {
   AMENITY_LABELS,
   GRACE_DAYS,
   includesAnalytics,
-  PLAN_PRICES,
   type AmenityKey,
   type DashboardLodge,
   type DashboardPhoto,
@@ -79,26 +78,23 @@ export function themeColorName(value: string) {
 
 export const PLANS: Record<
   PlanKey,
-  { name: string; tagline: string; price: number; pitch: string; features: string[]; later?: string }
+  { name: string; tagline: string; pitch: string; features: string[]; later?: string }
 > = {
   STARTER: {
     name: "Starter",
     tagline: "Get found",
-    price: PLAN_PRICES.STARTER,
     pitch: "For guesthouses that just need to be online.",
     features: ["Lodge site on stayzim.co.zw", "Rooms, gallery and map", "Book on WhatsApp button", "Google Business setup", "A free .co.zw domain"],
   },
   GROWTH: {
     name: "Growth",
     tagline: "Get booked",
-    price: PLAN_PRICES.GROWTH,
     pitch: "For most lodges. See who visits.",
     features: ["Everything in Starter", "Booking calendar: guests request dates on your site", "Visitor analytics"],
   },
   PRO: {
     name: "Pro",
     tagline: "Get full",
-    price: PLAN_PRICES.PRO,
     pitch: "For busy lodges with 5 or more rooms.",
     features: ["Everything in Growth", "We manage your Booking.com and Airbnb listings", "Priority WhatsApp support"],
   },

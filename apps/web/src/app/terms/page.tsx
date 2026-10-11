@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 
 import { LegalPage, type LegalSection } from "@/components/legal-page";
-import { ANNUAL_DISCOUNT, DEMO_DAYS, DEMO_KEEP_DAYS } from "@stayzim/sites";
+import { ANNUAL_DISCOUNT, DEMO_DAYS, DEMO_KEEP_DAYS, FOUNDING_PRICES, PLAN_PRICES } from "@stayzim/sites";
 
 import { GRACE_DAYS, PLANS } from "@/lib/lodge";
+
+/** The founding deadline, as people say it */
+const FOUNDING_END_LABEL = "22 October 2026 at 23:59, Zimbabwe time";
 
 export const metadata: Metadata = {
   title: "Terms",
@@ -29,8 +32,13 @@ const SECTIONS: LegalSection[] = [
       <>
         <ul>
           <li>
-            {PLANS.STARTER.name} is ${PLANS.STARTER.price}, {PLANS.GROWTH.name} ${PLANS.GROWTH.price} and {PLANS.PRO.name} ${PLANS.PRO.price} a
+            {PLANS.STARTER.name} is ${PLAN_PRICES.STARTER}, {PLANS.GROWTH.name} ${PLAN_PRICES.GROWTH} and {PLANS.PRO.name} ${PLAN_PRICES.PRO} a
             month, in US dollars. What each plan includes is on stayzim.co.zw.
+          </li>
+          <li>
+            Lodges that sign up before {FOUNDING_END_LABEL} are founding lodges. They pay ${FOUNDING_PRICES.STARTER} for {PLANS.STARTER.name},
+            ${FOUNDING_PRICES.GROWTH} for {PLANS.GROWTH.name} and ${FOUNDING_PRICES.PRO} for {PLANS.PRO.name} a month, on whichever plan they
+            move to, for as long as they stay with us.
           </li>
           <li>
             When you sign up, your site goes live as a free demo on the plan you choose, for {DEMO_DAYS} days, with small &quot;demo&quot;
@@ -41,8 +49,8 @@ const SECTIONS: LegalSection[] = [
             delete the demo, its photos and your account {DEMO_KEEP_DAYS} days later.
           </li>
           <li>
-            You pay in advance, for 1, 3 or 12 months (12 months cost {ANNUAL_DISCOUNT.STARTER}% less on Starter, {ANNUAL_DISCOUNT.GROWTH}% on Growth
-            and {ANNUAL_DISCOUNT.PRO}% on Pro), online through Paynow (EcoCash, InnBucks, OneMoney, card and more). We email an invoice 3 days before your paid time ends, the day before and on the day, and a receipt
+            You pay in advance, for 1, 3 or 12 months (founding lodges pay for 10 months when they pay for 12; otherwise 12 months cost {ANNUAL_DISCOUNT.STARTER}% less on
+            Starter, {ANNUAL_DISCOUNT.GROWTH}% on Growth and {ANNUAL_DISCOUNT.PRO}% on Pro), online through Paynow (EcoCash, InnBucks, OneMoney, card and more). We email an invoice 3 days before your paid time ends, the day before and on the day, and a receipt
             when you pay. If you pay for a different plan while you still have paid time, that time moves to the new plan at its price
             (12 days of Growth become 6 days of Pro), and the months you pay for start after it.
           </li>

@@ -1,6 +1,6 @@
 "use client";
 
-import { annualSaving, planPrice, type Plan as PlanKey } from "@stayzim/sites";
+import { annualSaving, foundingOpen, planPrice, type Plan as PlanKey } from "@stayzim/sites";
 import { motion, type Variants } from "framer-motion";
 import { ArrowRight, BadgePercent, CircleCheck, CreditCard, Globe, Star } from "lucide-react";
 
@@ -63,7 +63,7 @@ function PlanCard({ plan }: { plan: Plan }) {
         <span className="text-[15px] text-muted">/month</span>
       </div>
       <p className="-mt-3 text-[14px] leading-5 text-muted">
-        Or ${planPrice(key, 12)} for a year: <strong className="font-semibold text-success">save ${annualSaving(key)}</strong>
+        Or ${planPrice(key, 12, foundingOpen(new Date()))} for a year: <strong className="font-semibold text-success">save ${annualSaving(key, foundingOpen(new Date()))}</strong>
       </p>
 
       <TrackedLink

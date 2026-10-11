@@ -8,7 +8,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from "@stayzim/ui/compon
 import { monthOf } from "@stayzim/ui/components/range-calendar";
 import { Skeleton } from "@stayzim/ui/components/skeleton";
 import { Tabs, TabsList, TabsTab } from "@stayzim/ui/components/tabs";
-import { dateAdd, formatStay, includesBookingCalendar, todayInHarare } from "@stayzim/sites";
+import { dateAdd, formatStay, includesBookingCalendar, monthlyPrice, todayInHarare } from "@stayzim/sites";
 import { cn } from "@stayzim/ui/lib/utils";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { CalendarDays, ChevronLeft, ChevronRight, Inbox, Lock, Plus, Search } from "lucide-react";
@@ -528,7 +528,7 @@ function LockedBookings({ lodge }: { lodge: Lodge }) {
             <p className="font-display text-lg leading-6 font-semibold">Guests pick dates on your site; you confirm in one tap</p>
             <p className="text-[13px] text-muted">No more double bookings. Bookings you added before stay here when you upgrade.</p>
             <Link href="/dashboard/billing" className={buttonVariants({ variant: "accent", size: "lg", className: "w-full" })}>
-              Upgrade to {growth.name} (${growth.price}/mo)
+              Upgrade to {growth.name} (${monthlyPrice("GROWTH", lodge.founding)}/mo)
             </Link>
           </div>
         </div>

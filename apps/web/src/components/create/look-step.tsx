@@ -1,6 +1,6 @@
 "use client";
 
-import { DEFAULT_TEMPLATE, findTemplate, TEMPLATES, type Template, type TemplateKey } from "@stayzim/sites";
+import { DEFAULT_TEMPLATE, findTemplate, foundingOpen, monthlyPrice, TEMPLATES, type Template, type TemplateKey } from "@stayzim/sites";
 import { Button } from "@stayzim/ui/components/button";
 import { Tabs, TabsList, TabsTab } from "@stayzim/ui/components/tabs";
 import { cn } from "@stayzim/ui/lib/utils";
@@ -78,7 +78,7 @@ function LookPreview({ slug, template, onClose, onUse }: { slug: string; templat
         <div className="flex items-center gap-3">
           {plan ? (
             <span className="hidden text-[12.5px] text-muted-2 sm:inline">
-              {plan.name} · ${plan.price}/mo
+              {plan.name} · ${monthlyPrice(shown!.plan, foundingOpen(new Date()))}/mo
             </span>
           ) : null}
           <Button
@@ -118,7 +118,7 @@ export function LookStep({ value, onChange, onNext }: { value: TemplateKey; onCh
           {PLAN_ORDER.map((key) => (
             <TabsTab key={key} value={key} className="gap-1 px-3">
               {PLANS[key].name}
-              <span className="text-[11.5px] font-medium opacity-70 tabular-nums">${PLANS[key].price}</span>
+              <span className="text-[11.5px] font-medium opacity-70 tabular-nums">${monthlyPrice(key, foundingOpen(new Date()))}</span>
             </TabsTab>
           ))}
         </TabsList>
@@ -199,7 +199,7 @@ export function LookStep({ value, onChange, onNext }: { value: TemplateKey; onCh
         sticky
         note={
           <>
-            <span className="font-semibold text-ink-2">{picked.name}</span> comes with {plan.name}, ${plan.price} a month once your free 2 days are up.
+            <span className="font-semibold text-ink-2">{picked.name}</span> comes with {plan.name}, ${monthlyPrice(picked.plan, foundingOpen(new Date()))} a month once your free 2 days are up.
           </>
         }
       >

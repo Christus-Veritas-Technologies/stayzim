@@ -1,5 +1,6 @@
 "use client";
 
+import { monthlyPrice } from "@stayzim/sites";
 import { cn } from "@stayzim/ui/lib/utils";
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
@@ -13,7 +14,18 @@ export function planFromParam(value: string | null | undefined): PlanKey {
 }
 
 /** Three plan cards in a row, one picked: sign-up and the start screen. */
-export function PlanPicker({ value, onChange, disabled = false }: { value: PlanKey; onChange: (plan: PlanKey) => void; disabled?: boolean }) {
+export function PlanPicker({
+  value,
+  onChange,
+  founding,
+  disabled = false,
+}: {
+  value: PlanKey;
+  onChange: (plan: PlanKey) => void;
+  /** Show founding prices (the lodge's own, or for a new lodge before they end) */
+  founding: boolean;
+  disabled?: boolean;
+}) {
   return (
     <div role="radiogroup" aria-label="Plan" className="grid grid-cols-3 gap-2">
       {PLAN_ORDER.map((key) => {
@@ -43,7 +55,7 @@ export function PlanPicker({ value, onChange, disabled = false }: { value: PlanK
             ) : null}
             <span className={cn("text-[13.5px] font-semibold", picked ? "text-brand-dark" : "text-ink")}>{plan.name}</span>
             <span className="text-[12.5px] text-muted">
-              <strong className="font-semibold text-ink">${plan.price}</strong>/mo
+              <strong className="font-semibold text-ink">${monthlyPrice(key, founding)}</strong>/mo
             </span>
           </button>
         );

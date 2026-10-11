@@ -81,15 +81,16 @@ async function nextNumber(tx: Tx, kind: "invoice" | "receipt", now: Date) {
   return `${kind === "invoice" ? "SZ" : "R"}-${year}-${String(counter.value).padStart(5, "0")}`;
 }
 
-/** An invoice for one month of `plan`, from `dueAt`. */
+/** An invoice for one month of `plan`, from `dueAt`, at the lodge's price (founding or not). */
 export async function createInvoice(lodgeId: string, plan: Plan, dueAt: Date) {
+  const { founding } = await prisma.lodge.findUniqueOrThrow({ where: { id: lodgeId }, select: { founding: true } });
   return prisma.$transaction(async (tx) =>
     tx.invoice.create({
       data: {
         number: await nextNumber(tx, "invoice", new Date()),
         lodgeId,
         plan,
-        amountCents: planPriceCents(plan),
+        amountCents: planPriceCents(plan, 1, founding),
         periodStart: dueAt,
         periodEnd: addMonths(dueAt, 1),
         dueAt,
@@ -109,7 +110,7 @@ export async function onDemoCreated(lodgeId: string) {
 export async function sendDemoWelcome(lodgeId: string) {
   const lodge = await prisma.lodge.findUniqueOrThrow({
     where: { id: lodgeId },
-    select: { name: true, slug: true, customDomain: true, plan: true, demoEndsAt: true, owner: { select: { name: true, email: true } } },
+    select: { name: true, slug: true, customDomain: true, plan: true, founding: true, demoEndsAt: true, owner: { select: { name: true, email: true } } },
   });
   await sendQuietly(
     demoWelcomeEmail({
@@ -119,7 +120,7 @@ export async function sendDemoWelcome(lodgeId: string) {
       siteUrl: siteUrlFor(lodge),
       dashboardUrl: DASHBOARD_URL,
       plan: PLANS_LABEL[lodge.plan],
-      price: formatCents(planPriceCents(lodge.plan)),
+      price: formatCents(planPriceCents(lodge.plan, 1, lodge.founding)),
       endsAt: lodge.demoEndsAt ? formatHarareDateTime(lodge.demoEndsAt) : "in 2 days",
     }),
     "the welcome email",
@@ -151,9 +152,9 @@ export async function applyPayment(paymentId: string, extra: { paynowReference?:
       where: { id: paymentId },
       data: { receiptNumber: await nextNumber(tx, "receipt", now) },
     });
-    const lodge = await tx.lodge.findUniqueOrThrow({ where: { id: payment.lodgeId }, select: { paidUntil: true, status: true, plan: true } });
+    const lodge = await tx.lodge.findUniqueOrThrow({ where: { id: payment.lodgeId }, select: { paidUntil: true, status: true, plan: true, founding: true } });
     // Time already paid for moves to the new plan at its price (12 days of Growth are 6 of Pro)
-    const paidUntil = paidUntilAfterPayment({ paidUntil: lodge.status === "DEMO" ? null : lodge.paidUntil, plan: lodge.plan }, payment.plan, payment.months, now);
+    const paidUntil = paidUntilAfterPayment({ paidUntil: lodge.status === "DEMO" ? null : lodge.paidUntil, plan: lodge.plan, founding: lodge.founding }, payment.plan, payment.months, now);
     await tx.lodge.update({
       where: { id: payment.lodgeId },
       // A design picked for a plan that doesn't include the old one goes live with it
@@ -207,6 +208,7 @@ export async function applyPayment(paymentId: string, extra: { paynowReference?:
 
 /** Records a payment the team confirmed on Paynow outside the app (mark-paid) and applies it. */
 export async function recordManualPayment(input: { lodgeId: string; plan: Plan; months: number; amountCents?: number; channel: string; note?: string; template?: string }) {
+  const { founding } = await prisma.lodge.findUniqueOrThrow({ where: { id: input.lodgeId }, select: { founding: true } });
   const invoice = await prisma.invoice.findFirst({ where: { lodgeId: input.lodgeId, status: "OPEN" }, orderBy: { dueAt: "asc" } });
   const payment = await prisma.payment.create({
     data: {
@@ -214,7 +216,7 @@ export async function recordManualPayment(input: { lodgeId: string; plan: Plan; 
       invoiceId: invoice?.plan === input.plan ? invoice.id : null,
       plan: input.plan,
       months: input.months,
-      amountCents: input.amountCents ?? planPriceCents(input.plan, input.months),
+      amountCents: input.amountCents ?? planPriceCents(input.plan, input.months, founding),
       method: "MANUAL",
       channel: input.channel,
       reference: newPaymentReference(),

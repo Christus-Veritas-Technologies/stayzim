@@ -1,5 +1,6 @@
 "use client";
 
+import { monthlyPrice } from "@stayzim/sites";
 import { buttonVariants } from "@stayzim/ui/components/button";
 import { Card } from "@stayzim/ui/components/card";
 import { InfoTip } from "@stayzim/ui/components/info-tip";
@@ -190,12 +191,12 @@ export function AnalyticsUpsell({ className }: { className?: string }) {
         <p className="text-[13.5px] text-muted">A bookings calendar guests book from, plus visits by day, countries and booking chats per room.</p>
       </div>
       <a
-        href={stayzimChatUrl(`Hi StayZim, I'd like to move ${lodge.name} to the ${growth.name} plan ($${growth.price}/month).`)}
+        href={stayzimChatUrl(`Hi StayZim, I'd like to move ${lodge.name} to the ${growth.name} plan ($${monthlyPrice("GROWTH", lodge.founding)}/month).`)}
         target="_blank"
         rel="noreferrer"
         className={buttonVariants({ variant: "accent", size: "lg", className: "relative w-full sm:w-auto" })}
       >
-        Upgrade to {growth.name} (${growth.price}/mo)
+        Upgrade to {growth.name} (${monthlyPrice("GROWTH", lodge.founding)}/mo)
       </a>
     </Card>
   );

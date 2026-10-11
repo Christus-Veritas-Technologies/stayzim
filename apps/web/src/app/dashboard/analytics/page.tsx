@@ -1,5 +1,6 @@
 "use client";
 
+import { monthlyPrice } from "@stayzim/sites";
 import { buttonVariants } from "@stayzim/ui/components/button";
 import { Card } from "@stayzim/ui/components/card";
 import { CopyButton } from "@stayzim/ui/components/copy-button";
@@ -58,7 +59,7 @@ function LockedPreview() {
           <span className="text-xs font-semibold tracking-[0.06em] text-purple uppercase">{growth.name} plan</span>
           <p className="font-display text-lg leading-6 font-semibold">See who visits your site, and from where</p>
           <Link href="/dashboard/billing?plan=growth" className={buttonVariants({ variant: "accent", size: "lg", className: "w-full" })}>
-            Upgrade to {growth.name} (${growth.price}/mo)
+            Upgrade to {growth.name} (${monthlyPrice("GROWTH", lodge.founding)}/mo)
           </Link>
         </div>
       </div>

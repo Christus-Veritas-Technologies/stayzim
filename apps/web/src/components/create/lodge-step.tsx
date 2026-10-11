@@ -1,6 +1,6 @@
 "use client";
 
-import { COUNTRIES, ZIMBABWE_TOWNS, type TemplateKey } from "@stayzim/sites";
+import { COUNTRIES, foundingOpen, monthlyPrice, ZIMBABWE_TOWNS, type TemplateKey } from "@stayzim/sites";
 import { Button } from "@stayzim/ui/components/button";
 import { Field, FormMessage } from "@stayzim/ui/components/field";
 import { Input, InputGroup, InputGroupAddon, InputGroupInput } from "@stayzim/ui/components/input";
@@ -96,7 +96,7 @@ export function LodgeStep({
       },
     });
     if (result.data) {
-      metaEvent("StartTrial", { value: 0, currency: "USD", predicted_ltv: PLANS[plan].price * 12, content_name: plan.toLowerCase() });
+      metaEvent("StartTrial", { value: 0, currency: "USD", predicted_ltv: monthlyPrice(plan, foundingOpen(new Date())) * 12, content_name: plan.toLowerCase() });
       trackCreateStep("lodge");
       metaCreateStep("lodge");
       onCreated(result.data);

@@ -1,5 +1,5 @@
 import type { Plan } from "./index";
-import { GRACE_DAYS, PLAN_PRICES } from "./plans";
+import { GRACE_DAYS, monthlyPrice } from "./plans";
 
 /**
  * Date rules for billing, in Zimbabwe time (Africa/Harare is UTC+2 all year,
@@ -40,15 +40,15 @@ export function extendPaidUntil(paidUntil: Date | null, now: Date, months: numbe
 }
 
 /**
- * The paid time left, moved to another plan at the two monthly prices, in
- * whole days (rounded down): 12 days of Growth ($40) are 6 days of Pro ($80),
- * 6 days of Pro are 12 of Growth. The same plan keeps every minute.
+ * The paid time left, moved to another plan at the lodge's two monthly prices,
+ * in whole days (rounded down): 12 days of Growth ($40) are 6 days of an $80
+ * plan, and 6 days of it are 12 of Growth. The same plan keeps every minute.
  */
-export function carriedOverMs(paidUntil: Date | null, now: Date, from: Plan, to: Plan) {
+export function carriedOverMs(paidUntil: Date | null, now: Date, from: Plan, to: Plan, founding: boolean) {
   if (!paidUntil || paidUntil.getTime() <= now.getTime()) return 0;
   const left = paidUntil.getTime() - now.getTime();
   if (from === to) return left;
-  return Math.floor((left * PLAN_PRICES[from]) / PLAN_PRICES[to] / DAY_MS) * DAY_MS;
+  return Math.floor((left * monthlyPrice(from, founding)) / monthlyPrice(to, founding) / DAY_MS) * DAY_MS;
 }
 
 /**
@@ -56,8 +56,8 @@ export function carriedOverMs(paidUntil: Date | null, now: Date, from: Plan, to:
  * current plan, carried over at the new plan's price (carriedOverMs), then the
  * months paid for. Same plan: the same as extendPaidUntil.
  */
-export function paidUntilAfterPayment(lodge: { paidUntil: Date | null; plan: Plan }, to: Plan, months: number, now: Date) {
-  return addMonths(new Date(now.getTime() + carriedOverMs(lodge.paidUntil, now, lodge.plan, to)), months);
+export function paidUntilAfterPayment(lodge: { paidUntil: Date | null; plan: Plan; founding: boolean }, to: Plan, months: number, now: Date) {
+  return addMonths(new Date(now.getTime() + carriedOverMs(lodge.paidUntil, now, lodge.plan, to, lodge.founding)), months);
 }
 
 export type NoticeKind = "DUE_IN_3" | "DUE_IN_1" | "DUE_TODAY";

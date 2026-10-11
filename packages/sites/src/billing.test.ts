@@ -2,17 +2,20 @@ import { describe, expect, test } from "bun:test";
 
 import {
   addMonths,
+  annualDeal,
   annualMonthlyPrice,
   annualSaving,
   calendarDaysUntil,
   carriedOverMs,
   demoEnded,
   extendPaidUntil,
+  foundingOpen,
   canClaimDomain,
   domainStillFree,
   freeDomainName,
   isValidSlug,
   noticeFor,
+  monthlyPrice,
   paidUntilAfterPayment,
   planPrice,
   planPriceCents,
@@ -25,17 +28,35 @@ const at = (iso: string) => new Date(iso);
 
 describe("plans", () => {
   test("prices in cents, for several months", () => {
-    expect(planPriceCents("GROWTH")).toBe(4000);
-    expect(planPriceCents("GROWTH", 3)).toBe(12000);
-    expect(planPriceCents("PRO", 12)).toBe(63000);
+    expect(planPriceCents("GROWTH", 1, false)).toBe(4000);
+    expect(planPriceCents("GROWTH", 3, false)).toBe(12000);
+    expect(planPriceCents("PRO", 12, false)).toBe(63000);
+    expect(planPriceCents("GROWTH", 1, true)).toBe(3000);
+    expect(planPriceCents("STARTER", 3, true)).toBe(4500);
   });
 
-  test("12 months take 10, 17 and 30% off, rounded down", () => {
-    expect(planPrice("STARTER", 12)).toBe(216);
-    expect(planPrice("GROWTH", 12)).toBe(398);
-    expect(planPrice("PRO", 12)).toBe(630);
-    expect([annualMonthlyPrice("STARTER"), annualMonthlyPrice("GROWTH"), annualMonthlyPrice("PRO")]).toEqual([18, 33, 52]);
-    expect([annualSaving("STARTER"), annualSaving("GROWTH"), annualSaving("PRO")]).toEqual([24, 82, 270]);
+  test("normal prices: 12 months take 10, 17 and 30% off, rounded down", () => {
+    expect([monthlyPrice("STARTER", false), monthlyPrice("GROWTH", false), monthlyPrice("PRO", false)]).toEqual([25, 40, 75]);
+    expect(planPrice("STARTER", 12, false)).toBe(270);
+    expect(planPrice("GROWTH", 12, false)).toBe(398);
+    expect(planPrice("PRO", 12, false)).toBe(630);
+    expect([annualMonthlyPrice("STARTER", false), annualMonthlyPrice("GROWTH", false), annualMonthlyPrice("PRO", false)]).toEqual([22, 33, 52]);
+    expect([annualSaving("STARTER", false), annualSaving("GROWTH", false), annualSaving("PRO", false)]).toEqual([30, 82, 270]);
+    expect(annualDeal("GROWTH", false)).toBe("17% off");
+  });
+
+  test("founding prices: $15, $30 and $50, and a year is 2 months free", () => {
+    expect([monthlyPrice("STARTER", true), monthlyPrice("GROWTH", true), monthlyPrice("PRO", true)]).toEqual([15, 30, 50]);
+    expect([planPrice("STARTER", 12, true), planPrice("GROWTH", 12, true), planPrice("PRO", 12, true)]).toEqual([150, 300, 500]);
+    expect([annualSaving("STARTER", true), annualSaving("GROWTH", true), annualSaving("PRO", true)]).toEqual([30, 60, 100]);
+    expect(annualDeal("PRO", true)).toBe("2 months free");
+  });
+
+  test("founding prices end at 23:59 on 22 October, Harare time", () => {
+    expect(foundingOpen(at("2026-10-11T08:00:00Z"))).toBe(true);
+    expect(foundingOpen(at("2026-10-22T21:59:59Z"))).toBe(true); // 23:59:59 in Harare
+    expect(foundingOpen(at("2026-10-22T22:00:00Z"))).toBe(false); // midnight in Harare
+    expect(foundingOpen(at("2027-01-01T00:00:00Z"))).toBe(false);
   });
 
   test("free .co.zw domain on Growth and Pro", () => {
@@ -92,16 +113,20 @@ describe("billing dates", () => {
     const now = at("2026-10-06T09:00:00Z");
     const twelveDays = at("2026-10-18T09:00:00Z");
     const day = 86_400_000;
-    expect(carriedOverMs(twelveDays, now, "GROWTH", "GROWTH")).toBe(12 * day);
-    expect(carriedOverMs(twelveDays, now, "STARTER", "GROWTH")).toBe(6 * day);
-    expect(carriedOverMs(twelveDays, now, "GROWTH", "PRO")).toBe(6 * day); // 12 × 40 / 75 = 6.4
-    expect(carriedOverMs(twelveDays, now, "PRO", "STARTER")).toBe(45 * day);
-    expect(carriedOverMs(at("2026-10-01T00:00:00Z"), now, "GROWTH", "PRO")).toBe(0);
-    expect(carriedOverMs(null, now, "GROWTH", "PRO")).toBe(0);
+    expect(carriedOverMs(twelveDays, now, "GROWTH", "GROWTH", false)).toBe(12 * day);
+    expect(carriedOverMs(twelveDays, now, "STARTER", "GROWTH", false)).toBe(7 * day); // 12 × 25 / 40 = 7.5
+    expect(carriedOverMs(twelveDays, now, "GROWTH", "PRO", false)).toBe(6 * day); // 12 × 40 / 75 = 6.4
+    expect(carriedOverMs(twelveDays, now, "PRO", "STARTER", false)).toBe(36 * day);
+    expect(carriedOverMs(at("2026-10-01T00:00:00Z"), now, "GROWTH", "PRO", false)).toBe(0);
+    expect(carriedOverMs(null, now, "GROWTH", "PRO", false)).toBe(0);
+    // A founding lodge moves at its founding prices
+    expect(carriedOverMs(twelveDays, now, "STARTER", "GROWTH", true)).toBe(6 * day);
+    expect(carriedOverMs(twelveDays, now, "GROWTH", "PRO", true)).toBe(7 * day); // 12 × 30 / 50 = 7.2
     // Upgrading with 12 days of Growth left: 6 days of Pro, then the month
-    expect(paidUntilAfterPayment({ paidUntil: twelveDays, plan: "GROWTH" }, "PRO", 1, now).toISOString()).toBe("2026-11-12T09:00:00.000Z");
+    expect(paidUntilAfterPayment({ paidUntil: twelveDays, plan: "GROWTH", founding: false }, "PRO", 1, now).toISOString()).toBe("2026-11-12T09:00:00.000Z");
+    expect(paidUntilAfterPayment({ paidUntil: twelveDays, plan: "GROWTH", founding: true }, "PRO", 1, now).toISOString()).toBe("2026-11-13T09:00:00.000Z");
     // The same plan extends from paid-until, as before
-    expect(paidUntilAfterPayment({ paidUntil: twelveDays, plan: "GROWTH" }, "GROWTH", 1, now).toISOString()).toBe("2026-11-18T09:00:00.000Z");
+    expect(paidUntilAfterPayment({ paidUntil: twelveDays, plan: "GROWTH", founding: false }, "GROWTH", 1, now).toISOString()).toBe("2026-11-18T09:00:00.000Z");
   });
 
   test("invoice reminders: 3 days before, the day before and the day itself", () => {

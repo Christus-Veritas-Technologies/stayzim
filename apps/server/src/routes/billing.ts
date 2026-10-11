@@ -74,7 +74,7 @@ export const billing = new Hono<{ Variables: LodgeVariables }>()
 
       const lodge = await prisma.lodge.findUniqueOrThrow({
         where: { id: c.var.lodgeId },
-        select: { id: true, name: true, plan: true, template: true, owner: { select: { email: true } } },
+        select: { id: true, name: true, plan: true, founding: true, template: true, owner: { select: { email: true } } },
       });
       // Moving to a plan without the site's design: the owner picks one of its designs first
       const design = input.template ? findTemplate(input.template) : undefined;
@@ -91,7 +91,7 @@ export const billing = new Hono<{ Variables: LodgeVariables }>()
           invoiceId: input.months === 1 ? (invoice?.id ?? null) : null,
           plan,
           months: input.months,
-          amountCents: planPriceCents(plan, input.months),
+          amountCents: planPriceCents(plan, input.months, lodge.founding),
           method: "PAYNOW",
           channel: input.channel,
           reference: newPaymentReference(),

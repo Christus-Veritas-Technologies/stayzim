@@ -2,7 +2,7 @@
 
 import { Badge } from "@stayzim/ui/components/badge";
 import { CopyButton } from "@stayzim/ui/components/copy-button";
-import { annualSaving, DEMO_DAYS, includesBookingCalendar, planPrice } from "@stayzim/sites";
+import { annualSaving, DEMO_DAYS, includesBookingCalendar, monthlyPrice, planPrice } from "@stayzim/sites";
 import { cn } from "@stayzim/ui/lib/utils";
 import { motion } from "framer-motion";
 import { Button, buttonVariants } from "@stayzim/ui/components/button";
@@ -34,20 +34,20 @@ const STATUS = {
 
 /** A line under the plan name explaining where things stand. */
 function statusLine(lodge: Lodge) {
-  const plan = PLANS[lodge.plan];
+  const price = monthlyPrice(lodge.plan, lodge.founding);
   const due = dueDate(lodge);
   const offline = offlineDate(lodge);
   switch (lodge.status) {
     case "DEMO":
       return lodge.demoEnded
-        ? `Your demo has ended and your site is offline. Pay ${formatMoney(plan.price)} to put it back live, just as you left it.`
-        : `Your site is live as a free demo. Pay ${formatMoney(plan.price)} for the first month to keep it live and remove the demo badges.`;
+        ? `Your demo has ended and your site is offline. Pay ${formatMoney(price)} to put it back live, just as you left it.`
+        : `Your site is live as a free demo. Pay ${formatMoney(price)} for the first month to keep it live and remove the demo badges.`;
     case "ACTIVE":
       return lodge.paidUntil ? `Paid until ${formatLongDate(lodge.paidUntil)}. Nothing to do.` : "Paid up. Nothing to do.";
     case "OVERDUE":
       return `Was due ${due ? formatLongDate(due) : "recently"}. Your site goes offline on ${offline ? formatLongDate(offline) : "soon"}.`;
     case "SUSPENDED":
-      return `Pay ${formatMoney(plan.price)} and tap I have paid. Your site comes back as soon as we confirm.`;
+      return `Pay ${formatMoney(price)} and tap I have paid. Your site comes back as soon as we confirm.`;
   }
 }
 
@@ -104,7 +104,7 @@ function PlanCard({ lodge }: { lodge: Lodge }) {
       <dl className="relative mt-6 grid overflow-hidden rounded-[14px] border border-white/10 bg-white/5 sm:grid-cols-3">
         <div className="flex flex-col gap-1 border-b border-white/10 p-4 sm:border-r sm:border-b-0">
           <dt className="text-xs text-[#9FB2BB]">{lodge.status === "DEMO" ? "First payment" : "Amount"}</dt>
-          <dd className="font-display text-xl font-semibold">{formatMoney(plan.price)}</dd>
+          <dd className="font-display text-xl font-semibold">{formatMoney(monthlyPrice(lodge.plan, lodge.founding))}</dd>
         </div>
         <div className="flex flex-col gap-1 border-b border-white/10 p-4 sm:border-r sm:border-b-0">
           <dt className="text-xs text-[#9FB2BB]">{lodge.status === "ACTIVE" ? "Next payment" : "Due"}</dt>
@@ -129,7 +129,7 @@ function PlanCard({ lodge }: { lodge: Lodge }) {
  * message to StayZim, who sends a Paynow link and records it (mark-paid).
  */
 function HowToPay({ lodge }: { lodge: Lodge }) {
-  const amount = formatMoney(PLANS[lodge.plan].price);
+  const amount = formatMoney(monthlyPrice(lodge.plan, lodge.founding));
   return (
     <section className="flex flex-col gap-3 rounded-[14px] bg-surface-2 p-3.5 sm:flex-row sm:items-center" aria-label="How to pay">
       <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white text-slate shadow-xs">
@@ -224,6 +224,7 @@ function Plans({ lodge, onPick, canPay }: { lodge: Lodge; onPick: (plan: PlanKey
         {PLAN_ORDER.map((key: PlanKey, index) => {
           const upcoming = lodge.rooms.reduce((sum, room) => sum + room.upcomingBookings, 0);
           const plan = PLANS[key];
+          const price = monthlyPrice(key, lodge.founding);
           const current = key === lodge.plan;
           return (
             <motion.div
@@ -241,11 +242,11 @@ function Plans({ lodge, onPick, canPay }: { lodge: Lodge; onPick: (plan: PlanKey
               </div>
               <div>
                 <p>
-                  <span className="font-display text-[28px] font-semibold tracking-[-0.02em]">${plan.price}</span>
+                  <span className="font-display text-[28px] font-semibold tracking-[-0.02em]">${price}</span>
                   <span className="text-[13px] text-muted">/month</span>
                 </p>
                 <p className="text-[13px] text-muted">
-                  Or ${planPrice(key, 12)} a year, <span className="font-semibold text-success">save ${annualSaving(key)}</span>
+                  Or ${planPrice(key, 12, lodge.founding)} a year, <span className="font-semibold text-success">save ${annualSaving(key, lodge.founding)}</span>
                 </p>
                 <p className="mt-1 text-[13px] text-muted">{plan.pitch}</p>
               </div>
@@ -278,7 +279,7 @@ function Plans({ lodge, onPick, canPay }: { lodge: Lodge; onPick: (plan: PlanKey
                   <span className="flex h-10 items-center justify-center rounded-[10px] bg-surface-2 text-sm font-semibold text-muted">Your plan</span>
                 ) : (
                   <a
-                    href={stayzimChatUrl(`Hi StayZim, I'd like to switch ${lodge.name} to the ${plan.name} plan ($${plan.price}/month).`)}
+                    href={stayzimChatUrl(`Hi StayZim, I'd like to switch ${lodge.name} to the ${plan.name} plan ($${price}/month).`)}
                     target="_blank"
                     rel="noreferrer"
                     className={buttonVariants({ variant: "outline", className: "w-full" })}
