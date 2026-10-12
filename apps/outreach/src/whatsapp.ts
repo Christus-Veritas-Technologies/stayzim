@@ -252,19 +252,54 @@ export class WhatsAppAccount {
     this.client = undefined;
   }
 
+  /**
+   * Makes sure WhatsApp Web has a chat with `id` before sending a first
+   * message. whatsapp-web.js opens one with findOrCreateLatestChat and reads
+   * `.chat` off the result; WhatsApp Web has changed that shape before, which
+   * leaves the library with no chat and nothing sent. Opening it here, taking
+   * either shape, puts it in the chat list where the library finds it.
+   */
+  private async openChat(id: string): Promise<boolean> {
+    const page = (this.client as unknown as { pupPage?: { evaluate: <T>(fn: (id: string) => Promise<T>, id: string) => Promise<T> } }).pupPage;
+    if (!page) return false;
+    try {
+      return await page.evaluate(async (chatId: string) => {
+        // Runs inside WhatsApp Web
+        const require = (globalThis as unknown as { require: (name: string) => any }).require;
+        const wid = require("WAWebWidFactory").createWid(chatId);
+        const chats = require("WAWebCollections").Chat;
+        if (chats.get(wid)) return true;
+        const found = await require("WAWebFindChatAction").findOrCreateLatestChat(wid);
+        return Boolean(found?.chat ?? found) || Boolean(chats.get(wid));
+      }, id);
+    } catch (error) {
+      this.logError(`opening a chat with ${id} failed:`, error);
+      return false;
+    }
+  }
+
   async send(phone: string, message: string) {
     if (!this.client || !this.isReady) {
       throw new Error(`WhatsApp account ${this.id} is not connected (state: ${this.status.state})`);
     }
 
-    const chatId = toChatId(phone);
-    if (!(await this.client.isRegisteredUser(chatId))) {
+    // WhatsApp's own id for the number: null when it isn't on WhatsApp. Newer
+    // WhatsApp Web can't open a first chat from the plain "<number>@c.us" form
+    // (sendMessage then sends nothing and returns undefined), but it can from this.
+    const numberId = await this.client.getNumberId(toChatId(phone));
+    if (!numberId) {
       return { sent: false as const, reason: "not_on_whatsapp" as const };
     }
 
+    const chatOpened = await this.openChat(numberId._serialized);
+    if (!chatOpened) this.log(`couldn't open a chat with ${numberId._serialized} before sending; trying anyway`);
+
     // sendSeen: outbound-only, and it sidesteps the sendSeen/markedUnread crash
     // WD_logistics patches around (whatsapp-web.js issue #5741)
-    const sent = await this.client.sendMessage(chatId, message, { sendSeen: false });
+    const sent = await this.client.sendMessage(numberId._serialized, message, { sendSeen: false });
+    if (!sent) {
+      throw new Error("WhatsApp didn't send it: no chat could be opened with this number");
+    }
     return { sent: true as const, account: this.id, id: sent.id._serialized };
   }
 }
