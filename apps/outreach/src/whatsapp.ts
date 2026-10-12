@@ -253,28 +253,29 @@ export class WhatsAppAccount {
   }
 
   /**
-   * Makes sure WhatsApp Web has a chat with `id` before sending a first
-   * message. whatsapp-web.js opens one with findOrCreateLatestChat and reads
-   * `.chat` off the result; WhatsApp Web has changed that shape before, which
-   * leaves the library with no chat and nothing sent. Opening it here, taking
-   * either shape, puts it in the chat list where the library finds it.
+   * The message this account just sent with exactly `body`, found in WhatsApp
+   * Web's own message list. whatsapp-web.js returns the sent message by looking
+   * it up under the key it made; WhatsApp now files messages to new chats under
+   * the contact's LID instead, so that lookup comes back empty for a message
+   * that did go. Every first message names the lodge, so the body and the last
+   * few minutes are enough to find it.
    */
-  private async openChat(id: string): Promise<boolean> {
-    const page = (this.client as unknown as { pupPage?: { evaluate: <T>(fn: (id: string) => Promise<T>, id: string) => Promise<T> } }).pupPage;
-    if (!page) return false;
+  private async findJustSent(body: string): Promise<string | null> {
+    const page = (this.client as unknown as { pupPage?: { evaluate: <T>(fn: (body: string) => T, body: string) => Promise<T> } }).pupPage;
+    if (!page) return null;
     try {
-      return await page.evaluate(async (chatId: string) => {
+      return await page.evaluate((text: string) => {
         // Runs inside WhatsApp Web
         const require = (globalThis as unknown as { require: (name: string) => any }).require;
-        const wid = require("WAWebWidFactory").createWid(chatId);
-        const chats = require("WAWebCollections").Chat;
-        if (chats.get(wid)) return true;
-        const found = await require("WAWebFindChatAction").findOrCreateLatestChat(wid);
-        return Boolean(found?.chat ?? found) || Boolean(chats.get(wid));
-      }, id);
+        const since = Date.now() / 1000 - 300;
+        const sent = require("WAWebCollections")
+          .Msg.getModelsArray()
+          .filter((msg: any) => msg.id?.fromMe && msg.body === text && msg.t >= since);
+        return sent.length > 0 ? String(sent[sent.length - 1].id._serialized) : null;
+      }, body);
     } catch (error) {
-      this.logError(`opening a chat with ${id} failed:`, error);
-      return false;
+      this.logError("looking for the sent message failed:", error);
+      return null;
     }
   }
 
@@ -283,24 +284,21 @@ export class WhatsAppAccount {
       throw new Error(`WhatsApp account ${this.id} is not connected (state: ${this.status.state})`);
     }
 
-    // WhatsApp's own id for the number: null when it isn't on WhatsApp. Newer
-    // WhatsApp Web can't open a first chat from the plain "<number>@c.us" form
-    // (sendMessage then sends nothing and returns undefined), but it can from this.
+    // WhatsApp's own id for the number: null when it isn't on WhatsApp
     const numberId = await this.client.getNumberId(toChatId(phone));
     if (!numberId) {
       return { sent: false as const, reason: "not_on_whatsapp" as const };
     }
 
-    const chatOpened = await this.openChat(numberId._serialized);
-    if (!chatOpened) this.log(`couldn't open a chat with ${numberId._serialized} before sending; trying anyway`);
-
     // sendSeen: outbound-only, and it sidesteps the sendSeen/markedUnread crash
     // WD_logistics patches around (whatsapp-web.js issue #5741)
     const sent = await this.client.sendMessage(numberId._serialized, message, { sendSeen: false });
-    if (!sent) {
-      throw new Error("WhatsApp didn't send it: no chat could be opened with this number");
-    }
-    return { sent: true as const, account: this.id, id: sent.id._serialized };
+    if (sent) return { sent: true as const, account: this.id, id: sent.id._serialized };
+
+    // No message back doesn't mean nothing went: check WhatsApp's own list before calling it failed
+    const found = await this.findJustSent(message);
+    if (found) return { sent: true as const, account: this.id, id: found };
+    throw new Error("WhatsApp didn't confirm the message was sent, and it isn't in the chat");
   }
 }
 
