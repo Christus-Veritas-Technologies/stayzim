@@ -11,6 +11,7 @@
 # Each WhatsApp number runs its own Chromium, so give the container memory
 # accordingly (roughly 300 MB per number) and a larger /dev/shm, e.g.
 #   docker run --shm-size=1g --memory=2g ...
+# In the whole stack it runs as the `outreach` service of deploy/compose.yaml.
 # Sessions are backed up to Postgres (RemoteAuth), so a redeploy doesn't need
 # new QR scans; the first backup lands about a minute after a number connects.
 
@@ -54,9 +55,11 @@ RUN pnpm install --frozen-lockfile --filter "outreach..."
 # ---- Runtime ----
 FROM base AS runtime
 
-# Chromium for whatsapp-web.js, plus fonts so emoji and non-Latin names render
+# Chromium for whatsapp-web.js, plus fonts so emoji and non-Latin names render.
+# tini runs as PID 1: it passes SIGTERM on (so sessions are saved and Chromium
+# closes) and reaps the processes each Chromium leaves behind, which Bun won't.
 RUN apt-get update -y \
-  && apt-get install -y --no-install-recommends chromium fonts-liberation fonts-noto-color-emoji \
+  && apt-get install -y --no-install-recommends chromium fonts-liberation fonts-noto-color-emoji tini \
   && rm -rf /var/lib/apt/lists/*
 
 COPY --from=oven/bun:1 /usr/local/bin/bun /usr/local/bin/bun
@@ -85,5 +88,7 @@ EXPOSE 9997
 HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3 \
   CMD bun -e "fetch('http://localhost:' + (process.env.PORT || 9997) + '/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
 
-# Applies new Prisma migrations, then runs outreach with Bun (TypeScript source, as in dev)
+# Applies new Prisma migrations (creating its database the first time), then
+# runs outreach with Bun (TypeScript source, as in dev)
+ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["stayzim-start"]
