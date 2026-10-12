@@ -122,6 +122,18 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    labels:
+      # Its own route, so it doesn't depend on a domain being entered for it in
+      # Coolify (without one, web's catch-all below took the host). Traefik only
+      # sends traffic once the container is healthy; until then web answers
+      # "isn't running right now" for this host.
+      - traefik.enable=true
+      - traefik.http.routers.stayzim-outreach.rule=Host(`${OUTREACH_DOMAIN:-outreach.stayzim.co.zw}`)
+      - traefik.http.routers.stayzim-outreach.priority=100
+      - traefik.http.routers.stayzim-outreach.entrypoints=https
+      - traefik.http.routers.stayzim-outreach.tls=true
+      - traefik.http.routers.stayzim-outreach.service=stayzim-outreach
+      - traefik.http.services.stayzim-outreach.loadbalancer.server.port=9997
 
   db:
     image: postgres:16

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { isStayZimHost, lodgeSlugFromHost, MAIN_URL, mainSiteRedirect, siteHost, siteUrl, subdomainHost } from "./site-host";
+import { isStayZimHost, lodgeSlugFromHost, MAIN_URL, mainSiteRedirect, reservedSubdomain, siteHost, siteUrl, subdomainHost } from "./site-host";
 
 // NEXT_PUBLIC_SITES_DOMAIN is stayzim.co.zw in tests (test/setup.ts)
 describe("lodge site addresses", () => {
@@ -34,6 +34,17 @@ describe("lodgeSlugFromHost", () => {
     for (const host of ["stayzim.co.zw", "app.stayzim.co.zw", "www.stayzim.co.zw", "sites.stayzim.co.zw", "a.b.stayzim.co.zw", "-x.stayzim.co.zw", "mistvalley.example.com", null]) {
       expect(lodgeSlugFromHost(host)).toBeNull();
     }
+  });
+});
+
+describe("reservedSubdomain", () => {
+  test("names another service's address, never a lodge's or the main site's", () => {
+    expect(reservedSubdomain("outreach.stayzim.co.zw")).toBe("outreach");
+    expect(reservedSubdomain("API.stayzim.co.zw")).toBe("api");
+    expect(reservedSubdomain("www.stayzim.co.zw")).toBeNull();
+    expect(reservedSubdomain("mistvalley.stayzim.co.zw")).toBeNull();
+    expect(reservedSubdomain("stayzim.co.zw")).toBeNull();
+    expect(reservedSubdomain("outreach.example.com")).toBeNull();
   });
 });
 

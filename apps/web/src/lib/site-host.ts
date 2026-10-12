@@ -54,6 +54,19 @@ export function lodgeSlugFromHost(host: string | null) {
   return slug;
 }
 
+/**
+ * "outreach.stayzim.co.zw" → "outreach": one of StayZim's own reserved names
+ * (api, outreach, ...), served by another service. Only reaches the web app
+ * when that service isn't running (or has no route), so it must not look like
+ * the main site. The main site's aliases (www., app.) → null.
+ */
+export function reservedSubdomain(host: string | null) {
+  const value = host?.toLowerCase() ?? "";
+  if (!value.endsWith(SUFFIX) || MAIN_ALIASES.has(value)) return null;
+  const name = value.slice(0, -SUFFIX.length);
+  return RESERVED_SLUGS.has(name) ? name : null;
+}
+
 const MAIN_HOSTNAME = SITES_DOMAIN.replace(/:\d+$/, "");
 
 /**

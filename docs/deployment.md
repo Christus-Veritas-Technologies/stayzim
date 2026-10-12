@@ -123,7 +123,7 @@ Install Coolify on the VPS (Ubuntu 24.04, 2 vCPU, 4 GB RAM is plenty to start). 
 3. **Domains:**
    - service `web`: `https://stayzim.co.zw:9999,https://www.stayzim.co.zw:9999`;
    - service `server`: `https://api.stayzim.co.zw:9998`;
-   - service `outreach`: `https://outreach.stayzim.co.zw:9997`;
+   - service `outreach`: `https://outreach.stayzim.co.zw:9997` (optional: the compose file's own Traefik labels already route `OUTREACH_DOMAIN`, default `outreach.stayzim.co.zw`, to it);
    - `db`: none.
 
    The `:9999` and `:9998` tell Coolify which port inside the container to send traffic to. Visitors still use plain `https://stayzim.co.zw`.
@@ -273,6 +273,16 @@ How it works:
 - **Owner visits:** the session cookie belongs to `stayzim.co.zw` and isn't sent from another site, so on a custom domain the owner's visits are skipped by the owner key their dashboard's View site link carries (`apps/server/src/lib/owner-key.ts`).
 
 ## Troubleshooting
+
+### outreach.stayzim.co.zw shows the main site, or "isn't running right now"
+
+Web answers for that address whenever Traefik has no healthy `outreach` container to send it to (since 12 October it says "isn't running right now" with a 503 rather than showing the landing page). Traefik skips a container that is still starting (up to about 30 seconds after a deploy) or unhealthy. In Coolify, open the resource's `outreach` logs:
+
+- `OUTREACH_PASSWORD` errors at boot: set it (12+ characters) and redeploy.
+- A migration error: the log names it, as for the server.
+- Nothing about it at all: Coolify didn't start it. Check the deployment log, then redeploy.
+
+Once it's up, `https://outreach.stayzim.co.zw/health` answers `{"healthy":true,…}`.
 
 ### A lodge site shows "no available server", or a 404
 

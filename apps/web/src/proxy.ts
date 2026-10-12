@@ -3,7 +3,7 @@ import { getSessionCookie } from "better-auth/cookies";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { slugForCustomDomain } from "@/lib/custom-domains";
-import { isStayZimHost, lodgeSlugFromHost, mainSiteRedirect, siteUrl } from "@/lib/site-host";
+import { isStayZimHost, lodgeSlugFromHost, mainSiteRedirect, reservedSubdomain, siteUrl } from "@/lib/site-host";
 
 const SIGNED_IN_ONLY = ["/dashboard", "/set-password", "/admin"];
 
@@ -34,6 +34,15 @@ export async function proxy(request: NextRequest) {
 
   const main = mainSiteRedirect(host, `${pathname}${request.nextUrl.search}`);
   if (main) return NextResponse.redirect(main, 308);
+
+  // outreach.stayzim.co.zw, api.…: another service's address, which is down if it got here
+  const service = reservedSubdomain(host);
+  if (service) {
+    return new NextResponse(`${host} isn't running right now. Try again in a minute.\n`, {
+      status: 503,
+      headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", "Retry-After": "60" },
+    });
+  }
 
   const slug = lodgeSlugFromHost(host);
   if (slug) return lodgeSite(request, slug);
