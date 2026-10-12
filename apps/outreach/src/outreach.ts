@@ -13,6 +13,14 @@ import {
 
 /** Contacts in these states are picked up by campaigns. */
 const SENDABLE_STATUSES = ["PENDING", "FAILED"] as const;
+/** A follow-up campaign also reaches people already messaged, or who replied; never opt-outs or numbers not on WhatsApp. */
+const FOLLOW_UP_STATUSES = ["PENDING", "FAILED", "REACHED", "REPLIED"] as const;
+
+/** Which statuses a campaign may send to. */
+function campaignStatuses(input: Pick<CampaignInput, "retryFailed" | "followUp">): readonly string[] {
+  if (input.followUp) return FOLLOW_UP_STATUSES;
+  return input.retryFailed ? SENDABLE_STATUSES : ["PENDING"];
+}
 
 /** Daily limits are a rolling window, so there's no timezone to get wrong. */
 const LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
@@ -30,7 +38,7 @@ export function renderMessage(template: string, contact: ContactFields | null) {
 
 export class OutreachError extends Error {
   constructor(
-    readonly status: 404 | 409 | 429 | 503,
+    readonly status: 400 | 404 | 409 | 429 | 503,
     message: string,
     /** For 429: when the earliest number gets capacity back. */
     readonly retryAt?: Date,
@@ -240,6 +248,8 @@ export type CampaignInput = {
   limit?: number;
   account?: string;
   retryFailed?: boolean;
+  /** Also send to contacts already reached or who replied (a second message). Needs contactIds or phones. */
+  followUp?: boolean;
   minDelaySeconds: number;
   maxDelaySeconds: number;
 };
@@ -286,7 +296,10 @@ export async function startCampaign(input: CampaignInput) {
     );
   }
 
-  const statuses = input.retryFailed ? [...SENDABLE_STATUSES] : ["PENDING" as const];
+  if (input.followUp && !input.contactIds && !input.phones) {
+    throw new OutreachError(400, "A follow-up goes to the contacts you name: give contactIds or phones");
+  }
+  const statuses = campaignStatuses(input) as ("PENDING" | "FAILED" | "REACHED" | "REPLIED")[];
   const contacts = await prisma.contact.findMany({
     where: {
       status: { in: statuses },
@@ -329,7 +342,7 @@ async function runCampaign(state: CampaignState, contacts: { id: string; phone: 
 
       // Re-check: a direct send, a reply or an edit may have changed it since the campaign started
       const current = await prisma.contact.findUnique({ where: { id }, select: { status: true } });
-      if (!current || !(SENDABLE_STATUSES as readonly string[]).includes(current.status)) {
+      if (!current || !campaignStatuses(input).includes(current.status)) {
         state.skipped++;
         state.processed++;
         index++;

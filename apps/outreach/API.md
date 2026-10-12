@@ -1,6 +1,6 @@
 # Outreach API
 
-Base URL: `http://localhost:9997`
+Base URL: `https://outreach.stayzim.co.zw` in production (the `outreach` service of `deploy/compose.yaml`), `http://localhost:9997` locally.
 
 ## Auth
 
@@ -99,9 +99,9 @@ Responses:
 
 ### `POST /api/campaigns`
 
-Sends one message to many contacts, one at a time, in the background. Only contacts with status `PENDING` (plus `FAILED` if `retryFailed`) are included, oldest first. Waits a random `minDelaySeconds`–`maxDelaySeconds` between sends. Rotates accounts unless `account` is set. Only one campaign can run at a time. Returns immediately.
+Sends one message to many contacts, one at a time, in the background. Only contacts with status `PENDING` (plus `FAILED` if `retryFailed`) are included, oldest first. A follow-up (`followUp: true`) also includes `REACHED` and `REPLIED` contacts, but only the ones named in `contactIds` or `phones`. Waits a random `minDelaySeconds`–`maxDelaySeconds` between sends. Rotates accounts unless `account` is set. Only one campaign can run at a time. Returns immediately.
 
-Before each send, the contact's status is checked again. Contacts that are no longer `PENDING`/`FAILED` (reached by a direct send, opted out, ...) are skipped. When every usable account is at its daily limit, the campaign pauses (`pausedUntil`) and resumes automatically. It stops early if no account is connected.
+Before each send, the contact's status is checked again. Contacts that are no longer `PENDING`/`FAILED` (reached by a direct send, opted out, ...) are skipped; in a follow-up, only opt-outs (`DO_NOT_CONTACT`) and `NOT_ON_WHATSAPP` are. When every usable account is at its daily limit, the campaign pauses (`pausedUntil`) and resumes automatically. It stops early if no account is connected.
 
 Body (all filters optional and combined with AND; no filters = all pending contacts):
 
@@ -128,6 +128,7 @@ Body (all filters optional and combined with AND; no filters = all pending conta
 | `limit` | int | no | | 1–5000, max contacts to message |
 | `account` | string | no | rotate | Send everything from this account |
 | `retryFailed` | boolean | no | `false` | Include `FAILED` contacts |
+| `followUp` | boolean | no | `false` | A second message: also `REACHED` and `REPLIED` contacts. Needs `contactIds` or `phones` (`400` otherwise) |
 | `minDelaySeconds` | number | no | `20` | 5–3600 |
 | `maxDelaySeconds` | number | no | `60` | 5–3600, ≥ `minDelaySeconds` |
 
@@ -136,6 +137,7 @@ Responses:
 | Status | When | Body |
 |---|---|---|
 | `202` | Started | `CampaignState` |
+| `400` | Invalid body (including `followUp` without `contactIds` or `phones`) | `{ error }` |
 | `409` | A campaign is already running, or no contacts match | `{ error }` |
 | `404` | Unknown `account` | `{ error }` |
 | `503` | Requested account (or every account) not connected | `{ error }` |

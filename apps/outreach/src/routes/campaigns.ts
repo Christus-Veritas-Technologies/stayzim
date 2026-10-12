@@ -15,12 +15,18 @@ export const startCampaignSchema = z
     limit: z.number().int().min(1).max(5000).optional(),
     account: z.string().optional(),
     retryFailed: z.boolean().default(false),
+    /** Also message contacts already reached or who replied; only the contacts named by contactIds or phones. */
+    followUp: z.boolean().default(false),
     minDelaySeconds: z.number().min(5).max(3600).default(20),
     maxDelaySeconds: z.number().min(5).max(3600).default(60),
   })
   .refine((value) => value.maxDelaySeconds >= value.minDelaySeconds, {
     message: "maxDelaySeconds must be >= minDelaySeconds",
     path: ["maxDelaySeconds"],
+  })
+  .refine((value) => !value.followUp || value.contactIds || value.phones, {
+    message: "followUp needs contactIds or phones",
+    path: ["followUp"],
   });
 
 export const campaigns = new Hono()
