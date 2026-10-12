@@ -26,7 +26,7 @@ function campaignStatuses(input: Pick<CampaignInput, "retryFailed" | "followUp">
 const LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 /** Replies that opt someone out of all further messages. */
-const OPT_OUT = /^\s*(stop|unsubscribe|opt[\s-]?out|remove me)\s*[.!]*\s*$/i;
+const OPT_OUT = /^\s*["“']?(stop|unsubscribe|opt[\s-]?out|remove me|not interested|no thanks|no thank you)["”']?\s*[.!]*\s*$/i;
 
 type ContactFields = { name: string; city: string };
 

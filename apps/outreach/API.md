@@ -33,7 +33,7 @@ Every direct message to any of our numbers is stored. Groups, status updates and
 
 - `lastRepliedAt` is set.
 - A `REACHED` contact becomes `REPLIED`. A `PENDING` contact who writes first stays `PENDING`.
-- A reply of exactly `stop`, `unsubscribe`, `opt out` or `remove me` (any case) sets `DO_NOT_CONTACT`.
+- A reply of exactly `stop`, `unsubscribe`, `opt out`, `remove me`, `not interested`, `no thanks` or `no thank you` (any case, quotes and a full stop allowed) sets `DO_NOT_CONTACT`.
 
 ### Contact status
 
