@@ -323,7 +323,7 @@ Every `.env` file is gitignored; only the `.env.example` files are committed.
 | --- | --- | --- | --- | --- |
 | server | `apps/server/Dockerfile` | `node:22-slim` + Bun | `docker/start.sh` → `bun src/index.ts` | Applies new migrations to `DATABASE_URL` on start. Needs the `R2_*` settings (photos live in R2, so no volume) |
 | web | `apps/web/Dockerfile` | `node:22-slim` | `next start` | `NEXT_PUBLIC_SERVER_URL`, `NEXT_PUBLIC_SITES_DOMAIN` and `NEXT_PUBLIC_WHATSAPP_NUMBER` are build args, baked in at build time |
-| outreach | `apps/outreach/Dockerfile` | `node:22-slim` + Bun + Chromium | `docker/start.sh` → `bun src/index.ts` | Applies new migrations to its own database on start |
+| outreach | `apps/outreach/Dockerfile` | `node:22-slim` + Bun + Chromium + tini | `tini` → `docker/start.sh` → `bun src/index.ts` | Creates its own database (`stayzim-outreach`) if missing and applies new migrations to it on start; the `outreach` service of `deploy/compose.yaml` |
 
 How they're built:
 

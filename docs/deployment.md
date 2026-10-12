@@ -8,11 +8,12 @@ StayZim runs on one VPS with [Coolify](https://coolify.io), behind Cloudflare. C
 | --- | --- | --- |
 | `web` | Landing page, login and dashboard, and every lodge site | `stayzim.co.zw` (`www.` and `app.` redirect there), `*.stayzim.co.zw` |
 | `server` | The API (Hono on Bun). Applies new database migrations each time it starts | `api.stayzim.co.zw` |
-| `db` | Postgres 16, data in the `postgres` volume | internal only |
+| `outreach` | The WhatsApp outreach tool (Hono on Bun, one Chromium per number). Its own database, `stayzim-outreach`, on the same Postgres, made and migrated each time it starts | `outreach.stayzim.co.zw` |
+| `db` | Postgres 16 (databases `stayzim` and `stayzim-outreach`), data in the `postgres` volume | internal only |
 
 Lodge photos live in Cloudflare R2, served from `cdn.stayzim.co.zw`, so the server needs no volume.
 
-The outreach tool (`apps/outreach`) isn't in this stack. Deploy it as its own resource with `apps/outreach/Dockerfile` when it's needed.
+The outreach tool's WhatsApp logins are saved in its database (about a minute after a number connects), so it needs no volume either, and a redeploy needs no new QR scans. Each linked number runs its own Chromium, about 300 MB: three numbers fit on the 4 GB VPS beside the rest.
 
 **Tested here:**
 
@@ -122,6 +123,7 @@ Install Coolify on the VPS (Ubuntu 24.04, 2 vCPU, 4 GB RAM is plenty to start). 
 3. **Domains:**
    - service `web`: `https://stayzim.co.zw:9999,https://www.stayzim.co.zw:9999`;
    - service `server`: `https://api.stayzim.co.zw:9998`;
+   - service `outreach`: `https://outreach.stayzim.co.zw:9997`;
    - `db`: none.
 
    The `:9999` and `:9998` tell Coolify which port inside the container to send traffic to. Visitors still use plain `https://stayzim.co.zw`.
@@ -137,7 +139,8 @@ Install Coolify on the VPS (Ubuntu 24.04, 2 vCPU, 4 GB RAM is plenty to start). 
 
 4. **Environment variables:**
    - Paste [`deploy/.env.example`](../deploy/.env.example) and fill it in.
-   - Required: `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET` (`openssl rand -base64 32`), the `R2_*` settings, and `NEXT_PUBLIC_WHATSAPP_NUMBER`.
+   - Required: `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET` (`openssl rand -base64 32`), `OUTREACH_PASSWORD` (`openssl rand -hex 16`; without it only `outreach` fails to start), the `R2_*` settings, and `NEXT_PUBLIC_WHATSAPP_NUMBER`.
+   - Outreach: `WHATSAPP_ACCOUNTS` (one id per number, default `wa1,wa2,wa3`), `WHATSAPP_DAILY_LIMIT` (default 40 a day per number), `OUTREACH_CORS_ORIGIN` (its own address), and `WHATSAPP_ENABLED=false` to run it without WhatsApp.
    - For online payments: `PAYNOW_INTEGRATION_ID` and `PAYNOW_INTEGRATION_KEY` (above). SMTP matters more now: welcome emails, invoices and receipts go through it.
    - SMTP and Google are needed for reset emails and Google sign-in.
    - `COOKIE_DOMAIN=.stayzim.co.zw`: besides sign-in across subdomains, it's how an owner's own visits to their site are left out of their numbers.
@@ -152,7 +155,7 @@ Install Coolify on the VPS (Ubuntu 24.04, 2 vCPU, 4 GB RAM is plenty to start). 
    - The Meta Pixel for the Facebook ads is built in (its ID is in `apps/web/src/lib/meta-pixel.ts`) and reports sign-ups, demos and payments. Nothing to set.
    - `NEXT_PUBLIC_*` values are baked in when the web image builds, so mark them as build variables, and redeploy after changing them.
 
-5. **Deploy.** The server waits for Postgres, applies the migrations, then starts. Web waits for the server's health check (`/health`, which also checks the database).
+5. **Deploy.** The server waits for Postgres, applies the migrations, then starts. Web waits for the server's health check (`/health`, which also checks the database). Outreach waits for Postgres, creates its own database the first time, applies the migrations to it, then starts each number's Chromium.
 
 ## 4. First run
 
@@ -173,9 +176,12 @@ The scripts print temporary passwords.
 - **Payments made outside Paynow:** `cd /app/apps/server && bun scripts/mark-paid.ts --slug mistvalley --months 1 --channel ecocash` records one and emails the receipt. Use `--list` to see every lodge and what it owes. `bun scripts/run-billing.ts` runs the hourly billing job straight away.
 - With the wildcard in place, a new lodge's site is live straight away. Nothing changes in DNS or Coolify.
 
+**Outreach:** open `https://outreach.stayzim.co.zw/accounts` (user `admin`, password `OUTREACH_PASSWORD`) and scan each number's QR code with WhatsApp on that phone (Linked devices). Wait a minute after the last one connects before redeploying, so its login is saved. The API takes `Authorization: Bearer <OUTREACH_PASSWORD>` ([apps/outreach/API.md](../apps/outreach/API.md)).
+
 **Check after deploying:**
 
 - `https://api.stayzim.co.zw/health` → `{"status":"ok"}`.
+- `https://outreach.stayzim.co.zw/health` → `{"healthy":true,…}` with each number `qr` (waiting for a scan) or `ready`.
 - `https://stayzim.co.zw` shows the landing page, and `https://mistvalley.stayzim.co.zw` shows a demo lodge.
 - Signing in on `stayzim.co.zw` reaches the dashboard. If it bounces back to the login page, check `COOKIE_DOMAIN=.stayzim.co.zw` and `CORS_ORIGIN`.
 - Five wrong passwords in a row give "Too many attempts". If one person's mistakes lock everyone out, `CLIENT_IP_HEADER` doesn't match the proxy.
@@ -210,6 +216,8 @@ Coolify's backups need the database as a Coolify-managed Postgres. With the bund
 ```bash
 # /etc/cron.d/stayzim-backup: 02:30 every night
 30 2 * * * root docker exec $(docker ps -qf name=db- | head -n 1) pg_dump -U stayzim -Fc stayzim > /var/backups/stayzim-$(date +\%F).dump && find /var/backups -name 'stayzim-*.dump' -mtime +14 -delete
+# The outreach database (contacts, the outreach log and WhatsApp logins)
+45 2 * * * root docker exec $(docker ps -qf name=db- | head -n 1) pg_dump -U stayzim -Fc stayzim-outreach > /var/backups/outreach-$(date +\%F).dump && find /var/backups -name 'outreach-*.dump' -mtime +14 -delete
 ```
 
 [`docker/backup.sh`](../docker/backup.sh) does the same from any machine with `pg_dump` and `DATABASE_URL`, and keeps the newest 14. Copy the files off the VPS (for example `rclone copy /var/backups r2:stayzim-backups`): a backup on the same disk dies with it.

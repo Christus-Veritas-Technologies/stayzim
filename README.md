@@ -189,7 +189,7 @@ docker build -f apps/outreach/Dockerfile -t stayzim-outreach .
 
 - Images install from the committed `pnpm-lock.yaml` (`--frozen-lockfile`), so keep it committed and up to date.
 - `server` and `outreach` apply new Prisma migrations on start (`docker/start.sh`), then run with Bun. Set `SKIP_DB_MIGRATE=1` to skip that.
-- `outreach` includes Chromium. Run it with `--shm-size=1g` and about 300 MB of memory per WhatsApp number.
+- `outreach` includes Chromium, with `tini` as PID 1 to clean up after it. Run it with `--shm-size=1g` and about 300 MB of memory per WhatsApp number. In production it's the `outreach` service of [deploy/compose.yaml](deploy/compose.yaml), on its own database in the same Postgres ([docs/deployment.md](docs/deployment.md)).
 
 Details: [docs/architecture.md](docs/architecture.md#docker).
 

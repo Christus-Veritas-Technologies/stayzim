@@ -1,7 +1,9 @@
-# StayZim on one server: web (landing page, dashboard, lodge sites), the API and
-# Postgres. Made for Coolify's "Docker Compose" build pack; plain `docker compose`
-# works too. Settings come from the environment (deploy/.env.example lists them);
-# POSTGRES_PASSWORD and BETTER_AUTH_SECRET have no default and must be set.
+# StayZim on one server: web (landing page, dashboard, lodge sites), the API, the
+# WhatsApp outreach tool and Postgres. Made for Coolify's "Docker Compose" build
+# pack; plain `docker compose` works too. Settings come from the environment
+# (deploy/.env.example lists them); POSTGRES_PASSWORD, BETTER_AUTH_SECRET and
+# OUTREACH_PASSWORD have no default and must be set (without its password only
+# outreach stops; the rest still runs).
 # No ${VAR:?message} here: Coolify reads the message as the value.
 # Full guide: docs/deployment.md
 #
@@ -88,6 +90,35 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
     expose:
       - "9998"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # WhatsApp outreach to leads (internal tool): its pages and API on its own
+  # domain, e.g. outreach.stayzim.co.zw (pages: user "admin", OUTREACH_PASSWORD).
+  # Its own database, stayzim-outreach, on the same Postgres: its start script
+  # creates it and applies the migrations the first time. WhatsApp logins are
+  # kept in that database, so a redeploy needs no new QR scans.
+  outreach:
+    build:
+      context: .
+      dockerfile: apps/outreach/Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://stayzim:${POSTGRES_PASSWORD}@db:5432/stayzim-outreach
+      # Who may call its API from a browser: its own address
+      CORS_ORIGIN: ${OUTREACH_CORS_ORIGIN:-https://outreach.stayzim.co.zw}
+      OUTREACH_PASSWORD: ${OUTREACH_PASSWORD}
+      WHATSAPP_ACCOUNTS: ${WHATSAPP_ACCOUNTS:-wa1,wa2,wa3}
+      WHATSAPP_DAILY_LIMIT: ${WHATSAPP_DAILY_LIMIT:-40}
+      WHATSAPP_ENABLED: ${WHATSAPP_ENABLED:-true}
+    expose:
+      - "9997"
+    # One Chromium per number (about 300 MB each), and Chromium outgrows
+    # Docker's 64 MB /dev/shm
+    shm_size: 1gb
+    # Time to save each session to Postgres and close Chromium on a redeploy
+    stop_grace_period: 30s
     depends_on:
       db:
         condition: service_healthy
