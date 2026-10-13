@@ -14,6 +14,8 @@ import { isAnyLodgeSiteOrigin } from "./lib/sites";
 import { describeStorage, serveUpload } from "./lib/uploads";
 import { account } from "./routes/account";
 import { admin } from "./routes/admin";
+import { adminConsole } from "./routes/admin-console";
+import { adminLeads } from "./routes/admin-leads";
 import { landing } from "./routes/landing";
 import { lodge } from "./routes/lodge";
 import { startBillingJob } from "./jobs/billing";
@@ -87,8 +89,10 @@ app.route("/api/account", account);
 
 app.route("/api/lodge", lodge);
 
-// StayZim staff only
+// StayZim staff only: the admin app (apps/admin)
 app.route("/api/admin", admin);
+app.route("/api/admin", adminConsole);
+app.route("/api/admin", adminLeads);
 
 // Public: lodge site content and visit tracking
 app.route("/api/sites", sites);
