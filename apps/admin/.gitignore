@@ -1,0 +1,22 @@
+# Dependencies
+/node_modules
+
+# Build outputs
+/.next/
+/out/
+
+# Environment & local files
+.env*
+!.env.example
+*.local
+
+# WhatsApp Web scratch data (sessions live in Postgres)
+/.wwebjs_auth/
+/.wwebjs_cache/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Logs
+*.log*

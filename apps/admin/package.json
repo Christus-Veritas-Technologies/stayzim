@@ -1,0 +1,45 @@
+{
+  "name": "admin",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 9996",
+    "build": "next build",
+    "start": "next start --port 9996",
+    "check-types": "next typegen && tsc --noEmit",
+    "test": "bun test",
+    "import-outreach": "bun --env-file=.env scripts/import-outreach-db.ts"
+  },
+  "dependencies": {
+    "@stayzim/db": "workspace:*",
+    "@stayzim/env": "workspace:*",
+    "@stayzim/sites": "workspace:*",
+    "@stayzim/ui": "workspace:*",
+    "babel-plugin-react-compiler": "^1.0.0",
+    "better-auth": "catalog:",
+    "dotenv": "catalog:",
+    "framer-motion": "^13.5.0",
+    "lucide-react": "catalog:",
+    "next": "^16.2.0",
+    "next-themes": "catalog:",
+    "pg": "^8.17.1",
+    "qrcode": "^1.5.4",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "sonner": "catalog:",
+    "whatsapp-web.js": "^1.34.7",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@stayzim/config": "workspace:*",
+    "@tailwindcss/postcss": "^4.1.18",
+    "@types/bun": "catalog:",
+    "@types/node": "^20",
+    "@types/pg": "^8.16.0",
+    "@types/qrcode": "^1.5.5",
+    "@types/react": "^19.2.15",
+    "@types/react-dom": "catalog:",
+    "tailwindcss": "^4.1.18",
+    "typescript": "catalog:"
+  }
+}

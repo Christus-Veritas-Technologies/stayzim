@@ -25,8 +25,8 @@ import { sites } from "./routes/sites";
 
 const app = new Hono<{ Variables: AuthVariables }>();
 
-/** CORS_ORIGIN, plus WEB_URL's origin: the web app always reaches the API, even if CORS_ORIGIN misses it. */
-const WEB_ORIGINS = new Set([...env.CORS_ORIGIN, ...(env.WEB_URL ? [new URL(env.WEB_URL).origin] : [])]);
+/** CORS_ORIGIN, plus WEB_URL's and ADMIN_URL's origins: the web and admin apps always reach the API. */
+const WEB_ORIGINS = new Set([...env.CORS_ORIGIN, ...[env.WEB_URL, env.ADMIN_URL].flatMap((url) => (url ? [new URL(url).origin] : []))]);
 
 app.use(logger());
 

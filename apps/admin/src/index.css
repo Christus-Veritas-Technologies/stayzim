@@ -1,0 +1,2 @@
+/* Colours, fonts and shadows live in packages/ui, shared with the web app */
+@import "@stayzim/ui/globals.css";

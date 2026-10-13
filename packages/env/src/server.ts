@@ -30,6 +30,9 @@ export const env = createEnv({
     BETTER_AUTH_URL: z.url().optional(),
     // Public URL of the web app (login, reset password pages), e.g. https://stayzim.co.zw
     WEB_URL: z.url().optional(),
+    // The admin app (apps/admin), e.g. https://admin.stayzim.co.zw: it calls the API with the
+    // team's session, so it's allowed like the web app (CORS and sign-in)
+    ADMIN_URL: z.url().optional(),
     // Share the session cookie across subdomains in production, e.g. ".stayzim.co.zw".
     // Leave unset on localhost.
     COOKIE_DOMAIN: z.string().min(1).optional(),
