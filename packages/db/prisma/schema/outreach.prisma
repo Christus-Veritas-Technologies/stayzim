@@ -1,4 +1,4 @@
-// Outreach (apps/outreach): WhatsApp numbers, leads and the messages sent to them.
+// Outreach (the admin app, apps/admin): WhatsApp numbers, leads and the messages sent to them.
 
 /// WhatsApp Web sessions (whatsapp-web.js RemoteAuth). One row per linked
 /// number, keyed "RemoteAuth-<account id>"; `data` is the zipped Chromium
@@ -27,13 +27,23 @@ enum OutreachStatus {
   DO_NOT_CONTACT
 }
 
-/// A lead, e.g. someone who opted in or replied to a Facebook ad.
+/// A lead: someone who filled in the Facebook form, a lodge from a list we reach
+/// out to, or someone the team added by hand. Sites made for them point here.
 model Contact {
   id              String            @id @default(cuid())
   name            String
   /// Digits only, with country code (e.g. "263771234567")
   phone           String            @unique
   city            String
+  /// Where the lead came from: "meta_form", "list" or "manual" (null: before this was kept)
+  source          String?
+  /// Their lodge's name, when we know it (the person's name is `name`)
+  lodgeName       String?           @map("lodge_name")
+  email           String?
+  /// The team's notes
+  notes           String            @default("")
+  /// Sites the team made for this lead (each owned by a placeholder guest account until handed over)
+  sites           Lodge[]           @relation("LeadSites")
   status          OutreachStatus    @default(PENDING)
   /// The outreach account (WhatsApp number id) that first reached this contact
   reachedVia      String?           @map("reached_via")

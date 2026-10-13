@@ -118,6 +118,13 @@ model Lodge {
   ownerId String @unique @map("owner_id")
   owner   User   @relation(fields: [ownerId], references: [id], onDelete: Restrict)
 
+  /// The lead the team made this site for (admin app), until and after it's handed over
+  leadId String?  @map("lead_id")
+  lead   Contact? @relation("LeadSites", fields: [leadId], references: [id], onDelete: SetNull)
+  /// "Give to lead": SHA-256 of the one-time claim link's token, and when the link stops working
+  claimTokenHash      String?   @unique @map("claim_token_hash")
+  claimTokenExpiresAt DateTime? @map("claim_token_expires_at")
+
   rooms    Room[]
   photos   Photo[]         @relation("LodgePhotos")
   events   SiteEvent[]
@@ -132,6 +139,7 @@ model Lodge {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  @@index([leadId])
   @@map("lodge")
 }
 
