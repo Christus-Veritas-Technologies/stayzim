@@ -22,16 +22,6 @@
       "port": 9998
     },
     {
-      "name": "outreach",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": [
-        "--filter",
-        "outreach",
-        "dev"
-      ],
-      "port": 9997
-    },
-    {
       "name": "designs",
       "runtimeExecutable": "python",
       "runtimeArgs": [

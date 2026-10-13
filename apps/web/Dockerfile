@@ -22,7 +22,7 @@ FROM base AS deps
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc ./
 COPY apps/server/package.json apps/server/
 COPY apps/web/package.json apps/web/
-COPY apps/outreach/package.json apps/outreach/
+COPY apps/admin/package.json apps/admin/
 COPY apps/native/package.json apps/native/
 COPY packages/auth/package.json packages/auth/
 COPY packages/config/package.json packages/config/

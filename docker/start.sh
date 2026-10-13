@@ -1,9 +1,8 @@
 #!/bin/sh
-# Container entrypoint for apps/server and apps/outreach.
+# Container entrypoint for apps/server.
 #
 # 1. Applies any new Prisma migrations (packages/db/prisma/migrations) to
 #    $DATABASE_URL. Skip with SKIP_DB_MIGRATE=1 (SKIP_DB_PUSH=1 still works).
-#    When both containers start together, Prisma's lock makes one wait.
 # 2. Runs the app's TypeScript entry with Bun, replacing this shell so the app
 #    receives SIGTERM directly and shuts down cleanly.
 set -e

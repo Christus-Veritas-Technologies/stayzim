@@ -1,18 +1,15 @@
 # Outreach API
 
-Base URL: `https://outreach.stayzim.co.zw` in production (the `outreach` service of `deploy/compose.yaml`), `http://localhost:9997` locally.
+The WhatsApp outreach, part of the admin app (apps/admin). Base URL: `https://admin.stayzim.co.zw/api/outreach` in production (the `admin` service of `deploy/compose.yaml`), `http://localhost:9996/api/outreach` locally. Paths below are relative to it: `POST /messages` is `POST https://admin.stayzim.co.zw/api/outreach/messages`.
 
 ## Auth
 
-All `/api/*` endpoints require:
+Every endpoint takes either:
 
-```
-Authorization: Bearer <OUTREACH_PASSWORD>
-```
+- A signed-in team member's StayZim session (the admin app's own pages), or
+- From scripts: `Authorization: Bearer <ADMIN_API_TOKEN>`.
 
-Missing or wrong password → `401`.
-
-Pages (`/dashboard`, `/accounts`, `/contacts`, `/campaign`) use HTTP Basic auth: username `admin`, password `OUTREACH_PASSWORD`.
+Missing or wrong token, or not signed in → `401`. Signed in without the team role → `403`.
 
 ## Conventions
 
@@ -21,7 +18,6 @@ Pages (`/dashboard`, `/accounts`, `/contacts`, `/campaign`) use HTTP Basic auth:
 - Phone numbers: any format with country code (`+263 77 123 4567`, `263771234567`). Stored as digits only. Must be 8–15 digits.
 - `account`: id of one of our WhatsApp numbers (`WHATSAPP_ACCOUNTS`, default `wa1`, `wa2`, `wa3`). If omitted, sends rotate across connected accounts.
 - Message templates: `{name}` and `{city}` are replaced with the contact's values when the phone number belongs to a saved contact.
-- Rate limit: 60 requests/minute on `/api/*` → `429`.
 
 ### Daily send limit
 
@@ -44,13 +40,13 @@ Every direct message to any of our numbers is stored. Groups, status updates and
 | `REPLIED` | Was reached, then wrote back. Never picked up by campaigns. |
 | `NOT_ON_WHATSAPP` | Number isn't on WhatsApp. Never picked up by campaigns. |
 | `FAILED` | Last send errored. Picked up by campaigns only with `retryFailed: true`. |
-| `DO_NOT_CONTACT` | Never messaged, not even by `POST /api/messages`. Set manually or by an opt-out reply. |
+| `DO_NOT_CONTACT` | Never messaged, not even by `POST /messages`. Set manually or by an opt-out reply. |
 
 ---
 
 ## Sending
 
-### `POST /api/messages`
+### `POST /messages`
 
 Sends one message to one phone number immediately, from one account. Logs it. If the number belongs to a contact, updates that contact's status (`REACHED`, `NOT_ON_WHATSAPP`, or `FAILED`; `REPLIED` stays `REPLIED`). Sends even if the contact was already reached. Refuses contacts marked `DO_NOT_CONTACT`.
 
@@ -97,7 +93,7 @@ Responses:
 
 `contactId` is `null` when the number isn't a saved contact. `messageId` is the id of the logged `OutreachMessage`.
 
-### `POST /api/campaigns`
+### `POST /campaigns`
 
 Sends one message to many contacts, one at a time, in the background. Only contacts with status `PENDING` (plus `FAILED` if `retryFailed`) are included, oldest first. A follow-up (`followUp: true`) also includes `REACHED` and `REPLIED` contacts, but only the ones named in `contactIds` or `phones`. Waits a random `minDelaySeconds`–`maxDelaySeconds` between sends. Rotates accounts unless `account` is set. Only one campaign can run at a time. Returns immediately.
 
@@ -164,11 +160,11 @@ Being at the daily limit does not block starting; the campaign waits.
 
 `finishedAt` and `stoppedReason` (why it ended early) appear once set. `nextSendAt` is only present while waiting between sends. `pausedUntil` is only present while paused at daily limits.
 
-### `GET /api/campaigns/current`
+### `GET /campaigns/current`
 
 Returns the running or most recent campaign's `CampaignState`, or `null` if none has run since the server started. Campaign state is in memory; a restart stops a running campaign. Contact statuses and the message log are in the database.
 
-### `POST /api/campaigns/current/stop`
+### `POST /campaigns/current/stop`
 
 Stops the running campaign before its next send. → `200` `CampaignState`, or `409` if nothing is running.
 
@@ -195,7 +191,7 @@ Stops the running campaign before its next send. → `200` `CampaignState`, or `
 
 `reachedVia` is the account that first reached the contact.
 
-### `POST /api/contacts`
+### `POST /contacts`
 
 Adds one contact or a list (max 5000). Phone numbers that already exist, or repeat within the list, are skipped. Existing contacts are not changed. New contacts are `PENDING`. If any item is invalid, the whole request is rejected with `400`.
 
@@ -220,7 +216,7 @@ Body: a single contact or an array.
 { "received": 2, "created": 2, "skipped": 0 }
 ```
 
-### `GET /api/contacts`
+### `GET /contacts`
 
 Lists contacts, newest first.
 
@@ -236,7 +232,7 @@ Query:
 
 → `200` `{ "total": 230, "page": 1, "pageSize": 50, "items": [Contact] }`
 
-### `GET /api/contacts/stats`
+### `GET /contacts/stats`
 
 → `200`
 
@@ -247,11 +243,11 @@ Query:
 }
 ```
 
-### `GET /api/contacts/:id`
+### `GET /contacts/:id`
 
 → `200` `Contact` plus `messages: [OutreachMessage]` (newest first), or `404`.
 
-### `PATCH /api/contacts/:id`
+### `PATCH /contacts/:id`
 
 Updates any of `name`, `phone`, `city`, `status`. At least one is required. Use `status: "DO_NOT_CONTACT"` to exclude someone, or `status: "PENDING"` to make them eligible for campaigns again.
 
@@ -261,7 +257,7 @@ Updates any of `name`, `phone`, `city`, `status`. At least one is required. Use 
 
 → `200` `Contact`, `404` not found, `409` phone belongs to another contact.
 
-### `DELETE /api/contacts/:id`
+### `DELETE /contacts/:id`
 
 Deletes the contact. Its logged messages are kept, with `contactId` set to `null`. → `204`, or `404`.
 
@@ -287,7 +283,7 @@ Deletes the contact. Its logged messages are kept, with `contactId` set to `null
 
 `status`: `SENT` | `NOT_ON_WHATSAPP` | `FAILED`. `body` is the final text after `{name}`/`{city}` replacement.
 
-### `GET /api/messages`
+### `GET /messages`
 
 Lists send attempts, newest first.
 
@@ -317,7 +313,7 @@ Query: `phone`, `contactId`, `account`, `status`, `page` (default `1`), `pageSiz
 
 `phone` is `null` when WhatsApp hides the sender behind a `…@lid` id that couldn't be mapped to a number. `type` is the WhatsApp message type (`chat`, `image`, `ptt`, ...). `body` is empty for media without a caption.
 
-### `GET /api/replies`
+### `GET /replies`
 
 Lists received messages, newest first.
 
@@ -329,7 +325,7 @@ Query: `phone`, `contactId`, `account`, `page` (default `1`), `pageSize` (defaul
 
 ## WhatsApp accounts
 
-### `GET /api/whatsapp/status`
+### `GET /whatsapp/status`
 
 → `200`
 
@@ -349,25 +345,3 @@ Query: `phone`, `contactId`, `account`, `page` (default `1`), `pageSize` (defaul
 ```
 
 `state`: `disabled` | `starting` | `qr` (waiting for a scan) | `authenticated` | `ready` | `disconnected` | `failed`. `lastSavedAt` is the last session backup to Postgres. `usage.sent` counts the last 24 hours. `usage.resetsAt` is present when `remaining` is `0`.
-
----
-
-## Pages (browser, Basic auth)
-
-| Page | Shows | Actions |
-|---|---|---|
-| `GET /` | Redirects to `/dashboard` | |
-| `GET /dashboard` | Contact totals, sent/replies (24h and total), reply rate, per-number state and daily usage, running campaign, last 10 sends and replies | Refreshes every 30s |
-| `GET /accounts` | Each number's state, pairing QR code, linked number, daily usage, last session backup | Refreshes every 5s until all are connected |
-| `GET /contacts` | Contacts with search and status/city filters, 50 per page | Paste-import (`name, phone, city` per line); mark do-not-contact / allow again |
-| `GET /campaign` | Current/last campaign progress | Start a campaign (message, city, max contacts, number, delays, retry failed); stop it |
-
-Form posts (`POST /contacts/import`, `POST /contacts/:id/status`, `POST /campaign/start`, `POST /campaign/stop`) must come from these pages: requests from another origin get `403`.
-
----
-
-## Unauthenticated
-
-| Endpoint | Response |
-|---|---|
-| `GET /health` | `200` `{ healthy, accounts: [{ account, state }] }`. `503` only if every account has `failed`. |

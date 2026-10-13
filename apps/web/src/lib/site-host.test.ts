@@ -39,12 +39,12 @@ describe("lodgeSlugFromHost", () => {
 
 describe("reservedSubdomain", () => {
   test("names another service's address, never a lodge's or the main site's", () => {
-    expect(reservedSubdomain("outreach.stayzim.co.zw")).toBe("outreach");
+    expect(reservedSubdomain("admin.stayzim.co.zw")).toBe("admin");
     expect(reservedSubdomain("API.stayzim.co.zw")).toBe("api");
     expect(reservedSubdomain("www.stayzim.co.zw")).toBeNull();
     expect(reservedSubdomain("mistvalley.stayzim.co.zw")).toBeNull();
     expect(reservedSubdomain("stayzim.co.zw")).toBeNull();
-    expect(reservedSubdomain("outreach.example.com")).toBeNull();
+    expect(reservedSubdomain("admin.example.com")).toBeNull();
   });
 });
 

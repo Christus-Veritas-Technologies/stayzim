@@ -7,7 +7,6 @@
     "./server": "./src/server.ts",
     "./web": "./src/web.ts",
     "./native": "./src/native.ts",
-    "./outreach": "./src/outreach.ts",
     "./admin": "./src/admin.ts"
   },
   "dependencies": {

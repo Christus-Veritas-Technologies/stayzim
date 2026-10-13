@@ -24,7 +24,7 @@ export const env = createEnv({
     PORT: z.coerce.number().default(9998),
 
     // Auth (packages/auth). Optional here so processes that load this env but never
-    // mount auth (apps/outreach, via @stayzim/db) still boot; packages/auth checks them.
+    // mount auth (apps/admin, via @stayzim/db) still boot; packages/auth checks them.
     BETTER_AUTH_SECRET: z.string().min(32).optional(),
     // Public URL of this API, e.g. https://api.stayzim.co.zw
     BETTER_AUTH_URL: z.url().optional(),
