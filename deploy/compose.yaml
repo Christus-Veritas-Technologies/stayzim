@@ -1,9 +1,8 @@
 # StayZim on one server: web (landing page, dashboard, lodge sites), the API, the
-# WhatsApp outreach tool and Postgres. Made for Coolify's "Docker Compose" build
-# pack; plain `docker compose` works too. Settings come from the environment
-# (deploy/.env.example lists them); POSTGRES_PASSWORD, BETTER_AUTH_SECRET and
-# OUTREACH_PASSWORD have no default and must be set (without its password only
-# outreach stops; the rest still runs).
+# admin app (with the WhatsApp outreach) and Postgres. Made for Coolify's "Docker
+# Compose" build pack; plain `docker compose` works too. Settings come from the
+# environment (deploy/.env.example lists them); POSTGRES_PASSWORD and
+# BETTER_AUTH_SECRET have no default and must be set.
 # No ${VAR:?message} here: Coolify reads the message as the value.
 # Full guide: docs/deployment.md
 #
@@ -64,6 +63,8 @@ services:
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-https://api.stayzim.co.zw}
       WEB_URL: ${WEB_URL:-https://stayzim.co.zw}
+      # The admin app: allowed to call the API with the team's login
+      ADMIN_URL: ${ADMIN_URL:-https://admin.stayzim.co.zw}
       COOKIE_DOMAIN: ${COOKIE_DOMAIN:-.stayzim.co.zw}
       CLIENT_IP_HEADER: ${CLIENT_IP_HEADER:-cf-connecting-ip}
       R2_ACCOUNT_ID: ${R2_ACCOUNT_ID:-}
@@ -94,46 +95,57 @@ services:
       db:
         condition: service_healthy
 
-  # WhatsApp outreach to leads (internal tool): its pages and API on its own
-  # domain, e.g. outreach.stayzim.co.zw (pages: user "admin", OUTREACH_PASSWORD).
-  # Its own database, stayzim-outreach, on the same Postgres: its start script
-  # creates it and applies the migrations the first time. WhatsApp logins are
-  # kept in that database, so a redeploy needs no new QR scans.
-  outreach:
+  # The team's app at admin.stayzim.co.zw: leads, sites made for them, every
+  # site, user and payment, and the WhatsApp outreach (one Chromium per number,
+  # inside this container). Team accounts sign in with their StayZim login; the
+  # API checks the role. It uses the main database; WhatsApp logins are kept
+  # there, so a redeploy needs no new QR scans.
+  admin:
     build:
       context: .
-      dockerfile: apps/outreach/Dockerfile
+      dockerfile: apps/admin/Dockerfile
+      # Baked into the browser bundle: changing them needs a rebuild
+      args:
+        NEXT_PUBLIC_SERVER_URL: ${NEXT_PUBLIC_SERVER_URL:-https://api.stayzim.co.zw}
+        NEXT_PUBLIC_WEB_URL: ${WEB_URL:-https://stayzim.co.zw}
+        NEXT_PUBLIC_SITES_DOMAIN: ${NEXT_PUBLIC_SITES_DOMAIN:-stayzim.co.zw}
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://stayzim:${POSTGRES_PASSWORD}@db:5432/stayzim-outreach
-      # Who may call its API from a browser: its own address
-      CORS_ORIGIN: ${OUTREACH_CORS_ORIGIN:-https://outreach.stayzim.co.zw}
-      OUTREACH_PASSWORD: ${OUTREACH_PASSWORD}
+      DATABASE_URL: postgresql://stayzim:${POSTGRES_PASSWORD}@db:5432/stayzim
+      # Its own address (the database package reads the API's settings too)
+      CORS_ORIGIN: ${ADMIN_URL:-https://admin.stayzim.co.zw}
+      # Checks who's signed in with the API inside this network
+      SERVER_INTERNAL_URL: http://server:9998
+      # For scripts calling /api/outreach/* ("Authorization: Bearer ..."); empty:
+      # signed-in team members only
+      ADMIN_API_TOKEN: ${ADMIN_API_TOKEN:-}
       WHATSAPP_ACCOUNTS: ${WHATSAPP_ACCOUNTS:-wa1,wa2,wa3}
       WHATSAPP_DAILY_LIMIT: ${WHATSAPP_DAILY_LIMIT:-40}
       WHATSAPP_ENABLED: ${WHATSAPP_ENABLED:-true}
+      # Once, after the old outreach app: copies its leads, messages and WhatsApp
+      # logins from its database (stayzim-outreach) while the main one has none
+      OUTREACH_IMPORT_DATABASE_URL: postgresql://stayzim:${POSTGRES_PASSWORD}@db:5432/stayzim-outreach
     expose:
-      - "9997"
+      - "9996"
     # One Chromium per number (about 300 MB each), and Chromium outgrows
     # Docker's 64 MB /dev/shm
     shm_size: 1gb
     # Time to save each session to Postgres and close Chromium on a redeploy
     stop_grace_period: 30s
+    # The API applies the database migrations first
     depends_on:
-      db:
+      server:
         condition: service_healthy
     labels:
       # Its own route, so it doesn't depend on a domain being entered for it in
-      # Coolify (without one, web's catch-all below took the host). Traefik only
-      # sends traffic once the container is healthy; until then web answers
-      # "isn't running right now" for this host.
+      # Coolify (without one, web's catch-all above would take the host)
       - traefik.enable=true
-      - traefik.http.routers.stayzim-outreach.rule=Host(`${OUTREACH_DOMAIN:-outreach.stayzim.co.zw}`)
-      - traefik.http.routers.stayzim-outreach.priority=100
-      - traefik.http.routers.stayzim-outreach.entrypoints=https
-      - traefik.http.routers.stayzim-outreach.tls=true
-      - traefik.http.routers.stayzim-outreach.service=stayzim-outreach
-      - traefik.http.services.stayzim-outreach.loadbalancer.server.port=9997
+      - traefik.http.routers.stayzim-admin.rule=Host(`${ADMIN_DOMAIN:-admin.stayzim.co.zw}`)
+      - traefik.http.routers.stayzim-admin.priority=100
+      - traefik.http.routers.stayzim-admin.entrypoints=https
+      - traefik.http.routers.stayzim-admin.tls=true
+      - traefik.http.routers.stayzim-admin.service=stayzim-admin
+      - traefik.http.services.stayzim-admin.loadbalancer.server.port=9996
 
   db:
     image: postgres:16

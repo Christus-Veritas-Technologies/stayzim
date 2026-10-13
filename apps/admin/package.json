@@ -8,7 +8,7 @@
     "start": "next start --port 9996",
     "check-types": "next typegen && tsc --noEmit",
     "test": "bun test",
-    "import-outreach": "bun --env-file=.env scripts/import-outreach-db.ts"
+    "import-outreach": "node --env-file=.env scripts/import-outreach-db.mjs"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.9.1",

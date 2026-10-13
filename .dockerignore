@@ -8,6 +8,7 @@
 **/dist
 **/*.tsbuildinfo
 apps/web/.next
+apps/admin/.next
 packages/db/prisma/generated
 
 # Not needed in any image
