@@ -6,3 +6,8 @@ const local = /(^|\.)localhost(:\d+)?$/.test(env.NEXT_PUBLIC_SITES_DOMAIN);
 export function siteUrl(lodge: { slug: string; customDomain?: string | null }) {
   return `${local ? "http" : "https"}://${lodge.customDomain ?? `${lodge.slug}.${env.NEXT_PUBLIC_SITES_DOMAIN}`}`;
 }
+
+/** "mistvalley.stayzim.co.zw" (or the lodge's own domain), for showing. */
+export function siteHost(lodge: { slug: string; customDomain?: string | null }) {
+  return siteUrl(lodge).replace(/^https?:\/\//, "");
+}
