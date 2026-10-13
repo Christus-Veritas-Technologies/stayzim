@@ -6,6 +6,10 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { anonymous } from "better-auth/plugins";
 
+import { claimLink } from "./claim-link";
+
+export { claimTokenHash, newClaimToken, onClaimLinkRedeemed } from "./claim-link";
+
 // Optional in the shared env schema (see packages/env/src/server.ts), required here
 if (!env.BETTER_AUTH_SECRET) {
   throw new Error("BETTER_AUTH_SECRET is required (32+ characters). See apps/server/.env.example.");
@@ -109,6 +113,8 @@ export const auth = betterAuth({
         await prisma.lodge.update({ where: { id: lodge.id }, data: { ownerId: newUser.user.id } });
       },
     }),
+    // "Give to lead" in the admin app: a one-time link that signs the lead in to the site made for them
+    claimLink(),
   ],
 
   user: {
@@ -138,6 +144,8 @@ export const auth = betterAuth({
       // Each /create visit that makes a demo starts with one; many phones share a mobile network's IP
       "/sign-in/anonymous": { window: 10 * 60, max: 30 },
       "/request-password-reset": { window: 10 * 60, max: 3 },
+      // Guessing a claim token is hopeless (32 random bytes); this stops anyone trying
+      "/claim-link/redeem": { window: 10 * 60, max: 10 },
       "/change-password": { window: 10 * 60, max: 5 },
     },
   },

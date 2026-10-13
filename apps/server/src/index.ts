@@ -1,4 +1,4 @@
-import { auth } from "@stayzim/auth";
+import { auth, onClaimLinkRedeemed } from "@stayzim/auth";
 import prisma from "@stayzim/db";
 import { env } from "@stayzim/env/server";
 import { isMailConfigured, verifyMailConnection } from "@stayzim/mail";
@@ -8,6 +8,7 @@ import { HTTPException } from "hono/http-exception";
 import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
 
+import { onLeadSiteClaimed } from "./lib/admin";
 import { withSession, type AuthVariables } from "./lib/session";
 import { isAnyLodgeSiteOrigin } from "./lib/sites";
 import { describeStorage, serveUpload } from "./lib/uploads";
@@ -69,7 +70,10 @@ app.get("/health", async (c) => {
   }
 });
 
-// better-auth: sign in/out, session, password reset, ... (see packages/auth)
+// A lead opening the claim link for a site the team made for them (packages/auth's claim-link plugin)
+onClaimLinkRedeemed(onLeadSiteClaimed);
+
+// better-auth: sign in/out, session, password reset, claim links, ... (see packages/auth)
 app.on(["GET", "POST"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
 app.route("/api/landing", landing);

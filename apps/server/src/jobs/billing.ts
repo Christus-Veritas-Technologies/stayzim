@@ -19,9 +19,9 @@ import {
   statusFor,
 } from "@stayzim/sites";
 
+import { deleteLodge } from "../lib/admin";
 import { BILLING_URL, createInvoice, refreshPayment, sendOnce } from "../lib/billing";
 import { issuerLine } from "../lib/business";
-import { removeUploads } from "../lib/uploads";
 
 /** How long guests' details are kept after their stay (the privacy page says 12 months). */
 const GUEST_DATA_DAYS = 365;
@@ -188,18 +188,10 @@ export async function runBilling(now = new Date()) {
   // 4: demos nobody paid for, 30 days after they ended
   const stale = await prisma.lodge.findMany({
     where: { status: "DEMO", demoEndsAt: { lt: addDays(now, -DEMO_KEEP_DAYS) }, payments: { none: { status: "PAID" } } },
-    select: { id: true, slug: true, logoKey: true, ownerId: true, owner: { select: { role: true } }, photos: { select: { key: true, mediumKey: true, smallKey: true } } },
+    select: { id: true, slug: true },
   });
   for (const lodge of stale) {
-    const keys = [lodge.logoKey, ...lodge.photos.flatMap((photo) => [photo.key, photo.mediumKey, photo.smallKey])].filter((key): key is string => Boolean(key));
-    await prisma.$transaction([
-      prisma.lodge.update({ where: { id: lodge.id }, data: { heroPhotoId: null } }),
-      prisma.lodge.delete({ where: { id: lodge.id } }),
-      prisma.billingNotice.deleteMany({ where: { lodgeId: lodge.id } }),
-      // The account goes too (it was only for this demo), so the email can sign up again
-      ...(lodge.owner.role === "OWNER" ? [prisma.user.delete({ where: { id: lodge.ownerId } })] : []),
-    ]);
-    await removeUploads(keys);
+    await deleteLodge(lodge.id);
     console.log(`[billing] Deleted the unpaid demo ${lodge.slug} (ended over ${DEMO_KEEP_DAYS} days ago)`);
     report.deleted += 1;
   }

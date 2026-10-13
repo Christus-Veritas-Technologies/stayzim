@@ -1,20 +1,15 @@
 import prisma from "@stayzim/db";
 import { Hono } from "hono";
-import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 
 import { postInput, postSlug, reviewsInput } from "@stayzim/sites/schemas";
 
+import { requireAdmin } from "../lib/admin";
 import { photoJson } from "../lib/lodge";
 import { requireAuth, withSession, type AuthVariables } from "../lib/session";
 import { validJson } from "../lib/validate";
 
-/** StayZim staff only (accounts made with `create-owner --admin`). */
-const requireAdmin = createMiddleware<{ Variables: AuthVariables }>(async (c, next) => {
-  if (c.get("user")?.role !== "ADMIN") throw new HTTPException(403, { message: "This is for the StayZim team" });
-  await next();
-});
 
 const listQuery = z.object({
   /** open: open and in progress, oldest first (the queue). done: done and declined. all: everything, newest first. */
