@@ -49,12 +49,19 @@
       "runtimeArgs": [
         "--filter",
         "server",
+        "dev:preview"
+      ],
+      "port": 9998
+    },
+    {
+      "name": "admin",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--filter",
+        "admin",
         "dev"
       ],
-      "port": 9998,
-      "env": {
-        "DATABASE_URL": "postgresql://postgres:admin@localhost:5432/stayzim_preview"
-      }
+      "port": 9996
     }
   ]
 }
