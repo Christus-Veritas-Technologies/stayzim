@@ -5,7 +5,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { slugForCustomDomain } from "@/lib/custom-domains";
 import { isStayZimHost, lodgeSlugFromHost, mainSiteRedirect, reservedSubdomain, siteUrl } from "@/lib/site-host";
 
-const SIGNED_IN_ONLY = ["/dashboard", "/set-password", "/admin"];
+const SIGNED_IN_ONLY = ["/dashboard", "/set-password"];
 
 /** Shows a lodge's site: /sites/{slug}, and its other pages under it (paths its plan doesn't have 404 there). */
 function lodgeSite(request: NextRequest, slug: string) {
@@ -35,7 +35,7 @@ export async function proxy(request: NextRequest) {
   const main = mainSiteRedirect(host, `${pathname}${request.nextUrl.search}`);
   if (main) return NextResponse.redirect(main, 308);
 
-  // outreach.stayzim.co.zw, api.…: another service's address, which is down if it got here
+  // admin.stayzim.co.zw, api.…: another service's address, which is down if it got here
   const service = reservedSubdomain(host);
   if (service) {
     return new NextResponse(`${host} isn't running right now. Try again in a minute.\n`, {

@@ -30,6 +30,9 @@ const MAIN_HOSTNAME_IS_LOCALHOST = /^localhost(:\d+)?$/.test(SITES_DOMAIN);
 /** StayZim's own site: https://stayzim.co.zw (http://localhost:9999 in development). */
 export const MAIN_URL = `${PROTOCOL}://${SITES_DOMAIN}`;
 
+/** The team's admin app: https://admin.stayzim.co.zw (http://localhost:9996 in development). */
+export const ADMIN_URL = PROTOCOL === "http" ? "http://localhost:9996" : `https://admin.${SITES_DOMAIN}`;
+
 /**
  * Other names for the main site, sent on to it: StayZim lives on the bare domain only.
  * Not on plain localhost, where Next.js would turn the redirect into a relative one (a loop).
@@ -55,8 +58,8 @@ export function lodgeSlugFromHost(host: string | null) {
 }
 
 /**
- * "outreach.stayzim.co.zw" → "outreach": one of StayZim's own reserved names
- * (api, outreach, ...), served by another service. Only reaches the web app
+ * "admin.stayzim.co.zw" → "admin": one of StayZim's own reserved names
+ * (api, admin, ...), served by another service. Only reaches the web app
  * when that service isn't running (or has no route), so it must not look like
  * the main site. The main site's aliases (www., app.) → null.
  */

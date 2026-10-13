@@ -12,11 +12,15 @@ import { Suspense, useEffect, useState, type FormEvent } from "react";
 import { GoogleSignIn } from "@/components/auth/google-button";
 import { AuthHeading, AuthSection, AuthShell, NewToStayZim } from "@/components/auth/shell";
 import { authClient, authErrorMessage, oauthErrorMessage } from "@/lib/auth-client";
+import { ADMIN_URL } from "@/lib/site-host";
 
-/** Where an account lands after logging in: its own password first, then the team's screens or the dashboard. */
-function homeFor(user: { mustChangePassword?: boolean | null; role?: string | null }) {
-  if (user.mustChangePassword) return "/set-password";
-  return user.role === "ADMIN" ? "/admin/requests" : "/dashboard";
+type Account = { mustChangePassword?: boolean | null; role?: string | null };
+
+/** Where an account lands after logging in: its own password first, then the team's admin app or the dashboard. */
+function goHome(router: ReturnType<typeof useRouter>, user: Account) {
+  if (user.mustChangePassword) router.replace("/set-password");
+  else if (user.role === "ADMIN") window.location.replace(ADMIN_URL);
+  else router.replace("/dashboard");
 }
 
 function LoginForm() {
@@ -30,7 +34,7 @@ function LoginForm() {
   // Already logged in on this device (e.g. a bookmarked login page): skip the form.
   // Not a guest from /create: they're here to log in to their real account (which takes the site across).
   useEffect(() => {
-    if (session && !session.user.isAnonymous) router.replace(homeFor(session.user));
+    if (session && !session.user.isAnonymous) goHome(router, session.user);
   }, [router, session]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -58,7 +62,7 @@ function LoginForm() {
       return;
     }
     // Accounts start with a temporary password; the owner picks their own first
-    router.replace(homeFor(data.user));
+    goHome(router, data.user);
   }
 
   if (session && pending === null) {
