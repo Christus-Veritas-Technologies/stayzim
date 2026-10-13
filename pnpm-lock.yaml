@@ -63,6 +63,9 @@ importers:
 
   apps/admin:
     dependencies:
+      '@hono/zod-validator':
+        specifier: ^0.9.1
+        version: 0.9.1(hono@4.13.13)(zod@4.6.5)
       '@stayzim/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -87,6 +90,9 @@ importers:
       framer-motion:
         specifier: ^13.5.0
         version: 13.5.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      hono:
+        specifier: ^4.13.13
+        version: 4.13.13
       lucide-react:
         specifier: 'catalog:'
         version: 0.546.0(react@19.3.0)
