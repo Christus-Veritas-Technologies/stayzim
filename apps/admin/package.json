@@ -11,6 +11,7 @@
     "import-outreach": "bun --env-file=.env scripts/import-outreach-db.ts"
   },
   "dependencies": {
+    "@hono/zod-validator": "^0.9.1",
     "@stayzim/db": "workspace:*",
     "@stayzim/env": "workspace:*",
     "@stayzim/sites": "workspace:*",
@@ -19,6 +20,7 @@
     "better-auth": "catalog:",
     "dotenv": "catalog:",
     "framer-motion": "^13.5.0",
+    "hono": "^4.13.13",
     "lucide-react": "catalog:",
     "next": "^16.2.0",
     "next-themes": "catalog:",
