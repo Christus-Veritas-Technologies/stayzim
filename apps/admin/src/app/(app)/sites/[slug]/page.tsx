@@ -10,7 +10,7 @@ import { NativeSelect } from "@stayzim/ui/components/native-select";
 import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@stayzim/ui/components/sheet";
 import { Switch } from "@stayzim/ui/components/switch";
 import { Tabs, TabsList, TabsTab } from "@stayzim/ui/components/tabs";
-import { ArrowUpRight, Banknote, Trash2 } from "lucide-react";
+import { ArrowUpRight, Banknote, Link2, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -20,6 +20,7 @@ import { JournalEditor } from "@/components/content/journal-editor";
 import { ReviewsEditor } from "@/components/content/reviews-editor";
 import type { LodgeContent } from "@/components/content/types";
 import { LoadError, LoadingCards, Page, PageHeader, PageSection, Panel } from "@/components/page";
+import { PaymentLinkSheet } from "@/components/payment-link-sheet";
 import { api } from "@/lib/api";
 import { formatDate, formatShortDate, formatWhen } from "@/lib/format";
 import { CHANNELS, PLAN_NAMES, SITE_STATES } from "@/lib/labels";
@@ -116,8 +117,9 @@ function PaymentSheet({ site, open, onOpenChange, onSaved }: { site: SiteDetail;
   );
 }
 
-function Actions({ site, onChanged }: { site: SiteDetail; onChanged: (site: SiteDetail) => void }) {
+function Actions({ site, onChanged, onReload }: { site: SiteDetail; onChanged: (site: SiteDetail) => void; onReload: () => void }) {
   const router = useRouter();
+  const [linking, setLinking] = useState(false);
   const [domain, setDomain] = useState(site.customDomain ?? "");
   const [paying, setPaying] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -209,7 +211,11 @@ function Actions({ site, onChanged }: { site: SiteDetail; onChanged: (site: Site
         </form>
 
         <div className="flex flex-wrap gap-2 border-t border-line-3 pt-4">
-          <Button size="sm" onClick={() => setPaying(true)} disabled={site.owner.guest}>
+          <Button size="sm" onClick={() => setLinking(true)}>
+            <Link2 />
+            Payment link
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setPaying(true)} disabled={site.owner.guest}>
             <Banknote />
             Record a payment
           </Button>
@@ -218,10 +224,20 @@ function Actions({ site, onChanged }: { site: SiteDetail; onChanged: (site: Site
             Delete site
           </Button>
         </div>
-        {site.owner.guest ? <p className="text-[12.5px] text-muted">Payments wait until the owner has claimed the site with an email (for the receipt).</p> : null}
+        {site.paymentLink ? (
+          <p className="text-[12.5px] text-muted">
+            {site.paymentLink.state === "paid"
+              ? `Paid through its payment link ${formatShortDate(site.paymentLink.paidAt!)} (${formatCents(site.paymentLink.amountCents)}).`
+              : site.paymentLink.state === "open"
+                ? `A payment link for ${formatCents(site.paymentLink.amountCents)} is out, until ${formatShortDate(site.paymentLink.expiresAt)}.`
+                : "Its last payment link expired."}
+          </p>
+        ) : null}
+        {site.owner.guest ? <p className="text-[12.5px] text-muted">Recording a payment by hand waits until the owner has claimed the site with an email (for the receipt). A payment link works before that.</p> : null}
       </div>
 
       <PaymentSheet site={site} open={paying} onOpenChange={setPaying} onSaved={onChanged} />
+      <PaymentLinkSheet site={site} phone={site.whatsapp} name={site.lead?.name ?? (site.owner.guest || site.owner.team ? null : site.owner.name)} open={linking} onOpenChange={setLinking} onChanged={onReload} />
       <AlertDialog open={deleting} onOpenChange={setDeleting}>
         <AlertDialogContent>
           <AlertDialogIcon>
@@ -353,7 +369,7 @@ export default function SitePage() {
             </dl>
           </Panel>
           <div className="flex flex-col gap-4">
-            <Actions site={site} onChanged={set} />
+            <Actions site={site} onChanged={set} onReload={reload} />
             {site.requests.length > 0 ? (
               <Panel title="Change requests" actions={<Link href="/requests" className="text-[13px] font-semibold text-brand hover:text-brand-dark">All requests</Link>}>
                 <ul className="flex flex-col gap-2">

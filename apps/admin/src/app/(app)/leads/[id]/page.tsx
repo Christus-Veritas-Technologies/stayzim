@@ -12,7 +12,7 @@ import { Switch } from "@stayzim/ui/components/switch";
 import { Textarea } from "@stayzim/ui/components/textarea";
 import { cn } from "@stayzim/ui/lib/utils";
 import { findTemplate } from "@stayzim/sites";
-import { ArrowUpRight, Gift, Globe, Plus, Send, Trash2 } from "lucide-react";
+import { ArrowUpRight, Gift, Globe, Link2, Plus, Send, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
@@ -20,9 +20,11 @@ import { toast } from "sonner";
 
 import { WhatsAppIcon } from "@/components/brand";
 import { LoadError, LoadingCards, Page, PageHeader, PageSection, Panel } from "@/components/page";
+import { PaymentLinkSheet } from "@/components/payment-link-sheet";
 import { api, outreachApi } from "@/lib/api";
 import { formatShortDate, formatWhen } from "@/lib/format";
 import { formatPhone, LEAD_SOURCES, OUTREACH_STATUSES, PLAN_NAMES } from "@/lib/labels";
+import { formatCents } from "@/lib/money";
 import type { LeadDetail, LeadSite } from "@/lib/types";
 import { useApi } from "@/lib/use-api";
 import { whatsappTextUrl } from "@/lib/whatsapp";
@@ -110,7 +112,7 @@ function GiveSheet({ lead, site, onClose, onSent }: { lead: LeadDetail; site: Le
   );
 }
 
-function SiteCard({ leadId, site, onGive, onDelete }: { leadId: string; site: LeadSite; onGive: () => void; onDelete: () => void }) {
+function SiteCard({ leadId, site, onGive, onPay, onDelete }: { leadId: string; site: LeadSite; onGive: () => void; onPay: () => void; onDelete: () => void }) {
   const design = site.template ? findTemplate(site.template) : undefined;
   return (
     <Card className="flex flex-col gap-3 p-4">
@@ -134,12 +136,17 @@ function SiteCard({ leadId, site, onGive, onDelete }: { leadId: string; site: Le
         </Badge>
         {site.claimed ? <Badge variant="success">Theirs: {site.ownerEmail}</Badge> : null}
         {!site.claimed && site.previewEndsAt ? <Badge variant="purple">Link opened, not claimed yet</Badge> : null}
+        {site.paymentLink?.state === "paid" ? <Badge variant="success">Paid {formatCents(site.paymentLink.amountCents)}</Badge> : null}
       </div>
       <div className="flex flex-wrap gap-2">
         <a href={site.url} target="_blank" rel="noreferrer" className={buttonVariants({ variant: "outline", size: "sm" })}>
           Open
           <ArrowUpRight />
         </a>
+        <Button size="sm" variant="outline" onClick={onPay}>
+          <Link2 />
+          Payment link
+        </Button>
         {site.claimed ? null : (
           <>
             <Link href={`/leads/${leadId}/new-site?site=${site.slug}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
@@ -156,6 +163,11 @@ function SiteCard({ leadId, site, onGive, onDelete }: { leadId: string; site: Le
         )}
       </div>
       {site.claimLinkExpiresAt && !site.claimed ? <p className="text-[12px] text-muted-2">A claim link is out, until {formatShortDate(site.claimLinkExpiresAt)}.</p> : null}
+      {site.paymentLink?.state === "open" ? (
+        <p className="text-[12px] text-muted-2">
+          A payment link for {formatCents(site.paymentLink.amountCents)} is out, until {formatShortDate(site.paymentLink.expiresAt)}.
+        </p>
+      ) : null}
     </Card>
   );
 }
@@ -271,6 +283,7 @@ export default function LeadPage() {
   const { id } = useParams<{ id: string }>();
   const { data: lead, error, loading, reload, set } = useApi<LeadDetail>(`/api/admin/leads/${id}`);
   const [giving, setGiving] = useState<LeadSite | null>(null);
+  const [paying, setPaying] = useState<LeadSite | null>(null);
   const [deleting, setDeleting] = useState<LeadSite | null>(null);
 
   if (loading) return <LoadingCards />;
@@ -334,7 +347,7 @@ export default function LeadPage() {
             ) : (
               <div className="grid gap-3 md:grid-cols-2">
                 {lead.sites.map((site) => (
-                  <SiteCard key={site.id} leadId={lead.id} site={site} onGive={() => setGiving(site)} onDelete={() => setDeleting(site)} />
+                  <SiteCard key={site.id} leadId={lead.id} site={site} onGive={() => setGiving(site)} onPay={() => setPaying(site)} onDelete={() => setDeleting(site)} />
                 ))}
               </div>
             )}
@@ -345,6 +358,18 @@ export default function LeadPage() {
       </PageSection>
 
       <GiveSheet lead={lead} site={giving} onClose={() => setGiving(null)} onSent={reload} />
+      {paying ? (
+        <PaymentLinkSheet
+          site={paying}
+          phone={lead.status === "DO_NOT_CONTACT" ? null : lead.phone}
+          name={lead.name}
+          open
+          onOpenChange={(open) => {
+            if (!open) setPaying(null);
+          }}
+          onChanged={reload}
+        />
+      ) : null}
       <AlertDialog open={deleting !== null} onOpenChange={(open) => !open && setDeleting(null)}>
         <AlertDialogContent>
           <AlertDialogIcon>

@@ -25,6 +25,18 @@ export type SiteRow = {
   photos: number;
 };
 
+/** A site's latest payment link (stayzim.co.zw/pay/…): one amount, paid without signing in. */
+export type PaymentLink = {
+  url: string;
+  plan: Plan;
+  months: number;
+  amountCents: number;
+  expiresAt: string;
+  paidAt: string | null;
+  createdAt: string;
+  state: "open" | "paid" | "expired";
+};
+
 export type Invoice = { id: string; number: string; plan: Plan; amountCents: number; status: "OPEN" | "PAID" | "VOID"; dueAt: string; paidAt: string | null; periodStart?: string; periodEnd?: string };
 
 export type Payment = {
@@ -54,6 +66,7 @@ export type SiteDetail = SiteRow & {
   utm: { source: string | null; medium: string | null; campaign: string | null; content: string | null; referrer: string | null };
   linkSharedAt: string | null;
   claimLinkExpiresAt: string | null;
+  paymentLink: PaymentLink | null;
   domainClaim: { domain: string; status: "REQUESTED" | "READY"; createdAt: string; readyAt: string | null } | null;
   invoices: Invoice[];
   payments: Payment[];
@@ -124,6 +137,7 @@ export type LeadSite = {
   claimed: boolean;
   ownerEmail: string | null;
   claimLinkExpiresAt: string | null;
+  paymentLink: PaymentLink | null;
   photos: number;
 };
 
