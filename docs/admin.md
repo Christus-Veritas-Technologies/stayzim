@@ -64,6 +64,14 @@ _Planned with the user on 13 October 2026. One app for the StayZim team: everyon
 ### Domains
 - Free `.co.zw` domains claimed and not set up yet, with the name asked for; **Set up** sets the lodge's domain (the job then emails the owner).
 
+## Making sites for clients
+
+Every client who answers our follow-up gets two sites to choose between: the $15 one (Starter) and the $30 one (Growth). They're guest sites, claimed later (Give to lead) or paid first (Payment link).
+
+- **In the admin:** New sites (Overview, Sites), or **$15 + $30 sites** on a lead. The lodge's name, town and WhatsApp number, the sites to make, and photos that go on every site. The lead is found by the WhatsApp number, or made.
+- **From a terminal** (the team, and Claude): `ADMIN_API_TOKEN=… pnpm --filter admin make-sites --name "Kudu Creek Lodge" --town Hwange --whatsapp "+263 77 123 4567" [--contact "Their Name"] [--kind lodge] [--plans STARTER,GROWTH] photo1.jpg photo2.jpg`. It resizes the photos as the admin does and prints both addresses.
+- **The API:** every `/api/admin/*` route takes `Authorization: Bearer <ADMIN_API_TOKEN>` as well as a team member's session, acting as the team login `ADMIN_EMAIL`. `POST /api/admin/sites` makes the sites; `POST /api/admin/sites/:slug/photos` adds a photo; `PATCH /api/admin/sites/:slug` changes the name, town or WhatsApp number.
+
 ## Build order
 
 1. The plan (this file).

@@ -8,7 +8,8 @@
     "start": "next start --port 9996",
     "check-types": "next typegen && tsc --noEmit",
     "test": "bun test",
-    "import-outreach": "node --env-file=.env scripts/import-outreach-db.mjs"
+    "import-outreach": "node --env-file=.env scripts/import-outreach-db.mjs",
+    "make-sites": "bun scripts/make-sites.ts"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.9.1",
@@ -41,6 +42,7 @@
     "@types/qrcode": "^1.5.5",
     "@types/react": "^19.2.15",
     "@types/react-dom": "catalog:",
+    "sharp": "0.35.5",
     "tailwindcss": "^4.1.18",
     "typescript": "catalog:"
   }
