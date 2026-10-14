@@ -1,6 +1,8 @@
 "use client";
 
 import { Badge } from "@stayzim/ui/components/badge";
+import { buttonVariants } from "@stayzim/ui/components/button";
+import { Plus } from "lucide-react";
 import Link from "next/link";
 
 import { LoadError, LoadingCards, Page, PageHeader, PageSection, Panel, Stat } from "@/components/page";
@@ -17,7 +19,16 @@ export default function OverviewPage() {
 
   return (
     <Page>
-      <PageHeader title="Overview" description="Sign-ups, sites and money across StayZim." />
+      <PageHeader
+        title="Overview"
+        description="Sign-ups, sites and money across StayZim."
+        actions={
+          <Link href="/sites/new" className={buttonVariants({ size: "sm" })}>
+            <Plus />
+            New sites
+          </Link>
+        }
+      />
       {loading ? <LoadingCards /> : null}
       {error ? <LoadError message={error} onRetry={reload} /> : null}
       {data ? (

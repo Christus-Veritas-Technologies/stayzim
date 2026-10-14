@@ -1,12 +1,12 @@
 "use client";
 
 import { Badge } from "@stayzim/ui/components/badge";
-import { Button } from "@stayzim/ui/components/button";
+import { Button, buttonVariants } from "@stayzim/ui/components/button";
 import { Card } from "@stayzim/ui/components/card";
 import { EmptyState } from "@stayzim/ui/components/empty-state";
 import { Input } from "@stayzim/ui/components/input";
 import { NativeSelect } from "@stayzim/ui/components/native-select";
-import { Globe, Search } from "lucide-react";
+import { Globe, Plus, Search } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -50,7 +50,17 @@ function SitesList() {
 
   return (
     <Page>
-      <PageHeader title="Sites" count={data?.total} description="Every lodge site: who owns it, what it pays, and where it stands." />
+      <PageHeader
+        title="Sites"
+        count={data?.total}
+        description="Every lodge site: who owns it, what it pays, and where it stands."
+        actions={
+          <Link href="/sites/new" className={buttonVariants({ size: "sm" })}>
+            <Plus />
+            New sites
+          </Link>
+        }
+      />
       <PageSection className="flex flex-col gap-2 sm:flex-row">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-2" />

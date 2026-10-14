@@ -10,7 +10,7 @@ import { NativeSelect } from "@stayzim/ui/components/native-select";
 import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@stayzim/ui/components/sheet";
 import { Switch } from "@stayzim/ui/components/switch";
 import { Tabs, TabsList, TabsTab } from "@stayzim/ui/components/tabs";
-import { ArrowUpRight, Banknote, Link2, Trash2 } from "lucide-react";
+import { ArrowUpRight, Banknote, ImagePlus, Link2, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -117,6 +117,50 @@ function PaymentSheet({ site, open, onOpenChange, onSaved }: { site: SiteDetail;
   );
 }
 
+/** The lodge's name, town and WhatsApp number, as its owner edits them on the dashboard. */
+function Details({ site, onChanged }: { site: SiteDetail; onChanged: (site: SiteDetail) => void }) {
+  const initial = { name: site.name, town: site.town ?? "", whatsapp: site.whatsapp ? `+${site.whatsapp}` : "" };
+  const [form, setForm] = useState(initial);
+  const [saving, setSaving] = useState(false);
+  const set = (key: keyof typeof form) => (event: { target: { value: string } }) => setForm((current) => ({ ...current, [key]: event.target.value }));
+  const changed = form.name !== initial.name || form.town !== initial.town || form.whatsapp !== initial.whatsapp;
+
+  async function save(event: React.FormEvent) {
+    event.preventDefault();
+    setSaving(true);
+    const result = await api<SiteDetail>(`/api/admin/sites/${site.slug}`, {
+      method: "PATCH",
+      json: { name: form.name, town: form.town || null, ...(form.whatsapp !== initial.whatsapp ? { whatsapp: form.whatsapp } : {}) },
+    });
+    setSaving(false);
+    if (result.error !== undefined) return toast.error(result.error);
+    toast.success("Saved");
+    onChanged(result.data);
+    setForm({ name: result.data.name, town: result.data.town ?? "", whatsapp: result.data.whatsapp ? `+${result.data.whatsapp}` : "" });
+  }
+
+  return (
+    <Panel title="Details" description="What the site shows. The owner can change them on their dashboard too.">
+      <form onSubmit={save} className="flex flex-col gap-3">
+        <Field label="Lodge name">
+          <Input value={form.name} onChange={set("name")} required maxLength={80} />
+        </Field>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Town or city">
+            <Input value={form.town} onChange={set("town")} maxLength={60} />
+          </Field>
+          <Field label="WhatsApp number">
+            <Input value={form.whatsapp} onChange={set("whatsapp")} inputMode="tel" placeholder="+263 77 123 4567" />
+          </Field>
+        </div>
+        <Button type="submit" variant="outline" size="sm" className="self-start" disabled={!changed || saving}>
+          {saving ? "Saving" : "Save details"}
+        </Button>
+      </form>
+    </Panel>
+  );
+}
+
 function Actions({ site, onChanged, onReload }: { site: SiteDetail; onChanged: (site: SiteDetail) => void; onReload: () => void }) {
   const router = useRouter();
   const [linking, setLinking] = useState(false);
@@ -215,6 +259,12 @@ function Actions({ site, onChanged, onReload }: { site: SiteDetail; onChanged: (
             <Link2 />
             Payment link
           </Button>
+          {site.lead && site.owner.guest ? (
+            <Link href={`/leads/${site.lead.id}/new-site?site=${site.slug}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+              <ImagePlus />
+              Photos
+            </Link>
+          ) : null}
           <Button size="sm" variant="outline" onClick={() => setPaying(true)} disabled={site.owner.guest}>
             <Banknote />
             Record a payment
@@ -370,6 +420,7 @@ export default function SitePage() {
           </Panel>
           <div className="flex flex-col gap-4">
             <Actions site={site} onChanged={set} onReload={reload} />
+            <Details key={`${site.name}|${site.town}|${site.whatsapp}`} site={site} onChanged={set} />
             {site.requests.length > 0 ? (
               <Panel title="Change requests" actions={<Link href="/requests" className="text-[13px] font-semibold text-brand hover:text-brand-dark">All requests</Link>}>
                 <ul className="flex flex-col gap-2">

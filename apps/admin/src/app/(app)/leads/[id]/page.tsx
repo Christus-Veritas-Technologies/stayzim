@@ -322,9 +322,13 @@ export default function LeadPage() {
               <WhatsAppIcon size={15} />
               Chat from my phone
             </a>
-            <Link href={`/leads/${lead.id}/new-site`} className={buttonVariants({ size: "sm" })}>
+            <Link href={`/leads/${lead.id}/new-site`} className={buttonVariants({ variant: "outline", size: "sm" })}>
               <Plus />
-              Make a site
+              One site
+            </Link>
+            <Link href={`/sites/new?lead=${lead.id}`} className={buttonVariants({ size: "sm" })}>
+              <Plus />
+              $15 + $30 sites
             </Link>
           </>
         }
