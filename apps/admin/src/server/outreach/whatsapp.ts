@@ -20,6 +20,33 @@ const BACKUP_INTERVAL_MS = 5 * 60 * 1000;
 const START_ATTEMPTS = 3;
 const RETRY_DELAY_MS = 10_000;
 
+/** How long WhatsApp Web gets to say it's connected, to find a number, and to send. */
+const CHECK_TIMEOUT_MS = 15_000;
+const LOOKUP_TIMEOUT_MS = 30_000;
+const SEND_TIMEOUT_MS = 60_000;
+
+/** How often every connected number is checked, so a dead browser is found before a send needs it. */
+const WATCH_EVERY_MS = 2 * 60 * 1000;
+
+/** After a disconnect (other than unlinking from the phone), when to start the browser again. */
+const RECONNECT_DELAY_MS = 15_000;
+
+/** WhatsApp Web's states that need the phone (scan again, or close WhatsApp on another computer). */
+const NEEDS_THE_PHONE = new Set(["UNPAIRED", "UNPAIRED_IDLE", "CONFLICT", "DEPRECATED_VERSION", "PROXYBLOCK", "TOS_BLOCK", "SMB_TOS_BLOCK"]);
+
+/** Rejects if `promise` takes longer than `ms`: a hung WhatsApp Web page never holds a send forever. */
+function withTimeout<T>(promise: Promise<T>, ms: number, what: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`WhatsApp took more than ${Math.round(ms / 1000)} s ${what}`)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
+function errorText(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
 /** One store, one table, one row per account. */
 const store = new PostgresSessionStore(env.WHATSAPP_SESSION_PATH);
 
@@ -42,6 +69,8 @@ export type WhatsAppStatus = {
   lastError?: string;
   /** When this account's session was last backed up to Postgres. */
   lastSavedAt?: string;
+  /** When WhatsApp Web last confirmed this number is connected (before each send, and every 2 minutes). */
+  lastCheckedAt?: string;
   startedAt: string;
 };
 
@@ -87,6 +116,8 @@ function resolveBrowser(): string | undefined {
 export class WhatsAppAccount {
   private client: InstanceType<typeof Client> | undefined;
   private readonly status: WhatsAppStatus;
+  private executablePath: string | undefined;
+  private restarting = false;
 
   constructor(readonly id: string) {
     this.status = {
@@ -119,6 +150,7 @@ export class WhatsAppAccount {
 
   async start(executablePath: string | undefined, attempt = 1): Promise<void> {
     const status = this.status;
+    this.executablePath = executablePath;
 
     const lastSavedAt = await store.lastSavedAt(this.sessionName).catch(() => null);
     status.lastSavedAt = lastSavedAt?.toISOString();
@@ -222,6 +254,12 @@ export class WhatsAppAccount {
           .catch((error) => this.logError("could not delete stored session:", error));
         status.lastSavedAt = undefined;
       }
+      // Start again: from the saved session after WhatsApp Web reloads or the network
+      // drops, or with a QR code to scan after a logout
+      // (only if this browser is still the current one: not stopped for a redeploy, not restarted already)
+      setTimeout(() => {
+        if (this.client === client) void this.restart(`after a disconnect (${String(reason)})`);
+      }, RECONNECT_DELAY_MS).unref?.();
     });
 
     try {
@@ -265,6 +303,54 @@ export class WhatsAppAccount {
     this.client = undefined;
   }
 
+  /** Closes this number's browser and starts it again from the saved session. One at a time. */
+  async restart(why: string): Promise<void> {
+    if (this.restarting || !env.WHATSAPP_ENABLED) return;
+    this.restarting = true;
+    this.log(`restarting ${why}`);
+    try {
+      await this.stop();
+      this.status.state = "starting";
+      this.status.startedAt = new Date().toISOString();
+      await this.start(this.executablePath ?? resolveBrowser());
+    } catch (error) {
+      this.status.state = "failed";
+      this.status.lastError = errorText(error);
+      this.logError("restart failed:", error);
+    } finally {
+      this.restarting = false;
+    }
+  }
+
+  /**
+   * Asks WhatsApp Web whether this number is really connected, rather than
+   * trusting the last event. A browser that doesn't answer is restarted; a
+   * number that needs its phone is marked disconnected. True when it can send.
+   */
+  async verify(): Promise<boolean> {
+    const client = this.client;
+    if (!client || !this.isReady) return false;
+    try {
+      const state = await withTimeout(client.getState(), CHECK_TIMEOUT_MS, "to say whether it's connected");
+      if (state === "CONNECTED") {
+        this.status.lastCheckedAt = new Date().toISOString();
+        return true;
+      }
+      this.status.lastError = `WhatsApp Web says ${state ?? "nothing"}`;
+      this.logError(`not connected: ${this.status.lastError}`);
+      if (state && NEEDS_THE_PHONE.has(state)) this.status.state = "disconnected";
+      // Anything else (opening, reconnecting) passes; this number sits this send out
+      return false;
+    } catch (error) {
+      // The page or the browser is gone: start it again
+      this.status.state = "disconnected";
+      this.status.lastError = errorText(error);
+      this.logError("didn't answer the connection check:", error);
+      void this.restart("after a failed connection check");
+      return false;
+    }
+  }
+
   /**
    * The message this account just sent with exactly `body`, found in WhatsApp
    * Web's own message list. whatsapp-web.js returns the sent message by looking
@@ -293,19 +379,25 @@ export class WhatsAppAccount {
   }
 
   async send(phone: string, message: string) {
-    if (!this.client || !this.isReady) {
-      throw new Error(`WhatsApp account ${this.id} is not connected (state: ${this.status.state})`);
+    const client = this.client;
+    if (!client || !(await this.verify())) {
+      throw new Error(`WhatsApp number ${this.id} isn't connected right now (${this.status.lastError ?? this.status.state})`);
     }
 
     // WhatsApp's own id for the number: null when it isn't on WhatsApp
-    const numberId = await this.client.getNumberId(toChatId(phone));
+    const numberId = await withTimeout(client.getNumberId(toChatId(phone)), LOOKUP_TIMEOUT_MS, "to look the number up");
     if (!numberId) {
       return { sent: false as const, reason: "not_on_whatsapp" as const };
     }
 
     // sendSeen: outbound-only, and it sidesteps the sendSeen/markedUnread crash
     // WD_logistics patches around (whatsapp-web.js issue #5741)
-    const sent = await this.client.sendMessage(numberId._serialized, message, { sendSeen: false });
+    const sent = await withTimeout(client.sendMessage(numberId._serialized, message, { sendSeen: false }), SEND_TIMEOUT_MS, "to send").catch(async (error: unknown) => {
+      // A slow or failed answer doesn't mean nothing went: look before calling it failed
+      const found = await this.findJustSent(message);
+      if (found) return { id: { _serialized: found } };
+      throw error;
+    });
     if (sent) return { sent: true as const, account: this.id, id: sent.id._serialized };
 
     // No message back doesn't mean nothing went: check WhatsApp's own list before calling it failed
@@ -328,6 +420,16 @@ const engine = (shared.__stayzimWhatsApp ??= {
   nextIndex: 0,
   started: false,
 });
+
+/** Every 2 minutes, each connected number proves it still is (and a dead browser is restarted). */
+function watchAccounts() {
+  const timer = setInterval(() => {
+    for (const account of engine.accounts.values()) {
+      if (account.isReady) void account.verify();
+    }
+  }, WATCH_EVERY_MS);
+  timer.unref?.();
+}
 const accounts = engine.accounts;
 
 export const accountIds = [...accounts.keys()];
@@ -368,9 +470,10 @@ export async function startWhatsApp(): Promise<void> {
       `session path=${env.WHATSAPP_SESSION_PATH} browser=${executablePath ?? "none found"}`,
   );
 
+  watchAccounts();
   // Each account is its own Chromium; start them together so one waiting on a
-  // QR scan doesn't hold the others back.
-  await Promise.all([...accounts.values()].map((account) => account.start(executablePath)));
+  // QR scan doesn't hold the others back. One failing never stops the others.
+  await Promise.allSettled([...accounts.values()].map((account) => account.start(executablePath)));
 }
 
 export async function stopWhatsApp(): Promise<void> {

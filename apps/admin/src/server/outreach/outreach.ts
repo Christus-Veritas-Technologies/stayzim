@@ -93,7 +93,7 @@ async function resolveAccount(accountId: string | undefined): Promise<WhatsAppAc
   if (accountId) {
     const account = getAccount(accountId);
     if (!account) throw new OutreachError(404, `Unknown WhatsApp account: ${accountId}`);
-    if (!account.isReady) throw new OutreachError(503, `WhatsApp account ${accountId} is not ready`);
+    if (!(await account.verify())) throw new OutreachError(503, `WhatsApp number ${accountId} isn't connected right now. Try another, or check the WhatsApp page.`);
 
     const usage = await getAccountUsage(accountId);
     if (usage.remaining === 0) {
@@ -106,14 +106,19 @@ async function resolveAccount(accountId: string | undefined): Promise<WhatsAppAc
   if (ready.length === 0) throw new OutreachError(503, "No WhatsApp account is ready");
 
   let earliestReset: Date | undefined;
+  let connected = 0;
   for (const account of ready) {
     const usage = await getAccountUsage(account.id);
     if (usage.remaining > 0) {
+      // Only a number WhatsApp Web confirms is connected sends; the next one tries otherwise
+      if (!(await account.verify())) continue;
       markAccountUsed(account);
       return account;
     }
+    connected += 1;
     if (usage.resetsAt && (!earliestReset || usage.resetsAt < earliestReset)) earliestReset = usage.resetsAt;
   }
+  if (connected === 0) throw new OutreachError(503, "No WhatsApp number is connected right now. Check the WhatsApp page.");
   throw new OutreachError(429, `Every connected number hit its daily limit of ${env.WHATSAPP_DAILY_LIMIT}`, earliestReset);
 }
 

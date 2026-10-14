@@ -23,6 +23,7 @@ type NumberStatus = {
   pushName?: string;
   lastError?: string;
   lastSavedAt?: string;
+  lastCheckedAt?: string;
   startedAt: string;
   usage?: { sent: number; limit: number; remaining: number; resetsAt?: string };
 };
@@ -75,6 +76,9 @@ function NumberCard({ status }: { status: NumberStatus }) {
           <Progress value={(usage.sent / usage.limit) * 100} />
           {usage.remaining === 0 && usage.resetsAt ? <span className="text-[12px] text-warning">At its limit until {formatWhen(usage.resetsAt)}</span> : null}
         </div>
+      ) : null}
+      {status.state === "ready" ? (
+        <p className="text-[12px] text-muted-2">{status.lastCheckedAt ? `WhatsApp confirmed it's connected ${formatShortWhen(status.lastCheckedAt)}` : "Not checked yet: it's checked every 2 minutes and before each send"}</p>
       ) : null}
       <p className="text-[12px] text-muted-2">{status.lastSavedAt ? `Login saved ${formatShortWhen(status.lastSavedAt)}: a redeploy won't need a new scan` : "Login not saved yet: it saves about a minute after connecting"}</p>
     </Card>
