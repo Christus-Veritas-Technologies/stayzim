@@ -29,6 +29,9 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   typedRoutes: true,
   reactCompiler: true,
+  // The Docker builds set NEXT_BUILD_WORKERS=1: web and admin build side by side on the
+  // VPS, and a worker per CPU each is more than its memory holds
+  ...(process.env.NEXT_BUILD_WORKERS ? { experimental: { cpus: Number(process.env.NEXT_BUILD_WORKERS) } } : {}),
   poweredByHeader: false,
   // `next build` skips its own type check; types are checked by `pnpm check-types`
   // (next typegen + tsc), which CI runs on every push

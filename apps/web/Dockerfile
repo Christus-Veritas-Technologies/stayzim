@@ -47,6 +47,10 @@ ENV NEXT_PUBLIC_WHATSAPP_NUMBER=${NEXT_PUBLIC_WHATSAPP_NUMBER}
 ARG NEXT_PUBLIC_SITES_DOMAIN=stayzim.co.zw
 ENV NEXT_PUBLIC_SITES_DOMAIN=${NEXT_PUBLIC_SITES_DOMAIN}
 ENV NEXT_TELEMETRY_DISABLED=1
+# web and admin build at the same time on the VPS: one page worker and a capped heap
+# each, so the two fit in its memory beside the running stack
+ENV NEXT_BUILD_WORKERS=1 \
+    NODE_OPTIONS=--max-old-space-size=1536
 
 COPY packages/config/ packages/config/
 COPY packages/env/ packages/env/

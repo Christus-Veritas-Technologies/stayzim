@@ -65,6 +65,10 @@ ENV NEXT_PUBLIC_SERVER_URL=${NEXT_PUBLIC_SERVER_URL} \
     # Only for the build (the settings are checked when next.config loads); the real ones come at runtime
     CORS_ORIGIN=http://localhost:9996 \
     WHATSAPP_ENABLED=false
+# web and admin build at the same time on the VPS: one page worker and a capped heap
+# each, so the two fit in its memory beside the running stack
+ENV NEXT_BUILD_WORKERS=1 \
+    NODE_OPTIONS=--max-old-space-size=1536
 
 COPY packages/config/ packages/config/
 COPY packages/env/ packages/env/

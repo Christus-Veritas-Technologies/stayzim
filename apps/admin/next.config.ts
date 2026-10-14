@@ -16,6 +16,9 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  // The Docker builds set NEXT_BUILD_WORKERS=1: web and admin build side by side on the
+  // VPS, and a worker per CPU each is more than its memory holds
+  ...(process.env.NEXT_BUILD_WORKERS ? { experimental: { cpus: Number(process.env.NEXT_BUILD_WORKERS) } } : {}),
   poweredByHeader: false,
   // Types are checked by `pnpm check-types` (next typegen + tsc), as in the web app
   typescript: { ignoreBuildErrors: true },
