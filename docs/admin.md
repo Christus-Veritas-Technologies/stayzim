@@ -73,3 +73,5 @@ _Planned with the user on 13 October 2026. One app for the StayZim team: everyon
 6. The outreach engine and its routes in the admin, the WhatsApp screens, Leads (with Make a site and Give to lead), the CSV upload.
 7. Deployment: the admin image (Chromium), the compose service and route, copying the outreach database; the web app's `/admin` redirects to the admin; `apps/outreach` deleted.
 8. Docs.
+
+All eight landed on 13 October 2026. Deploying it the first time: [deployment.md](deployment.md#moving-from-the-outreach-app-to-the-admin-app).

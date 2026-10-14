@@ -1,6 +1,6 @@
 # WhatsApp outreach messages
 
-_Drafts for the founding offer (11 October 2026). Campaign messages are typed into the outreach tool (`apps/outreach`, Campaigns), not stored in the code, so paste these in there. The tool fills in `{name}` and `{city}` from each contact (nothing else). Founding prices end on 22 October 2026 at 23:59, Zimbabwe time: after that, use the "After 22 October" versions._
+_Drafts for the founding offer (11 October 2026). Campaign messages are typed into the admin app (Campaigns, `admin.stayzim.co.zw/campaigns`), not stored in the code, so paste these in there. It fills in `{name}` and `{city}` from each contact (nothing else). Founding prices end on 22 October 2026 at 23:59, Zimbabwe time: after that, use the "After 22 October" versions._
 
 ## First message
 

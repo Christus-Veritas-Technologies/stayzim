@@ -8,12 +8,12 @@ StayZim runs on one VPS with [Coolify](https://coolify.io), behind Cloudflare. C
 | --- | --- | --- |
 | `web` | Landing page, login and dashboard, and every lodge site | `stayzim.co.zw` (`www.` and `app.` redirect there), `*.stayzim.co.zw` |
 | `server` | The API (Hono on Bun). Applies new database migrations each time it starts | `api.stayzim.co.zw` |
-| `outreach` | The WhatsApp outreach tool (Hono on Bun, one Chromium per number). Its own database, `stayzim-outreach`, on the same Postgres, made and migrated each time it starts | `outreach.stayzim.co.zw` |
-| `db` | Postgres 16 (databases `stayzim` and `stayzim-outreach`), data in the `postgres` volume | internal only |
+| `admin` | The team's app (Next.js): leads, sites made for them, every site, user and payment, and the WhatsApp outreach (one Chromium per number). Team accounts only. Uses the main database; starts once the server is healthy | `admin.stayzim.co.zw` |
+| `db` | Postgres 16 (database `stayzim`), data in the `postgres` volume | internal only |
 
 Lodge photos live in Cloudflare R2, served from `cdn.stayzim.co.zw`, so the server needs no volume.
 
-The outreach tool's WhatsApp logins are saved in its database (about a minute after a number connects), so it needs no volume either, and a redeploy needs no new QR scans. Each linked number runs its own Chromium, about 300 MB: three numbers fit on the 4 GB VPS beside the rest.
+The admin's WhatsApp logins are saved in the database (about a minute after a number connects), so it needs no volume either, and a redeploy needs no new QR scans. Each linked number runs its own Chromium, about 300 MB: three numbers fit on the 4 GB VPS beside the rest.
 
 **Tested here:**
 
@@ -123,7 +123,7 @@ Install Coolify on the VPS (Ubuntu 24.04, 2 vCPU, 4 GB RAM is plenty to start). 
 3. **Domains:**
    - service `web`: `https://stayzim.co.zw:9999,https://www.stayzim.co.zw:9999`;
    - service `server`: `https://api.stayzim.co.zw:9998`;
-   - service `outreach`: `https://outreach.stayzim.co.zw:9997` (optional: the compose file's own Traefik labels already route `OUTREACH_DOMAIN`, default `outreach.stayzim.co.zw`, to it);
+   - service `admin`: `https://admin.stayzim.co.zw:9996` (optional: the compose file's own Traefik labels already route `ADMIN_DOMAIN`, default `admin.stayzim.co.zw`, to it; the wildcard DNS record and certificate cover it);
    - `db`: none.
 
    The `:9999` and `:9998` tell Coolify which port inside the container to send traffic to. Visitors still use plain `https://stayzim.co.zw`.
@@ -139,8 +139,8 @@ Install Coolify on the VPS (Ubuntu 24.04, 2 vCPU, 4 GB RAM is plenty to start). 
 
 4. **Environment variables:**
    - Paste [`deploy/.env.example`](../deploy/.env.example) and fill it in.
-   - Required: `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET` (`openssl rand -base64 32`), `OUTREACH_PASSWORD` (`openssl rand -hex 16`; without it only `outreach` fails to start), the `R2_*` settings, and `NEXT_PUBLIC_WHATSAPP_NUMBER`.
-   - Outreach: `WHATSAPP_ACCOUNTS` (one id per number, default `wa1,wa2,wa3`), `WHATSAPP_DAILY_LIMIT` (default 40 a day per number), `OUTREACH_CORS_ORIGIN` (its own address), and `WHATSAPP_ENABLED=false` to run it without WhatsApp.
+   - Required: `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET` (`openssl rand -base64 32`), the `R2_*` settings, and `NEXT_PUBLIC_WHATSAPP_NUMBER`.
+   - Admin: `ADMIN_URL` (its address, default `https://admin.stayzim.co.zw`; the API allows it), `ADMIN_API_TOKEN` (`openssl rand -hex 16`, for scripts calling its outreach API; empty means signed-in team members only), `WHATSAPP_ACCOUNTS` (one id per number, default `wa1,wa2,wa3`), `WHATSAPP_DAILY_LIMIT` (default 40 a day per number), and `WHATSAPP_ENABLED=false` to run it without WhatsApp.
    - For online payments: `PAYNOW_INTEGRATION_ID` and `PAYNOW_INTEGRATION_KEY` (above). SMTP matters more now: welcome emails, invoices and receipts go through it.
    - SMTP and Google are needed for reset emails and Google sign-in.
    - `COOKIE_DOMAIN=.stayzim.co.zw`: besides sign-in across subdomains, it's how an owner's own visits to their site are left out of their numbers.
@@ -155,14 +155,14 @@ Install Coolify on the VPS (Ubuntu 24.04, 2 vCPU, 4 GB RAM is plenty to start). 
    - The Meta Pixel for the Facebook ads is built in (its ID is in `apps/web/src/lib/meta-pixel.ts`) and reports sign-ups, demos and payments. Nothing to set.
    - `NEXT_PUBLIC_*` values are baked in when the web image builds, so mark them as build variables, and redeploy after changing them.
 
-5. **Deploy.** The server waits for Postgres, applies the migrations, then starts. Web waits for the server's health check (`/health`, which also checks the database). Outreach waits for Postgres, creates its own database the first time, applies the migrations to it, then starts each number's Chromium.
+5. **Deploy.** The server waits for Postgres, applies the migrations, then starts. Web waits for the server's health check (`/health`, which also checks the database). The admin waits for the server too, then starts each number's Chromium.
 
 ## 4. First run
 
 Open a terminal on the `server` container (Coolify → the resource → Terminal → `server`):
 
 ```bash
-# StayZim's own login, for the team screen (/admin/requests)
+# StayZim's own login, for the admin app (admin.stayzim.co.zw)
 cd /app/packages/auth && bun scripts/create-owner.ts --email you@stayzim.co.zw --name "Your Name" --admin
 
 # The landing page's demo lodges, with the sales number
@@ -176,21 +176,30 @@ The scripts print temporary passwords.
 - **Payments made outside Paynow:** `cd /app/apps/server && bun scripts/mark-paid.ts --slug mistvalley --months 1 --channel ecocash` records one and emails the receipt. Use `--list` to see every lodge and what it owes. `bun scripts/run-billing.ts` runs the hourly billing job straight away.
 - With the wildcard in place, a new lodge's site is live straight away. Nothing changes in DNS or Coolify.
 
-**Outreach:** open `https://outreach.stayzim.co.zw/accounts` (user `admin`, password `OUTREACH_PASSWORD`) and scan each number's QR code with WhatsApp on that phone (Linked devices). Wait a minute after the last one connects before redeploying, so its login is saved. The API takes `Authorization: Bearer <OUTREACH_PASSWORD>` ([apps/outreach/API.md](../apps/outreach/API.md)).
+**WhatsApp:** sign in at `https://admin.stayzim.co.zw` with the team login, open WhatsApp and scan each number's QR code with WhatsApp on that phone (Linked devices). Wait a minute after the last one connects before redeploying, so its login is saved. Scripts call `https://admin.stayzim.co.zw/api/outreach/*` with `Authorization: Bearer <ADMIN_API_TOKEN>` ([apps/admin/API.md](../apps/admin/API.md)).
 
 **Check after deploying:**
 
 - `https://api.stayzim.co.zw/health` → `{"status":"ok"}`.
-- `https://outreach.stayzim.co.zw/health` → `{"healthy":true,…}` with each number `qr` (waiting for a scan) or `ready`.
+- `https://admin.stayzim.co.zw` shows the admin's sign-in; signed in, its WhatsApp page shows each number `qr` (waiting for a scan) or `ready`.
 - `https://stayzim.co.zw` shows the landing page, and `https://mistvalley.stayzim.co.zw` shows a demo lodge.
 - Signing in on `stayzim.co.zw` reaches the dashboard. If it bounces back to the login page, check `COOKIE_DOMAIN=.stayzim.co.zw` and `CORS_ORIGIN`.
 - Five wrong passwords in a row give "Too many attempts". If one person's mistakes lock everyone out, `CLIENT_IP_HEADER` doesn't match the proxy.
+
+## Moving from the outreach app to the admin app
+
+The admin app replaced the outreach service (13 October 2026). Once, when deploying it:
+
+1. In Coolify's environment variables, add `ADMIN_API_TOKEN` with the old `OUTREACH_PASSWORD` value (so scripts keep their token) and `ADMIN_URL=https://admin.stayzim.co.zw`; delete `OUTREACH_PASSWORD`, `OUTREACH_DOMAIN` and `OUTREACH_CORS_ORIGIN`. Remove the `outreach` service's domain if one was set.
+2. Deploy. On its first start the admin copies the old `stayzim-outreach` database's leads, messages and WhatsApp logins into the main one (its log says `[import-outreach] … copied`), so no number needs a new QR scan. It never copies again once the main database has leads.
+3. Make sure the old `outreach` container is gone (Coolify → the resource; or `docker ps` on the VPS, then `docker rm -f` it). Two containers using the same WhatsApp login knock each other off.
+4. Check the leads and the WhatsApp page in the admin. When you're happy, the old database can go: `docker exec $(docker ps -qf name=db- | head -n 1) dropdb -U stayzim stayzim-outreach`.
 
 ## Updates and rollbacks
 
 **Updating:**
 
-- Pushing to `main` and pressing Redeploy (or turning on auto-deploy) rebuilds both images.
+- Pushing to `main` and pressing Redeploy (or turning on auto-deploy) rebuilds the images.
 - New migrations in `packages/db/prisma/migrations` apply when the server starts.
 - Migrations only ever apply what a reviewed SQL file says. A failed migration stops the server container before the app starts, and the log names the migration. Fix it, then redeploy.
 
@@ -216,8 +225,6 @@ Coolify's backups need the database as a Coolify-managed Postgres. With the bund
 ```bash
 # /etc/cron.d/stayzim-backup: 02:30 every night
 30 2 * * * root docker exec $(docker ps -qf name=db- | head -n 1) pg_dump -U stayzim -Fc stayzim > /var/backups/stayzim-$(date +\%F).dump && find /var/backups -name 'stayzim-*.dump' -mtime +14 -delete
-# The outreach database (contacts, the outreach log and WhatsApp logins)
-45 2 * * * root docker exec $(docker ps -qf name=db- | head -n 1) pg_dump -U stayzim -Fc stayzim-outreach > /var/backups/outreach-$(date +\%F).dump && find /var/backups -name 'outreach-*.dump' -mtime +14 -delete
 ```
 
 [`docker/backup.sh`](../docker/backup.sh) does the same from any machine with `pg_dump` and `DATABASE_URL`, and keeps the newest 14. Copy the files off the VPS (for example `rclone copy /var/backups r2:stayzim-backups`): a backup on the same disk dies with it.
@@ -274,15 +281,15 @@ How it works:
 
 ## Troubleshooting
 
-### outreach.stayzim.co.zw shows the main site, or "isn't running right now"
+### admin.stayzim.co.zw shows "isn't running right now"
 
-Web answers for that address whenever Traefik has no healthy `outreach` container to send it to (since 12 October it says "isn't running right now" with a 503 rather than showing the landing page). Traefik skips a container that is still starting (up to about 30 seconds after a deploy) or unhealthy. In Coolify, open the resource's `outreach` logs:
+Web answers for that address whenever Traefik has no healthy `admin` container to send it to. Traefik skips a container that is still starting (up to about a minute after a deploy: it waits for the server first) or unhealthy. In Coolify, open the resource's `admin` logs:
 
-- `OUTREACH_PASSWORD` errors at boot: set it (12+ characters) and redeploy.
-- A migration error: the log names it, as for the server.
+- Settings errors at boot (`Invalid environment variables`): the log names the setting; fix it and redeploy.
+- `[whatsapp] wa1 failed`: that number's Chromium didn't start; it tries 3 times. The rest of the admin works without it.
 - Nothing about it at all: Coolify didn't start it. Check the deployment log, then redeploy.
 
-Once it's up, `https://outreach.stayzim.co.zw/health` answers `{"healthy":true,…}`.
+Signing in works but every screen says "Sign in first": `ADMIN_URL` on the server must be the admin's exact address (it's allowed for CORS and sign-in), and `COOKIE_DOMAIN=.stayzim.co.zw`.
 
 ### A lodge site shows "no available server", or a 404
 

@@ -30,7 +30,7 @@ StayZim gives Zimbabwean lodges, guesthouses, cottages and Airbnbs their own web
 | Lodge owner or manager | Runs a lodge, guesthouse or Airbnb. Busy, sometimes in the diaspora, mostly on a phone. | Owner dashboard (stayzim.co.zw/dashboard) |
 | Guest | Local or regional traveller, tourist or diaspora visitor, often on slow or expensive data. | The lodge's own site ({slug}.stayzim.co.zw) |
 | Prospect | A lodge owner who hasn't signed up. Arrives from a Facebook ad, a link or an in-person demo. | Marketing site (stayzim.co.zw) |
-| Kin (admin) | Founder. Sells, onboards and supports every lodge. | Team screen for change requests (`/admin/requests`), scripts and the database |
+| Kin (admin) | Founder. Sells, onboards and supports every lodge. | The admin app (`admin.stayzim.co.zw`): leads, sites made for them, every site, user and payment, WhatsApp outreach |
 
 **Where the lodges are:** Victoria Falls, Kariba, Nyanga, Vumba, Chimanimani, Bulawayo, and Airbnbs in Harare suburbs such as Borrowdale and Greendale. The first demos target the Eastern Highlands (Vumba, Nyanga, Chimanimani), close to Mutare.
 
@@ -38,7 +38,7 @@ StayZim gives Zimbabwean lodges, guesthouses, cottages and Airbnbs their own web
 
 - **Facebook click-to-WhatsApp ads** aimed at lodge, guesthouse and Airbnb owners, from about $5 a day.
 - **Walking into lodges** with a demo of their own site already built.
-- **WhatsApp outreach** to leads who opted in or replied to the ads, sent from 3 StayZim numbers with daily limits (`apps/outreach`).
+- **WhatsApp outreach** to leads who opted in or replied to the ads, sent from 3 StayZim numbers with daily limits (in the admin app, `apps/admin`).
 - **Facebook ads** to `/create?utm_source=meta&…`: owners make their own live demo in about 90 seconds (name, WhatsApp, 3 photos), the same flow as everyone else, with the ad's tags saved on the lodge.
 - **Free .co.zw domains** on every plan, registered by StayZim when the site launches.
 
@@ -80,7 +80,7 @@ StayZim gives Zimbabwean lodges, guesthouses, cottages and Airbnbs their own web
 | Content (CMS) | One fixed data shape for every lodge and template; only the rendering differs. Owners edit rooms, guest info and bookings themselves. Rooms are room types with a count ("Standard Room × 6"). |
 | Sign-up | One flow for everyone (`/create`): pick a look (the nine designs; the plan comes with the design, its price shown small), then lodge name and WhatsApp, then 3 photos, and the 2-day free preview is live; the email comes after (Claim my site), then Love it? Launch it. The design (and plan) stays first, not last: decided 11 October 2026. No separate funnel for ads: the utm_* tags tell them apart. The copy says it's for lodges, guesthouses, B&Bs and holiday homes, to keep others out. StayZim can still create accounts with a temporary password (`create-owner`). |
 | Analytics | Basic visit tracking (date, IP, page, country). Shown on Growth and Pro only, as the reason to upgrade. |
-| Admin | One team screen, for answering owners' change requests (`/admin/requests`). Everything else (creating owners and lodges, domains, payments made outside Paynow) stays in scripts and the database. |
+| Admin | Its own app at `admin.stayzim.co.zw` ([admin.md](admin.md)): signups and sites by state, leads with sites made on their behalf (handed over with a claim link on WhatsApp), WhatsApp outreach, every site, user and payment, change requests and domains. The scripts still work. |
 | Email | Nodemailer over SMTP with a Spacemail address. |
 | Photos | Stored in Cloudflare R2, resized on the owner's phone before upload. |
 | Lodge sites | Belong to the lodge: the lodge's photos, name and theme colour lead; StayZim shrinks to a "Made with StayZim" footer link. |

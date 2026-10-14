@@ -9,11 +9,11 @@ How the pieces of the StayZim monorepo fit together. For setup, see the [README]
    │
    ├── stayzim.co.zw ─────────────┐
    ├── (www. → stayzim.co.zw) ────┤  apps/web (Next.js 16)
-   ├── {slug}.stayzim.co.zw ──────┤    landing page, /login, /dashboard, /admin,
+   ├── {slug}.stayzim.co.zw ──────┤    landing page, /login, /dashboard, /claim,
    │                              │    lodge sites (rewritten to /sites/{slug})
    │                              │
    │   fetch, with session cookie ▼
-   └────────────────────────▶ apps/server (Hono on Bun) :9998
+   ├────────────────────────▶ apps/server (Hono on Bun) :9998
                                 │  /api/auth/*      better-auth (email + password, Google)
                                 │  /api/account/*   signed-in user
                                 │  /api/lodge/*     the owner's lodge, rooms, photos, stats, requests
@@ -21,12 +21,12 @@ How the pieces of the StayZim monorepo fit together. For setup, see the [README]
                                 │  /api/admin/*     StayZim team only
                                 │  /api/landing/*   landing analytics
                                 ▼
-                         PostgreSQL "stayzim"
-
- apps/outreach (Hono on Bun) :9997   internal tool, own login
-   │  3 × whatsapp-web.js clients (one Chrome each)
-   ▼
- PostgreSQL "stayzim-outreach"
+                         PostgreSQL "stayzim" ◀──────────────┐
+   │                                                         │
+   └── admin.stayzim.co.zw ──▶ apps/admin (Next.js 16) :9996 │
+         team only: calls /api/admin/* with the team login,  │
+         and runs the WhatsApp outreach itself ──────────────┘
+         (/api/outreach/*, 3 × whatsapp-web.js, one Chromium each)
 ```
 
 ## Apps
@@ -36,7 +36,7 @@ How the pieces of the StayZim monorepo fit together. For setup, see the [README]
 One app serves three kinds of host, told apart in `src/proxy.ts`:
 
 - **Lodge sites** at `{slug}.SITES_DOMAIN` are rewritten to `/sites/{slug}`. Anything else on a lodge host is that site's own 404. `/sites/x` opened on the main domain is redirected to the subdomain.
-- **The main domain** (`stayzim.co.zw`; `www.` and `app.` redirect there with a 308) serves the landing page, login, dashboard and team screens. Requests without a session cookie are sent to `/login` before any `/dashboard`, `/set-password` or `/admin` code loads; the pages check the session again.
+- **The main domain** (`stayzim.co.zw`; `www.` and `app.` redirect there with a 308) serves the landing page, login and dashboard. Requests without a session cookie are sent to `/login` before any `/dashboard` or `/set-password` code loads; the pages check the session again. `/admin/*` (the team's old screens) redirects to the admin app.
 
 Routes:
 
@@ -48,7 +48,7 @@ Routes:
 | `/dashboard` | Overview: setup checklist, visit stats, Send your link, rooms, activity |
 | `/dashboard/site`, `rooms`, `gallery`, `design`, `requests` | The "My site" pages: Lodge info, Rooms, Gallery, Design (template and hero text) and Change requests |
 | `/dashboard/analytics`, `billing` | Visits (Growth and Pro; a locked preview on Starter) and Billing |
-| `/admin/requests` | Team screen: work through owners' change requests (`role` `ADMIN` only) |
+| `/claim/[token]` | A lead opening the claim link for a site the team made for them: signs them in to it, then `/dashboard` |
 | `/sites/[slug]` | A lodge site (reached through its subdomain, or the lodge's own domain) |
 | `/preview/[slug]/[template]` | A lodge site in any template, for the Design screen. `noindex`, tracking off |
 
@@ -106,6 +106,8 @@ Shared UX pieces, so every screen behaves the same:
 | `GET /api/sites/:slug` | Public lodge site content (no plan or owner data), fresh on every request |
 | `POST /api/sites/:slug/events` | Page views and Book on WhatsApp taps from lodge sites. 60/minute per IP; skips the owner's and the team's own visits (by session cookie, or by the owner key on a lodge's own domain) |
 | `GET /api/admin/requests?status=open\|done\|all`, `PATCH /api/admin/requests/:id` | Team only: list requests across lodges, set status and reply |
+| `/api/admin/overview`, `users`, `sites`, `billing`, `domains` | Team only, for the admin app: signups, sites by state, MRR; users (password reset); every site (preview, status, founding price, domain, record a payment, delete unpaid); payments and invoices; domain claims (`src/routes/admin-console.ts`) |
+| `/api/admin/leads` | Team only: leads (add, CSV import, notes, Do not contact), their conversation, the sites made for them (each owned by a placeholder guest account, with photos) and one-time claim links (`src/routes/admin-leads.ts`) |
 
 - **CORS:** allows the `CORS_ORIGIN` list (comma-separated web origins) and any `{slug}.SITES_DOMAIN` origin (lodge sites report visits), with credentials, so the session cookie is sent.
 - **Mail check at boot:** if SMTP is configured, the server checks both logins (no-reply and billing) on startup and logs the result.
@@ -113,13 +115,17 @@ Shared UX pieces, so every screen behaves the same:
 - **Custom domains:** `Lodge.customDomain` (set with `packages/db/scripts/set-domain.ts`). `GET /api/sites/domain/:host` answers which lodge a domain belongs to (`slugForCustomDomain` in `src/lib/sites.ts`, cached). CORS accepts those origins as lodge sites. The web proxy uses the same lookup (`src/lib/custom-domains.ts`), and `siteHost`/`siteUrl` prefer the custom domain, so dashboard links and share messages use it. Setup is in [deployment.md](deployment.md#custom-domains).
 - **Client IP:** read from `CLIENT_IP_HEADER` (`cf-connecting-ip` behind Cloudflare), for visit records and sign-in rate limits ([auth.md](auth.md#rules)).
 - **Lodge routes** need a signed-in owner with their own password and a lodge (`requireLodge` in `src/lib/lodge.ts`, 404 until StayZim creates it). Each answers with the whole lodge (`lodgeJson`).
-- **Team routes** (`src/routes/admin.ts`) need a signed-in user with `role` `ADMIN`.
+- **Team routes** (`src/routes/admin.ts`, `admin-console.ts`, `admin-leads.ts`) need a signed-in user with `role` `ADMIN`. `ADMIN_URL` (the admin app's address) is an allowed origin for CORS and auth.
 - **Photos** (`src/lib/uploads.ts`): JPG, PNG or WebP (checked by file signature), 5 MB at most, stored in Cloudflare R2 through Bun's built-in S3 client and served from the bucket's public URL. Without the `R2_*` settings (development), they go to `UPLOAD_DIR` and this server serves them at `/uploads`; production refuses to start without R2. The storage in use is logged at boot. `R2_ENDPOINT` overrides the endpoint, for buckets in R2's EU jurisdiction or any S3-compatible store (the upload, content type and delete paths were tested against an S3 test server).
 - **Photo copies:** each photo has up to three files: the full one (1600px at most), `-md` (1280px) and `-sm` (640px), stored as `key`, `mediumKey` and `smallKey`. Copies are skipped when the photo is already that small, and older uploads have none. `photoSrcSet` turns them into a `srcset` (`srcSet` on photos, `heroSrcSet` on the lodge and site), and the templates give each image a `sizes` that matches its layout. Deleting a photo or room removes every copy. With realistic photos, a lodge site's first load on a phone is about 1.36 MB (976 KB of images, 274 KB of scripts, 72 KB of fonts), under the 1.5 MB budget; room carousels load each photo only when the guest swipes to it.
 
-### apps/outreach: Hono on Bun, port 9997
+### apps/admin: Next.js 16, port 9996
 
-Internal tool for messaging leads on WhatsApp from 3 numbers, with daily limits per number, reply tracking and opt-outs. It has its own database (`stayzim-outreach`), its own password, and server-rendered admin pages. Full reference: [apps/outreach/API.md](../apps/outreach/API.md).
+The team's app at `admin.stayzim.co.zw` ([admin.md](admin.md)): Overview, Leads (with Make a site and Give to lead), WhatsApp, Campaigns, Sites, Users, Billing, Requests and Domains, on `@stayzim/ui` like the dashboard. Team accounts sign in with their StayZim login.
+
+- **Pages** call the API's `/api/admin/*` from the browser with the session cookie, like the web app.
+- **WhatsApp outreach** runs in this app's own server: `src/instrumentation.ts` starts one whatsapp-web.js client (one Chromium) per number once per process, kept on `globalThis` so Next can't start them twice. Sessions are saved in Postgres (`WhatsappSession`), so a redeploy needs no QR scan. Daily limits per number, reply tracking and opt-outs as before.
+- **Its API**, `/api/outreach/*` (a Hono app mounted in `src/app/api/outreach`), takes a signed-in team member (checked with the API's `/api/account/me`) or `Authorization: Bearer <ADMIN_API_TOKEN>` for scripts. Reference: [apps/admin/API.md](../apps/admin/API.md).
 
 ### apps/native: Expo
 
@@ -157,7 +163,7 @@ Scaffold from the starter template. Not part of the MVP yet.
   - `carousel.tsx`, `quote-rotator.tsx`, `parallax.tsx`, and gallery layouts in `gallery.tsx`;
   - `template-fonts.ts`: each design's typeface, not preloaded, so a site downloads only its own;
   - `lib/site-content.ts`: shared wording (`splitIntro`, `amenitySummary`, `roomStats`, `highlightWords`, `scoreWord`, `countWords`), and `*stars*` in hero text for words a design sets apart.
-- **Pro content:** reviews (the listing's score and guests' quotes) and journal posts, which the StayZim team keeps at `/admin/lodges`. Pro sites get them in `LiveSite.reviews` and `journal`; the journal has its own pages, `/journal` and `/journal/{post}`, and is in the lodge's sitemap.
+- **Pro content:** reviews (the listing's score and guests' quotes) and journal posts, which the StayZim team keeps in the admin app (a site's page). Pro sites get them in `LiveSite.reviews` and `journal`; the journal has its own pages, `/journal` and `/journal/{post}`, and is in the lodge's sitemap.
 - **Every template reads the same data.** Templates differ only in rendering. The CMS makes this a written contract ([docs/cms/README.md](cms/README.md#the-template-contract)):
   - the sections every template renders when they have content;
   - `BookLink` for every Book button;
@@ -188,7 +194,7 @@ The design is in [docs/cms/](cms/README.md); what was built is in [progress.md](
 Anything owners can't change themselves goes through change requests. Room details, guest info and bookings are self-serve now, through the CMS.
 
 1. **Owner** (`/dashboard/requests`): picks a topic (Words, Photos, Rooms, Design, Something else), writes the message (10–1000 characters) and sends it. The request gets a reference like `R-7K2Q`, and the owner can pass it on to StayZim on WhatsApp in one tap.
-2. **Team** (`/admin/requests`): the Waiting list (open and in progress, oldest first). Set the status and write a reply; Message {owner} opens WhatsApp to the lodge's number.
+2. **Team** (Requests in the admin app): the Waiting list (open and in progress, oldest first). Set the status and write a reply; Message {owner} opens WhatsApp to the lodge's number.
 3. **Owner** sees the status badge (Open, In progress, Done, Declined) and the team's reply under their request.
 
 The `resolve-request` script does the same from a terminal (`pnpm --filter @stayzim/db resolve-request --list`, or `--ref R-XXXX --status done --reply "…"`).
@@ -206,7 +212,7 @@ An unpaid site is a **free preview** to owners and guests (the code and database
 
   The frame (`components/create/frame.tsx`) has the steps down the side on wide screens and a pill of dots with a round Back on phones, "Step N of 3" with a thin bar, one big question per screen, and Next kept in view on long steps. The site takes shape beside the form as they type and upload (`components/create/preview.tsx`; the right column at `xl` and up, a strip above the form below that). Town, rooms, logo and guest info come after, from the dashboard checklist. The step and the look are in the URL (`?step=&look=`), so a reload carries on. The plan for this redesign, and what's left, is in [create-redesign.md](create-redesign.md). `/signup` and `/start` redirect here with their query (plan, utm_*).
 - **Guest accounts** (`user.is_anonymous`): their email is a placeholder at `guest.stayzim.co.zw`, which `sendEmail` never sends to. Until they claim, the dashboard shows a "Claim my site" banner, the account menu has Claim instead of Log out, and Billing asks them to claim before paying (the pay route refuses guests). Logging in to an existing account from a guest session also moves the demo across, if that account has no lodge.
-- **Where lodges come from:** `lodge.utm_source`, `utm_medium`, `utm_campaign`, `utm_content` and `signup_referrer`, from the first page of the visit (`signupSource()` in `lib/track.ts`). The team's lodge list (`/admin/lodges`) shows "via meta · registration_test".
+- **Where lodges come from:** `lodge.utm_source`, `utm_medium`, `utm_campaign`, `utm_content` and `signup_referrer`, from the first page of the visit (`signupSource()` in `lib/track.ts`). The admin app's Sites list shows "via meta · registration_test".
 - **The funnel:** each step is a `CTA_CLICK` landing event in the `create` section (`create_open`, `create_look`, `create_lodge`, `create_photo`, `create_live`, `create_claim`) and a custom Pixel event (`CreateStep`, with `step`), plus Meta's `StartTrial` when the demo is made and `CompleteRegistration` on claim. Drop-off between steps reads straight off `landing_event`; `pnpm --filter server funnel` prints it per advert source.
 - **Per-IP limits** are generous (30 guest sign-ins per 10 minutes, 30 demos an hour), because many phones on one mobile network share an IP address.
 - **Free previews (demo sites):**
@@ -277,7 +283,7 @@ An unpaid site is a **free preview** to owners and guests (the code and database
 
 - Email and password through better-auth. Owners sign up themselves (above); StayZim can still create accounts with `create-owner`. Details, rules and flows: [auth.md](auth.md).
 - **Google:** "Continue with Google" shows when `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set. It signs in the account with the same email, or creates one (then `/create`). From a guest account it claims the guest's site (back on `/dashboard?claimed=1`). Errors come back to `/login?error=…`.
-- **After login:** team accounts (`--admin`) land on `/admin/requests`, owners on `/dashboard`, anyone on a temporary password on `/set-password` first, and an owner without a lodge on `/create`.
+- **After login:** team accounts (`--admin`) go to the admin app, owners on `/dashboard`, anyone on a temporary password on `/set-password` first, and an owner without a lodge on `/create`.
 
 ## Packages
 
@@ -287,7 +293,7 @@ An unpaid site is a **free preview** to owners and guests (the code and database
 | `@stayzim/auth` | better-auth config (`auth`), `MIN_PASSWORD_LENGTH`, `googleSignInEnabled`, and `scripts/create-owner.ts` |
 | `@stayzim/sites` | The template catalog and its rules (`templateAllowed`, `effectiveTemplate`, `DEFAULT_TEMPLATE`, `HERO_LIMITS`, `heroText`), plan prices and inclusions (`plans.ts`), slug rules (`slugs.ts`), and billing dates in Zimbabwe time (`billing-dates.ts`). Shared by server, web and scripts. And the CMS content contract (`content/`: limits, amenities, guest-info rules, dates and availability, types; zod schemas at `@stayzim/sites/schemas`) |
 | `@stayzim/mail` | `sendEmail()` over SMTP with Nodemailer, `verifyMailConnection()`, and templates on one branded layout (`layout.ts`: a 480px card, near edge to edge on phones, the StayZim mark hosted at `/email/stayzim-mark.png`, the app's fonts where mail apps load them, and shared parts: heading, button, summary, note). Account emails are in `templates.ts`; welcome ("your site is ready"), invoice, receipt, free preview ended, the day 3 and day 10 reminders, the founding deadline and site offline in `billing.ts`; booking emails to owners and guests in `bookings.ts`; free-domain emails in `domains.ts`. `bun scripts/preview-emails.ts <dir>` writes each to HTML. Two senders: the main one (`SMTP_*`, no-reply@) and billing@ (`BILLING_SMTP_*`) for emails marked `sender: "billing"`; every email replies to hello@ unless it sets its own `replyTo` |
-| `@stayzim/env` | Validated env per app: `server`, `web`, `outreach`, `native` |
+| `@stayzim/env` | Validated env per app: `server`, `web`, `admin`, `native` |
 | `@stayzim/ui` | StayZim design tokens and shadcn-style components on Base UI (buttons, fields, dialogs, sheets, tabs, menus, …) |
 | `@stayzim/config` | Base `tsconfig` |
 
@@ -303,9 +309,9 @@ One Prisma schema, split into files:
 | `billing.prisma` | `Invoice`, `Payment`, `BillingNotice` (emails sent), `BillingCounter` (running numbers) | server |
 | `site.prisma` | `SiteEvent` (lodge site page views, booking chats and booking requests) | server |
 | `booking.prisma` | `Booking` (stays and closed dates, guests' requests, the owner's notes; snapshots of the room name and price) | server |
-| `outreach.prisma` | `WhatsappSession`, `Contact`, `OutreachMessage`, `InboundMessage` | outreach |
+| `outreach.prisma` | `WhatsappSession`, `Contact` (a lead, with the sites made for it), `OutreachMessage`, `InboundMessage` | admin, server |
 
-Both databases get the whole schema; each app only uses its own tables. Changes go through Prisma migrations in `packages/db/prisma/migrations` (`0_init` is the baseline): `pnpm db:migrate` creates one after a schema edit, and `pnpm db:deploy` (or a container start) applies new ones. Databases made with `db push` before then need baselining once (README, [Database changes](../README.md#database-changes)). `prisma generate` runs on every install and works without `DATABASE_URL`.
+Server and admin share the one database. Changes go through Prisma migrations in `packages/db/prisma/migrations` (`0_init` is the baseline): `pnpm db:migrate` creates one after a schema edit, and `pnpm db:deploy` (or a container start) applies new ones. Databases made with `db push` before then need baselining once (README, [Database changes](../README.md#database-changes)). `prisma generate` runs on every install and works without `DATABASE_URL`.
 
 ## Environment
 
@@ -313,7 +319,7 @@ Both databases get the whole schema; each app only uses its own tables. Changes 
 | --- | --- | --- |
 | server | `apps/server/.env` | `DATABASE_URL`, `CORS_ORIGIN` (comma-separated), `SITES_DOMAIN`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `WEB_URL`, `COOKIE_DOMAIN`, `GOOGLE_*`, `R2_*`, `SMTP_*`, `BILLING_SMTP_*`, `PAYNOW_*`. See [.env.example](../apps/server/.env.example). |
 | web | `apps/web/.env` | `NEXT_PUBLIC_SERVER_URL`, `NEXT_PUBLIC_SITES_DOMAIN`, `NEXT_PUBLIC_WHATSAPP_NUMBER`, `NEXT_PUBLIC_META_PIXEL` (optional, `off` to leave the Pixel out). See [.env.example](../apps/web/.env.example). |
-| outreach | `apps/outreach/.env` | `DATABASE_URL`, `OUTREACH_PASSWORD`, `WHATSAPP_*`. See [.env.example](../apps/outreach/.env.example). |
+| admin | `apps/admin/.env` | `NEXT_PUBLIC_SERVER_URL`, `NEXT_PUBLIC_WEB_URL`, `NEXT_PUBLIC_SITES_DOMAIN`, `DATABASE_URL` (the main one), `CORS_ORIGIN` (its own address), `ADMIN_API_TOKEN`, `WHATSAPP_*`. See [.env.example](../apps/admin/.env.example). |
 
 Every `.env` file is gitignored; only the `.env.example` files are committed.
 
@@ -323,20 +329,20 @@ Every `.env` file is gitignored; only the `.env.example` files are committed.
 | --- | --- | --- | --- | --- |
 | server | `apps/server/Dockerfile` | `node:22-slim` + Bun | `docker/start.sh` → `bun src/index.ts` | Applies new migrations to `DATABASE_URL` on start. Needs the `R2_*` settings (photos live in R2, so no volume) |
 | web | `apps/web/Dockerfile` | `node:22-slim` | `next start` | `NEXT_PUBLIC_SERVER_URL`, `NEXT_PUBLIC_SITES_DOMAIN` and `NEXT_PUBLIC_WHATSAPP_NUMBER` are build args, baked in at build time |
-| outreach | `apps/outreach/Dockerfile` | `node:22-slim` + Bun + Chromium + tini | `tini` → `docker/start.sh` → `bun src/index.ts` | Creates its own database (`stayzim-outreach`) if missing and applies new migrations to it on start; the `outreach` service of `deploy/compose.yaml` |
+| admin | `apps/admin/Dockerfile` | `node:22-slim` + Chromium + tini | `tini` → `docker/admin-start.sh` → `next start` | `NEXT_PUBLIC_*` are build args. Starts after the API (which applies the migrations). On its first start it copies the old outreach database's leads, messages and WhatsApp logins (`scripts/import-outreach-db.mjs`); the `admin` service of `deploy/compose.yaml` |
 
 How they're built:
 
 - **Build context:** the repo root. `.dockerignore` keeps out `node_modules`, `.env` files, designs, docs and WhatsApp scratch folders.
-- **Install:** every workspace `package.json` is copied so the lockfile matches, then `pnpm install --frozen-lockfile --filter "<app>..."` installs only that app and its workspace packages. For server and outreach, `packages/db`'s postinstall runs `prisma generate`; nothing connects at build time.
+- **Install:** every workspace `package.json` is copied so the lockfile matches, then `pnpm install --frozen-lockfile --filter "<app>..."` installs only that app and its workspace packages. For server and admin, `packages/db`'s postinstall runs `prisma generate`; nothing connects at build time.
 - **Runtime:** Node is the base because pnpm and the Prisma CLI need it; Bun is copied in from `oven/bun:1` and runs the TypeScript entry directly, as in development, so there's no separate bundling step. OpenSSL is installed for Prisma's schema engine.
-- **Start:** `docker/start.sh` runs `prisma migrate deploy`, which applies only committed migrations, so nothing changes the database that wasn't reviewed in a migration file. When server and outreach start together, Prisma's lock makes one wait. A database made with `db push` gives P3005: with no accounts or lodges in it, `packages/db/scripts/reset-if-empty.ts` drops its tables and the migrations run from scratch; with data, the container stops with the baselining command. Set `SKIP_DB_MIGRATE=1` to skip it.
-- **Users and health:** every container runs as the unprivileged `node` user and has a `HEALTHCHECK` (server `/health`, which also checks the database; web `/`; outreach `/health`).
+- **Start:** `docker/start.sh` runs `prisma migrate deploy`, which applies only committed migrations, so nothing changes the database that wasn't reviewed in a migration file. A database made with `db push` gives P3005: with no accounts or lodges in it, `packages/db/scripts/reset-if-empty.ts` drops its tables and the migrations run from scratch; with data, the container stops with the baselining command. Set `SKIP_DB_MIGRATE=1` to skip it.
+- **Users and health:** every container runs as the unprivileged `node` user and has a `HEALTHCHECK` (server `/health`, which also checks the database; web `/`; admin `/login`).
 - **Backups:** `docker/backup.sh` writes a compressed `pg_dump` (custom format) and keeps the newest `KEEP` (14); it prints the `pg_restore` command. A backup and restore of the dev database were checked to give the same row counts. In production, Coolify's scheduled backups to R2 come first ([deployment.md](deployment.md)).
-- **Outreach:**
+- **Admin (WhatsApp):**
   - Puppeteer's Chromium download is skipped; Debian's `chromium` is used via `PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium`.
   - Give it `--shm-size=1g` and about 300 MB of memory per number.
-  - Sessions are backed up to Postgres, so no volume is required. A volume on `/app/apps/outreach/.wwebjs_auth` only saves restoring them on restart.
+  - Sessions are backed up to Postgres, so no volume is required. A volume on `/app/apps/admin/.wwebjs_auth` only saves restoring them on restart.
 
 ## Production shape
 
@@ -346,4 +352,4 @@ Step by step in [deployment.md](deployment.md).
 - `{slug}.stayzim.co.zw`: lodge sites, also apps/web, via a wildcard DNS record and certificate (see [deployment.md](deployment.md))
 - `api.stayzim.co.zw`: apps/server, with `COOKIE_DOMAIN=.stayzim.co.zw` so web and API share the session cookie, and `CORS_ORIGIN=https://stayzim.co.zw`
 - `cdn.stayzim.co.zw`: the R2 bucket's public domain, for lodge photos (the hero photo is preloaded: React does it for a high-priority `<img>`)
-- Outreach runs on the same VPS but isn't exposed publicly beyond its password-protected pages
+- `admin.stayzim.co.zw`: apps/admin, for team accounts only (its own Traefik route in the compose file), with the WhatsApp outreach inside it

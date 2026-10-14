@@ -2,7 +2,7 @@
 
 _What's built, what's next, and what's blocking. Update this file whenever a piece of work lands. For what StayZim is and why, see [project.md](project.md)._
 
-**Last updated:** 11 October 2026 (founding prices until 22 October, the free preview, the landing page rewrite and the new emails; see the [log](#11-october-2026))
+**Last updated:** 13 October 2026 (the admin app at admin.stayzim.co.zw, which replaced the outreach tool; see the [log](#13-october-2026))
 
 ## At a glance
 
@@ -11,7 +11,7 @@ _What's built, what's next, and what's blocking. Update this file whenever a pie
 | Marketing landing page | ✅ Built; rewritten 11 October for the founding offer ("Get your lodge a website from $15 a month", countdown in six places) |
 | Landing page analytics (CTA clicks, page views) | ✅ Built |
 | Privacy and Terms pages | ✅ Drafted in plain language; need a review before launch |
-| WhatsApp outreach tool (internal) | ✅ Built |
+| Admin app (admin.stayzim.co.zw) | ✅ Built ([admin.md](admin.md)): Overview, Leads (Make a site, Give to lead with a claim link), WhatsApp outreach and Campaigns, Sites, Users, Billing, Requests, Domains. Replaced the outreach tool; needs its first deploy |
 | Self sign-up and the 2-day demo (`/create`) | ✅ Pick a look (designs in plan tabs, Starter first) + your place (type, setting, rooms, price) + lodge name, town and WhatsApp + 3 photos to a live demo, with the picked design previewed live beside the form ([create-redesign.md](create-redesign.md)); no email until Claim my site, ad tags saved, drop-off tracked per step, demo badges, offline when it ends, deleted 30 days later |
 | Owner sign-in (login, reset, first-login password) | ✅ Built, matches the app screens design |
 | Sign in with Google | ✅ Built (signs in or signs up), needs a Google OAuth client to test for real |
@@ -26,7 +26,7 @@ _What's built, what's next, and what's blocking. Update this file whenever a pie
 | Pages per plan | ✅ Starter one page (room filters on it); Growth adds Rooms (filters), a page per room, Gallery and Contact; Pro adds Our story, Things to do, Reviews, Check dates and a compare table ([cms/pages.md](cms/pages.md)) |
 | Generated copy | ✅ Every text on a site written from the lodge's facts, hundreds of variants, Try other wording ([cms/copy.md](cms/copy.md)) |
 | Example content on demos | ✅ Example rooms, guest info, reviews, posts and a real map until the owner adds theirs, marked Example and never bookable ([cms/examples.md](cms/examples.md)); stock photos still to add |
-| Change requests | ✅ Owner screen, team screen (`/admin/requests`), API and script |
+| Change requests | ✅ Owner screen, team screen (Requests in the admin app), API and script |
 | Owner analytics | ✅ Live numbers, chart, countries, activity, and the visits table (filters, pages, each visit's path, 90 days) |
 | Lodge CMS (rooms, guest info, quick wins) | ✅ Built, all plans: room details, how many, hide, duplicate, photo order; Guest info (times, rules, policy, FAQ, links); most asked-about rooms; edit your name. See [CMS](#cms) and [cms/](cms/README.md) |
 | Bookings calendar and on-site booking | ✅ Built, Growth and Pro: guests book on the site (WhatsApp second), the owner confirms or turns on Confirm bookings automatically, plus add, close dates, edit, cancel, emails, and booking data on the overview and Analytics. Starter keeps Book on WhatsApp |
@@ -64,7 +64,7 @@ Story IDs refer to the designer brief.
 - [x] A5 Log out
 - [x] A6 5 failed sign-ins in 10 minutes pauses sign-in for 10 minutes
 - [x] Self sign-up (`/signup`, email or Google), plus `create-owner` for accounts StayZim makes (that script was the only way in before sign-up opened)
-- [x] Owners already logged in skip the login screen; team accounts land on `/admin/requests`
+- [x] Owners already logged in skip the login screen; team accounts go to the admin app
 - [ ] Real SMTP credentials (Spacemail) configured and tested
 
 ### Dashboard (Screen 4)
@@ -171,7 +171,7 @@ The rule behind all of it: every lodge and every template has the same data shap
 
 ## Next up
 
-**Before 22 October:** deploy the founding offer, paste the new WhatsApp messages into the outreach tool ([outreach-messages.md](outreach-messages.md)), and check the countdown on a real phone.
+**Before 22 October:** deploy the founding offer, deploy the admin app ([deployment.md](deployment.md#moving-from-the-outreach-app-to-the-admin-app)), paste the new WhatsApp messages into its Campaigns ([outreach-messages.md](outreach-messages.md)), and check the countdown on a real phone.
 
 **Then [create-redesign.md](create-redesign.md#whats-left):**
 
@@ -398,6 +398,17 @@ Built (web):
 
 ## Log
 
+### 13 October 2026
+
+The admin app (`apps/admin`, [admin.md](admin.md)), planned with the user: claim links sent on WhatsApp, a lead's sites stay live until handed over or deleted, the old `/admin` screens move in, and outreach becomes the Leads inbox. Decided here: the lead's other sites are deleted at handover, Facebook leads come in by CSV upload, team role only, no signing in as someone else yet.
+
+- **Database:** leads are the outreach contacts, with a source, lodge name, email and notes; `lodge.lead_id`; one-time claim tokens (hashed).
+- **API** (`/api/admin/*`): overview (signups, sites by state, MRR, funnel), users (password reset), sites (preview, status, founding price, domain, record a payment, delete unpaid), billing, domains, leads (CSV import, conversation, sites for a lead with photos, claim links). A claim link signs the lead in to the site's placeholder account (`/claim/[token]` in the web app), starts the 2-day preview and deletes their other sites.
+- **Admin app:** Next.js on `@stayzim/ui`, team login. Overview, Leads, WhatsApp, Campaigns, Sites, Users, Billing, Requests and Domains. The WhatsApp engine moved in from `apps/outreach` (started by `instrumentation.ts`), its API now at `/api/outreach/*` ([apps/admin/API.md](../apps/admin/API.md)).
+- **Deploy:** the `admin` service at `admin.stayzim.co.zw` replaced `outreach`; on its first start it copies the old outreach database (leads, messages, WhatsApp logins). The web app's `/admin` redirects there. `apps/outreach` is deleted.
+- **Checked:** types and unit tests in every package; the admin's production build and `next start` (its API with the token, refused without); the outreach import (bytes and timestamps unchanged, skipped on a second run); the lead flow in a browser (CSV upload, Make a site, photos, Give to lead) and claim redemption. The Docker image itself wasn't built here (no Docker on this machine).
+- **Open:** the production outreach recorded no replies; WhatsApp may be hiding senders behind LIDs. Check the WhatsApp page's replies after the deploy.
+
 Newest first. One line per piece of work that landed on `main`.
 
 ### 11 October 2026
@@ -544,5 +555,5 @@ Value first: a new owner sees a full site in their chosen design, written for th
 - **Outreach tool:**
   - 3 WhatsApp numbers with sessions stored in Postgres (whatsapp-web.js RemoteAuth).
   - Contacts, campaigns, daily limits of 40 per number, reply tracking, opt-outs.
-  - Admin pages and an API. See [apps/outreach/API.md](../apps/outreach/API.md).
+  - Admin pages and an API. Its API reference is now [apps/admin/API.md](../apps/admin/API.md).
 - Server database moved from the shared `postgres` database to its own `stayzim` database.

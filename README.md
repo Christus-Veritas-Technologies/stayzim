@@ -8,7 +8,7 @@ Websites for Zimbabwean lodges, guesthouses and Airbnbs, where guests book direc
 - **The lodge CMS (rooms, guest info, bookings):** [docs/cms/](docs/cms/README.md)
 - **Deploying:** [docs/deployment.md](docs/deployment.md)
 - **Sign-in and email:** [docs/auth.md](docs/auth.md)
-- **Outreach tool API:** [apps/outreach/API.md](apps/outreach/API.md)
+- **The admin app:** [docs/admin.md](docs/admin.md); its WhatsApp outreach API: [apps/admin/API.md](apps/admin/API.md)
 
 ## What's in the repo
 
@@ -16,9 +16,10 @@ Websites for Zimbabwean lodges, guesthouses and Airbnbs, where guests book direc
 stayzim/
 ├── apps/
 │   ├── web/        Next.js: marketing site (stayzim.co.zw), owner login and dashboard,
-│   │               lodge sites ({slug}.stayzim.co.zw) and the team screen (/admin)
+│   │               lodge sites ({slug}.stayzim.co.zw)
 │   ├── server/     Hono on Bun: API, auth, lodge site content and visit tracking
-│   ├── outreach/   Hono on Bun: WhatsApp outreach to leads from 3 numbers (internal tool)
+│   ├── admin/      Next.js: the team's app (admin.stayzim.co.zw): leads, sites made for
+│   │               them, every site, user and payment, and WhatsApp outreach from 3 numbers
 │   └── native/     Expo app (scaffold only, not started)
 ├── packages/
 │   ├── db/         Prisma schema (one file per area), client, create-lodge and resolve-request scripts
@@ -36,7 +37,7 @@ stayzim/
 | web | http://localhost:9999 | (uses server) |
 | lodge sites | http://{slug}.localhost:9999, e.g. http://mistvalley.localhost:9999 | (uses server) |
 | server | http://localhost:9998 | `stayzim` |
-| outreach | http://localhost:9997 | `stayzim-outreach` |
+| admin | http://localhost:9996 | `stayzim` (shared with server) |
 
 ## Getting started
 
@@ -51,18 +52,12 @@ You need Node 22+, [Bun](https://bun.sh), pnpm 11 and PostgreSQL.
 2. Create the env files from the examples and fill them in:
    - `apps/server/.env` from [apps/server/.env.example](apps/server/.env.example)
    - `apps/web/.env` from [apps/web/.env.example](apps/web/.env.example)
-   - `apps/outreach/.env` from [apps/outreach/.env.example](apps/outreach/.env.example) (only if you run outreach)
+   - `apps/admin/.env` from [apps/admin/.env.example](apps/admin/.env.example) (only if you run the admin; `WHATSAPP_ENABLED=false` runs it without WhatsApp)
 
 3. Create the database tables by applying the migrations. `db:deploy` uses `DATABASE_URL` from `apps/server/.env`:
 
    ```bash
    pnpm db:deploy
-   ```
-
-   The outreach app has its own database. Apply the same migrations to it by overriding the URL:
-
-   ```bash
-   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/stayzim-outreach pnpm db:deploy
    ```
 
    A database set up earlier with `db:push` needs baselining once (see [Database changes](#database-changes)).
@@ -77,7 +72,7 @@ You need Node 22+, [Bun](https://bun.sh), pnpm 11 and PostgreSQL.
    pnpm --filter @stayzim/db create-lodge --owner owner@example.com --name "Mist Valley Lodge" --slug mistvalley --sample-rooms
    ```
 
-   For yourself, a team account opens the change requests screen (`/admin/requests`) after login:
+   For yourself, a team account, which signs in to the admin app (http://localhost:9996):
 
    ```bash
    pnpm --filter @stayzim/auth create-owner --email you@example.com --name "Your Name" --admin
@@ -100,7 +95,7 @@ You need Node 22+, [Bun](https://bun.sh), pnpm 11 and PostgreSQL.
    ```
 
    ```bash
-   pnpm dev:outreach
+   pnpm dev:admin
    ```
 
 Without SMTP settings, emails (password resets) are printed in the server's console, so you can still use the links locally. Without the `R2_*` settings, lodge photos are saved in `apps/server/uploads` instead of Cloudflare R2. Without the `GOOGLE_*` settings, the login screen hides "Continue with Google".
@@ -112,7 +107,7 @@ Lodge sites open at `http://{slug}.localhost:9999` (Chrome and Firefox resolve `
 | Command | What it does |
 | --- | --- |
 | `pnpm dev` | Start every app |
-| `pnpm dev:web` / `dev:server` / `dev:outreach` / `dev:native` | Start one app |
+| `pnpm dev:web` / `dev:server` / `dev:admin` / `dev:native` | Start one app |
 | `pnpm build` | Build every app |
 | `pnpm check-types` | Type-check every package |
 | `pnpm test` | Unit tests in every package (`bun test`) |
@@ -184,12 +179,12 @@ docker build -f apps/web/Dockerfile --build-arg NEXT_PUBLIC_SERVER_URL=https://a
 ```
 
 ```bash
-docker build -f apps/outreach/Dockerfile -t stayzim-outreach .
+docker build -f apps/admin/Dockerfile --build-arg NEXT_PUBLIC_SERVER_URL=https://api.stayzim.co.zw --build-arg NEXT_PUBLIC_WEB_URL=https://stayzim.co.zw -t stayzim-admin .
 ```
 
 - Images install from the committed `pnpm-lock.yaml` (`--frozen-lockfile`), so keep it committed and up to date.
-- `server` and `outreach` apply new Prisma migrations on start (`docker/start.sh`), then run with Bun. Set `SKIP_DB_MIGRATE=1` to skip that.
-- `outreach` includes Chromium, with `tini` as PID 1 to clean up after it. Run it with `--shm-size=1g` and about 300 MB of memory per WhatsApp number. In production it's the `outreach` service of [deploy/compose.yaml](deploy/compose.yaml), on its own database in the same Postgres ([docs/deployment.md](docs/deployment.md)).
+- `server` applies new Prisma migrations on start (`docker/start.sh`), then runs with Bun. Set `SKIP_DB_MIGRATE=1` to skip that.
+- `admin` includes Chromium for WhatsApp, with `tini` as PID 1 to clean up after it. Run it with `--shm-size=1g` and about 300 MB of memory per WhatsApp number. In production it's the `admin` service of [deploy/compose.yaml](deploy/compose.yaml), on the main database ([docs/deployment.md](docs/deployment.md)).
 
 Details: [docs/architecture.md](docs/architecture.md#docker).
 
