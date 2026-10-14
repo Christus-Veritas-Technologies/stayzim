@@ -3,7 +3,10 @@
 #
 # 1. Applies any new Prisma migrations (packages/db/prisma/migrations) to
 #    $DATABASE_URL. Skip with SKIP_DB_MIGRATE=1 (SKIP_DB_PUSH=1 still works).
-# 2. Runs the app's TypeScript entry with Bun, replacing this shell so the app
+# 2. Creates StayZim's own team login (ADMIN_EMAIL, ADMIN_PASSWORD) if it
+#    doesn't exist yet (packages/auth/scripts/ensure-admin.ts). A failure is
+#    logged and the app starts anyway.
+# 3. Runs the app's TypeScript entry with Bun, replacing this shell so the app
 #    receives SIGTERM directly and shuts down cleanly.
 set -e
 
@@ -32,6 +35,10 @@ if [ "${SKIP_DB_MIGRATE:-${SKIP_DB_PUSH:-0}}" != "1" ]; then
   else
     echo "$output" | tail -n 1
   fi
+fi
+
+if [ -n "${ADMIN_EMAIL:-}" ] && [ -n "${ADMIN_PASSWORD:-}" ]; then
+  (cd /app/packages/auth && bun scripts/ensure-admin.ts) || echo "[start] couldn't check the team login; starting anyway"
 fi
 
 cd "${APP_DIR:?APP_DIR must be set}"

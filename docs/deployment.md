@@ -162,7 +162,7 @@ Install Coolify on the VPS (Ubuntu 24.04, 2 vCPU, 4 GB RAM is plenty to start). 
 Open a terminal on the `server` container (Coolify → the resource → Terminal → `server`):
 
 ```bash
-# StayZim's own login, for the admin app (admin.stayzim.co.zw)
+# Another team login for the admin app (the server already made ADMIN_EMAIL's, below)
 cd /app/packages/auth && bun scripts/create-owner.ts --email you@stayzim.co.zw --name "Your Name" --admin
 
 # The landing page's demo lodges, with the sales number
@@ -170,6 +170,8 @@ bun scripts/seed-demos.ts --whatsapp 2637XXXXXXXX
 ```
 
 The scripts print temporary passwords.
+
+**The team login:** each time the server starts, it creates `ADMIN_EMAIL` (default `hello@stayzim.co.zw`) as a team account whose password is `ADMIN_API_TOKEN`, if that account doesn't exist yet (`packages/auth/scripts/ensure-admin.ts`; the log says `[ensure-admin] created the team login …`). It never changes an account that exists, so a password set later with Forgot password stays.
 
 - Sign in at `https://stayzim.co.zw/login`, choose a password, and add photos to each demo lodge as its demo owner.
 - New lodges mostly sign up themselves at `https://stayzim.co.zw/signup`. For one you set up yourself: `create-owner`, then `cd /app/packages/db && bun scripts/create-lodge.ts …` (see the [README](../README.md)).

@@ -65,6 +65,10 @@ services:
       WEB_URL: ${WEB_URL:-https://stayzim.co.zw}
       # The admin app: allowed to call the API with the team's login
       ADMIN_URL: ${ADMIN_URL:-https://admin.stayzim.co.zw}
+      # StayZim's own team login for the admin app, created on start if it doesn't
+      # exist yet (never changed after that). Its password is ADMIN_API_TOKEN.
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-hello@stayzim.co.zw}
+      ADMIN_PASSWORD: ${ADMIN_API_TOKEN:-}
       COOKIE_DOMAIN: ${COOKIE_DOMAIN:-.stayzim.co.zw}
       CLIENT_IP_HEADER: ${CLIENT_IP_HEADER:-cf-connecting-ip}
       R2_ACCOUNT_ID: ${R2_ACCOUNT_ID:-}
