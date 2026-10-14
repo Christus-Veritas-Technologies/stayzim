@@ -1,5 +1,6 @@
 import prisma from "@stayzim/db";
-import { sendEmail } from "@stayzim/mail";
+import { env } from "@stayzim/env/server";
+import { GUEST_EMAIL_DOMAIN, sendEmail } from "@stayzim/mail";
 import { demoWelcomeEmail, receiptEmail } from "@stayzim/mail/templates";
 import {
   addMonths,
@@ -14,9 +15,9 @@ import {
   type Plan,
 } from "@stayzim/sites";
 
-import { issuerLine } from "./business";
+import { issuer, issuerLine } from "./business";
 import { pingIndexNow } from "./indexnow";
-import { pollPayment } from "./paynow";
+import { pollPayment, startMobilePayment, startWebPayment, type MobileChannel } from "./paynow";
 import { DASHBOARD_URL, siteUrlFor } from "./sites";
 
 /**
@@ -128,6 +129,18 @@ export async function sendDemoWelcome(lodgeId: string) {
   );
 }
 
+/**
+ * Where a lodge's billing emails can go: the owner's own address, or for a site
+ * the team made that nobody has claimed yet (a guest account), the lead's email
+ * when the team has it. Null: nowhere.
+ */
+export function billingEmailFor(lodge: { owner: { email: string; isAnonymous: boolean | null }; lead: { email: string | null } | null }) {
+  if (!lodge.owner.isAnonymous && !lodge.owner.email.endsWith(`@${GUEST_EMAIL_DOMAIN}`)) return lodge.owner.email;
+  return lodge.lead?.email || null;
+}
+
+const billingRecipient = { owner: { select: { name: true, email: true, isAnonymous: true } }, lead: { select: { name: true, email: true } } } as const;
+
 /** Our payment reference: short, easy to read out, unique. */
 export function newPaymentReference() {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -169,6 +182,7 @@ export async function applyPayment(paymentId: string, extra: { paynowReference?:
     await tx.invoice.updateMany({ where: { lodgeId: payment.lodgeId, status: "OPEN", plan: payment.plan }, data: { status: "PAID", paidAt: now } });
     await tx.invoice.updateMany({ where: { lodgeId: payment.lodgeId, status: "OPEN" }, data: { status: "VOID" } });
     if (payment.invoiceId) await tx.invoice.update({ where: { id: payment.invoiceId }, data: { status: "PAID", paidAt: now } });
+    if (payment.paymentLinkId) await tx.paymentLink.update({ where: { id: payment.paymentLinkId }, data: { paidAt: now } });
     return { payment, paidUntil, before: lodge };
   });
   if (!applied) return false;
@@ -177,19 +191,22 @@ export async function applyPayment(paymentId: string, extra: { paynowReference?:
   const fresh = await prisma.payment.findUniqueOrThrow({ where: { id: payment.id }, select: { previousPlan: true, template: true } });
   const lodge = await prisma.lodge.findUniqueOrThrow({
     where: { id: payment.lodgeId },
-    select: { name: true, slug: true, customDomain: true, owner: { select: { name: true, email: true } } },
+    select: { name: true, slug: true, customDomain: true, ...billingRecipient },
   });
   // Paid sites are for search engines: tell them when one goes live (out of a demo or offline) or gains pages (a new plan)
   if (before.status === "DEMO" || before.status === "SUSPENDED" || before.plan !== payment.plan) {
     void pingIndexNow({ slug: lodge.slug, customDomain: lodge.customDomain, plan: payment.plan });
   }
+  // A site nobody has claimed yet (paid through a payment link) has no inbox: the lead's email, or no receipt
+  const to = billingEmailFor(lodge);
+  if (!to) return true;
   await sendOnce(
     `payment:${payment.id}:RECEIPT`,
     payment.lodgeId,
     "RECEIPT",
     receiptEmail({
-      to: lodge.owner.email,
-      name: lodge.owner.name,
+      to,
+      name: lodge.owner.isAnonymous ? (lodge.lead?.name ?? lodge.owner.name) : lodge.owner.name,
       lodgeName: lodge.name,
       number: payment.receiptNumber!,
       amount: formatCents(payment.amountCents),
@@ -227,6 +244,71 @@ export async function recordManualPayment(input: { lodgeId: string; plan: Plan; 
   });
   await applyPayment(payment.id);
   return prisma.payment.findUniqueOrThrow({ where: { id: payment.id } });
+}
+
+type StartPayment = {
+  lodgeId: string;
+  plan: Plan;
+  months: number;
+  amountCents: number;
+  channel: MobileChannel | "web";
+  /** The mobile money number, as Paynow wants it ("0771234567"); null for Paynow's page */
+  phone: string | null;
+  invoiceId?: string | null;
+  template?: string | null;
+  paymentLinkId?: string | null;
+  /** Where Paynow's page sends the payer back to, given the new payment's id */
+  returnUrl: (paymentId: string) => string;
+};
+
+/**
+ * Records a Paynow payment and starts it: a prompt on the payer's phone
+ * (EcoCash, OneMoney), a code for InnBucks, or Paynow's page for everything
+ * else. The dashboard's Billing and payment links both start payments here.
+ */
+export async function startPaynowPayment(input: StartPayment) {
+  const lodge = await prisma.lodge.findUniqueOrThrow({ where: { id: input.lodgeId }, select: billingRecipient });
+  const payment = await prisma.payment.create({
+    data: {
+      lodgeId: input.lodgeId,
+      invoiceId: input.invoiceId ?? null,
+      plan: input.plan,
+      months: input.months,
+      amountCents: input.amountCents,
+      method: "PAYNOW",
+      channel: input.channel,
+      reference: newPaymentReference(),
+      phone: input.phone,
+      template: input.template ?? null,
+      paymentLinkId: input.paymentLinkId ?? null,
+    },
+  });
+
+  const common = {
+    reference: payment.reference,
+    amountCents: payment.amountCents,
+    info: `StayZim ${input.plan} ${input.months} month${input.months === 1 ? "" : "s"}`,
+    // Paynow wants the payer's email; a site nobody has claimed yet has none of its own
+    email: billingEmailFor(lodge) ?? issuer.email,
+    resultUrl: `${env.BETTER_AUTH_URL}/api/paynow/result`,
+    returnUrl: input.returnUrl(payment.id),
+  };
+  const started = await (input.channel === "web" ? startWebPayment(common) : startMobilePayment({ ...common, phone: input.phone!, channel: input.channel })).catch(
+    (error: unknown) => ({ ok: false as const, error: error instanceof Error ? `Paynow didn't answer (${error.message}). Try again.` : "Paynow didn't answer. Try again." }),
+  );
+
+  if (!started.ok) {
+    await prisma.payment.update({ where: { id: payment.id }, data: { status: "FAILED" } });
+    return { ok: false as const, error: started.error };
+  }
+  const saved = await prisma.payment.update({ where: { id: payment.id }, data: { pollUrl: started.pollUrl, paynowReference: started.paynowReference } });
+  return {
+    ok: true as const,
+    payment: saved,
+    redirectUrl: started.redirectUrl ?? null,
+    instructions: started.instructions ?? null,
+    innbucksCode: started.innbucksCode ?? null,
+  };
 }
 
 const POLL_EVERY_MS = 5_000;

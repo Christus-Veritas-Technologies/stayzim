@@ -8,6 +8,7 @@ import { z } from "zod";
 
 import { deleteLodge, requireAdmin } from "../lib/admin";
 import { recordManualPayment } from "../lib/billing";
+import { createPaymentLink, latestPaymentLink } from "../lib/payment-links";
 import { requireAuth, withSession, type AuthVariables } from "../lib/session";
 import { siteUrlFor } from "../lib/sites";
 import { uploadUrl } from "../lib/uploads";
@@ -170,6 +171,7 @@ async function siteDetail(lodgeId: string) {
     utm: { source: lodge.utmSource, medium: lodge.utmMedium, campaign: lodge.utmCampaign, content: lodge.utmContent, referrer: lodge.signupReferrer },
     linkSharedAt: lodge.linkSharedAt,
     claimLinkExpiresAt: lodge.claimTokenExpiresAt,
+    paymentLink: await latestPaymentLink(lodgeId),
     domainClaim: lodge.domainClaim,
     invoices: lodge.invoices,
     payments: lodge.payments,
@@ -390,6 +392,17 @@ export const adminConsole = new Hono<{ Variables: AuthVariables }>()
       note: input.note || "Recorded in the admin app",
     });
     return c.json(await siteDetail(lodgeId), 201);
+  })
+
+  /**
+   * A payment link for this site: its own plan for 1, 3 or 12 months at its
+   * price, paid without signing in (stayzim.co.zw/pay/…). Its earlier unpaid
+   * links stop working.
+   */
+  .post("/sites/:slug/payment-link", validJson(z.object({ months: paymentInput.shape.months })), async (c) => {
+    const lodgeId = await siteBySlug(c.req.param("slug"));
+    const link = await createPaymentLink(lodgeId, c.req.valid("json").months, c.get("user")?.id ?? null);
+    return c.json(link, 201);
   })
 
   /** Deletes a site that never paid, with its photos and its account (unless it's the team's). */

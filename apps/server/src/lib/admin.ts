@@ -40,12 +40,17 @@ export async function deleteLodge(lodgeId: string) {
  * other sites, still on placeholder accounts, are deleted.
  */
 export async function onLeadSiteClaimed(lodgeId: string) {
-  const lodge = await prisma.lodge.update({
-    where: { id: lodgeId },
-    data: { status: "DEMO", demoEndsAt: addDays(new Date(), DEMO_DAYS) },
-    select: { id: true, leadId: true },
-  });
-  await onDemoCreated(lodge.id);
+  const current = await prisma.lodge.findUniqueOrThrow({ where: { id: lodgeId }, select: { status: true } });
+  // Paid already (a payment link, before they claimed it): it stays live as it is
+  const paid = current.status !== "DEMO";
+  const lodge = paid
+    ? await prisma.lodge.findUniqueOrThrow({ where: { id: lodgeId }, select: { id: true, leadId: true } })
+    : await prisma.lodge.update({
+        where: { id: lodgeId },
+        data: { status: "DEMO", demoEndsAt: addDays(new Date(), DEMO_DAYS) },
+        select: { id: true, leadId: true },
+      });
+  if (!paid) await onDemoCreated(lodge.id);
   if (!lodge.leadId) return;
   const others = await prisma.lodge.findMany({
     where: { leadId: lodge.leadId, id: { not: lodge.id }, owner: { isAnonymous: true }, payments: { none: { status: "PAID" } } },

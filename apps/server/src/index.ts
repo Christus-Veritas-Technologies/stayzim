@@ -20,6 +20,7 @@ import { landing } from "./routes/landing";
 import { lodge } from "./routes/lodge";
 import { startBillingJob } from "./jobs/billing";
 import { onboarding } from "./routes/onboarding";
+import { pay } from "./routes/pay";
 import { paynow } from "./routes/paynow";
 import { sites } from "./routes/sites";
 
@@ -96,6 +97,9 @@ app.route("/api/admin", adminLeads);
 
 // Public: lodge site content and visit tracking
 app.route("/api/sites", sites);
+
+// Public: payment links (stayzim.co.zw/pay/…), made in the admin app
+app.route("/api/pay", pay);
 
 app.notFound((c) => c.json({ error: "Not found" }, 404));
 

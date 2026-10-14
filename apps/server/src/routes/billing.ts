@@ -1,16 +1,15 @@
 import prisma from "@stayzim/db";
-import { env } from "@stayzim/env/server";
 import { designFitsPlan, findTemplate, isPlan, PAY_MONTHS, planPriceCents, PLANS_LABEL, templateAllowed } from "@stayzim/sites";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { rateLimiter } from "hono-rate-limiter";
 import { z } from "zod";
 
-import { BILLING_URL, newPaymentReference, paymentJson, refreshPayment } from "../lib/billing";
+import { BILLING_URL, paymentJson, refreshPayment, startPaynowPayment } from "../lib/billing";
 import { clientIp } from "../lib/ip";
 import { issuer } from "../lib/business";
 import { lodgeJson, type LodgeVariables } from "../lib/lodge";
-import { MOBILE_CHANNELS, paynowEnabled, startMobilePayment, startWebPayment } from "../lib/paynow";
+import { MOBILE_CHANNELS, paynowEnabled } from "../lib/paynow";
 import { validJson } from "../lib/validate";
 
 const paySchema = z.object({
@@ -74,7 +73,7 @@ export const billing = new Hono<{ Variables: LodgeVariables }>()
 
       const lodge = await prisma.lodge.findUniqueOrThrow({
         where: { id: c.var.lodgeId },
-        select: { id: true, name: true, plan: true, founding: true, template: true, owner: { select: { email: true } } },
+        select: { id: true, plan: true, founding: true, template: true },
       });
       // Moving to a plan without the site's design: the owner picks one of its designs first
       const design = input.template ? findTemplate(input.template) : undefined;
@@ -85,45 +84,24 @@ export const billing = new Hono<{ Variables: LodgeVariables }>()
         throw new HTTPException(400, { message: `Your design doesn't come with ${PLANS_LABEL[plan]}. Pick one of its designs first.` });
       }
       const invoice = await prisma.invoice.findFirst({ where: { lodgeId: lodge.id, status: "OPEN", plan }, orderBy: { dueAt: "asc" } });
-      const payment = await prisma.payment.create({
-        data: {
-          lodgeId: lodge.id,
-          invoiceId: input.months === 1 ? (invoice?.id ?? null) : null,
-          plan,
-          months: input.months,
-          amountCents: planPriceCents(plan, input.months, lodge.founding),
-          method: "PAYNOW",
-          channel: input.channel,
-          reference: newPaymentReference(),
-          phone,
-          template: design?.key ?? null,
-        },
+      const started = await startPaynowPayment({
+        lodgeId: lodge.id,
+        invoiceId: input.months === 1 ? (invoice?.id ?? null) : null,
+        plan,
+        months: input.months,
+        amountCents: planPriceCents(plan, input.months, lodge.founding),
+        channel: input.channel,
+        phone,
+        template: design?.key ?? null,
+        returnUrl: (id) => `${BILLING_URL}?payment=${id}`,
       });
-
-      const common = {
-        reference: payment.reference,
-        amountCents: payment.amountCents,
-        info: `StayZim ${plan} ${input.months} month${input.months === 1 ? "" : "s"}`,
-        email: lodge.owner.email,
-        resultUrl: `${env.BETTER_AUTH_URL}/api/paynow/result`,
-        returnUrl: `${BILLING_URL}?payment=${payment.id}`,
-      };
-      const started = await (input.channel === "web"
-        ? startWebPayment(common)
-        : startMobilePayment({ ...common, phone: phone!, channel: input.channel })
-      ).catch((error: unknown) => ({ ok: false as const, error: error instanceof Error ? `Paynow didn't answer (${error.message}). Try again.` : "Paynow didn't answer. Try again." }));
-
-      if (!started.ok) {
-        await prisma.payment.update({ where: { id: payment.id }, data: { status: "FAILED" } });
-        throw new HTTPException(502, { message: started.error });
-      }
-      await prisma.payment.update({ where: { id: payment.id }, data: { pollUrl: started.pollUrl, paynowReference: started.paynowReference } });
+      if (!started.ok) throw new HTTPException(502, { message: started.error });
       return c.json(
         {
-          payment: paymentJson({ ...payment, pollUrl: started.pollUrl }),
-          redirectUrl: started.redirectUrl ?? null,
-          instructions: started.instructions ?? null,
-          innbucksCode: started.innbucksCode ?? null,
+          payment: paymentJson(started.payment),
+          redirectUrl: started.redirectUrl,
+          instructions: started.instructions,
+          innbucksCode: started.innbucksCode,
         },
         201,
       );

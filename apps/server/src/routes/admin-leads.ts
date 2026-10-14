@@ -12,6 +12,7 @@ import { deleteLodge, requireAdmin } from "../lib/admin";
 import type { LodgeVariables } from "../lib/lodge";
 import { createLodge, newLodgeSchema } from "../lib/new-lodge";
 import { requireAuth, withSession } from "../lib/session";
+import { paymentLinkJson, paymentLinkSelect } from "../lib/payment-links";
 import { siteUrlFor } from "../lib/sites";
 import { validJson } from "../lib/validate";
 import { photos } from "./photos";
@@ -104,6 +105,7 @@ const leadSiteSelect = {
   demoEndsAt: true,
   createdAt: true,
   claimTokenExpiresAt: true,
+  paymentLinks: { orderBy: { createdAt: "desc" }, take: 1, select: paymentLinkSelect },
   owner: { select: { isAnonymous: true, email: true, name: true } },
   _count: { select: { photos: true, rooms: true } },
 } as const;
@@ -128,6 +130,7 @@ function leadSiteJson(site: LeadSite) {
     claimed: !site.owner.isAnonymous,
     ownerEmail: site.owner.isAnonymous ? null : site.owner.email,
     claimLinkExpiresAt: site.claimTokenExpiresAt,
+    paymentLink: site.paymentLinks[0] ? paymentLinkJson(site.paymentLinks[0]) : null,
     photos: site._count.photos,
   };
 }
