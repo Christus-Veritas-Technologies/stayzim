@@ -132,6 +132,7 @@ model Lodge {
   domainClaim DomainClaim?
   invoices Invoice[]
   payments Payment[]
+  paymentLinks PaymentLink[]
   bookings Booking[]
   reviews  Review[]
   posts    Post[]

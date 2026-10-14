@@ -82,6 +82,9 @@ model Payment {
   coversUntil     DateTime?     @map("covers_until")
   paidAt          DateTime?     @map("paid_at")
   lastPolledAt    DateTime?     @map("last_polled_at")
+  /// The payment link it was paid through, when it was (stayzim.co.zw/pay/…)
+  paymentLinkId   String?       @map("payment_link_id")
+  paymentLink     PaymentLink?  @relation(fields: [paymentLinkId], references: [id], onDelete: SetNull)
   createdAt       DateTime      @default(now()) @map("created_at")
 
   @@index([lodgeId, createdAt])
@@ -99,6 +102,32 @@ model BillingNotice {
 
   @@index([lodgeId])
   @@map("billing_notice")
+}
+
+/// A link the team sends a lodge so it can pay without signing in
+/// (stayzim.co.zw/pay/<token>): the lodge's name, its address and one amount,
+/// paid the same ways as on the dashboard. The token only lets someone pay, so
+/// it's kept as it is, for the team to copy again. A new link for the same lodge
+/// replaces the old one.
+model PaymentLink {
+  id          String    @id @default(cuid())
+  token       String    @unique
+  lodgeId     String    @map("lodge_id")
+  lodge       Lodge     @relation(fields: [lodgeId], references: [id], onDelete: Cascade)
+  /// What it pays for, fixed when the link was made
+  plan        LodgePlan
+  months      Int
+  amountCents Int       @map("amount_cents")
+  expiresAt   DateTime  @map("expires_at")
+  /// When a payment through it went through
+  paidAt      DateTime? @map("paid_at")
+  /// The team member who made it
+  createdById String?   @map("created_by_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  payments    Payment[]
+
+  @@index([lodgeId, createdAt])
+  @@map("payment_link")
 }
 
 /// Running numbers for invoices and receipts, per year ("invoice-2026").
