@@ -20,17 +20,17 @@ function sameToken(given: string, expected: string) {
 /**
  * The admin routes' sign-in: a team member's session, as the admin app sends it,
  * or "Authorization: Bearer <ADMIN_API_TOKEN>" from a script (and Claude), which
- * acts as the team login ADMIN_EMAIL (else the first team account). Same powers
- * either way.
+ * acts as the team login ADMIN_EMAIL (or the first team account, when that
+ * address is someone's own login). Same powers either way.
  */
 export const withTeamSession = createMiddleware<{ Variables: AuthVariables }>(async (c, next) => {
   const header = c.req.header("authorization");
   if (!header?.startsWith("Bearer ")) return withSession(c, next);
   if (!env.ADMIN_API_TOKEN || !sameToken(header.slice(7), env.ADMIN_API_TOKEN)) throw new HTTPException(401, { message: "Wrong token" });
-  const user = await prisma.user.findFirst({
-    where: { role: "ADMIN", ...(env.ADMIN_EMAIL ? { email: env.ADMIN_EMAIL.toLowerCase() } : {}) },
-    orderBy: { createdAt: "asc" },
-  });
+  // ADMIN_EMAIL when it's a team account (it may be someone's own login instead), else the first team account
+  const user =
+    (env.ADMIN_EMAIL ? await prisma.user.findFirst({ where: { role: "ADMIN", email: env.ADMIN_EMAIL.toLowerCase() } }) : null) ??
+    (await prisma.user.findFirst({ where: { role: "ADMIN" }, orderBy: { createdAt: "asc" } }));
   if (!user) throw new HTTPException(503, { message: "No team account yet: set ADMIN_EMAIL and restart the API" });
   c.set("user", { ...user, mustChangePassword: false } as unknown as Session["user"]);
   c.set("session", null);
