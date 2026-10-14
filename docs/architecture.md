@@ -49,6 +49,7 @@ Routes:
 | `/dashboard/site`, `rooms`, `gallery`, `design`, `requests` | The "My site" pages: Lodge info, Rooms, Gallery, Design (template and hero text) and Change requests |
 | `/dashboard/analytics`, `billing` | Visits (Growth and Pro; a locked preview on Starter) and Billing |
 | `/claim/[token]` | A lead opening the claim link for a site the team made for them: signs them in to it, then `/dashboard` |
+| `/pay/[token]` | A payment link from the team: no login, only the lodge's name, its address and the amount, the dashboard's ways to pay (all Paynow) and one Pay button |
 | `/sites/[slug]` | A lodge site (reached through its subdomain, or the lodge's own domain) |
 | `/preview/[slug]/[template]` | A lodge site in any template, for the Design screen. `noindex`, tracking off |
 
@@ -108,6 +109,8 @@ Shared UX pieces, so every screen behaves the same:
 | `GET /api/admin/requests?status=open\|done\|all`, `PATCH /api/admin/requests/:id` | Team only: list requests across lodges, set status and reply |
 | `/api/admin/overview`, `users`, `sites`, `billing`, `domains` | Team only, for the admin app: signups, sites by state, MRR; users (password reset); every site (preview, status, founding price, domain, record a payment, delete unpaid); payments and invoices; domain claims (`src/routes/admin-console.ts`) |
 | `/api/admin/leads` | Team only: leads (add, CSV import, notes, Do not contact), their conversation, the sites made for them (each owned by a placeholder guest account, with photos) and one-time claim links (`src/routes/admin-leads.ts`) |
+| `POST /api/admin/sites/:slug/payment-link` | Team only: a payment link for the site's own plan, 1, 3 or 12 months at its price, for 14 days; the site's earlier unpaid links stop working (`src/lib/payment-links.ts`) |
+| `GET /api/pay/:token`, `POST /api/pay/:token`, `GET /api/pay/:token/payments/:id` | Public, behind a payment link: what it pays, start a Paynow payment for exactly that (10 per 10 minutes per IP), how it's going (`src/routes/pay.ts`). Payments start in `startPaynowPayment` (`src/lib/billing.ts`), shared with the dashboard's Billing |
 
 - **CORS:** allows the `CORS_ORIGIN` list (comma-separated web origins) and any `{slug}.SITES_DOMAIN` origin (lodge sites report visits), with credentials, so the session cookie is sent.
 - **Mail check at boot:** if SMTP is configured, the server checks both logins (no-reply and billing) on startup and logs the result.
@@ -121,10 +124,10 @@ Shared UX pieces, so every screen behaves the same:
 
 ### apps/admin: Next.js 16, port 9996
 
-The team's app at `admin.stayzim.co.zw` ([admin.md](admin.md)): Overview, Leads (with Make a site and Give to lead), WhatsApp, Campaigns, Sites, Users, Billing, Requests and Domains, on `@stayzim/ui` like the dashboard. Team accounts sign in with their StayZim login.
+The team's app at `admin.stayzim.co.zw` ([admin.md](admin.md)): Overview, Leads (with Make a site, Give to lead and Payment link), WhatsApp, Campaigns, Sites, Users, Billing, Requests and Domains, on `@stayzim/ui` like the dashboard. Team accounts sign in with their StayZim login.
 
 - **Pages** call the API's `/api/admin/*` from the browser with the session cookie, like the web app.
-- **WhatsApp outreach** runs in this app's own server: `src/instrumentation.ts` starts one whatsapp-web.js client (one Chromium) per number once per process, kept on `globalThis` so Next can't start them twice. Sessions are saved in Postgres (`WhatsappSession`), so a redeploy needs no QR scan. Daily limits per number, reply tracking and opt-outs as before.
+- **WhatsApp outreach** runs in this app's own server: `src/instrumentation.ts` starts one whatsapp-web.js client (one Chromium) per number once per process, kept on `globalThis` so Next can't start them twice. Sessions are saved in Postgres (`WhatsappSession`), so a redeploy needs no QR scan. Daily limits per number, reply tracking and opt-outs as before. A number sends only after WhatsApp Web confirms it's connected (the next number tries otherwise); lookups and sends have time limits; every connected number is checked every 2 minutes, and a browser that stops answering or disconnects is restarted from its saved session. Errors thrown inside whatsapp-web.js are logged rather than ending the process (`src/instrumentation-node.ts`).
 - **Its API**, `/api/outreach/*` (a Hono app mounted in `src/app/api/outreach`), takes a signed-in team member (checked with the API's `/api/account/me`) or `Authorization: Bearer <ADMIN_API_TOKEN>` for scripts. Reference: [apps/admin/API.md](../apps/admin/API.md).
 
 ### apps/native: Expo

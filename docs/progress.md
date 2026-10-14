@@ -2,7 +2,7 @@
 
 _What's built, what's next, and what's blocking. Update this file whenever a piece of work lands. For what StayZim is and why, see [project.md](project.md)._
 
-**Last updated:** 13 October 2026 (the admin app at admin.stayzim.co.zw, which replaced the outreach tool; see the [log](#13-october-2026))
+**Last updated:** 14 October 2026 (payment links, and WhatsApp checks in the admin; see the [log](#14-october-2026))
 
 ## At a glance
 
@@ -397,6 +397,13 @@ Built (web):
 - The open questions in [project.md](project.md#open-questions).
 
 ## Log
+
+### 14 October 2026
+
+- **The admin went down while sending.** No logs to confirm it; the likely cause is Node ending the whole process when whatsapp-web.js fails inside its own event handlers (the old outreach app ran on Bun). Now: such errors are logged and the admin keeps running; a number sends only after WhatsApp Web confirms it's connected; lookups and sends have time limits; every number is checked every 2 minutes and a dead browser is restarted from its saved session. Not tested against real WhatsApp here (Chrome on this machine can't hold a session).
+- **Payment links**, for owners who aren't at home with apps: in the admin, Payment link on any site (pick 1, 3 or 12 months, copy it or send it on WhatsApp). The owner opens stayzim.co.zw/pay/…: no login, only the lodge's name, its address and the amount, the dashboard's four ways to pay, one Pay button, then Check your phone until it's paid. A lead's site paid this way stays live when they claim it.
+- **Checked:** types and unit tests; the whole flow against a local Paynow stand-in (a new link stops the old one, expired and wrong links refused, EcoCash and InnBucks paid, paying twice refused, the site live until the right date, claiming after paying leaves it live); the dashboard's own payments still go through; the pay page at 375px and the admin sheet in a browser.
+- **Also today:** the Docker builds use one Next worker and a capped heap (web and admin build side by side), and the server creates the hello@stayzim.co.zw team login on start.
 
 ### 13 October 2026
 

@@ -14,6 +14,7 @@ _Planned with the user on 13 October 2026. One app for the StayZim team: everyon
 | Outreach data | In the main `stayzim` database (the tables were already in the shared schema). The first admin deploy copies contacts, messages, replies and WhatsApp logins from the old `stayzim-outreach` database (`OUTREACH_IMPORT_DATABASE_URL`), so no QR codes need scanning again. |
 | Leads | The outreach contacts are the leads: a Facebook form lead, a lodge from a scraped list and someone typed in by hand are all one `Contact`, with a source, the lodge's name, an email and notes. |
 | Sites for a lead | A lead can have several sites (one at $15, one at $30, …). Each is a normal lodge owned by a placeholder guest account (the same kind `/create` makes before "Claim my site"), tied to the lead. They stay live with the Free preview marks, with no timer, until handed over or deleted. |
+| Payment link | On any site (a lead's too, before they claim it): a link to a page that shows only the lodge's name, its address and the amount, for 1, 3 or 12 months of its own plan, paid the dashboard's ways. Copy it or send it on WhatsApp. A site paid this way stays live when its lead claims it later, and its receipt goes to the lead's email if the team has it. |
 | Handover | "Give to lead" makes a one-time claim link (7 days). The lead opens it, is signed in to that site, and adds their email and password (the existing Claim my site). Opening it starts the 2-day free preview, makes the first invoice, and deletes the lead's other sites. |
 | Facebook leads | Upload the CSV from Leads Center; new numbers are added, known ones are updated. Automatic import (Meta's Lead Ads webhook) can come later. |
 | Not in the first version | Signing in as an owner, roles below Admin, automatic Meta import, editing a lead's rooms in the admin (the owner does it after claiming, or the team does it from a team account's own dashboard). |
@@ -47,7 +48,7 @@ _Planned with the user on 13 October 2026. One app for the StayZim team: everyon
 - A lead:
   - Details: name, number, city, lodge name, email, notes; Do not contact.
   - The WhatsApp conversation: what we sent (from which number) and their replies, and **Send a message** (from the next number in turn, within the daily limits).
-  - Sites made for them, each with its plan, price, design and link; **Make a site** (the `/create` steps on their behalf: design, their place, lodge name, town and WhatsApp, photos); **Give to lead** (copy the claim link, or send it on WhatsApp in one tap).
+  - Sites made for them, each with its plan, price, design and link; **Make a site** (the `/create` steps on their behalf: design, their place, lodge name, town and WhatsApp, photos); **Give to lead** (copy the claim link, or send it on WhatsApp in one tap); **Payment link** (pick the months, then copy it or send it).
 
 ### WhatsApp
 - Each number: connected or not, its QR code to pair, its number, today's sends against its limit, its last session backup.
