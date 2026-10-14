@@ -11,8 +11,8 @@
  *   pnpm --filter admin make-sites --check     (does the API take the token? makes nothing)
  *
  * It runs on your own machine against production (API_URL, default
- * https://api.stayzim.co.zw). The token is ADMIN_API_TOKEN from the environment,
- * or else from deploy/.env at the repo root (ADMIN_API_TOKEN, or the older
+ * https://api.stayzim.co.zw). The token is STAYZIM_ADMIN_TOKEN, or production's
+ * from deploy/.env at the repo root (ADMIN_API_TOKEN, or the older
  * OUTREACH_PASSWORD; that file is gitignored).
  *
  * Photos: files or folders (every JPG, PNG and WebP in a folder, by name). They're
@@ -28,9 +28,8 @@ import sharp from "sharp";
 
 const API = (process.env.API_URL ?? "https://api.stayzim.co.zw").replace(/\/$/, "");
 
-/** ADMIN_API_TOKEN from the environment, or from deploy/.env at the repo root. */
-function token() {
-  if (process.env.ADMIN_API_TOKEN) return process.env.ADMIN_API_TOKEN;
+/** The token in deploy/.env at the repo root (production's, gitignored). */
+function deployToken() {
   const file = resolve(import.meta.dir, "../../../deploy/.env");
   if (!existsSync(file)) return undefined;
   const settings = new Map<string, string>();
@@ -39,6 +38,17 @@ function token() {
     if (match) settings.set(match[1]!, match[2]!.trim().replace(/^["']|["']$/g, ""));
   }
   return settings.get("ADMIN_API_TOKEN") || settings.get("OUTREACH_PASSWORD") || undefined;
+}
+
+/**
+ * STAYZIM_ADMIN_TOKEN wins. Otherwise production's token from deploy/.env: Bun
+ * loads apps/admin/.env by itself, and its ADMIN_API_TOKEN is the local one, so
+ * that's only used against a local API (or when deploy/.env has none).
+ */
+function token() {
+  if (process.env.STAYZIM_ADMIN_TOKEN) return process.env.STAYZIM_ADMIN_TOKEN;
+  const local = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(API);
+  return local ? (process.env.ADMIN_API_TOKEN ?? deployToken()) : (deployToken() ?? process.env.ADMIN_API_TOKEN);
 }
 
 const TOKEN = token();
