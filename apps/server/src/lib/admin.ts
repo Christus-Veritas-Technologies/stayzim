@@ -1,11 +1,41 @@
+import { timingSafeEqual } from "node:crypto";
+
+import type { Session } from "@stayzim/auth";
 import prisma from "@stayzim/db";
+import { env } from "@stayzim/env/server";
 import { addDays, DEMO_DAYS } from "@stayzim/sites";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 
 import { onDemoCreated } from "./billing";
-import type { AuthVariables } from "./session";
+import { withSession, type AuthVariables } from "./session";
 import { removeUploads } from "./uploads";
+
+function sameToken(given: string, expected: string) {
+  const a = Buffer.from(given);
+  const b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
+/**
+ * The admin routes' sign-in: a team member's session, as the admin app sends it,
+ * or "Authorization: Bearer <ADMIN_API_TOKEN>" from a script (and Claude), which
+ * acts as the team login ADMIN_EMAIL (else the first team account). Same powers
+ * either way.
+ */
+export const withTeamSession = createMiddleware<{ Variables: AuthVariables }>(async (c, next) => {
+  const header = c.req.header("authorization");
+  if (!header?.startsWith("Bearer ")) return withSession(c, next);
+  if (!env.ADMIN_API_TOKEN || !sameToken(header.slice(7), env.ADMIN_API_TOKEN)) throw new HTTPException(401, { message: "Wrong token" });
+  const user = await prisma.user.findFirst({
+    where: { role: "ADMIN", ...(env.ADMIN_EMAIL ? { email: env.ADMIN_EMAIL.toLowerCase() } : {}) },
+    orderBy: { createdAt: "asc" },
+  });
+  if (!user) throw new HTTPException(503, { message: "No team account yet: set ADMIN_EMAIL and restart the API" });
+  c.set("user", { ...user, mustChangePassword: false } as unknown as Session["user"]);
+  c.set("session", null);
+  await next();
+});
 
 /** StayZim staff only (accounts made with `create-owner --admin`): the admin app's routes. */
 export const requireAdmin = createMiddleware<{ Variables: AuthVariables }>(async (c, next) => {

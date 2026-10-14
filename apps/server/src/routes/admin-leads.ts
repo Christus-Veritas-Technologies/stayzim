@@ -2,16 +2,16 @@ import { auth, claimTokenHash, newClaimToken } from "@stayzim/auth";
 import prisma from "@stayzim/db";
 import { env } from "@stayzim/env/server";
 import { GUEST_EMAIL_DOMAIN } from "@stayzim/mail";
-import { addDays, monthlyPrice, PLAN_PRICES } from "@stayzim/sites";
+import { addDays, monthlyPrice, PLAN_PRICES, TEMPLATE_KEYS, type Plan } from "@stayzim/sites";
 import { Hono } from "hono";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 
-import { deleteLodge, requireAdmin } from "../lib/admin";
+import { deleteLodge, requireAdmin, withTeamSession } from "../lib/admin";
 import type { LodgeVariables } from "../lib/lodge";
 import { createLodge, newLodgeSchema } from "../lib/new-lodge";
-import { requireAuth, withSession } from "../lib/session";
+import { requireAuth } from "../lib/session";
 import { paymentLinkJson, paymentLinkSelect } from "../lib/payment-links";
 import { siteUrlFor } from "../lib/sites";
 import { validJson } from "../lib/validate";
@@ -135,6 +135,44 @@ function leadSiteJson(site: LeadSite) {
   };
 }
 
+/**
+ * A site for a lead, owned by a placeholder guest account until it's handed over
+ * (claim link) or paid for (payment link). No end to its free preview until then.
+ */
+async function makeLeadSite(lead: { id: string; name: string }, input: z.infer<typeof newLodgeSchema>) {
+  const ctx = await auth.$context;
+  const placeholder = await ctx.internalAdapter.createUser(
+    { email: `lead-${crypto.randomUUID()}@${GUEST_EMAIL_DOMAIN}`, emailVerified: false, name: lead.name, isAnonymous: true },
+    { method: "admin" },
+  );
+  try {
+    const lodgeId = await createLodge(placeholder.id, input, { previewEndsAt: null, leadId: lead.id });
+    return prisma.lodge.findUniqueOrThrow({ where: { id: lodgeId }, select: leadSiteSelect });
+  } catch (error) {
+    await prisma.user.delete({ where: { id: placeholder.id } }).catch(() => {});
+    throw error;
+  }
+}
+
+/** The sites to make for a client in one go: by default the $15 one and the $30 one, to choose between. */
+const newSitesInput = z.object({
+  name: z.string().trim().min(2, "Add the lodge's name").max(80),
+  town: z.string().trim().min(1, "Add the town or city").max(60),
+  /** The lodge's WhatsApp number: its lead (found by it, or made), and the sites' Book on WhatsApp */
+  whatsapp: z.string().trim().min(1, "Add their WhatsApp number").max(30),
+  /** The person's name, for a new lead (else the lodge's name) */
+  contactName: z.string().trim().max(200).optional(),
+  email: z.email("Check the email").optional().or(z.literal("").transform(() => undefined)),
+  plans: z.array(z.enum(["STARTER", "GROWTH", "PRO"])).min(1).max(3).default(["STARTER", "GROWTH"]),
+  /** A design per plan; left out: the plan's own default */
+  templates: z.partialRecord(z.enum(["STARTER", "GROWTH", "PRO"]), z.enum(TEMPLATE_KEYS)).optional(),
+  region: newLodgeSchema.shape.region,
+  kind: newLodgeSchema.shape.kind,
+  setting: newLodgeSchema.shape.setting,
+  roomsHint: newLodgeSchema.shape.roomsHint,
+  priceHint: newLodgeSchema.shape.priceHint,
+});
+
 async function leadById(id: string) {
   const lead = await prisma.contact.findUnique({ where: { id }, select: { id: true, name: true, phone: true } });
   if (!lead) throw new HTTPException(404, { message: "No such lead" });
@@ -169,7 +207,7 @@ const siteFromSlug = createMiddleware<{ Variables: LodgeVariables }>(async (c, n
 });
 
 export const adminLeads = new Hono<{ Variables: LodgeVariables }>()
-  .use(withSession, requireAuth(), requireAdmin)
+  .use(withTeamSession, requireAuth(), requireAdmin)
 
   .get("/leads", async (c) => {
     const query = leadListQuery.safeParse(c.req.query());
@@ -293,20 +331,49 @@ export const adminLeads = new Hono<{ Variables: LodgeVariables }>()
    */
   .post("/leads/:id/sites", validJson(newLodgeSchema), async (c) => {
     const lead = await leadById(c.req.param("id"));
+    const site = await makeLeadSite(lead, c.req.valid("json"));
+    return c.json(leadSiteJson(site), 201);
+  })
+
+  /**
+   * New sites for a client in one go (the admin's New site, and scripts): by
+   * default the $15 Starter one and the $30 Growth one, as guest sites they can
+   * claim later. Their lead is found by the WhatsApp number, or made.
+   */
+  .post("/sites", validJson(newSitesInput), async (c) => {
     const input = c.req.valid("json");
-    const ctx = await auth.$context;
-    const placeholder = await ctx.internalAdapter.createUser(
-      { email: `lead-${crypto.randomUUID()}@${GUEST_EMAIL_DOMAIN}`, emailVerified: false, name: lead.name, isAnonymous: true },
-      { method: "admin" },
-    );
-    try {
-      const lodgeId = await createLodge(placeholder.id, input, { previewEndsAt: null, leadId: lead.id });
-      const site = await prisma.lodge.findUniqueOrThrow({ where: { id: lodgeId }, select: leadSiteSelect });
-      return c.json(leadSiteJson(site), 201);
-    } catch (error) {
-      await prisma.user.delete({ where: { id: placeholder.id } }).catch(() => {});
-      throw error;
+    const phone = leadPhone(input.whatsapp);
+    if (!phone) throw new HTTPException(400, { message: "Check the WhatsApp number: include the country code, like +263 77 123 4567" });
+
+    const existing = await prisma.contact.findUnique({ where: { phone }, select: { id: true, name: true, lodgeName: true, email: true } });
+    const lead =
+      existing ??
+      (await prisma.contact.create({
+        data: { name: input.contactName || input.name, phone, city: input.town, lodgeName: input.name, email: input.email ?? null, source: "manual" },
+        select: { id: true, name: true, lodgeName: true, email: true },
+      }));
+    if (existing && (!existing.lodgeName || (input.email && !existing.email))) {
+      await prisma.contact.update({ where: { id: existing.id }, data: { lodgeName: existing.lodgeName ?? input.name, email: existing.email ?? input.email ?? null } });
     }
+
+    const sites = [];
+    for (const plan of [...new Set(input.plans)] as Plan[]) {
+      const parsed = newLodgeSchema.safeParse({
+        plan,
+        template: input.templates?.[plan],
+        name: input.name,
+        town: input.town,
+        region: input.region,
+        whatsapp: phone,
+        kind: input.kind,
+        setting: input.setting,
+        roomsHint: input.roomsHint,
+        priceHint: input.priceHint,
+      });
+      if (!parsed.success) throw new HTTPException(400, { message: parsed.error.issues[0]?.message ?? "Check the details" });
+      sites.push(leadSiteJson(await makeLeadSite(lead, parsed.data)));
+    }
+    return c.json({ leadId: lead.id, sites }, 201);
   })
 
   /** Deletes a site made for a lead that they haven't taken. */

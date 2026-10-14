@@ -6,10 +6,11 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 
-import { deleteLodge, requireAdmin } from "../lib/admin";
+import { deleteLodge, requireAdmin, withTeamSession } from "../lib/admin";
 import { recordManualPayment } from "../lib/billing";
 import { createPaymentLink, latestPaymentLink } from "../lib/payment-links";
-import { requireAuth, withSession, type AuthVariables } from "../lib/session";
+import { leadPhone } from "./admin-leads";
+import { requireAuth, type AuthVariables } from "../lib/session";
 import { siteUrlFor } from "../lib/sites";
 import { uploadUrl } from "../lib/uploads";
 import { validJson } from "../lib/validate";
@@ -107,6 +108,10 @@ const siteUpdate = z
     founding: z.boolean().optional(),
     /** A domain to answer on, or null to remove it */
     customDomain: z.string().trim().max(253).nullable().optional(),
+    /** The lodge's details, as its owner edits them on the dashboard */
+    name: z.string().trim().min(2, "Add the lodge's name").max(80).optional(),
+    town: z.string().trim().max(60).nullable().optional(),
+    whatsapp: z.string().trim().max(30).optional(),
   })
   .refine((value) => Object.values(value).some((field) => field !== undefined), "Nothing to change");
 
@@ -181,7 +186,7 @@ async function siteDetail(lodgeId: string) {
 }
 
 export const adminConsole = new Hono<{ Variables: AuthVariables }>()
-  .use(withSession, requireAuth(), requireAdmin)
+  .use(withTeamSession, requireAuth(), requireAdmin)
 
   /** The overview: sign-ups, sites by status, money, sources, the /create funnel and the latest activity. */
   .get("/overview", async (c) => {
@@ -351,7 +356,15 @@ export const adminConsole = new Hono<{ Variables: AuthVariables }>()
     const lodgeId = await siteBySlug(c.req.param("slug"));
     const input = c.req.valid("json");
     const lodge = await prisma.lodge.findUniqueOrThrow({ where: { id: lodgeId }, select: { status: true, demoEndsAt: true } });
-    const data: { demoEndsAt?: Date; status?: "ACTIVE" | "OVERDUE" | "SUSPENDED"; founding?: boolean; customDomain?: string | null } = {};
+    const data: { demoEndsAt?: Date; status?: "ACTIVE" | "OVERDUE" | "SUSPENDED"; founding?: boolean; customDomain?: string | null; name?: string; town?: string | null; whatsapp?: string } = {};
+
+    if (input.name) data.name = input.name;
+    if (input.town !== undefined) data.town = input.town || null;
+    if (input.whatsapp !== undefined) {
+      const whatsapp = leadPhone(input.whatsapp);
+      if (!whatsapp) throw new HTTPException(400, { message: "Check the WhatsApp number: include the country code, like +263 77 123 4567" });
+      data.whatsapp = whatsapp;
+    }
 
     if (input.extendPreviewDays) {
       if (lodge.status !== "DEMO") throw new HTTPException(400, { message: "Only a free preview has an end to move." });

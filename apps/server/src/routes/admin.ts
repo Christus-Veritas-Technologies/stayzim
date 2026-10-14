@@ -5,9 +5,9 @@ import { z } from "zod";
 
 import { postInput, postSlug, reviewsInput } from "@stayzim/sites/schemas";
 
-import { requireAdmin } from "../lib/admin";
+import { requireAdmin, withTeamSession } from "../lib/admin";
 import { photoJson } from "../lib/lodge";
-import { requireAuth, withSession, type AuthVariables } from "../lib/session";
+import { requireAuth, type AuthVariables } from "../lib/session";
 import { validJson } from "../lib/validate";
 
 
@@ -128,7 +128,7 @@ async function savePost(save: () => Promise<StoredAdminPost>) {
 
 /** /api/admin: StayZim's own tools: owners' change requests, and the reviews and journal on Pro sites. */
 export const admin = new Hono<{ Variables: AuthVariables }>()
-  .use(withSession, requireAuth(), requireAdmin)
+  .use(withTeamSession, requireAuth(), requireAdmin)
 
   .get("/requests", async (c) => {
     const query = listQuery.safeParse(c.req.query());

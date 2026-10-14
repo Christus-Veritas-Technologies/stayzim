@@ -69,6 +69,9 @@ services:
       # exist yet (never changed after that). Its password is ADMIN_API_TOKEN.
       ADMIN_EMAIL: ${ADMIN_EMAIL:-hello@stayzim.co.zw}
       ADMIN_PASSWORD: ${ADMIN_API_TOKEN:-}
+      # Scripts (and Claude) call /api/admin/* with "Authorization: Bearer <ADMIN_API_TOKEN>",
+      # acting as that team login
+      ADMIN_API_TOKEN: ${ADMIN_API_TOKEN:-}
       COOKIE_DOMAIN: ${COOKIE_DOMAIN:-.stayzim.co.zw}
       CLIENT_IP_HEADER: ${CLIENT_IP_HEADER:-cf-connecting-ip}
       R2_ACCOUNT_ID: ${R2_ACCOUNT_ID:-}

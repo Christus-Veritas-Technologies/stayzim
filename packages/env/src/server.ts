@@ -33,6 +33,10 @@ export const env = createEnv({
     // The admin app (apps/admin), e.g. https://admin.stayzim.co.zw: it calls the API with the
     // team's session, so it's allowed like the web app (CORS and sign-in)
     ADMIN_URL: z.url().optional(),
+    // For scripts (and Claude) calling /api/admin/* without signing in: "Authorization: Bearer
+    // <ADMIN_API_TOKEN>" acts as the team login ADMIN_EMAIL (the same token as the admin app's)
+    ADMIN_API_TOKEN: z.string().min(12).optional(),
+    ADMIN_EMAIL: z.email().optional(),
     // Share the session cookie across subdomains in production, e.g. ".stayzim.co.zw".
     // Leave unset on localhost.
     COOKIE_DOMAIN: z.string().min(1).optional(),
