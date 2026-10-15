@@ -64,6 +64,10 @@ _Planned with the user on 13 October 2026. One app for the StayZim team: everyon
 ### Domains
 - Free `.co.zw` domains claimed and not set up yet, with the name asked for; **Set up** sets the lodge's domain (the job then emails the owner).
 
+## The WhatsApp sales agent
+
+People who tap the click-to-WhatsApp ad talk to an AI agent on wa1, which qualifies them, builds their sites and takes the first payment by EcoCash: [sales-agent.md](sales-agent.md).
+
 ## Making sites for clients
 
 Every client who answers our follow-up gets two sites to choose between: the $15 one (Starter) and the $30 one (Growth). They're guest sites, claimed later (Give to lead) or paid first (Payment link).

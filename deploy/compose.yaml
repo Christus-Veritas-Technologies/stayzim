@@ -129,6 +129,14 @@ services:
       WHATSAPP_ACCOUNTS: ${WHATSAPP_ACCOUNTS:-wa1,wa2,wa3}
       WHATSAPP_DAILY_LIMIT: ${WHATSAPP_DAILY_LIMIT:-40}
       WHATSAPP_ENABLED: ${WHATSAPP_ENABLED:-true}
+      # The WhatsApp sales agent (docs/sales-agent.md): OpenRouter for its models, the
+      # numbers it answers on, and its starting mode (the admin's switch overrides it)
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      AGENT_ACCOUNTS: ${AGENT_ACCOUNTS:-wa1}
+      AGENT_MODE: ${AGENT_MODE:-off}
+      AGENT_MODEL: ${AGENT_MODEL:-anthropic/claude-haiku-5.5}
+      AGENT_FALLBACK_MODEL: ${AGENT_FALLBACK_MODEL:-openai/gpt-6-luna}
+      JEV_MODEL: ${JEV_MODEL:-typesafe/jev-1.14}
       # Once, after the old outreach app: copies its leads, messages and WhatsApp
       # logins from its database (stayzim-outreach) while the main one has none
       OUTREACH_IMPORT_DATABASE_URL: postgresql://stayzim:${POSTGRES_PASSWORD}@db:5432/stayzim-outreach

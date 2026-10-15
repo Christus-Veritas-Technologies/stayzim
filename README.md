@@ -9,6 +9,7 @@ Websites for Zimbabwean lodges, guesthouses and Airbnbs, where guests book direc
 - **Deploying:** [docs/deployment.md](docs/deployment.md)
 - **Sign-in and email:** [docs/auth.md](docs/auth.md)
 - **The admin app:** [docs/admin.md](docs/admin.md); its WhatsApp outreach API: [apps/admin/API.md](apps/admin/API.md)
+- **The WhatsApp sales agent:** [docs/sales-agent.md](docs/sales-agent.md), and its script: [docs/sales-script.md](docs/sales-script.md)
 
 ## What's in the repo
 
