@@ -1,5 +1,5 @@
 import prisma from "@stayzim/db";
-import { foundingOpen, LODGE_KIND_KEYS, monthlyPrice, type Plan } from "@stayzim/sites";
+import { DEMO_DAYS, foundingOpen, LODGE_KIND_KEYS, monthlyPrice, type Plan } from "@stayzim/sites";
 import sharp from "sharp";
 
 import { siteUrl } from "@/lib/site-url";
@@ -276,6 +276,8 @@ export async function runTool(name: string, args: Args, ctx: ToolContext): Promi
         email: contact.email ?? undefined,
         kind: facts.kind ?? undefined,
         plans: big ? ["STARTER", "GROWTH", "PRO"] : ["STARTER", "GROWTH"],
+        // A free preview, like the sign-up page's: offline after DEMO_DAYS unless they pay
+        previewDays: DEMO_DAYS,
       });
       for (const [index, photo] of photos.entries()) {
         const prepared = await preparePhoto(photo.data).catch(() => null);
@@ -288,11 +290,11 @@ export async function runTool(name: string, args: Args, ctx: ToolContext): Promi
       }
       await prisma.inboundMedia.updateMany({ where: { id: { in: photos.map((photo) => photo.id) } }, data: { usedAt: new Date() } });
 
-      const message = siteOptionsMessage({ lodge: contact.lodgeName, city: contact.city, name: givenName(contact), sites: made.sites });
+      const message = siteOptionsMessage({ lodge: contact.lodgeName, city: contact.city, name: givenName(contact), sites: made.sites, previewDays: DEMO_DAYS });
       await ctx.send(message);
       await prisma.contact.update({
         where: { id: contact.id },
-        data: { agentStage: "OFFER", nextFollowUpAt: new Date(Date.now() + 24 * 60 * 60 * 1000), followUps: 0, status: "REACHED" },
+        data: { agentStage: "OFFER", nextFollowUpAt: new Date(Date.now() + 20 * 60 * 60 * 1000), followUps: 0, status: "REACHED" },
       });
       await ctx.log("tool", { tool: "make_sites", sites: made.sites.map((site) => site.slug) });
       await alertKin(`New sites sent to ${contact.lodgeName} (${contact.city}), +${contact.phone}: ${made.sites.map((site) => `$${site.monthlyPrice} ${site.url}`).join(" · ")}`);

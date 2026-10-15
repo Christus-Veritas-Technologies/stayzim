@@ -14,7 +14,8 @@ import { detailsNudgeMessage, followUpMessage } from "./templates";
  */
 
 const EVERY_MS = 10 * 60 * 1000;
-const SECOND_AFTER_MS = 48 * 60 * 60 * 1000;
+/** The second nudge a day after the first: the morning the 2-day preview ends */
+const SECOND_AFTER_MS = 24 * 60 * 60 * 1000;
 const MAX_FOLLOW_UPS = 2;
 
 async function tick() {

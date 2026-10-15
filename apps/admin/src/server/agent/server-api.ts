@@ -30,7 +30,7 @@ async function call<T>(method: string, path: string, body?: unknown, auth = true
 export type MadeSite = { slug: string; plan: "STARTER" | "GROWTH" | "PRO"; monthlyPrice: number; url: string; name: string };
 
 export const serverApi = {
-  makeSites: (input: { name: string; town: string; whatsapp: string; contactName?: string; email?: string; kind?: string; plans: string[] }) =>
+  makeSites: (input: { name: string; town: string; whatsapp: string; contactName?: string; email?: string; kind?: string; plans: string[]; previewDays?: number }) =>
     call<{ leadId: string; sites: MadeSite[] }>("POST", "/api/admin/sites", input),
 
   uploadPhoto: (slug: string, form: FormData) => call<unknown>("POST", `/api/admin/sites/${slug}/photos`, form),

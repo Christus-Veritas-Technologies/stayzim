@@ -60,6 +60,22 @@ describe("siteOptionsMessage", () => {
     expect(message.length).toBeLessThan(600);
   });
 
+  test("with the 2-day free preview, as the agent sends it: still under 600 with three sites", () => {
+    const message = siteOptionsMessage({
+      lodge: "Hardy House",
+      city: "Bulawayo",
+      now: BEFORE_DEADLINE,
+      previewDays: 2,
+      sites: [
+        { plan: "STARTER", url: "https://hardy-house.stayzim.co.zw", monthlyPrice: 15 },
+        { plan: "GROWTH", url: "https://hardy-house-bulawayo.stayzim.co.zw", monthlyPrice: 30 },
+        { plan: "PRO", url: "https://hardy-house-2.stayzim.co.zw", monthlyPrice: 50 },
+      ],
+    });
+    expect(message).toContain("free to look at for 2 days; pick one to keep it live");
+    expect(message.length).toBeLessThan(600);
+  });
+
   test("after the deadline: no deadline line", () => {
     const message = siteOptionsMessage({ lodge: "X Lodge", city: "Gweru", now: new Date("2026-11-01T00:00:00Z"), sites: [{ plan: "STARTER", url: "https://x.stayzim.co.zw", monthlyPrice: 25 }] });
     expect(message).not.toContain("only until");

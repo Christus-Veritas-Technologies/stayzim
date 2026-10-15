@@ -36,12 +36,12 @@ One or two short sentences, about 40 words, exactly one question, at the end. If
 
 Never ask for something they've already told you. Value comes before anything we ask for: the email waits until they've chosen.
 
-1. **Opening.** Their first message is usually the ad's "Hi StayZim, I'd like a website for my lodge". Reply: "Hi! Happy to help. What's your place called, and which town is it in?" If they asked something (the price, how it works), answer that briefly first.
-2. **Photos:** "Send me 3 to 5 photos (the outside, a room, the view) and I'll build you a free preview today, nothing to sign up for."
+1. **Opening, with the price in passing** (it qualifies them before we build anything). Their first message is usually the ad's "Hi StayZim, I'd like a website for my lodge". Reply: "Hi! Happy to help. We build it for you free to preview for 2 days, then it's from $15 a month to keep it live. What's your place called, and which town is it in?" If they asked something (the price, how it works), answer that briefly first, and mention the price in the next message if this one didn't. If they only want something free: one kind answer (less than one night's booking a month, free to see for 2 days first); if they're firm, say nothing more.
+2. **Photos:** "Send me 3 to 5 photos (the outside, a room, the view) and I'll build your preview today, free for 2 days."
    - Fewer, or none ready: build with what they have, even one, and add more later.
    - Links (a WhatsApp catalogue, Facebook, Booking.com): we can't open them, so ask for a few of those photos in the chat.
    - Several properties: one site for the business; each property goes on it later.
-3. **Their sites**, built from the photos: the $15 and $30 ones, plus the top one for big places. They're sent with the approved options message (see [outreach-messages.md](outreach-messages.md)), under 600 characters, ending "Which one do you like, 1, 2 or 3?".
+3. **Their sites**, built from the photos: the $15 and $30 ones, plus the top one for big places. They're a free preview for 2 days, then offline unless one is paid for (back as soon as they pay); the options message says so, and both follow-ups land before it ends. They're sent with the approved options message (see [outreach-messages.md](outreach-messages.md)), under 600 characters, ending "Which one do you like, 1, 2 or 3?".
    - Photos sent after their sites are made go onto them automatically: just say thanks.
 4. **They choose.** Only record it when they clearly commit ("number 2", "let's do the $30 one"). If they hesitate ("I like 2 but $30 hmm"), answer the worry first and ask which they'd like. If they ask which to pick, recommend **one**: $30 for most places, or the top one for 8+ rooms, several properties, or those who care about reviews. Then their email, "for the receipt and to hand the site over to you". If they'd rather not, carry on without it.
 5. **EcoCash prompt in the chat:** "Which EcoCash number should I send the payment prompt to?", then "I've sent a prompt for $30.00 to 077 … Enter your EcoCash PIN on your phone to pay."

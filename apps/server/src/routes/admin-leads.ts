@@ -141,14 +141,14 @@ function leadSiteJson(site: LeadSite) {
  * A site for a lead, owned by a placeholder guest account until it's handed over
  * (claim link) or paid for (payment link). No end to its free preview until then.
  */
-async function makeLeadSite(lead: { id: string; name: string }, input: z.infer<typeof newLodgeSchema>) {
+async function makeLeadSite(lead: { id: string; name: string }, input: z.infer<typeof newLodgeSchema>, previewEndsAt: Date | null = null) {
   const ctx = await auth.$context;
   const placeholder = await ctx.internalAdapter.createUser(
     { email: `lead-${crypto.randomUUID()}@${GUEST_EMAIL_DOMAIN}`, emailVerified: false, name: lead.name, isAnonymous: true },
     { method: "admin" },
   );
   try {
-    const lodgeId = await createLodge(placeholder.id, input, { previewEndsAt: null, leadId: lead.id });
+    const lodgeId = await createLodge(placeholder.id, input, { previewEndsAt, leadId: lead.id });
     return prisma.lodge.findUniqueOrThrow({ where: { id: lodgeId }, select: leadSiteSelect });
   } catch (error) {
     await prisma.user.delete({ where: { id: placeholder.id } }).catch(() => {});
@@ -166,6 +166,8 @@ const newSitesInput = z.object({
   contactName: z.string().trim().max(200).optional(),
   email: z.email("Check the email").optional().or(z.literal("").transform(() => undefined)),
   plans: z.array(z.enum(["STARTER", "GROWTH", "PRO"])).min(1).max(3).default(["STARTER", "GROWTH"]),
+  /** A free preview of this many days, then offline unless paid (the sales agent: 2). Left out: no end, until handed over */
+  previewDays: z.number().int().min(1).max(30).optional(),
   /** A design per plan; left out: the plan's own default */
   templates: z.partialRecord(z.enum(["STARTER", "GROWTH", "PRO"]), z.enum(TEMPLATE_KEYS)).optional(),
   region: newLodgeSchema.shape.region,
@@ -383,7 +385,7 @@ export const adminLeads = new Hono<{ Variables: LodgeVariables }>()
         priceHint: input.priceHint,
       });
       if (!parsed.success) throw new HTTPException(400, { message: parsed.error.issues[0]?.message ?? "Check the details" });
-      sites.push(leadSiteJson(await makeLeadSite(lead, parsed.data)));
+      sites.push(leadSiteJson(await makeLeadSite(lead, parsed.data, input.previewDays ? addDays(new Date(), input.previewDays) : null)));
     }
     return c.json({ leadId: lead.id, sites }, 201);
   })

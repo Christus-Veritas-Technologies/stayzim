@@ -17,12 +17,14 @@ Our first $16 of Facebook ads brought 4 real lodge owners and 1 sale, closed on 
    - **continue**: everything else, including whenever Jev is unsure. A lost lodge costs more than one reply to a stranger. Someone we've made sites for is never ignored.
 4. **The reply (Claude Haiku 5.5, fallback GPT-6 Luna)** with the sales script and tools:
    - `save_details`: their place's name, town, email, name, kind, rooms.
-   - `make_sites`: the $15 and $30 sites, plus Pro for 8+ rooms or established places, with their photos. It sends the approved options message itself.
+   - `make_sites`: the $15 and $30 sites, plus Pro for 8+ rooms or established places, with their photos, as a 2-day free preview (offline after that unless paid). It sends the approved options message itself.
    - `choose_site`, `start_ecocash` (a payment link plus the EcoCash prompt) or `send_payment_link`, `check_payment`.
    - `hand_over`, `stay_silent` (not interested, "I'll get back to you", conversation over, junk).
    Prices, links and payments only ever come from fixed templates (`templates.ts`), never the model's own words.
 5. **Paid** (Paynow, checked every 10 s for 5 minutes, then by the follow-up loop): their site, a claim link to make it theirs, and an alert to Kin.
-6. **Follow-ups**: a nudge a day after the options, a last one with the deadline two days later, then nothing.
+6. **Follow-ups**: a nudge 20 hours after the options, and a last one the morning the 2-day preview ends, then nothing.
+
+The price is said in passing in the opening message (free to preview for 2 days, then from $15 a month), before anything is built: people who only want something free drop out before we build for them.
 7. **Alerts to Kin** (+263 78 985 9332, from wa3): sites sent, a choice, paid, a payment failure, a hand-over, the agent failing to reply.
 
 ## Switching it on

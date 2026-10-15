@@ -40,7 +40,7 @@ export function foundingDeadline() {
 const slash = (url: string) => (url.endsWith("/") ? url : `${url}/`);
 
 /** Their sites to choose from, "1, 2 or 3?": the approved wording, shorter only if it has to be. */
-export function siteOptionsMessage(input: { lodge: string; city: string; name?: string | null; sites: OfferSite[]; now?: Date }) {
+export function siteOptionsMessage(input: { lodge: string; city: string; name?: string | null; sites: OfferSite[]; now?: Date; previewDays?: number }) {
   const full = optionsMessage(input, ADDS, true);
   if (full.length < OPTIONS_MAX) return full;
   const short = optionsMessage(input, ADDS_SHORT, true);
@@ -50,7 +50,7 @@ export function siteOptionsMessage(input: { lodge: string; city: string; name?: 
 }
 
 function optionsMessage(
-  input: { lodge: string; city: string; name?: string | null; sites: OfferSite[]; now?: Date },
+  input: { lodge: string; city: string; name?: string | null; sites: OfferSite[]; now?: Date; previewDays?: number },
   adds: typeof ADDS,
   withName: boolean,
   compactClose = false,
@@ -72,7 +72,7 @@ function optionsMessage(
   return [
     `${first && withName ? `Hi ${first}, here's` : "Here's"} ${input.lodge}'s website in ${count} versions:`,
     lines.join("\n\n"),
-    "The rooms and prices on it are examples for now; we'll put yours in.",
+    `The rooms and prices on it are examples for now; we'll put yours in.${input.previewDays ? ` It's free to look at for ${input.previewDays} days; pick one to keep it live.` : ""}`,
     close,
   ].join("\n\n");
 }
@@ -105,8 +105,8 @@ export function followUpMessage(n: number, input: { lodge: string; name?: string
   const pick = input.options >= 3 ? "1, 2 or 3" : "1 or 2";
   if (n === 1) return `${first ? `Hi ${first}, ` : ""}did you get a chance to look at ${input.lodge}'s site? Which one would you go with, ${pick}?`;
   return foundingOpen(new Date())
-    ? `Quick one: the founding price ends on ${foundingDeadline()}, and it's yours for life if you start before then. Shall I keep ${input.lodge}'s site for you?`
-    : `Shall I keep ${input.lodge}'s site for you, or let it go for now?`;
+    ? `Quick one: ${input.lodge}'s free preview ends today, and the founding price is yours for life if you start before ${foundingDeadline()}. Shall I keep it live for you?`
+    : `Quick one: ${input.lodge}'s free preview ends today. Shall I keep it live for you?`;
 }
 
 /** One gentle nudge when they went quiet before sending photos (a day later) */
