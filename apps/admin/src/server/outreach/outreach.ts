@@ -1,6 +1,7 @@
 import prisma from "@stayzim/db";
 import { env } from "@stayzim/env/admin";
 
+import { queueAgentTurn } from "../agent/queue";
 import { isAgentAccount } from "../agent/settings";
 import {
   accountIds,
@@ -25,6 +26,13 @@ function campaignStatuses(input: Pick<CampaignInput, "retryFailed" | "followUp">
 
 /** Daily limits are a rolling window, so there's no timezone to get wrong. */
 const LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Only messages this recent make a new lead or start an agent turn: the first
+ * read after connecting looks back 14 days (personal chats included), and
+ * those are recorded, never answered.
+ */
+const AGENT_RECENT_MS = 15 * 60 * 1000;
 
 /** Replies that opt someone out of all further messages. */
 const OPT_OUT = /^\s*["“']?(stop|unsubscribe|opt[\s-]?out|remove me|not interested|no thanks|no thank you)["”']?\s*[.!]*\s*$/i;
@@ -103,7 +111,8 @@ async function resolveAccount(accountId: string | undefined): Promise<WhatsAppAc
     return account;
   }
 
-  const ready = readyAccountsInRotation();
+  // The sales agent's numbers only answer people who message them: never sent from in rotation
+  const ready = readyAccountsInRotation().filter((account) => !isAgentAccount(account.id));
   if (ready.length === 0) throw new OutreachError(503, "No WhatsApp account is ready");
 
   let earliestReset: Date | undefined;
@@ -211,9 +220,10 @@ onInboundMessage(async (event) => {
   if (await prisma.inboundMessage.findUnique({ where: { whatsappMessageId: event.whatsappMessageId }, select: { id: true } })) return false;
 
   const agentNumber = isAgentAccount(event.account);
+  const recent = Date.now() - event.receivedAt.getTime() < AGENT_RECENT_MS;
   let contact = event.phone ? await prisma.contact.findUnique({ where: { phone: event.phone } }) : null;
   // Someone new messaging the agent's number (from an ad) becomes a lead
-  if (!contact && agentNumber && event.phone) {
+  if (!contact && agentNumber && recent && event.phone) {
     contact = await prisma.contact.upsert({
       where: { phone: event.phone },
       create: { name: event.senderName?.trim() || `+${event.phone}`, phone: event.phone, city: "", source: "whatsapp", agentChatId: event.chatId, agentAccount: event.account },
@@ -268,6 +278,8 @@ onInboundMessage(async (event) => {
       `[outreach] reply from ${contact.name} (+${contact.phone}) to ${event.account}${optOut ? " — opted out" : ""}`,
     );
   }
+  // The sales agent answers new messages on its number (batched, in the background)
+  if (agentNumber && recent) queueAgentTurn(event.account, event.chatId);
   return true;
 });
 
@@ -325,8 +337,11 @@ export function stopCampaign() {
 export async function startCampaign(input: CampaignInput) {
   if (campaignBox.current?.running) throw new OutreachError(409, "A campaign is already running");
 
+  if (input.account && isAgentAccount(input.account)) {
+    throw new OutreachError(400, `${input.account} is the sales agent's number: it only answers people who message it. Pick another.`);
+  }
   // Fail fast if nothing could ever send. Being at the daily limit is fine: the campaign waits.
-  if (input.account ? !getAccount(input.account)?.isReady : readyAccountsInRotation().length === 0) {
+  if (input.account ? !getAccount(input.account)?.isReady : readyAccountsInRotation().filter((account) => !isAgentAccount(account.id)).length === 0) {
     throw new OutreachError(
       input.account && !getAccount(input.account) ? 404 : 503,
       input.account ? `WhatsApp account ${input.account} is not available` : "No WhatsApp account is ready",
