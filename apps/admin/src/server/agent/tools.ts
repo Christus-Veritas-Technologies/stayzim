@@ -81,7 +81,15 @@ export const TOOLS: ToolDefinition[] = [
     function: {
       name: "make_sites",
       description:
-        "Build their sites from the photos they sent (the $15 and $30 ones, and the top one for big places) and send them the options with links and prices. Call once you have their place's name, town, email and at least 3 photos (or all they have).",
+        "Build their sites from the photos they sent (the $15 and $30 ones, and the top one for big places) and send them the options with links and prices. Call once you have their place's name, town and at least one photo (3 or more is better).",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "send_options_again",
+      description: "Send their sites' options message again (links and prices), when they lost it or ask to see the options again.",
       parameters: { type: "object", properties: {} },
     },
   },
@@ -97,16 +105,23 @@ export const TOOLS: ToolDefinition[] = [
     type: "function",
     function: {
       name: "start_ecocash",
-      description: "Send an EcoCash prompt for the first month of the site they chose to this number. It sends the message telling them to enter their PIN.",
-      parameters: { type: "object", properties: { phone: { type: "string", description: "The EcoCash number, e.g. 0771234567" } }, required: ["phone"] },
+      description: "Send an EcoCash prompt for the site they chose to this number (1 month, or 3 or 12 ahead if they asked). It sends the message telling them to enter their PIN.",
+      parameters: {
+        type: "object",
+        properties: {
+          phone: { type: "string", description: "The EcoCash number, e.g. 0771234567" },
+          months: { type: "integer", enum: [1, 3, 12], description: "How many months they pay for (default 1)" },
+        },
+        required: ["phone"],
+      },
     },
   },
   {
     type: "function",
     function: {
       name: "send_payment_link",
-      description: "Send a link to pay the first month by card, bank, OneMoney or InnBucks (when they don't want an EcoCash prompt).",
-      parameters: { type: "object", properties: {} },
+      description: "Send a link to pay by card, bank, OneMoney or InnBucks (when they don't want an EcoCash prompt).",
+      parameters: { type: "object", properties: { months: { type: "integer", enum: [1, 3, 12], description: "How many months they pay for (default 1)" } } },
     },
   },
   {
@@ -200,16 +215,21 @@ export async function runTool(name: string, args: Args, ctx: ToolContext): Promi
       });
       const fresh = await prisma.contact.findUniqueOrThrow({ where: { id: contact.id } });
       const photos = await prisma.inboundMedia.count({ where: { inboundMessage: { contactId: contact.id } } });
-      const missing = [!fresh.lodgeName && "their place's name", !fresh.city && "the town", !fresh.email && "the email", photos < 3 && `photos (${photos} so far)`].filter(Boolean);
-      return missing.length ? `Saved. Still missing: ${missing.join(", ")}.` : "Saved. You have everything: call make_sites.";
+      const built = (await leadSites(contact.id)).length > 0;
+      if (built) return "Saved.";
+      const missing = [!fresh.lodgeName && "their place's name", !fresh.city && "the town", photos < 1 && "at least one photo"].filter(Boolean);
+      return missing.length
+        ? `Saved. Before building their sites you still need: ${missing.join(", ")}.`
+        : `Saved. You can build their sites now (make_sites)${photos < 3 ? `; they've sent ${photos} photo${photos === 1 ? "" : "s"}, so wait a moment if they're still sending` : ""}.`;
     }
 
     case "make_sites": {
       if (!contact.lodgeName || !contact.city) return "Can't yet: you need their place's name and town first.";
+      if (!(await prisma.inboundMedia.count({ where: { inboundMessage: { contactId: contact.id } } }))) return "Can't yet: they haven't sent a photo. Ask for a few (even one is enough to start).";
       const existing = await leadSites(contact.id);
       if (existing.length) return "Their sites are already made and were sent to them. Don't make more.";
       const photos = await unusedPhotos(contact.id);
-      if (photos.length === 0) return "Can't yet: they haven't sent any photos. Ask for 3 to 5.";
+      if (photos.length === 0) return "Can't yet: there are no new photos to build with. Ask them to send a few here.";
 
       await prisma.contact.update({ where: { id: contact.id }, data: { agentStage: "BUILDING" } });
       const big = (facts.rooms ?? 0) >= 8 || (contact.qualification as { jev?: { fit?: string } } | null)?.jev?.fit === "established, with several rooms or properties";
@@ -251,7 +271,10 @@ export async function runTool(name: string, args: Args, ctx: ToolContext): Promi
       await prisma.contact.update({ where: { id: contact.id }, data: { chosenSiteId: site.id, agentStage: "CHOSEN", nextFollowUpAt: null } });
       await alertKin(`${contact.lodgeName ?? contact.name} chose option ${site.option}: $${site.monthlyPrice}/month, ${site.url}`);
       const wa = contact.phone.startsWith("2637") ? `0${contact.phone.slice(3)}` : null;
-      return `Recorded: option ${site.option}, $${site.monthlyPrice} a month${foundingOpen(new Date()) ? " (founding price, theirs for life)" : ""}. Now ask which EcoCash number to send the first month's payment prompt to${wa ? ` (offer ${wa}, their WhatsApp number)` : ""}.`;
+      const next = contact.email
+        ? `ask which EcoCash number to send the payment prompt to${wa ? ` (offer ${wa}, their WhatsApp number)` : ""}`
+        : `ask for their email ("for the receipt and to hand the site over to you"), then which EcoCash number to send the payment prompt to${wa ? ` (offer ${wa}, their WhatsApp number)` : ""}`;
+      return `Recorded: option ${site.option}, $${site.monthlyPrice} a month${foundingOpen(new Date()) ? " (founding price, theirs for life)" : ""}. Now ${next}.`;
     }
 
     case "start_ecocash":
@@ -259,7 +282,8 @@ export async function runTool(name: string, args: Args, ctx: ToolContext): Promi
       const sites = await leadSites(contact.id);
       const site = sites.find((candidate) => candidate.id === contact.chosenSiteId);
       if (!site) return "They haven't chosen a site yet: ask which one (1, 2 or 3) first.";
-      const link = await serverApi.paymentLink(site.slug, 1);
+      const months = [1, 3, 12].includes(Number(args.months)) ? Number(args.months) : 1;
+      const link = await serverApi.paymentLink(site.slug, months);
       const token = link.url.split("/").pop()!;
       if (name === "send_payment_link") {
         await ctx.send(payLinkMessage(link.url, link.amountCents));
@@ -281,6 +305,13 @@ export async function runTool(name: string, args: Args, ctx: ToolContext): Promi
         await ctx.log("error", { tool: "start_ecocash", error: String(error) });
         return `The prompt couldn't be sent (${error instanceof Error ? error.message : "Paynow didn't answer"}). Offer a payment link instead (send_payment_link), or hand over.`;
       }
+    }
+
+    case "send_options_again": {
+      const sites = await leadSites(contact.id);
+      if (!sites.length || !contact.lodgeName) return "Their sites aren't made yet.";
+      await ctx.send(siteOptionsMessage({ lodge: contact.lodgeName, city: contact.city, name: givenName(contact), sites }));
+      return "Sent their options again. Don't repeat them.";
     }
 
     case "check_payment": {

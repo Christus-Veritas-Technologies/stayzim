@@ -1,6 +1,7 @@
 import prisma from "@stayzim/db";
 import { env } from "@stayzim/env/admin";
 
+import { handleOwnMessage } from "../agent/commands";
 import { queueAgentTurn } from "../agent/queue";
 import { isAgentAccount } from "../agent/settings";
 import {
@@ -9,6 +10,7 @@ import {
   markAccountUsed,
   normalizePhone,
   onInboundMessage,
+  onOwnMessage,
   readyAccountsInRotation,
   type WhatsAppAccount,
 } from "./whatsapp";
@@ -214,6 +216,9 @@ export async function sendToPhone(input: { phone: string; message: string; accou
 // ---------------------------------------------------------------------------
 // Replies
 // ---------------------------------------------------------------------------
+
+// Commands (/silence, /resume, /ban) and replies Kin types on an agent number's phone
+onOwnMessage(handleOwnMessage);
 
 onInboundMessage(async (event) => {
   // Seen before (the 2-minute read sees recent messages again): nothing to do, nothing to download

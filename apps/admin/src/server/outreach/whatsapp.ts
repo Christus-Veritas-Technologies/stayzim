@@ -4,6 +4,7 @@ import { env } from "@stayzim/env/admin";
 import QRCode from "qrcode";
 import wwebjs from "whatsapp-web.js";
 
+import { isAgentAccount } from "../agent/settings";
 import { PostgresSessionStore } from "./session-store";
 
 // whatsapp-web.js is CommonJS, so named ESM imports don't resolve
@@ -122,6 +123,30 @@ const handlerBox = globalThis as unknown as { __stayzimInbound?: InboundHandler 
 /** Registers what to do with direct messages people send to any of our numbers. */
 export function onInboundMessage(handler: InboundHandler) {
   handlerBox.__stayzimInbound = handler;
+}
+
+/**
+ * A message sent from one of our numbers by someone on its phone (Kin), not by
+ * the app: a command for the sales agent (/silence, /resume, /ban), or a reply
+ * the agent should know about. Agent numbers only.
+ */
+export type OwnMessageEvent = {
+  account: string;
+  chatId: string;
+  /** Digits only, when WhatsApp gives it */
+  phone?: string;
+  body: string;
+  whatsappMessageId: string;
+  sentAt: Date;
+  /** Deletes it for everyone (a command the other person shouldn't see) */
+  deleteForEveryone: () => Promise<boolean>;
+};
+
+const ownBox = globalThis as unknown as { __stayzimOwn?: (event: OwnMessageEvent) => Promise<void> };
+
+/** Registers what to do with messages sent from an agent number's phone. */
+export function onOwnMessage(handler: (event: OwnMessageEvent) => Promise<void>) {
+  ownBox.__stayzimOwn = handler;
 }
 
 type WhatsAppMessage = {
@@ -278,6 +303,12 @@ export class WhatsAppAccount {
       void this.recordInbound(message as unknown as WhatsAppMessage, "event");
     });
 
+    // Messages sent from this number (the app's, or typed on the phone): commands and Kin's own replies
+    client.on("message_create", (message) => {
+      if (!message.fromMe || !isAgentAccount(this.id)) return;
+      void this.recordOwn({ ...(message as unknown as WhatsAppMessage), from: message.to });
+    });
+
     client.on("auth_failure", (message) => {
       status.state = "failed";
       status.lastError = message;
@@ -360,6 +391,47 @@ export class WhatsAppAccount {
   }
 
   /**
+   * A message sent from this number: passed on (after a pause, so the app's own
+   * sends are recorded first and can be told apart) for commands and Kin's replies.
+   * `message.from` holds the chat it was sent to.
+   */
+  private async recordOwn(message: WhatsAppMessage) {
+    const chatId = message.from;
+    const handler = ownBox.__stayzimOwn;
+    if (!handler || !DIRECT_CHAT.test(chatId)) return;
+    const age = Date.now() - message.timestamp * 1000;
+    // Older ones (the read of the chats) are history, not commands or fresh replies
+    if (age > 15 * 60 * 1000) return;
+    // Just sent: give the app a moment to record its own send first
+    if (age < 8000) await new Promise((resolve) => setTimeout(resolve, 8000 - age));
+    try {
+      await handler({
+        account: this.id,
+        chatId,
+        phone: await this.resolvePhone(chatId),
+        body: message.body ?? "",
+        whatsappMessageId: message.id._serialized,
+        sentAt: new Date(message.timestamp * 1000),
+        deleteForEveryone: () => this.deleteForEveryone(message.id._serialized),
+      });
+    } catch (error) {
+      this.logError("failed to handle a message sent from the phone:", error);
+    }
+  }
+
+  /** Deletes one of our messages for everyone in the chat. */
+  async deleteForEveryone(messageId: string) {
+    try {
+      const message = await withTimeout(this.client!.getMessageById(messageId), 15_000, "to find the message");
+      await withTimeout(message.delete(true), 15_000, "to delete the message");
+      return true;
+    } catch (error) {
+      this.logError(`deleting ${messageId} failed:`, error);
+      return false;
+    }
+  }
+
+  /**
    * Reads recent direct chats from WhatsApp Web and records every message from
    * the other person not recorded yet: the first time back BACKFILL_DAYS, then
    * from the last read. Replies don't depend on the "new message" event this way.
@@ -375,8 +447,9 @@ export class WhatsAppAccount {
     try {
       // 1. Every message WhatsApp Web has loaded, in one quick call (no chat list, no fetching)
       try {
-        for (const message of await this.loadedMessages(since)) {
-          if (await this.recordInbound(message, "sync")) found += 1;
+        for (const message of await this.loadedMessages(since, isAgentAccount(this.id))) {
+          if (message.fromMe) await this.recordOwn(message);
+          else if (await this.recordInbound(message, "sync")) found += 1;
         }
       } catch (error) {
         problems.push(`loaded messages: ${errorText(error)}`);
@@ -419,20 +492,20 @@ export class WhatsAppAccount {
     return (this.client as unknown as { pupPage?: { evaluate: <T, A>(fn: (arg: A) => T, arg: A) => Promise<T> } } | undefined)?.pupPage;
   }
 
-  /** Messages other people sent, already loaded in WhatsApp Web, since `since` (seconds). */
-  private async loadedMessages(since: number): Promise<WhatsAppMessage[]> {
+  /** Messages other people sent (and, with `own`, ours too), already loaded in WhatsApp Web, since `since` (seconds). */
+  private async loadedMessages(since: number, own = false): Promise<WhatsAppMessage[]> {
     const page = this.page;
     if (!page) return [];
     return withTimeout(
-      page.evaluate((after: number) => {
+      page.evaluate(({ after, own }: { after: number; own: boolean }) => {
         // Runs inside WhatsApp Web
         const require = (globalThis as unknown as { require: (name: string) => any }).require;
         return require("WAWebCollections")
           .Msg.getModelsArray()
-          .filter((msg: any) => msg.id && !msg.id.fromMe && msg.t >= after)
+          .filter((msg: any) => msg.id && (own || !msg.id.fromMe) && msg.t >= after)
           .map((msg: any) => ({
             from: String(msg.id.remote?._serialized ?? msg.from?._serialized ?? ""),
-            fromMe: false,
+            fromMe: Boolean(msg.id.fromMe),
             isStatus: Boolean(msg.isStatusV3) || String(msg.id.remote?._serialized ?? "") === "status@broadcast",
             body: String(msg.body ?? msg.caption ?? ""),
             type: String(msg.type ?? "chat"),
@@ -440,7 +513,7 @@ export class WhatsAppAccount {
             id: { _serialized: String(msg.id._serialized) },
             notifyName: msg.notifyName ? String(msg.notifyName) : undefined,
           }));
-      }, since),
+      }, { after: since, own }),
       30_000,
       "to list the loaded messages",
     );

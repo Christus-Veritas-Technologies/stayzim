@@ -48,6 +48,10 @@ export function describeEvent(event: { kind: string; data: Record<string, unknow
       return `Follow-up ${data.n} sent`;
     case "turn":
       return data.silent ? `Stayed silent (${data.silent})` : data.replied ? `Replied${data.tools?.length ? ` after ${(data.tools as string[]).join(", ")}` : ""}` : "No reply";
+    case "command":
+      return `Kin typed /${data.command}${data.command === "silence" ? ": the agent is quiet here" : data.command === "ban" ? ": never answered again" : ": the agent carries on"}`;
+    case "kin_reply":
+      return `Kin replied from the phone: ${data.text}`;
     case "alert":
       return `Alert to Kin: ${data.text}`;
     case "error":
@@ -66,6 +70,8 @@ const KIND_BADGE: Record<string, "neutral" | "brand" | "success" | "purple" | "w
   follow_up: "neutral",
   turn: "neutral",
   alert: "warning",
+  command: "danger",
+  kin_reply: "brand",
   error: "danger",
 };
 
