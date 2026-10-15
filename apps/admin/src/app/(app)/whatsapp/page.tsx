@@ -8,6 +8,7 @@ import { Smartphone } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { AgentControl } from "@/components/agent-control";
 import { LoadError, LoadingCards, Page, PageHeader, PageSection, Panel } from "@/components/page";
 import { formatShortWhen, formatWhen } from "@/lib/format";
 import { formatPhone } from "@/lib/labels";
@@ -147,6 +148,9 @@ export default function WhatsAppPage() {
       <PageHeader title="WhatsApp" description="The numbers outreach sends from, in turn. Each has its own daily limit; replies and opt-outs are recorded on the lead." />
       {loading ? <LoadingCards /> : null}
       {error ? <LoadError message={error} onRetry={reload} /> : null}
+      <PageSection>
+        <AgentControl />
+      </PageSection>
       {data ? (
         <PageSection className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {data.map((status) => (

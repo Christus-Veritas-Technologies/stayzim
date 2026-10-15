@@ -1,4 +1,4 @@
-import type { LeadSource, OutreachStatus, Plan, SiteState } from "@/lib/types";
+import type { AgentStage, LeadSource, OutreachStatus, Plan, SiteState } from "@/lib/types";
 
 type BadgeVariant = "neutral" | "brand" | "success" | "purple" | "warning" | "danger";
 
@@ -21,7 +21,29 @@ export const OUTREACH_STATUSES: Record<OutreachStatus, { label: string; badge: B
   DO_NOT_CONTACT: { label: "Do not contact", badge: "danger" },
 };
 
-export const LEAD_SOURCES: Record<LeadSource, string> = { meta_form: "Facebook form", list: "Outreach list", manual: "Added by hand" };
+export const LEAD_SOURCES: Record<LeadSource, string> = { meta_form: "Facebook form", list: "Outreach list", manual: "Added by hand", whatsapp: "Messaged us (ad)" };
+
+/** Where the WhatsApp sales agent is with a lead */
+export const AGENT_STAGES: Record<AgentStage, { label: string; badge: BadgeVariant }> = {
+  NEW: { label: "New", badge: "neutral" },
+  DETAILS: { label: "Agent: getting details", badge: "brand" },
+  BUILDING: { label: "Agent: building", badge: "brand" },
+  OFFER: { label: "Agent: sites sent", badge: "purple" },
+  CHOSEN: { label: "Agent: chose a site", badge: "purple" },
+  PAYING: { label: "Agent: paying", badge: "warning" },
+  PAID: { label: "Paid", badge: "success" },
+  HANDOVER: { label: "Needs you", badge: "danger" },
+  DISQUALIFIED: { label: "Not a fit (ignored)", badge: "neutral" },
+};
+
+export const AGENT_FILTERS = {
+  all: "Agent: everyone",
+  talking: "Agent: talking",
+  needs_you: "Needs you",
+  paying: "Paying",
+  paid: "Paid",
+  disqualified: "Not a fit (ignored)",
+} as const;
 
 /** "263771234567" → "+263 77 123 4567" (Zimbabwe numbers); others get a + and stay as they are. */
 export function formatPhone(digits: string) {

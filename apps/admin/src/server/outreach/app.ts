@@ -4,6 +4,7 @@ import { bodyLimit } from "hono/body-limit";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 
+import { agentRoutes } from "../agent/routes";
 import { getAllAccountUsage, OutreachError } from "./outreach";
 import { campaigns } from "./routes/campaigns";
 import { contacts } from "./routes/contacts";
@@ -50,6 +51,7 @@ export const outreachApp = new Hono()
   .route("/messages", messages)
   .route("/replies", replies)
   .route("/campaigns", campaigns)
+  .route("/agent", agentRoutes)
   .notFound((c) => c.json({ error: "Not found" }, 404))
   .onError((err, c) => {
     if (err instanceof OutreachError) {

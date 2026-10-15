@@ -20,6 +20,7 @@ import { toast } from "sonner";
 
 import { WhatsAppIcon } from "@/components/brand";
 import { LoadError, LoadingCards, Page, PageHeader, PageSection, Panel } from "@/components/page";
+import { AgentPanel } from "@/components/agent-panel";
 import { PaymentLinkSheet } from "@/components/payment-link-sheet";
 import { api, outreachApi } from "@/lib/api";
 import { formatShortDate, formatWhen } from "@/lib/format";
@@ -358,7 +359,10 @@ export default function LeadPage() {
           </Panel>
           <Conversation lead={lead} onSent={reload} />
         </div>
-        <Details key={lead.id} lead={lead} onSaved={set} />
+        <div className="flex flex-col gap-4">
+          <AgentPanel leadId={lead.id} onChanged={reload} />
+          <Details key={lead.id} lead={lead} onSaved={set} />
+        </div>
       </PageSection>
 
       <GiveSheet lead={lead} site={giving} onClose={() => setGiving(null)} onSent={reload} />

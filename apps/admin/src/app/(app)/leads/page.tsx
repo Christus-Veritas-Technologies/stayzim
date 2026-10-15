@@ -19,7 +19,7 @@ import { LoadError, LoadingCards, Page, PageHeader, PageSection } from "@/compon
 import { api } from "@/lib/api";
 import { leadsFromCsv } from "@/lib/csv";
 import { formatShortWhen } from "@/lib/format";
-import { formatPhone, LEAD_SOURCES, OUTREACH_STATUSES, PLAN_NAMES } from "@/lib/labels";
+import { AGENT_FILTERS, AGENT_STAGES, LEAD_SOURCES, OUTREACH_STATUSES, PLAN_NAMES, formatPhone } from "@/lib/labels";
 import type { LeadDetail, LeadRow, LeadSource, OutreachStatus, Paged } from "@/lib/types";
 import { useApi } from "@/lib/use-api";
 
@@ -133,7 +133,7 @@ function UploadSheet({ open, onOpenChange, onImported }: { open: boolean; onOpen
         <SheetBody className="flex flex-col gap-4">
           <Field label="Where they came from">
             <NativeSelect value={source} onChange={(event) => setSource(event.target.value as LeadSource)}>
-              {(Object.keys(LEAD_SOURCES) as LeadSource[]).map((key) => (
+              {(Object.keys(LEAD_SOURCES) as LeadSource[]).filter((key) => key !== "whatsapp").map((key) => (
                 <option key={key} value={key}>
                   {LEAD_SOURCES[key]}
                 </option>
@@ -182,6 +182,7 @@ export default function LeadsPage() {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<"all" | OutreachStatus>("all");
   const [source, setSource] = useState<"all" | LeadSource>("all");
+  const [agent, setAgent] = useState<keyof typeof AGENT_FILTERS>("all");
   const [page, setPage] = useState(1);
   const [adding, setAdding] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -194,7 +195,7 @@ export default function LeadsPage() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  const query = new URLSearchParams({ status, source, page: String(page), ...(q ? { q } : {}) });
+  const query = new URLSearchParams({ status, source, agent, page: String(page), ...(q ? { q } : {}) });
   const { data, error, loading, reload } = useApi<Paged<"leads", LeadRow>>(`/api/admin/leads?${query}`);
   const pages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
 
@@ -254,6 +255,21 @@ export default function LeadsPage() {
             </option>
           ))}
         </NativeSelect>
+        <NativeSelect
+          value={agent}
+          onChange={(event) => {
+            setAgent(event.target.value as typeof agent);
+            setPage(1);
+          }}
+          aria-label="Sales agent"
+          className="sm:w-44"
+        >
+          {(Object.keys(AGENT_FILTERS) as (keyof typeof AGENT_FILTERS)[]).map((key) => (
+            <option key={key} value={key}>
+              {AGENT_FILTERS[key]}
+            </option>
+          ))}
+        </NativeSelect>
       </PageSection>
 
       {loading ? <LoadingCards /> : null}
@@ -303,6 +319,9 @@ export default function LeadsPage() {
                           {site.claimed ? " · taken" : ""}
                         </Badge>
                       ))}
+                      {lead.agentStage && lead.agentStage !== "NEW" ? (
+                        <Badge variant={lead.agentPaused ? "danger" : AGENT_STAGES[lead.agentStage].badge}>{lead.agentPaused ? "Needs you" : AGENT_STAGES[lead.agentStage].label}</Badge>
+                      ) : null}
                       <Badge variant={OUTREACH_STATUSES[lead.status].badge}>{OUTREACH_STATUSES[lead.status].label}</Badge>
                     </span>
                   </Link>

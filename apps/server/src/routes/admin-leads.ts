@@ -1,5 +1,5 @@
 import { auth, claimTokenHash, newClaimToken } from "@stayzim/auth";
-import prisma from "@stayzim/db";
+import prisma, { AgentStage } from "@stayzim/db";
 import { env } from "@stayzim/env/server";
 import { GUEST_EMAIL_DOMAIN } from "@stayzim/mail";
 import { addDays, monthlyPrice, PLAN_PRICES, TEMPLATE_KEYS, type Plan } from "@stayzim/sites";
@@ -86,7 +86,9 @@ const importInput = z.object({
 const leadListQuery = z.object({
   q: z.string().trim().max(80).default(""),
   status: z.enum(["all", "PENDING", "REACHED", "REPLIED", "NOT_ON_WHATSAPP", "FAILED", "DO_NOT_CONTACT"]).default("all"),
-  source: z.enum(["all", "meta_form", "list", "manual"]).default("all"),
+  source: z.enum(["all", "meta_form", "list", "manual", "whatsapp"]).default("all"),
+  /** Where the WhatsApp sales agent is with them */
+  agent: z.enum(["all", "talking", "needs_you", "paying", "paid", "disqualified"]).default("all"),
   /** Only leads with sites made for them */
   withSites: z.enum(["true", "false"]).optional(),
   page: z.coerce.number().int().min(1).default(1),
@@ -212,9 +214,19 @@ export const adminLeads = new Hono<{ Variables: LodgeVariables }>()
   .get("/leads", async (c) => {
     const query = leadListQuery.safeParse(c.req.query());
     if (!query.success) throw new HTTPException(400, { message: "Check the filters" });
-    const { q, status, source, withSites, page } = query.data;
+    const { q, status, source, agent, withSites, page } = query.data;
+    const agentWhere = {
+      all: {},
+      talking: { agentStage: { in: [AgentStage.DETAILS, AgentStage.BUILDING, AgentStage.OFFER, AgentStage.CHOSEN] }, agentPaused: false },
+      needs_you: { OR: [{ agentStage: "HANDOVER" as const }, { agentPaused: true }] },
+      paying: { agentStage: "PAYING" as const },
+      paid: { agentStage: "PAID" as const },
+      disqualified: { agentStage: "DISQUALIFIED" as const },
+    }[agent];
     const digits = q.replace(/\D/g, "");
     const where = {
+      // The agent filter ANDed, so its own OR doesn't replace the search's
+      AND: [agentWhere],
       ...(status !== "all" && { status }),
       ...(source !== "all" && { source }),
       ...(withSites === "true" && { sites: { some: {} } }),

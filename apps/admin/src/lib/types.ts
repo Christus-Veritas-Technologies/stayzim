@@ -101,7 +101,8 @@ export type UserRow = {
 export type Paged<K extends string, T> = { total: number; page: number; pageSize: number } & Record<K, T[]>;
 
 export type OutreachStatus = "PENDING" | "REACHED" | "REPLIED" | "NOT_ON_WHATSAPP" | "FAILED" | "DO_NOT_CONTACT";
-export type LeadSource = "meta_form" | "list" | "manual";
+export type LeadSource = "meta_form" | "list" | "manual" | "whatsapp";
+export type AgentStage = "NEW" | "DETAILS" | "BUILDING" | "OFFER" | "CHOSEN" | "PAYING" | "PAID" | "HANDOVER" | "DISQUALIFIED";
 
 export type LeadRow = {
   id: string;
@@ -119,6 +120,10 @@ export type LeadRow = {
   createdAt: string;
   sites: { slug: string; plan: Plan; claimed: boolean }[];
   lastReply: { body: string; createdAt: string } | null;
+  /** The WhatsApp sales agent */
+  agentStage: AgentStage;
+  agentPaused: boolean;
+  disqualifiedReason: string | null;
 };
 
 export type LeadSite = {
