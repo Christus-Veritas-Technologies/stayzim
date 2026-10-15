@@ -24,6 +24,8 @@ type NumberStatus = {
   lastError?: string;
   lastSavedAt?: string;
   lastCheckedAt?: string;
+  lastSyncedAt?: string;
+  lastSyncFound?: number;
   startedAt: string;
   usage?: { sent: number; limit: number; remaining: number; resetsAt?: string };
 };
@@ -78,7 +80,14 @@ function NumberCard({ status }: { status: NumberStatus }) {
         </div>
       ) : null}
       {status.state === "ready" ? (
-        <p className="text-[12px] text-muted-2">{status.lastCheckedAt ? `WhatsApp confirmed it's connected ${formatShortWhen(status.lastCheckedAt)}` : "Not checked yet: it's checked every 2 minutes and before each send"}</p>
+        <>
+          <p className="text-[12px] text-muted-2">{status.lastCheckedAt ? `WhatsApp confirmed it's connected ${formatShortWhen(status.lastCheckedAt)}` : "Not checked yet: it's checked every 2 minutes and before each send"}</p>
+          <p className="text-[12px] text-muted-2">
+            {status.lastSyncedAt
+              ? `Chats read for replies ${formatShortWhen(status.lastSyncedAt)}${status.lastSyncFound ? `: ${status.lastSyncFound} new` : ""}`
+              : "Chats not read for replies yet: the first read, half a minute after connecting, looks back 14 days"}
+          </p>
+        </>
       ) : null}
       <p className="text-[12px] text-muted-2">{status.lastSavedAt ? `Login saved ${formatShortWhen(status.lastSavedAt)}: a redeploy won't need a new scan` : "Login not saved yet: it saves about a minute after connecting"}</p>
     </Card>

@@ -28,6 +28,18 @@ const SEND_TIMEOUT_MS = 60_000;
 /** How often every connected number is checked, so a dead browser is found before a send needs it. */
 const WATCH_EVERY_MS = 2 * 60 * 1000;
 
+/**
+ * Replies are also read from WhatsApp Web's own chats every 2 minutes (with the
+ * connection check), not only from its "new message" event, which has never
+ * recorded a reply in production. The first read after connecting looks back
+ * this far, so replies missed before are picked up.
+ */
+const BACKFILL_DAYS = 14;
+/** Each later read looks back this far before the last one, to be safe. */
+const SYNC_OVERLAP_MS = 10 * 60 * 1000;
+/** The newest messages read from each chat. */
+const SYNC_MESSAGES_PER_CHAT = 30;
+
 /** After a disconnect (other than unlinking from the phone), when to start the browser again. */
 const RECONNECT_DELAY_MS = 15_000;
 
@@ -71,6 +83,9 @@ export type WhatsAppStatus = {
   lastSavedAt?: string;
   /** When WhatsApp Web last confirmed this number is connected (before each send, and every 2 minutes). */
   lastCheckedAt?: string;
+  /** When this number's chats were last read for replies, and how many new ones that found. */
+  lastSyncedAt?: string;
+  lastSyncFound?: number;
   startedAt: string;
 };
 
@@ -85,12 +100,25 @@ export type InboundMessageEvent = {
   receivedAt: Date;
 };
 
-let inboundHandler: ((event: InboundMessageEvent) => Promise<void>) | undefined;
+/** Records a reply; true when it's new (not seen before). */
+type InboundHandler = (event: InboundMessageEvent) => Promise<boolean>;
+
+/**
+ * What to do with replies, kept on globalThis like the numbers themselves:
+ * Next.js can load this module more than once, and a handler set on one copy
+ * was invisible to the browsers started by another.
+ */
+const handlerBox = globalThis as unknown as { __stayzimInbound?: InboundHandler };
 
 /** Registers what to do with direct messages people send to any of our numbers. */
-export function onInboundMessage(handler: (event: InboundMessageEvent) => Promise<void>) {
-  inboundHandler = handler;
+export function onInboundMessage(handler: InboundHandler) {
+  handlerBox.__stayzimInbound = handler;
 }
+
+type WhatsAppMessage = { from: string; fromMe: boolean; isStatus: boolean; body?: string; type: string; timestamp: number; id: { _serialized: string } };
+
+/** A direct chat with a person (not a group, a status update or a channel). */
+const DIRECT_CHAT = /@(c\.us|lid)$/;
 
 /**
  * Puppeteer's own Chromium download is disabled in this workspace, so drive a
@@ -118,6 +146,9 @@ export class WhatsAppAccount {
   private readonly status: WhatsAppStatus;
   private executablePath: string | undefined;
   private restarting = false;
+  private syncing = false;
+  /** Seconds since 1970 of the last read of the chats; 0 until the first (which looks back BACKFILL_DAYS) */
+  private syncedUntil = 0;
 
   constructor(readonly id: string) {
     this.status = {
@@ -207,6 +238,8 @@ export class WhatsAppAccount {
       status.number = client.info?.wid?.user;
       status.pushName = client.info?.pushname;
       this.log(`ready as ${status.pushName ?? "unknown"} (${status.number ?? "?"})`);
+      // Pick up replies that came in while it was away (and, the first time, the last BACKFILL_DAYS)
+      setTimeout(() => void this.syncInbound(), 30_000).unref?.();
     });
 
     // First backup lands ~1 minute after 'ready'; restart before then and the QR is needed again
@@ -215,24 +248,8 @@ export class WhatsAppAccount {
       this.log("session backed up to Postgres");
     });
 
-    client.on("message", async (message) => {
-      const chatId = message.from;
-      // Direct chats only: skip groups, status updates, channels and our own sends
-      if (message.fromMe || message.isStatus || !/@(c\.us|lid)$/.test(chatId)) return;
-
-      try {
-        await inboundHandler?.({
-          account: this.id,
-          chatId,
-          phone: await this.resolvePhone(chatId),
-          body: message.body ?? "",
-          type: message.type,
-          whatsappMessageId: message.id._serialized,
-          receivedAt: new Date(message.timestamp * 1000),
-        });
-      } catch (error) {
-        this.logError("failed to record inbound message:", error);
-      }
+    client.on("message", (message) => {
+      void this.recordInbound(message as unknown as WhatsAppMessage, "event");
     });
 
     client.on("auth_failure", (message) => {
@@ -279,6 +296,78 @@ export class WhatsAppAccount {
       }
       status.state = "failed";
     }
+  }
+
+  /**
+   * Saves a message someone sent us (direct chats only: no groups, status
+   * updates, channels or our own sends). Seen before: nothing happens. True
+   * when it was new. `phone` (from the chat's contact, in a sync) is used when
+   * WhatsApp's own lookup can't turn a LID into a number.
+   */
+  private async recordInbound(message: WhatsAppMessage, via: "event" | "sync", phone?: string): Promise<boolean> {
+    const chatId = message.from;
+    if (message.fromMe || message.isStatus || !DIRECT_CHAT.test(chatId)) return false;
+    const handler = handlerBox.__stayzimInbound;
+    if (!handler) {
+      this.logError("a reply came in, but nothing is set to record it");
+      return false;
+    }
+    try {
+      const resolved = (await this.resolvePhone(chatId)) ?? phone;
+      const isNew = await handler({
+        account: this.id,
+        chatId,
+        phone: resolved,
+        body: message.body ?? "",
+        type: message.type,
+        whatsappMessageId: message.id._serialized,
+        receivedAt: new Date(message.timestamp * 1000),
+      });
+      if (isNew) this.log(`reply recorded (${via}) from ${resolved ? `+${resolved}` : chatId}`);
+      return isNew;
+    } catch (error) {
+      this.logError("failed to record inbound message:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Reads recent direct chats from WhatsApp Web and records every message from
+   * the other person not recorded yet: the first time back BACKFILL_DAYS, then
+   * from the last read. Replies don't depend on the "new message" event this way.
+   */
+  async syncInbound(): Promise<number> {
+    const client = this.client;
+    if (!client || !this.isReady || this.syncing) return 0;
+    this.syncing = true;
+    const startedAt = Math.floor(Date.now() / 1000);
+    const since = this.syncedUntil > 0 ? this.syncedUntil - SYNC_OVERLAP_MS / 1000 : startedAt - BACKFILL_DAYS * 24 * 60 * 60;
+    let found = 0;
+    try {
+      const chats = await withTimeout(client.getChats(), 60_000, "to list the chats");
+      for (const chat of chats) {
+        const chatId = chat.id._serialized;
+        if (chat.isGroup || !DIRECT_CHAT.test(chatId) || (chat.timestamp ?? 0) < since) continue;
+        // For a LID chat, the contact's number when WhatsApp's LID lookup has none (and it isn't the LID itself)
+        const contact = chatId.endsWith("@lid") ? await chat.getContact().catch(() => null) : null;
+        const lid = chatId.split("@")[0];
+        const number = contact?.number && contact.number !== lid && /^\d{6,20}$/.test(contact.number) ? contact.number : undefined;
+        const messages = await withTimeout(chat.fetchMessages({ limit: SYNC_MESSAGES_PER_CHAT }), 30_000, "to read a chat");
+        for (const message of messages) {
+          if (message.timestamp < since) continue;
+          if (await this.recordInbound(message as unknown as WhatsAppMessage, "sync", number)) found += 1;
+        }
+      }
+      this.syncedUntil = startedAt;
+      this.status.lastSyncedAt = new Date(startedAt * 1000).toISOString();
+      this.status.lastSyncFound = found;
+      if (found > 0) this.log(`read the chats: ${found} new ${found === 1 ? "reply" : "replies"}`);
+    } catch (error) {
+      this.logError("reading the chats for replies failed:", error);
+    } finally {
+      this.syncing = false;
+    }
+    return found;
   }
 
   /**
@@ -425,7 +514,8 @@ const engine = (shared.__stayzimWhatsApp ??= {
 function watchAccounts() {
   const timer = setInterval(() => {
     for (const account of engine.accounts.values()) {
-      if (account.isReady) void account.verify();
+      if (!account.isReady) continue;
+      void account.verify().then((connected) => (connected ? account.syncInbound() : 0));
     }
   }, WATCH_EVERY_MS);
   timer.unref?.();

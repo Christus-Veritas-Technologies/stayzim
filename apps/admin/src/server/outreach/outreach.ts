@@ -222,7 +222,8 @@ onInboundMessage(async (event) => {
     // WhatsApp can redeliver messages after a reconnect
     skipDuplicates: true,
   });
-  if (count === 0 || !contact) return;
+  if (count === 0) return false;
+  if (!contact) return true;
 
   const optOut = OPT_OUT.test(event.body);
   await prisma.contact.update({
@@ -239,6 +240,7 @@ onInboundMessage(async (event) => {
   console.log(
     `[outreach] reply from ${contact.name} (+${contact.phone}) to ${event.account}${optOut ? " — opted out" : ""}`,
   );
+  return true;
 });
 
 // ---------------------------------------------------------------------------
