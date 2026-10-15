@@ -166,6 +166,13 @@ type WhatsAppMessage = {
 const DIRECT_CHAT = /@(c\.us|lid)$/;
 
 /**
+ * What a person sends: text, media, a location, a contact, a button tap.
+ * Everything else in a chat is WhatsApp's own (security-code changes, call
+ * logs, "notification_template", deleted messages) and never counts as a reply.
+ */
+export const MESSAGE_TYPES = ["chat", "image", "video", "audio", "ptt", "document", "sticker", "location", "vcard", "multi_vcard", "list_response", "buttons_response", "template_button_reply"];
+
+/**
  * Puppeteer's own Chromium download is disabled in this workspace, so drive a
  * browser that is already installed instead.
  */
@@ -363,7 +370,7 @@ export class WhatsAppAccount {
    */
   private async recordInbound(message: WhatsAppMessage, via: "event" | "sync", phone?: string): Promise<boolean> {
     const chatId = message.from;
-    if (message.fromMe || message.isStatus || !DIRECT_CHAT.test(chatId)) return false;
+    if (message.fromMe || message.isStatus || !DIRECT_CHAT.test(chatId) || !MESSAGE_TYPES.includes(message.type)) return false;
     const handler = handlerBox.__stayzimInbound;
     if (!handler) {
       this.logError("a reply came in, but nothing is set to record it");
@@ -497,12 +504,34 @@ export class WhatsAppAccount {
     const page = this.page;
     if (!page) return [];
     return withTimeout(
-      page.evaluate(({ after, own }: { after: number; own: boolean }) => {
+      page.evaluate(async ({ after, own, types }: { after: number; own: boolean; types: string[] }) => {
         // Runs inside WhatsApp Web
         const require = (globalThis as unknown as { require: (name: string) => any }).require;
-        return require("WAWebCollections")
-          .Msg.getModelsArray()
-          .filter((msg: any) => msg.id && (own || !msg.id.fromMe) && msg.t >= after)
+        const { Chat, Msg } = require("WAWebCollections");
+        // Direct chats active since `after`: load their earlier messages (what fetchMessages does), newest chats first
+        let loader: any = null;
+        try {
+          loader = require("WAWebChatLoadMessages");
+        } catch {
+          // Another WhatsApp Web version: only what's loaded already
+        }
+        if (loader?.loadEarlierMsgs) {
+          const chats = Chat.getModelsArray()
+            .filter((chat: any) => !chat.isGroup && /@(c\.us|lid)$/.test(String(chat.id?._serialized ?? "")) && (chat.t ?? 0) >= after)
+            .sort((a: any, b: any) => (b.t ?? 0) - (a.t ?? 0))
+            .slice(0, 80);
+          for (const chat of chats) {
+            const oldest = chat.msgs?.getModelsArray?.()[0];
+            if (oldest && oldest.t < after) continue;
+            try {
+              await loader.loadEarlierMsgs(chat);
+            } catch {
+              // This chat stays as it is
+            }
+          }
+        }
+        return Msg.getModelsArray()
+          .filter((msg: any) => msg.id && (own || !msg.id.fromMe) && msg.t >= after && types.includes(String(msg.type ?? "chat")))
           .map((msg: any) => ({
             from: String(msg.id.remote?._serialized ?? msg.from?._serialized ?? ""),
             fromMe: Boolean(msg.id.fromMe),
@@ -513,9 +542,9 @@ export class WhatsAppAccount {
             id: { _serialized: String(msg.id._serialized) },
             notifyName: msg.notifyName ? String(msg.notifyName) : undefined,
           }));
-      }, { after: since, own }),
-      30_000,
-      "to list the loaded messages",
+      }, { after: since, own, types: MESSAGE_TYPES }),
+      90_000,
+      "to list the messages",
     );
   }
 

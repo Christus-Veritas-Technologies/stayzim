@@ -1,4 +1,4 @@
-import type { DecisionAnswer, DecisionQuestion, DecisionState } from "./openrouter";
+import { options, type DecisionAnswer, type DecisionQuestion, type DecisionState } from "./openrouter";
 
 /**
  * Qualification, on every batch of messages someone sends the agent's number:
@@ -40,8 +40,8 @@ export function qualificationQuestions(withPhotos: boolean) {
       instructions:
         "The person messaging owns, runs or manages a place where guests pay to stay (a lodge, guesthouse, B&B, hotel, holiday home, Airbnb or furnished apartments), or is clearly asking about a website for one.",
     },
-    intent: { type: "choice", instructions: "What the person messaging wants, judging by everything they have written so far.", criteria: [...INTENTS] },
-    fit: { type: "score", instructions: "How established their place to stay is, from what they have said and shown.", criteria: [...FITS] },
+    intent: { type: "choice", instructions: "What the person messaging wants, judging by everything they have written so far.", criteria: options(INTENTS) },
+    fit: { type: "score", instructions: "How established their place to stay is, from what they have said and shown.", criteria: options(FITS) },
     needs_human: {
       type: "noul",
       instructions:

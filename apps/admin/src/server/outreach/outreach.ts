@@ -10,6 +10,7 @@ import {
   markAccountUsed,
   normalizePhone,
   onInboundMessage,
+  MESSAGE_TYPES,
   onOwnMessage,
   readyAccountsInRotation,
   type WhatsAppAccount,
@@ -219,6 +220,25 @@ export async function sendToPhone(input: { phone: string; message: string; accou
 
 // Commands (/silence, /resume, /ban) and replies Kin types on an agent number's phone
 onOwnMessage(handleOwnMessage);
+
+/**
+ * Once per start (safe to repeat): WhatsApp's own notices (security-code
+ * changes, "notification_template"…) recorded as replies before only real
+ * messages counted. They're removed, and a lead marked replied only because
+ * of them goes back to messaged.
+ */
+async function removeSystemNotices() {
+  const notices = await prisma.inboundMessage.findMany({ where: { type: { notIn: MESSAGE_TYPES } }, select: { id: true, contactId: true } });
+  if (!notices.length) return;
+  await prisma.inboundMessage.deleteMany({ where: { id: { in: notices.map((notice) => notice.id) } } });
+  for (const contactId of new Set(notices.flatMap((notice) => (notice.contactId ? [notice.contactId] : [])))) {
+    const real = await prisma.inboundMessage.findFirst({ where: { contactId }, orderBy: { createdAt: "desc" }, select: { createdAt: true } });
+    if (real) await prisma.contact.update({ where: { id: contactId }, data: { lastRepliedAt: real.createdAt } });
+    else await prisma.contact.updateMany({ where: { id: contactId, status: "REPLIED" }, data: { status: "REACHED", lastRepliedAt: null } });
+  }
+  console.log(`[outreach] removed ${notices.length} WhatsApp notices recorded as replies`);
+}
+void removeSystemNotices().catch((error: unknown) => console.error("[outreach] removing notices failed:", error));
 
 onInboundMessage(async (event) => {
   // Seen before (the 2-minute read sees recent messages again): nothing to do, nothing to download

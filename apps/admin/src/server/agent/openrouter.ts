@@ -73,11 +73,18 @@ export async function chat(input: { messages: ChatMessage[]; tools?: ToolDefinit
 // Decisions (Jev)
 // ---------------------------------------------------------------------------
 
-/** A question for Jev: yes/no (noul), one of the options (choice) or a place on a scale (score). */
+/**
+ * A question for Jev: yes/no (noul), one of the options (choice) or a place on
+ * a scale (score). Options are a record, option → what it means (Jev rejects
+ * a plain list); answers name the option.
+ */
 export type DecisionQuestion =
   | { type: "noul"; instructions: string }
-  | { type: "choice"; instructions: string; criteria: string[] }
-  | { type: "score"; instructions: string; criteria: string[] };
+  | { type: "choice"; instructions: string; criteria: Record<string, string> }
+  | { type: "score"; instructions: string; criteria: Record<string, string> };
+
+/** Options whose names say what they mean: each maps to itself */
+export const options = (list: readonly string[]) => Object.fromEntries(list.map((option) => [option, option]));
 
 export type DecisionAnswer =
   | { type: "noul"; probability: number }
