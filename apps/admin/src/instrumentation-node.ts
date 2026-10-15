@@ -1,3 +1,4 @@
+import { startFollowUps } from "@/server/agent/follow-ups";
 import { startWhatsApp, stopWhatsApp } from "@/server/outreach/start";
 
 // whatsapp-web.js and puppeteer sometimes fail inside their own event handlers
@@ -12,6 +13,8 @@ process.on("uncaughtException", (error) => {
 });
 
 void startWhatsApp();
+// The sales agent's follow-ups and payment checks (it answers messages as they come in)
+startFollowUps();
 
 // Save each session and close Chromium on a redeploy (docker stop sends SIGTERM)
 for (const signal of ["SIGINT", "SIGTERM"] as const) {

@@ -25,7 +25,7 @@ const nextConfig: NextConfig = {
   headers: async () => [{ source: "/:path*", headers: securityHeaders }],
   // The WhatsApp engine (whatsapp-web.js drives Chromium through puppeteer) and the
   // database client run as plain Node modules on the server, not bundled
-  serverExternalPackages: ["whatsapp-web.js", "puppeteer", "puppeteer-core", "qrcode", "pg", "@prisma/client", "@prisma/adapter-pg"],
+  serverExternalPackages: ["whatsapp-web.js", "puppeteer", "puppeteer-core", "qrcode", "sharp", "pg", "@prisma/client", "@prisma/adapter-pg"],
   transpilePackages: ["@stayzim/db", "@stayzim/env", "@stayzim/sites", "@stayzim/ui"],
   images: { remotePatterns: [new URL("https://cdn.stayzim.co.zw/**")] },
 };
