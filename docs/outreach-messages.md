@@ -2,6 +2,31 @@
 
 _Drafts for the founding offer (11 October 2026). Campaign messages are typed into the admin app (Campaigns, `admin.stayzim.co.zw/campaigns`), not stored in the code, so paste these in there. It fills in `{name}` and `{city}` from each contact (nothing else). Founding prices end on 22 October 2026 at 23:59, Zimbabwe time: after that, use the "After 22 October" versions._
 
+## Facebook form leads (what we send now, 15 October 2026)
+
+People who filled in the Facebook form get these, from the admin (or Claude): first the details we need, then their sites to choose from.
+
+**1. Their details** ("Good morning", "Good afternoon" or "Good evening" by the time in Zimbabwe):
+
+> Good morning, this is Kin from StayZim, I'm messaging you because you replied to our ad on Facebook, please share the following details with us:
+> - Lodge name
+> - City
+> - Email address
+> - Rooms (names and pictures)
+
+**2. Their sites**, made with New sites or `make-sites` (the $15 and $30 ones, and the Pro one for bigger places). One question to answer, what each costs and adds, the rooms are examples, the deadline and the free domain. Keep it under 600 characters:
+
+> Hi {name}, here's {lodge}'s website in two versions:
+>
+> 1. $15/month: {starter address}
+> 2. $30/month, where each room gets its own page and guests can book on the site: {growth address}
+>
+> The rooms and prices on it are examples for now; we'll put yours in.
+>
+> Which one do you like, 1 or 2? This price is only until 22 October, and {lodge}.co.zw is free with your first payment.
+
+With the Pro site too: "3. $50/month (normally $75): adds reviews, your story and things to do in {city}", and "1, 2 or 3?".
+
 ## First message
 
 > Hi {name}, this is Kin from StayZim in Mutare. We build lodges in {city} their own website, free: your rooms, photos, a map and a Book on WhatsApp button, on your own yourlodge.co.zw (free too).
