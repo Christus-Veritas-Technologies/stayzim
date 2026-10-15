@@ -40,6 +40,9 @@ const SYNC_OVERLAP_MS = 10 * 60 * 1000;
 /** The newest messages read from each chat. */
 const SYNC_MESSAGES_PER_CHAT = 30;
 
+/** A number still starting or loading its chats after this long is restarted (it never got to "ready"). */
+const STUCK_AFTER_MS = 8 * 60 * 1000;
+
 /** After a disconnect (other than unlinking from the phone), when to start the browser again. */
 const RECONNECT_DELAY_MS = 15_000;
 
@@ -86,6 +89,8 @@ export type WhatsAppStatus = {
   /** When this number's chats were last read for replies, and how many new ones that found. */
   lastSyncedAt?: string;
   lastSyncFound?: number;
+  /** Why the last read of the chats failed, when it did */
+  lastSyncError?: string;
   startedAt: string;
 };
 
@@ -169,6 +174,12 @@ export class WhatsAppAccount {
 
   get isReady() {
     return this.status.state === "ready";
+  }
+
+  /** Still starting or loading its chats long after it began: it never got to "ready". */
+  get isStuck() {
+    if (this.restarting || (this.status.state !== "starting" && this.status.state !== "authenticated")) return false;
+    return Date.now() - Date.parse(this.status.startedAt) > STUCK_AFTER_MS;
   }
 
   private log(...args: unknown[]) {
@@ -343,31 +354,127 @@ export class WhatsAppAccount {
     const startedAt = Math.floor(Date.now() / 1000);
     const since = this.syncedUntil > 0 ? this.syncedUntil - SYNC_OVERLAP_MS / 1000 : startedAt - BACKFILL_DAYS * 24 * 60 * 60;
     let found = 0;
+    const problems: string[] = [];
     try {
-      const chats = await withTimeout(client.getChats(), 60_000, "to list the chats");
-      for (const chat of chats) {
-        const chatId = chat.id._serialized;
-        if (chat.isGroup || !DIRECT_CHAT.test(chatId) || (chat.timestamp ?? 0) < since) continue;
-        // For a LID chat, the contact's number when WhatsApp's LID lookup has none (and it isn't the LID itself)
-        const contact = chatId.endsWith("@lid") ? await chat.getContact().catch(() => null) : null;
-        const lid = chatId.split("@")[0];
-        const number = contact?.number && contact.number !== lid && /^\d{6,20}$/.test(contact.number) ? contact.number : undefined;
-        const messages = await withTimeout(chat.fetchMessages({ limit: SYNC_MESSAGES_PER_CHAT }), 30_000, "to read a chat");
-        for (const message of messages) {
-          if (message.timestamp < since) continue;
-          if (await this.recordInbound(message as unknown as WhatsAppMessage, "sync", number)) found += 1;
+      // 1. Every message WhatsApp Web has loaded, in one quick call (no chat list, no fetching)
+      try {
+        for (const message of await this.loadedMessages(since)) {
+          if (await this.recordInbound(message, "sync")) found += 1;
         }
+      } catch (error) {
+        problems.push(`loaded messages: ${errorText(error)}`);
+        this.logError("reading the loaded messages failed:", error);
+      }
+      // 2. Chats with unread messages, read one by one (older messages WhatsApp Web hasn't loaded)
+      try {
+        const chats = await withTimeout(client.getChats(), 120_000, "to list the chats");
+        for (const chat of chats) {
+          const chatId = chat.id._serialized;
+          if (chat.isGroup || !DIRECT_CHAT.test(chatId) || (chat.timestamp ?? 0) < since) continue;
+          if (this.syncedUntil > 0 && !chat.unreadCount) continue;
+          // For a LID chat, the contact's number when WhatsApp's LID lookup has none (and it isn't the LID itself)
+          const contact = chatId.endsWith("@lid") ? await chat.getContact().catch(() => null) : null;
+          const lid = chatId.split("@")[0];
+          const number = contact?.number && contact.number !== lid && /^\d{6,20}$/.test(contact.number) ? contact.number : undefined;
+          const messages = await withTimeout(chat.fetchMessages({ limit: SYNC_MESSAGES_PER_CHAT }), 30_000, "to read a chat").catch(() => []);
+          for (const message of messages) {
+            if (message.timestamp < since) continue;
+            if (await this.recordInbound(message as unknown as WhatsAppMessage, "sync", number)) found += 1;
+          }
+        }
+      } catch (error) {
+        problems.push(`chat list: ${errorText(error)}`);
+        this.logError("reading the unread chats failed:", error);
       }
       this.syncedUntil = startedAt;
       this.status.lastSyncedAt = new Date(startedAt * 1000).toISOString();
       this.status.lastSyncFound = found;
+      this.status.lastSyncError = problems.length ? problems.join("; ") : undefined;
       if (found > 0) this.log(`read the chats: ${found} new ${found === 1 ? "reply" : "replies"}`);
-    } catch (error) {
-      this.logError("reading the chats for replies failed:", error);
     } finally {
       this.syncing = false;
     }
     return found;
+  }
+
+  /** WhatsApp Web's page, for reading its own message list. */
+  private get page() {
+    return (this.client as unknown as { pupPage?: { evaluate: <T, A>(fn: (arg: A) => T, arg: A) => Promise<T> } } | undefined)?.pupPage;
+  }
+
+  /** Messages other people sent, already loaded in WhatsApp Web, since `since` (seconds). */
+  private async loadedMessages(since: number): Promise<WhatsAppMessage[]> {
+    const page = this.page;
+    if (!page) return [];
+    return withTimeout(
+      page.evaluate((after: number) => {
+        // Runs inside WhatsApp Web
+        const require = (globalThis as unknown as { require: (name: string) => any }).require;
+        return require("WAWebCollections")
+          .Msg.getModelsArray()
+          .filter((msg: any) => msg.id && !msg.id.fromMe && msg.t >= after)
+          .map((msg: any) => ({
+            from: String(msg.id.remote?._serialized ?? msg.from?._serialized ?? ""),
+            fromMe: false,
+            isStatus: Boolean(msg.isStatusV3) || String(msg.id.remote?._serialized ?? "") === "status@broadcast",
+            body: String(msg.body ?? msg.caption ?? ""),
+            type: String(msg.type ?? "chat"),
+            timestamp: Number(msg.t),
+            id: { _serialized: String(msg.id._serialized) },
+          }));
+      }, since),
+      30_000,
+      "to list the loaded messages",
+    );
+  }
+
+  /** Marks a chat read (blue ticks), without replying. */
+  async markRead(chatId: string) {
+    if (!this.client || !this.isReady) return false;
+    return withTimeout(this.client.sendSeen(chatId), 15_000, "to mark the chat read").catch((error: unknown) => {
+      this.logError(`marking ${chatId} read failed:`, error);
+      return false;
+    });
+  }
+
+  /**
+   * Replies in a chat as a person would: marks it read, shows "typing…" for a
+   * while that grows with the reply, then sends. Works for LID chats too (no
+   * phone number needed). Returns WhatsApp's id for the message.
+   */
+  async replyInChat(chatId: string, text: string): Promise<string> {
+    const client = this.client;
+    if (!client || !(await this.verify())) throw new Error(`WhatsApp number ${this.id} isn't connected right now (${this.status.lastError ?? this.status.state})`);
+    await this.markRead(chatId);
+    const chat = await withTimeout(client.getChatById(chatId), 15_000, "to open the chat").catch(() => null);
+    const typingMs = Math.min(8000, 2000 + text.length * 25);
+    await chat?.sendStateTyping().catch(() => {});
+    await new Promise((resolve) => setTimeout(resolve, typingMs));
+    await chat?.clearState().catch(() => {});
+    const sent = await withTimeout(client.sendMessage(chatId, text, { sendSeen: false }), SEND_TIMEOUT_MS, "to send").catch(async (error: unknown) => {
+      const found = await this.findJustSent(text);
+      if (found) return { id: { _serialized: found } };
+      throw error;
+    });
+    if (sent) return sent.id._serialized;
+    const found = await this.findJustSent(text);
+    if (found) return found;
+    throw new Error("WhatsApp didn't confirm the message was sent, and it isn't in the chat");
+  }
+
+  /** A photo someone sent, as bytes; null when it isn't one or can't be downloaded. */
+  async downloadImage(messageId: string): Promise<{ mimeType: string; data: Buffer } | null> {
+    const client = this.client;
+    if (!client) return null;
+    try {
+      const message = await withTimeout(client.getMessageById(messageId), 15_000, "to find the message");
+      if (!message?.hasMedia || message.type !== "image") return null;
+      const media = await withTimeout(message.downloadMedia(), 60_000, "to download the photo");
+      return media?.data ? { mimeType: media.mimetype, data: Buffer.from(media.data, "base64") } : null;
+    } catch (error) {
+      this.logError(`downloading photo ${messageId} failed:`, error);
+      return null;
+    }
   }
 
   /**
@@ -401,7 +508,8 @@ export class WhatsAppAccount {
       await this.stop();
       this.status.state = "starting";
       this.status.startedAt = new Date().toISOString();
-      await this.start(this.executablePath ?? resolveBrowser());
+      // A start that hangs doesn't hold the number forever: the next check can restart it again
+      await withTimeout(this.start(this.executablePath ?? resolveBrowser()), STUCK_AFTER_MS, "to start");
     } catch (error) {
       this.status.state = "failed";
       this.status.lastError = errorText(error);
@@ -514,6 +622,10 @@ const engine = (shared.__stayzimWhatsApp ??= {
 function watchAccounts() {
   const timer = setInterval(() => {
     for (const account of engine.accounts.values()) {
+      if (account.isStuck) {
+        void account.restart("after being stuck while starting");
+        continue;
+      }
       if (!account.isReady) continue;
       void account.verify().then((connected) => (connected ? account.syncInbound() : 0));
     }

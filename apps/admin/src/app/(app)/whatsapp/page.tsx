@@ -26,6 +26,7 @@ type NumberStatus = {
   lastCheckedAt?: string;
   lastSyncedAt?: string;
   lastSyncFound?: number;
+  lastSyncError?: string;
   startedAt: string;
   usage?: { sent: number; limit: number; remaining: number; resetsAt?: string };
 };
@@ -87,6 +88,7 @@ function NumberCard({ status }: { status: NumberStatus }) {
               ? `Chats read for replies ${formatShortWhen(status.lastSyncedAt)}${status.lastSyncFound ? `: ${status.lastSyncFound} new` : ""}`
               : "Chats not read for replies yet: the first read, half a minute after connecting, looks back 14 days"}
           </p>
+          {status.lastSyncError ? <p className="text-[12px] text-warning">Reading the chats: {status.lastSyncError}</p> : null}
         </>
       ) : null}
       <p className="text-[12px] text-muted-2">{status.lastSavedAt ? `Login saved ${formatShortWhen(status.lastSavedAt)}: a redeploy won't need a new scan` : "Login not saved yet: it saves about a minute after connecting"}</p>
