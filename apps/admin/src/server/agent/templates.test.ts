@@ -5,6 +5,23 @@ import { followUpMessage, freeDomain, localPhone, paidMessage, siteOptionsMessag
 const BEFORE_DEADLINE = new Date("2026-10-15T10:00:00Z");
 
 describe("siteOptionsMessage", () => {
+  test("long names and towns still fit under 600 characters (the shorter wording)", () => {
+    const message = siteOptionsMessage({
+      lodge: "Msasa Hill Executive Guest Lodge",
+      city: "Victoria Falls",
+      name: "Siphosenkosi Ndlovu",
+      now: BEFORE_DEADLINE,
+      sites: [
+        { plan: "STARTER", url: "https://msasa-hill-executive-guest-lodge.stayzim.co.zw", monthlyPrice: 15 },
+        { plan: "GROWTH", url: "https://msasa-hill-executive-guest-lodge-victoria-falls.stayzim.co.zw", monthlyPrice: 30 },
+        { plan: "PRO", url: "https://msasa-hill-executive-guest-lodge-2.stayzim.co.zw", monthlyPrice: 50 },
+      ],
+    });
+    expect(message.length).toBeLessThan(600);
+    expect(message).toContain("1, 2 or 3?");
+    expect(message).toContain("the .co.zw domain is free");
+  });
+
   test("three sites, as sent to Hardy House: under 600 characters, the right prices, 1, 2 or 3", () => {
     const message = siteOptionsMessage({
       lodge: "Hardy House",

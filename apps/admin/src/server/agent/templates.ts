@@ -15,6 +15,16 @@ const ADDS: Record<Plan, (city: string) => string> = {
   PRO: (city) => `adds reviews, your story and things to do in ${city}`,
 };
 
+/** The same, shorter: used only when the message would otherwise pass 600 characters */
+const ADDS_SHORT: Record<Plan, (city: string) => string> = {
+  STARTER: () => "one page, WhatsApp booking",
+  GROWTH: () => "a page per room, booking on the site",
+  PRO: () => "adds reviews and things to do nearby",
+};
+
+/** WhatsApp shows long messages folded: keep the options under this */
+export const OPTIONS_MAX = 600;
+
 const PLAN_ORDER: Plan[] = ["STARTER", "GROWTH", "PRO"];
 
 /** "Hardy House" → "hardyhouse.co.zw" */
@@ -29,23 +39,41 @@ export function foundingDeadline() {
 
 const slash = (url: string) => (url.endsWith("/") ? url : `${url}/`);
 
-/** Their sites to choose from, "1, 2 or 3?". */
+/** Their sites to choose from, "1, 2 or 3?": the approved wording, shorter only if it has to be. */
 export function siteOptionsMessage(input: { lodge: string; city: string; name?: string | null; sites: OfferSite[]; now?: Date }) {
+  const full = optionsMessage(input, ADDS, true);
+  if (full.length < OPTIONS_MAX) return full;
+  const short = optionsMessage(input, ADDS_SHORT, true);
+  if (short.length < OPTIONS_MAX) return short;
+  const shorter = optionsMessage(input, ADDS_SHORT, false);
+  return shorter.length < OPTIONS_MAX ? shorter : optionsMessage(input, ADDS_SHORT, false, true);
+}
+
+function optionsMessage(
+  input: { lodge: string; city: string; name?: string | null; sites: OfferSite[]; now?: Date },
+  adds: typeof ADDS,
+  withName: boolean,
+  compactClose = false,
+) {
   const sites = [...input.sites].sort((a, b) => PLAN_ORDER.indexOf(a.plan) - PLAN_ORDER.indexOf(b.plan));
   const founding = foundingOpen(input.now ?? new Date());
   const count = sites.length === 2 ? "two" : sites.length === 3 ? "3" : String(sites.length);
   const first = input.name?.split(" ")[0];
   const lines = sites.map((site, index) => {
     const normally = founding && site.monthlyPrice < PLAN_PRICES[site.plan] && site.plan === "PRO" ? ` (normally $${PLAN_PRICES[site.plan]})` : "";
-    return `${index + 1}. $${site.monthlyPrice}/month${normally}: ${ADDS[site.plan](input.city)}\n${slash(site.url)}`;
+    return `${index + 1}. $${site.monthlyPrice}/month${normally}: ${adds[site.plan](input.city)}\n${slash(site.url)}`;
   });
   const which = sites.length === 1 ? "Do you like it?" : `Which one do you like, ${sites.map((_, i) => i + 1).join(sites.length === 2 ? " or " : ", ").replace(/, (\d)$/, " or $1")}?`;
   const deadline = founding ? ` This price is only until ${foundingDeadline()}, and` : " And";
+  // Long addresses (long names): the same ask, fewer words
+  const close = compactClose
+    ? `${which}${founding ? ` Price held until ${foundingDeadline()};` : ""} the .co.zw domain is free when you pay.`
+    : `${which}${deadline} ${freeDomain(input.lodge)} is free with your first payment.`;
   return [
-    `${first ? `Hi ${first}, here's` : "Here's"} ${input.lodge}'s website in ${count} versions:`,
+    `${first && withName ? `Hi ${first}, here's` : "Here's"} ${input.lodge}'s website in ${count} versions:`,
     lines.join("\n\n"),
     "The rooms and prices on it are examples for now; we'll put yours in.",
-    `${which}${deadline} ${freeDomain(input.lodge)} is free with your first payment.`,
+    close,
   ].join("\n\n");
 }
 

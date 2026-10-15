@@ -8,7 +8,7 @@ import { chat, decide, type ChatContent, type ChatMessage } from "./openrouter";
 import { gate, qualificationQuestions, qualificationState, toQualification, type Qualification } from "./qualify";
 import { buildInstructions } from "./script";
 import { getAgentMode } from "./settings";
-import { leadSites, readFacts, runTool, TOOLS, type ToolContext } from "./tools";
+import { givenName, leadSites, readFacts, runTool, TOOLS, type ToolContext } from "./tools";
 import { handoverMessage } from "./templates";
 
 /**
@@ -146,8 +146,8 @@ export async function handleChat(account: string, chatId: string) {
   const system = buildInstructions(
     {
       stage: contact.agentStage,
-      whatsappName: contact.source === "whatsapp" ? contact.name : null,
-      name: contact.source === "whatsapp" ? null : contact.name,
+      whatsappName: contact.source === "whatsapp" && !facts.nameGiven ? contact.name : null,
+      name: givenName(contact),
       lodgeName: contact.lodgeName,
       city: contact.city || null,
       email: contact.email,

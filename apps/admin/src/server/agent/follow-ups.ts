@@ -3,7 +3,7 @@ import prisma from "@stayzim/db";
 import { logEvent, sendInChat } from "./chat";
 import { checkPayment } from "./payments";
 import { getAgentMode } from "./settings";
-import { leadSites } from "./tools";
+import { givenName, leadSites } from "./tools";
 import { followUpMessage } from "./templates";
 
 /**
@@ -36,7 +36,7 @@ async function tick() {
         contactId: contact.id,
         chatId: contact.agentChatId,
         account: contact.agentAccount,
-        text: followUpMessage(n, { lodge: contact.lodgeName ?? "your place", name: contact.source === "whatsapp" ? null : contact.name, options: sites.length }),
+        text: followUpMessage(n, { lodge: contact.lodgeName ?? "your place", name: givenName(contact), options: sites.length }),
       });
       await prisma.contact.update({
         where: { id: contact.id },

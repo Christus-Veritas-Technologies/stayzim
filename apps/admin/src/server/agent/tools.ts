@@ -16,7 +16,18 @@ import { handoverMessage, payLinkMessage, promptSentMessage, siteOptionsMessage 
  * fixed templates, never the model's own words.
  */
 
-export type AgentFacts = { kind?: string | null; rooms?: number | null };
+export type AgentFacts = {
+  kind?: string | null;
+  rooms?: number | null;
+  /** They told us their name (not just their WhatsApp profile's) */
+  nameGiven?: boolean;
+};
+
+/** Their name, only when they gave it (or came from a form or a list); never a WhatsApp profile name */
+export function givenName(contact: { name: string; phone: string; source: string | null; qualification: unknown }) {
+  if (contact.source === "whatsapp" && !readFacts(contact.qualification).nameGiven) return null;
+  return contact.name && contact.name !== contact.phone && !contact.name.startsWith("+") ? contact.name : null;
+}
 
 /** What a tool can use: the lead, sending in their chat, and the log. */
 export type ToolContext = {
@@ -176,8 +187,13 @@ export async function runTool(name: string, args: Args, ctx: ToolContext): Promi
           ...(text(args.email) ? { email: text(args.email)!.toLowerCase() } : {}),
           ...(text(args.their_name) ? { name: text(args.their_name) } : {}),
           ...(note ? { notes: [contact.notes, note].filter(Boolean).join("\n") } : {}),
-          ...(kind || rooms
-            ? { qualification: { ...((contact.qualification as object | null) ?? {}), facts: { ...facts, ...(kind ? { kind } : {}), ...(rooms ? { rooms } : {}) } } }
+          ...(kind || rooms || text(args.their_name)
+            ? {
+                qualification: {
+                  ...((contact.qualification as object | null) ?? {}),
+                  facts: { ...facts, ...(kind ? { kind } : {}), ...(rooms ? { rooms } : {}), ...(text(args.their_name) ? { nameGiven: true } : {}) },
+                },
+              }
             : {}),
           ...(contact.agentStage === "NEW" ? { agentStage: "DETAILS" } : {}),
         },
@@ -217,7 +233,7 @@ export async function runTool(name: string, args: Args, ctx: ToolContext): Promi
       }
       await prisma.inboundMedia.updateMany({ where: { id: { in: photos.map((photo) => photo.id) } }, data: { usedAt: new Date() } });
 
-      const message = siteOptionsMessage({ lodge: contact.lodgeName, city: contact.city, name: contact.name !== contact.phone ? contact.name : null, sites: made.sites });
+      const message = siteOptionsMessage({ lodge: contact.lodgeName, city: contact.city, name: givenName(contact), sites: made.sites });
       await ctx.send(message);
       await prisma.contact.update({
         where: { id: contact.id },
