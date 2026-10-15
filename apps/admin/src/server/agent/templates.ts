@@ -109,6 +109,11 @@ export function followUpMessage(n: number, input: { lodge: string; name?: string
     : `Shall I keep ${input.lodge}'s site for you, or let it go for now?`;
 }
 
+/** One gentle nudge when they went quiet before sending photos (a day later) */
+export function detailsNudgeMessage(lodge: string | null) {
+  return `Whenever you have a minute, send me a photo or two of ${lodge ?? "your place"} and I'll build your preview. No rush.`;
+}
+
 /** When the agent hands over to Kin */
 export function handoverMessage() {
   return "Let me get Kin to help you with that. Kin will message you here shortly.";

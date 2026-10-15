@@ -8,8 +8,8 @@ import { chat, decide, type ChatContent, type ChatMessage } from "./openrouter";
 import { gate, qualificationQuestions, qualificationState, toQualification, type Qualification } from "./qualify";
 import { buildInstructions } from "./script";
 import { getAgentMode } from "./settings";
-import { givenName, leadSites, readFacts, runTool, TOOLS, type ToolContext } from "./tools";
-import { handoverMessage } from "./templates";
+import { addNewPhotosToSites, givenName, leadSites, readFacts, runTool, TOOLS, type ToolContext } from "./tools";
+import { handoverMessage, localPhone } from "./templates";
 
 /**
  * One turn of the WhatsApp sales agent for a chat on its number: the messages
@@ -75,7 +75,7 @@ async function leadForChat(account: string, chatId: string) {
 type Lead = NonNullable<Awaited<ReturnType<typeof leadForChat>>>;
 
 /** The system prompt (script, live facts, this lead) and the conversation, with this batch's photos. */
-async function chatMessages(contact: Lead, items: Item[], batchPhotos: string[]): Promise<ChatMessage[]> {
+async function chatMessages(contact: Lead, items: Item[], batchPhotos: string[], newPhotosAdded = 0): Promise<ChatMessage[]> {
   const sites = await leadSites(contact.id);
   const facts = readFacts(contact.qualification);
   const photos = await prisma.inboundMedia.count({ where: { inboundMessage: { contactId: contact.id } } });
@@ -83,6 +83,8 @@ async function chatMessages(contact: Lead, items: Item[], batchPhotos: string[])
   const system = buildInstructions(
     {
       stage: contact.agentStage,
+      whatsappNumber: localPhone(contact.phone),
+      newPhotosAdded,
       whatsappName: contact.source === "whatsapp" && !facts.nameGiven ? contact.name : null,
       name: givenName(contact),
       lodgeName: contact.lodgeName,
@@ -187,7 +189,9 @@ export async function handleChat(account: string, chatId: string) {
   }
 
   // --- The conversation (Claude Haiku 5.5 with tools) ------------------------
-  const messages = await chatMessages(contact, items, batchPhotos);
+  // Photos sent after their sites were made go onto the sites before the reply
+  const newPhotosAdded = await addNewPhotosToSites(contact.id, (kind, data, costUsd) => event(kind, data, costUsd)).catch(() => 0);
+  const messages = await chatMessages(contact, items, batchPhotos, newPhotosAdded);
 
   const ctx: ToolContext = {
     contactId: contact.id,
@@ -224,7 +228,7 @@ export async function handleChat(account: string, chatId: string) {
         });
         messages.push({ role: "tool", tool_call_id: call.id, content: result });
       }
-      if (ctx.silent) break;
+      if (ctx.silent || ctx.done) break;
     }
   } catch (error) {
     await event("error", { step: "reply", error: String(error) }, cost);
@@ -232,10 +236,17 @@ export async function handleChat(account: string, chatId: string) {
     return;
   }
 
-  if (reply && !ctx.silent) await sendInChat({ contactId: contact.id, chatId, account, text: reply });
+  if (reply && !ctx.silent && !ctx.done) await sendInChat({ contactId: contact.id, chatId, account, text: reply });
   else if (ctx.silent) await number?.markRead(chatId);
   if (contact.agentStage === "NEW") await prisma.contact.updateMany({ where: { id: contact.id, agentStage: "NEW" }, data: { agentStage: "DETAILS" } });
-  await event("turn", { tools: calls, replied: Boolean(reply && !ctx.silent), silent: ctx.silent ?? null }, cost);
+  // Still getting their details (no sites yet) and we asked something: one gentle nudge a day later if they go quiet
+  if (reply && !ctx.silent) {
+    await prisma.contact.updateMany({
+      where: { id: contact.id, agentStage: "DETAILS", followUps: 0, nextFollowUpAt: null },
+      data: { nextFollowUpAt: new Date(Date.now() + 24 * 60 * 60 * 1000) },
+    });
+  }
+  await event("turn", { tools: calls, replied: Boolean(reply && !ctx.silent && !ctx.done), silent: ctx.silent ?? null }, cost);
 }
 
 /** What they've sent since our last message (the batch a turn would answer), and their photos in it. */

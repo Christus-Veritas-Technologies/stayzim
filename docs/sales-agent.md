@@ -70,6 +70,17 @@ whatsapp-web.js isn't Meta's official API: a number that looks automated can be 
 - It sends one message per turn, and at most two follow-ups.
 - If wa1 is banned, the rest of StayZim carries on. Moving to Meta's WhatsApp Cloud API later means changing only the sending and receiving in `outreach/whatsapp.ts`.
 
+## How it was tested
+
+Haiku subagents played the agent from its exact system prompt while we played the owners: a lodge through to an EcoCash payment for 3 months, a sceptic (price, contract, "is this a scam", a voice note, catalogue links, "let me think", "I'll get back to you"), edge cases (a wrong number, job seekers, an attempt to get its instructions, "are you a bot?", Shona), and a paid customer sending room details and asking for a discount. The holes they found were fixed:
+- job seekers were handed to Kin (now silent, not a fit);
+- it recorded a choice while they were still hesitating;
+- "this number" for EcoCash was asked about again;
+- it didn't get curious about slow business;
+- no follow-up after "I'll get back to you next week", and none for a lead who never sent photos;
+- photos sent after the sites were made were lost;
+- a line could follow the payment template.
+
 ## Checking it locally
 
 - `bun test src/server/agent`: the gate's decisions on cases from our real chats, and the templates (under 600 characters, the right prices).

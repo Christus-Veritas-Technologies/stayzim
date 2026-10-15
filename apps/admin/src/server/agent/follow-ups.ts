@@ -4,7 +4,7 @@ import { logEvent, sendInChat } from "./chat";
 import { checkPayment } from "./payments";
 import { getAgentMode } from "./settings";
 import { givenName, leadSites } from "./tools";
-import { followUpMessage } from "./templates";
+import { detailsNudgeMessage, followUpMessage } from "./templates";
 
 /**
  * Every 10 minutes: a gentle nudge to leads who got their sites and went quiet
@@ -21,12 +21,22 @@ async function tick() {
   if ((await getAgentMode()) !== "live") return;
 
   const due = await prisma.contact.findMany({
-    where: { nextFollowUpAt: { lte: new Date() }, agentStage: "OFFER", agentPaused: false, status: { not: "DO_NOT_CONTACT" }, agentChatId: { not: null } },
+    where: { nextFollowUpAt: { lte: new Date() }, agentStage: { in: ["OFFER", "DETAILS"] }, agentPaused: false, status: { not: "DO_NOT_CONTACT" }, agentChatId: { not: null } },
     take: 20,
   });
   for (const contact of due) {
+    if (!contact.agentAccount || !contact.agentChatId) continue;
+    // Details: one nudge only
+    if (contact.agentStage === "DETAILS") {
+      if (contact.followUps === 0) {
+        await sendInChat({ contactId: contact.id, chatId: contact.agentChatId, account: contact.agentAccount, text: detailsNudgeMessage(contact.lodgeName) }).catch(() => {});
+        await logEvent({ contactId: contact.id, chatId: contact.agentChatId, account: contact.agentAccount, kind: "follow_up", data: { n: 1, stage: "DETAILS" } });
+      }
+      await prisma.contact.update({ where: { id: contact.id }, data: { followUps: 1, nextFollowUpAt: null } });
+      continue;
+    }
     const n = contact.followUps + 1;
-    if (n > MAX_FOLLOW_UPS || !contact.agentAccount || !contact.agentChatId) {
+    if (n > MAX_FOLLOW_UPS) {
       await prisma.contact.update({ where: { id: contact.id }, data: { nextFollowUpAt: null } });
       continue;
     }

@@ -39,6 +39,8 @@ export type ToolContext = {
   log: (kind: string, data: Record<string, unknown>, costUsd?: number) => Promise<void>;
   /** Set by stay_silent: no reply this turn */
   silent?: string;
+  /** Set when a tool sent the turn's message itself (a payment prompt or link): nothing more is sent */
+  done?: boolean;
 };
 
 const PLAN_ORDER: Plan[] = ["STARTER", "GROWTH", "PRO"];
@@ -139,11 +141,22 @@ export const TOOLS: ToolDefinition[] = [
   {
     type: "function",
     function: {
+      name: "check_in_later",
+      description: "Schedule one check-in message when a new lead isn't ready yet (renovating, travelling, 'end of the month'). You still reply this turn, briefly and warmly, with no question.",
+      parameters: { type: "object", properties: { days: { type: "integer", description: "In how many days (they said when; a week if not)" } }, required: ["days"] },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name: "stay_silent",
       description: "Don't reply this time (their messages are still read).",
       parameters: {
         type: "object",
-        properties: { reason: { type: "string", enum: ["not_interested", "will_get_back", "conversation_over", "low_quality"] } },
+        properties: {
+          reason: { type: "string", enum: ["not_interested", "will_get_back", "conversation_over", "low_quality", "not_a_fit"] },
+          follow_up_days: { type: "integer", description: "For will_get_back: when they said they'd come back, in days (default 7)" },
+        },
         required: ["reason"],
       },
     },
@@ -179,6 +192,28 @@ function photoForm(photo: Awaited<ReturnType<typeof preparePhoto>>, name: string
   form.append("width", String(photo.main.info.width));
   form.append("height", String(photo.main.info.height));
   return form;
+}
+
+/**
+ * Photos they sent after their sites were made: added to every one of their
+ * sites (not yet handed over), so nothing they send is lost. Returns how many.
+ */
+export async function addNewPhotosToSites(contactId: string, log: ToolContext["log"]) {
+  const sites = await leadSites(contactId);
+  if (!sites.length) return 0;
+  const photos = await unusedPhotos(contactId);
+  let added = 0;
+  for (const [index, photo] of photos.entries()) {
+    const prepared = await preparePhoto(photo.data).catch(() => null);
+    if (!prepared) continue;
+    for (const site of sites) {
+      await serverApi.uploadPhoto(site.slug, photoForm(prepared, `photo-more-${index + 1}`)).catch((error: unknown) => log("error", { step: "add photos", site: site.slug, error: String(error) }));
+    }
+    added += 1;
+  }
+  if (photos.length) await prisma.inboundMedia.updateMany({ where: { id: { in: photos.map((photo) => photo.id) } }, data: { usedAt: new Date() } });
+  if (added) await log("tool", { tool: "add_photos", added });
+  return added;
 }
 
 type Args = Record<string, unknown>;
@@ -261,7 +296,7 @@ export async function runTool(name: string, args: Args, ctx: ToolContext): Promi
       });
       await ctx.log("tool", { tool: "make_sites", sites: made.sites.map((site) => site.slug) });
       await alertKin(`New sites sent to ${contact.lodgeName} (${contact.city}), +${contact.phone}: ${made.sites.map((site) => `$${site.monthlyPrice} ${site.url}`).join(" · ")}`);
-      return `Built ${made.sites.length} sites and sent them the options message with the links and prices. Don't repeat them.`;
+      return `Built ${made.sites.length} sites and sent them the options message with the links, prices and the question "which one do you like". Say nothing more this turn unless they asked something else; then answer it briefly, with no question.`;
     }
 
     case "choose_site": {
@@ -287,9 +322,10 @@ export async function runTool(name: string, args: Args, ctx: ToolContext): Promi
       const token = link.url.split("/").pop()!;
       if (name === "send_payment_link") {
         await ctx.send(payLinkMessage(link.url, link.amountCents));
+        ctx.done = true;
         await prisma.contact.update({ where: { id: contact.id }, data: { agentStage: "PAYING" } });
         await ctx.log("tool", { tool: "send_payment_link", slug: site.slug, url: link.url });
-        return "Sent the payment link. Paynow confirms on its own.";
+        return "Sent the payment link. Paynow confirms on its own. Say nothing more this turn.";
       }
       const phone = String(args.phone ?? "").replace(/\D/g, "");
       const local = phone.startsWith("263") ? `0${phone.slice(3)}` : phone.startsWith("7") ? `0${phone}` : phone;
@@ -299,8 +335,9 @@ export async function runTool(name: string, args: Args, ctx: ToolContext): Promi
         await prisma.contact.update({ where: { id: contact.id }, data: { agentStage: "PAYING" } });
         await ctx.log("payment", { token, paymentId: started.payment.id, slug: site.slug, phone: local, amountCents: started.payment.amountCents });
         await ctx.send(promptSentMessage(started.payment.amountCents, local));
+        ctx.done = true;
         watchPayment({ contactId: contact.id, chatId: ctx.chatId, account: ctx.account, token, paymentId: started.payment.id, slug: site.slug });
-        return "Sent the EcoCash prompt and told them to enter their PIN. Wait for Paynow; don't say it's paid.";
+        return "Sent the EcoCash prompt and the message telling them to enter their PIN. Say nothing more this turn, and never say it's paid until Paynow confirms.";
       } catch (error) {
         await ctx.log("error", { tool: "start_ecocash", error: String(error) });
         return `The prompt couldn't be sent (${error instanceof Error ? error.message : "Paynow didn't answer"}). Offer a payment link instead (send_payment_link), or hand over.`;
@@ -331,6 +368,15 @@ export async function runTool(name: string, args: Args, ctx: ToolContext): Promi
       return "Handed over and told them Kin will reply. Say nothing more.";
     }
 
+    case "check_in_later": {
+      const days = Math.min(60, Math.max(1, Math.round(Number(args.days) || 7)));
+      await prisma.contact.update({
+        where: { id: contact.id },
+        data: { nextFollowUpAt: new Date(Date.now() + days * 24 * 60 * 60 * 1000), followUps: contact.agentStage === "OFFER" ? 1 : 0, ...(contact.agentStage === "NEW" ? { agentStage: "DETAILS" } : {}) },
+      });
+      return `We'll check in with them in ${days} day${days === 1 ? "" : "s"}. Now reply briefly and warmly, with no question.`;
+    }
+
     case "stay_silent": {
       const reason = String(args.reason ?? "conversation_over");
       ctx.silent = reason;
@@ -338,7 +384,14 @@ export async function runTool(name: string, args: Args, ctx: ToolContext): Promi
         await prisma.contact.update({ where: { id: contact.id }, data: { agentStage: "DISQUALIFIED", disqualifiedReason: "said they're not interested", nextFollowUpAt: null } });
         if (contact.agentStage === "OFFER" || contact.agentStage === "CHOSEN") await alertKin(`${contact.lodgeName ?? contact.name} said they're not interested (+${contact.phone}).`);
       }
-      if (reason === "will_get_back") await prisma.contact.update({ where: { id: contact.id }, data: { nextFollowUpAt: null } });
+      if (reason === "not_a_fit") {
+        await prisma.contact.update({ where: { id: contact.id }, data: { agentStage: "DISQUALIFIED", disqualifiedReason: "not a fit (the agent's call)", nextFollowUpAt: null } });
+      }
+      if (reason === "will_get_back") {
+        // A no reply is "not right now": check in once, when they said (a week if they didn't)
+        const days = Math.min(30, Math.max(1, Math.round(Number(args.follow_up_days) || 7)));
+        await prisma.contact.update({ where: { id: contact.id }, data: { nextFollowUpAt: new Date(Date.now() + days * 24 * 60 * 60 * 1000), followUps: contact.agentStage === "OFFER" ? 1 : 0 } });
+      }
       return "OK: no reply this time.";
     }
 
