@@ -76,6 +76,30 @@ export const agentRoutes = new Hono()
   })
 
   /**
+   * Replays the qualification gate on leads' conversations as they stand
+   * (the given leads, or the latest who wrote to us): what it would decide.
+   * Changes nothing, sends nothing.
+   */
+  .post("/replay", zValidator("json", z.object({ leadIds: z.array(z.string()).max(50).optional(), latest: z.number().int().min(1).max(50).default(10) })), async (c) => {
+    if (!agentConfigured) throw new HTTPException(400, { message: "Set OPENROUTER_API_KEY on the admin app first" });
+    const { leadIds, latest } = c.req.valid("json");
+    const ids =
+      leadIds ??
+      (await prisma.contact.findMany({ where: { replies: { some: {} } }, orderBy: { lastRepliedAt: { sort: "desc", nulls: "last" } }, take: latest, select: { id: true } })).map((lead) => lead.id);
+    const { assessLead } = await import("./agent");
+    const results = [];
+    for (const id of ids) results.push(await assessLead(id).catch((error: unknown) => ({ id, error: String(error) })));
+    return c.json({ results });
+  })
+
+  /** What the agent would reply to this lead now (real models, tools listed but not run, nothing sent). */
+  .post("/leads/:id/preview", async (c) => {
+    if (!agentConfigured) throw new HTTPException(400, { message: "Set OPENROUTER_API_KEY on the admin app first" });
+    const { previewReply } = await import("./agent");
+    return c.json(await previewReply(c.req.param("id")));
+  })
+
+  /**
    * take-over: the agent stops for this lead (the team replies themselves).
    * resume: it carries on, and answers anything waiting.
    * reply-anyway: a disqualified lead gets answered after all.

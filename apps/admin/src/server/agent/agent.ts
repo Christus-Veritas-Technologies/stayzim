@@ -72,6 +72,54 @@ async function leadForChat(account: string, chatId: string) {
   return inbound?.contactId ? prisma.contact.findUnique({ where: { id: inbound.contactId } }) : null;
 }
 
+type Lead = NonNullable<Awaited<ReturnType<typeof leadForChat>>>;
+
+/** The system prompt (script, live facts, this lead) and the conversation, with this batch's photos. */
+async function chatMessages(contact: Lead, items: Item[], batchPhotos: string[]): Promise<ChatMessage[]> {
+  const sites = await leadSites(contact.id);
+  const facts = readFacts(contact.qualification);
+  const photos = await prisma.inboundMedia.count({ where: { inboundMessage: { contactId: contact.id } } });
+  const lastPayment = await prisma.agentEvent.findFirst({ where: { contactId: contact.id, kind: { in: ["payment", "paid"] } }, orderBy: { createdAt: "desc" } });
+  const system = buildInstructions(
+    {
+      stage: contact.agentStage,
+      whatsappName: contact.source === "whatsapp" && !facts.nameGiven ? contact.name : null,
+      name: givenName(contact),
+      lodgeName: contact.lodgeName,
+      city: contact.city || null,
+      email: contact.email,
+      kind: facts.kind ?? null,
+      rooms: facts.rooms ?? null,
+      photos,
+      sites: sites.map((site) => ({ option: site.option, plan: site.plan, monthlyPrice: site.monthlyPrice, url: site.url })),
+      chosen: sites.find((site) => site.id === contact.chosenSiteId) ? `option ${sites.find((site) => site.id === contact.chosenSiteId)!.option}` : null,
+      payment: lastPayment ? (lastPayment.kind === "paid" ? "paid" : "EcoCash prompt sent, waiting for Paynow") : null,
+      notes: contact.notes,
+    },
+    new Date(),
+    !items.some((item) => item.from === "us"),
+  );
+
+  // Earlier messages as text; this batch's photos as images on the last message
+  const messages: ChatMessage[] = [{ role: "system", content: system }];
+  for (const item of items) {
+    const role = item.from === "us" ? "assistant" : "user";
+    const last = messages.at(-1);
+    if (last && last.role === role && typeof last.content === "string") last.content = `${last.content}\n${item.text}`;
+    else messages.push(role === "assistant" ? { role, content: item.text } : { role, content: item.text });
+  }
+  // The model expects the other person to speak first; our campaign message may have
+  if (messages[1]?.role === "assistant") messages.splice(1, 0, { role: "user", content: "(We messaged them first. Our message follows.)" });
+  const images = (await Promise.all(batchPhotos.slice(0, PHOTOS_FOR_CHAT).map((id) => photoUrl(id, 1024)))).filter((url): url is string => Boolean(url));
+  const lastUser = messages.at(-1);
+  if (images.length && lastUser?.role === "user") {
+    const content: ChatContent = [{ type: "text", text: typeof lastUser.content === "string" ? lastUser.content : "" }, ...images.map((url) => ({ type: "image_url" as const, image_url: { url } }))];
+    lastUser.content = content;
+  }
+
+  return messages;
+}
+
 export async function handleChat(account: string, chatId: string) {
   const mode = await getAgentMode();
   if (mode === "off") return;
@@ -139,46 +187,7 @@ export async function handleChat(account: string, chatId: string) {
   }
 
   // --- The conversation (Claude Haiku 5.5 with tools) ------------------------
-  const sites = await leadSites(contact.id);
-  const facts = readFacts(contact.qualification);
-  const photos = await prisma.inboundMedia.count({ where: { inboundMessage: { contactId: contact.id } } });
-  const lastPayment = await prisma.agentEvent.findFirst({ where: { contactId: contact.id, kind: { in: ["payment", "paid"] } }, orderBy: { createdAt: "desc" } });
-  const system = buildInstructions(
-    {
-      stage: contact.agentStage,
-      whatsappName: contact.source === "whatsapp" && !facts.nameGiven ? contact.name : null,
-      name: givenName(contact),
-      lodgeName: contact.lodgeName,
-      city: contact.city || null,
-      email: contact.email,
-      kind: facts.kind ?? null,
-      rooms: facts.rooms ?? null,
-      photos,
-      sites: sites.map((site) => ({ option: site.option, plan: site.plan, monthlyPrice: site.monthlyPrice, url: site.url })),
-      chosen: sites.find((site) => site.id === contact.chosenSiteId) ? `option ${sites.find((site) => site.id === contact.chosenSiteId)!.option}` : null,
-      payment: lastPayment ? (lastPayment.kind === "paid" ? "paid" : "EcoCash prompt sent, waiting for Paynow") : null,
-      notes: contact.notes,
-    },
-    new Date(),
-    !items.some((item) => item.from === "us"),
-  );
-
-  // Earlier messages as text; this batch's photos as images on the last message
-  const messages: ChatMessage[] = [{ role: "system", content: system }];
-  for (const item of items) {
-    const role = item.from === "us" ? "assistant" : "user";
-    const last = messages.at(-1);
-    if (last && last.role === role && typeof last.content === "string") last.content = `${last.content}\n${item.text}`;
-    else messages.push(role === "assistant" ? { role, content: item.text } : { role, content: item.text });
-  }
-  // The model expects the other person to speak first; our campaign message may have
-  if (messages[1]?.role === "assistant") messages.splice(1, 0, { role: "user", content: "(We messaged them first. Our message follows.)" });
-  const images = (await Promise.all(batchPhotos.slice(0, PHOTOS_FOR_CHAT).map((id) => photoUrl(id, 1024)))).filter((url): url is string => Boolean(url));
-  const lastUser = messages.at(-1);
-  if (images.length && lastUser?.role === "user") {
-    const content: ChatContent = [{ type: "text", text: typeof lastUser.content === "string" ? lastUser.content : "" }, ...images.map((url) => ({ type: "image_url" as const, image_url: { url } }))];
-    lastUser.content = content;
-  }
+  const messages = await chatMessages(contact, items, batchPhotos);
 
   const ctx: ToolContext = {
     contactId: contact.id,
@@ -227,4 +236,48 @@ export async function handleChat(account: string, chatId: string) {
   else if (ctx.silent) await number?.markRead(chatId);
   if (contact.agentStage === "NEW") await prisma.contact.updateMany({ where: { id: contact.id, agentStage: "NEW" }, data: { agentStage: "DETAILS" } });
   await event("turn", { tools: calls, replied: Boolean(reply && !ctx.silent), silent: ctx.silent ?? null }, cost);
+}
+
+/** What they've sent since our last message (the batch a turn would answer), and their photos in it. */
+function pendingBatch(items: Item[]) {
+  const lastOurs = [...items].reverse().find((item) => item.from === "us");
+  const batch = items.filter((item) => item.from === "them" && (!lastOurs || item.at > lastOurs.at));
+  return { batch, photos: batch.flatMap((item) => (item.mediaId ? [item.mediaId] : [])) };
+}
+
+/**
+ * The gate on a lead's conversation as it stands (replaying real chats before
+ * going live): Jev's answers and the decision. Changes nothing.
+ */
+export async function assessLead(contactId: string) {
+  const contact = await prisma.contact.findUniqueOrThrow({ where: { id: contactId } });
+  const items = await conversation(contact);
+  if (!items.some((item) => item.from === "them")) return { lead: contact.lodgeName ?? contact.name, skipped: "they haven't written anything" };
+  const transcript = items.map((item) => `${item.from === "us" ? "StayZim" : "Them"}: ${item.text}`).join("\n");
+  const photoIds = items.flatMap((item) => (item.mediaId ? [item.mediaId] : [])).slice(-PHOTOS_FOR_JEV);
+  const photos = (await Promise.all(photoIds.map((id) => photoUrl(id, 512)))).filter((url): url is string => Boolean(url));
+  const { answers, cost } = await decide(qualificationState(transcript, photos), qualificationQuestions(photos.length > 0));
+  const qualification = toQualification(answers);
+  return { lead: contact.lodgeName ?? contact.name, stage: contact.agentStage, qualification, decision: gate(qualification, null, contact.agentStage), cost, lastMessage: items.at(-1)?.text };
+}
+
+/**
+ * What the agent would say to this lead now, with the real script and models,
+ * but its tools only listed, never run, and nothing sent. For trying the script
+ * on real chats.
+ */
+export async function previewReply(contactId: string) {
+  const contact = await prisma.contact.findUniqueOrThrow({ where: { id: contactId } });
+  const items = await conversation(contact);
+  const { photos } = pendingBatch(items);
+  if (!items.length || items.at(-1)?.from !== "them") return { lead: contact.lodgeName ?? contact.name, skipped: "nothing from them to answer" };
+  const messages = await chatMessages(contact, items, photos);
+  const answer = await chat({ messages, tools: TOOLS });
+  return {
+    lead: contact.lodgeName ?? contact.name,
+    wouldSay: answer.message.content?.trim() || null,
+    wouldCall: (answer.message.tool_calls ?? []).map((call) => ({ tool: call.function.name, args: call.function.arguments })),
+    model: answer.model,
+    cost: answer.cost,
+  };
 }
