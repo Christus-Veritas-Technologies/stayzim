@@ -38,6 +38,19 @@ export const env = createEnv({
       .string()
       .default("true")
       .transform((value) => value !== "false"),
+    // The WhatsApp sales agent (src/server/agent): OpenRouter for its models
+    OPENROUTER_API_KEY: z.string().min(10).optional(),
+    // The numbers the agent answers on (it never sends campaigns from them)
+    AGENT_ACCOUNTS: z
+      .string()
+      .default("wa1")
+      .transform((value) => [...new Set(value.split(",").map((id) => id.trim()).filter(Boolean))]),
+    // off: nothing; shadow: qualifies and logs, never replies; live: replies. The admin's switch overrides it.
+    AGENT_MODE: z.enum(["off", "shadow", "live"]).default("off"),
+    // The conversation (vision, tools) and its fallback, and Jev for the quick decisions
+    AGENT_MODEL: z.string().min(1).default("anthropic/claude-haiku-5.5"),
+    AGENT_FALLBACK_MODEL: z.string().min(1).default("openai/gpt-6-luna"),
+    JEV_MODEL: z.string().min(1).default("typesafe/jev-1.14"),
   },
   client: {
     // The API (apps/server), e.g. https://api.stayzim.co.zw
@@ -57,6 +70,12 @@ export const env = createEnv({
     WHATSAPP_ACCOUNTS: process.env.WHATSAPP_ACCOUNTS,
     WHATSAPP_DAILY_LIMIT: process.env.WHATSAPP_DAILY_LIMIT,
     WHATSAPP_ENABLED: process.env.WHATSAPP_ENABLED,
+    OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
+    AGENT_ACCOUNTS: process.env.AGENT_ACCOUNTS,
+    AGENT_MODE: process.env.AGENT_MODE,
+    AGENT_MODEL: process.env.AGENT_MODEL,
+    AGENT_FALLBACK_MODEL: process.env.AGENT_FALLBACK_MODEL,
+    JEV_MODEL: process.env.JEV_MODEL,
     NEXT_PUBLIC_SERVER_URL: process.env.NEXT_PUBLIC_SERVER_URL,
     NEXT_PUBLIC_WEB_URL: process.env.NEXT_PUBLIC_WEB_URL,
     NEXT_PUBLIC_SITES_DOMAIN: process.env.NEXT_PUBLIC_SITES_DOMAIN,

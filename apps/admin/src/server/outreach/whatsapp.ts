@@ -103,6 +103,10 @@ export type InboundMessageEvent = {
   type: string;
   whatsappMessageId: string;
   receivedAt: Date;
+  /** Their WhatsApp profile name, when WhatsApp gives it */
+  senderName?: string;
+  /** For a photo: downloads it (called only for a message not recorded before) */
+  loadImage?: () => Promise<{ mimeType: string; data: Buffer } | null>;
 };
 
 /** Records a reply; true when it's new (not seen before). */
@@ -120,7 +124,18 @@ export function onInboundMessage(handler: InboundHandler) {
   handlerBox.__stayzimInbound = handler;
 }
 
-type WhatsAppMessage = { from: string; fromMe: boolean; isStatus: boolean; body?: string; type: string; timestamp: number; id: { _serialized: string } };
+type WhatsAppMessage = {
+  from: string;
+  fromMe: boolean;
+  isStatus: boolean;
+  body?: string;
+  type: string;
+  timestamp: number;
+  id: { _serialized: string };
+  /** The sender's profile name (whatsapp-web.js keeps it in _data; our own list sets it directly) */
+  notifyName?: string;
+  _data?: { notifyName?: string };
+};
 
 /** A direct chat with a person (not a group, a status update or a channel). */
 const DIRECT_CHAT = /@(c\.us|lid)$/;
@@ -333,6 +348,8 @@ export class WhatsAppAccount {
         type: message.type,
         whatsappMessageId: message.id._serialized,
         receivedAt: new Date(message.timestamp * 1000),
+        senderName: message.notifyName ?? message._data?.notifyName ?? undefined,
+        loadImage: message.type === "image" ? () => this.downloadImage(message.id._serialized) : undefined,
       });
       if (isNew) this.log(`reply recorded (${via}) from ${resolved ? `+${resolved}` : chatId}`);
       return isNew;
@@ -421,6 +438,7 @@ export class WhatsAppAccount {
             type: String(msg.type ?? "chat"),
             timestamp: Number(msg.t),
             id: { _serialized: String(msg.id._serialized) },
+            notifyName: msg.notifyName ? String(msg.notifyName) : undefined,
           }));
       }, since),
       30_000,

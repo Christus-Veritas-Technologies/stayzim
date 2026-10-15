@@ -27,6 +27,27 @@ enum OutreachStatus {
   DO_NOT_CONTACT
 }
 
+/// Where the sales agent is with a lead on WhatsApp (apps/admin/src/server/agent)
+enum AgentStage {
+  /// Hasn't heard from the agent yet
+  NEW
+  /// Asked for their details (lodge name, city, email, photos)
+  DETAILS
+  /// Their sites are being made
+  BUILDING
+  /// Sent their sites to choose from ("1, 2 or 3?")
+  OFFER
+  /// Chose a site; asked for their EcoCash number
+  CHOSEN
+  /// An EcoCash prompt is on their phone
+  PAYING
+  PAID
+  /// Handed over to the team; the agent waits
+  HANDOVER
+  /// Not a fit: their messages are read, never answered
+  DISQUALIFIED
+}
+
 /// A lead: someone who filled in the Facebook form, a lodge from a list we reach
 /// out to, or someone the team added by hand. Sites made for them point here.
 model Contact {
@@ -35,7 +56,7 @@ model Contact {
   /// Digits only, with country code (e.g. "263771234567")
   phone           String            @unique
   city            String
-  /// Where the lead came from: "meta_form", "list" or "manual" (null: before this was kept)
+  /// Where the lead came from: "meta_form", "list", "manual" or "whatsapp" (messaged the agent; null: before this was kept)
   source          String?
   /// Their lodge's name, when we know it (the person's name is `name`)
   lodgeName       String?           @map("lodge_name")
@@ -53,8 +74,25 @@ model Contact {
   updatedAt       DateTime          @updatedAt @map("updated_at")
   messages        OutreachMessage[]
   replies         InboundMessage[]
+  /// The sales agent's state for this lead
+  agentStage         AgentStage   @default(NEW) @map("agent_stage")
+  /// The team took over: the agent stays quiet
+  agentPaused        Boolean      @default(false) @map("agent_paused")
+  /// The chat the agent talks in (…@c.us or …@lid) and the number it's on
+  agentChatId        String?      @map("agent_chat_id")
+  agentAccount       String?      @map("agent_account")
+  /// The last qualification answers (Jev), as JSON
+  qualification      Json?
+  disqualifiedReason String?      @map("disqualified_reason")
+  nextFollowUpAt     DateTime?    @map("next_follow_up_at")
+  followUps          Int          @default(0) @map("follow_ups")
+  /// The site they picked
+  chosenSiteId       String?      @map("chosen_site_id")
+  agentEvents        AgentEvent[]
 
   @@index([status])
+  @@index([agentStage])
+  @@index([nextFollowUpAt])
   @@index([city])
   @@map("contact")
 }
@@ -102,8 +140,54 @@ model InboundMessage {
   type              String
   whatsappMessageId String   @unique @map("whatsapp_message_id")
   createdAt         DateTime @default(now()) @map("created_at")
+  /// A photo they sent (agent numbers only)
+  media             InboundMedia?
 
   @@index([contactId])
   @@index([createdAt])
   @@map("inbound_message")
+}
+
+/// A photo someone sent to an agent number, kept for making their site (deleted after 30 days).
+model InboundMedia {
+  id               String         @id @default(cuid())
+  inboundMessageId String         @unique @map("inbound_message_id")
+  inboundMessage   InboundMessage @relation(fields: [inboundMessageId], references: [id], onDelete: Cascade)
+  mimeType         String         @map("mime_type")
+  data             Bytes
+  sizeBytes        Int            @map("size_bytes")
+  /// Used for a site already (uploaded as its photo)
+  usedAt           DateTime?      @map("used_at")
+  createdAt        DateTime       @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@map("inbound_media")
+}
+
+/// What the sales agent did and why: a qualification decision, a reply, a tool, an alert, an error.
+model AgentEvent {
+  id        String   @id @default(cuid())
+  contactId String?  @map("contact_id")
+  contact   Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  chatId    String   @map("chat_id")
+  account   String
+  /// decision, ignored, reply, tool, alert, follow_up, error
+  kind      String
+  data      Json
+  /// What the model calls cost, in US dollars
+  costUsd   Float    @default(0) @map("cost_usd")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([contactId, createdAt])
+  @@index([createdAt])
+  @@map("agent_event")
+}
+
+/// Settings the team changes from the admin app (e.g. the sales agent's mode), kept across restarts.
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("app_setting")
 }

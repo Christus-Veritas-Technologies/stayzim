@@ -1,6 +1,7 @@
 import prisma from "@stayzim/db";
 import { env } from "@stayzim/env/admin";
 
+import { isAgentAccount } from "../agent/settings";
 import {
   accountIds,
   getAccount,
@@ -206,40 +207,67 @@ export async function sendToPhone(input: { phone: string; message: string; accou
 // ---------------------------------------------------------------------------
 
 onInboundMessage(async (event) => {
-  const contact = event.phone ? await prisma.contact.findUnique({ where: { phone: event.phone } }) : null;
+  // Seen before (the 2-minute read sees recent messages again): nothing to do, nothing to download
+  if (await prisma.inboundMessage.findUnique({ where: { whatsappMessageId: event.whatsappMessageId }, select: { id: true } })) return false;
 
-  const { count } = await prisma.inboundMessage.createMany({
-    data: {
-      contactId: contact?.id,
-      phone: event.phone,
-      chatId: event.chatId,
-      account: event.account,
-      body: event.body,
-      type: event.type,
-      whatsappMessageId: event.whatsappMessageId,
-      createdAt: event.receivedAt,
-    },
-    // WhatsApp can redeliver messages after a reconnect
-    skipDuplicates: true,
-  });
-  if (count === 0) return false;
-  if (!contact) return true;
+  const agentNumber = isAgentAccount(event.account);
+  let contact = event.phone ? await prisma.contact.findUnique({ where: { phone: event.phone } }) : null;
+  // Someone new messaging the agent's number (from an ad) becomes a lead
+  if (!contact && agentNumber && event.phone) {
+    contact = await prisma.contact.upsert({
+      where: { phone: event.phone },
+      create: { name: event.senderName?.trim() || `+${event.phone}`, phone: event.phone, city: "", source: "whatsapp", agentChatId: event.chatId, agentAccount: event.account },
+      update: {},
+    });
+  }
 
-  const optOut = OPT_OUT.test(event.body);
-  await prisma.contact.update({
-    where: { id: contact.id },
-    data: {
-      lastRepliedAt: event.receivedAt,
-      // Only a reply to our outreach counts as REPLIED; a lead writing first stays
-      // PENDING so campaigns still send them the intro
-      ...(optOut
-        ? { status: "DO_NOT_CONTACT" as const }
-        : contact.status === "REACHED" && { status: "REPLIED" as const }),
-    },
-  });
-  console.log(
-    `[outreach] reply from ${contact.name} (+${contact.phone}) to ${event.account}${optOut ? " — opted out" : ""}`,
-  );
+  let inboundId: string;
+  try {
+    const inbound = await prisma.inboundMessage.create({
+      data: {
+        contactId: contact?.id,
+        phone: event.phone,
+        chatId: event.chatId,
+        account: event.account,
+        body: event.body,
+        type: event.type,
+        whatsappMessageId: event.whatsappMessageId,
+        createdAt: event.receivedAt,
+      },
+      select: { id: true },
+    });
+    inboundId = inbound.id;
+  } catch (error) {
+    // The message event and the read can race: whoever's second finds it there
+    if ((error as { code?: string }).code === "P2002") return false;
+    throw error;
+  }
+
+  // Photos sent to the agent's number are kept for making their site
+  if (agentNumber && event.loadImage) {
+    const image = await event.loadImage();
+    if (image) await prisma.inboundMedia.create({ data: { inboundMessageId: inboundId, mimeType: image.mimeType, data: new Uint8Array(image.data), sizeBytes: image.data.byteLength } });
+  }
+
+  if (contact) {
+    const optOut = OPT_OUT.test(event.body);
+    await prisma.contact.update({
+      where: { id: contact.id },
+      data: {
+        lastRepliedAt: event.receivedAt,
+        // The agent talks in the chat they wrote from
+        ...(agentNumber && !contact.agentChatId ? { agentChatId: event.chatId, agentAccount: event.account } : {}),
+        // Only a reply to our outreach counts as REPLIED; a lead writing first stays
+        // PENDING so campaigns still send them the intro
+        ...(optOut
+          ? { status: "DO_NOT_CONTACT" as const }
+          : contact.status === "REACHED" && { status: "REPLIED" as const }),
+      },
+    });
+    console.log(
+      `[outreach] reply from ${contact.name} (+${contact.phone}) to ${event.account}${optOut ? " — opted out" : ""}`,
+    );
+  }
   return true;
 });
 
