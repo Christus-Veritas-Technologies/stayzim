@@ -37,6 +37,16 @@ Our first $16 of Facebook ads brought 4 real lodge owners and 1 sale, closed on 
 4. **Live.** Set it to **Live**. Test from a second phone: write as a lodge (photos, details, choose, pay $15), and as junk (it should go silent with blue ticks).
 5. **The ads.** In Meta Ads Manager: the Messages objective (or Engagement → Messaging apps), destination **WhatsApp**, the number **+263 77 510 1506**, with a ready-typed first message: "Hi StayZim, I'd like a website for my lodge."
 
+## Commands in the chat
+
+Typed on wa1's phone, as plain text, in a lead's chat. Each is deleted for everyone at once, so they never see it:
+
+- **/silence:** the agent stops replying in this chat, until /resume.
+- **/resume:** it carries on, and answers anything waiting. It also lifts a /ban.
+- **/ban:** it never speaks in this chat again (the lead is "not a fit" and "do not contact", so campaigns skip them too).
+
+Anything else you type on wa1's phone in a lead's chat becomes part of the conversation the agent reads, so it never answers on top of you. To keep it quiet while you handle someone, use /silence (or Take over in the admin).
+
 ## Controls
 
 - **WhatsApp page → Sales agent**: off, shadow or live (saved; it overrides `AGENT_MODE`), its numbers and models, the cost today and in 30 days, leads by stage and what it did lately.
