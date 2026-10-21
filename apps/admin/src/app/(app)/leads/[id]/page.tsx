@@ -11,8 +11,8 @@ import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHea
 import { Switch } from "@stayzim/ui/components/switch";
 import { Textarea } from "@stayzim/ui/components/textarea";
 import { cn } from "@stayzim/ui/lib/utils";
-import { findTemplate } from "@stayzim/sites";
-import { ArrowUpRight, Gift, Globe, Link2, Plus, Send, Trash2 } from "lucide-react";
+import { DEMO_DAYS, findTemplate } from "@stayzim/sites";
+import { ArrowUpRight, Gift, Globe, Link2, Plus, RotateCcw, Send, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
@@ -113,8 +113,21 @@ function GiveSheet({ lead, site, onClose, onSent }: { lead: LeadDetail; site: Le
   );
 }
 
-function SiteCard({ leadId, site, onGive, onPay, onDelete }: { leadId: string; site: LeadSite; onGive: () => void; onPay: () => void; onDelete: () => void }) {
+function SiteCard({ leadId, site, onGive, onPay, onDelete, onChanged }: { leadId: string; site: LeadSite; onGive: () => void; onPay: () => void; onDelete: () => void; onChanged: () => void }) {
   const design = site.template ? findTemplate(site.template) : undefined;
+  const [extending, setExtending] = useState(false);
+  // A free preview (the agent's sites, or one they claimed) goes offline when it ends; made by hand, it has no end
+  const preview = site.status === "DEMO" && site.previewEndsAt ? { ended: new Date(site.previewEndsAt).getTime() <= Date.now(), endsAt: site.previewEndsAt } : null;
+
+  async function extend() {
+    setExtending(true);
+    const result = await api(`/api/admin/sites/${site.slug}`, { method: "PATCH", json: { extendPreviewDays: DEMO_DAYS } });
+    setExtending(false);
+    if (result.error !== undefined) return toast.error(result.error);
+    toast.success(preview?.ended ? `${site.name} is back online for ${DEMO_DAYS} days` : `Preview extended by ${DEMO_DAYS} days`);
+    onChanged();
+  }
+
   return (
     <Card className="flex flex-col gap-3 p-4">
       <div className="flex items-start justify-between gap-3">
@@ -136,7 +149,11 @@ function SiteCard({ leadId, site, onGive, onPay, onDelete }: { leadId: string; s
           {site.photos} {site.photos === 1 ? "photo" : "photos"}
         </Badge>
         {site.claimed ? <Badge variant="success">Theirs: {site.ownerEmail}</Badge> : null}
-        {!site.claimed && site.previewEndsAt ? <Badge variant="purple">Link opened, not claimed yet</Badge> : null}
+        {preview ? (
+          <Badge variant={preview.ended ? "danger" : "purple"} status>
+            {preview.ended ? "Offline: preview ended" : `Free preview until ${formatWhen(preview.endsAt)}`}
+          </Badge>
+        ) : null}
         {site.paymentLink?.state === "paid" ? <Badge variant="success">Paid {formatCents(site.paymentLink.amountCents)}</Badge> : null}
       </div>
       <div className="flex flex-wrap gap-2">
@@ -148,6 +165,12 @@ function SiteCard({ leadId, site, onGive, onPay, onDelete }: { leadId: string; s
           <Link2 />
           Payment link
         </Button>
+        {preview ? (
+          <Button size="sm" variant={preview.ended ? "default" : "outline"} disabled={extending} onClick={extend}>
+            <RotateCcw />
+            {preview.ended ? `Bring back for ${DEMO_DAYS} days` : `+${DEMO_DAYS} days`}
+          </Button>
+        ) : null}
         {site.claimed ? null : (
           <>
             <Link href={`/leads/${leadId}/new-site?site=${site.slug}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
@@ -155,7 +178,7 @@ function SiteCard({ leadId, site, onGive, onPay, onDelete }: { leadId: string; s
             </Link>
             <Button size="sm" onClick={onGive}>
               <Gift />
-              {site.previewEndsAt ? "New claim link" : "Give to lead"}
+              {site.claimLinkExpiresAt ? "New claim link" : "Give to lead"}
             </Button>
             <Button size="sm" variant="ghost" onClick={onDelete} aria-label={`Delete ${site.name}`}>
               <Trash2 />
@@ -352,7 +375,7 @@ export default function LeadPage() {
             ) : (
               <div className="grid gap-3 md:grid-cols-2">
                 {lead.sites.map((site) => (
-                  <SiteCard key={site.id} leadId={lead.id} site={site} onGive={() => setGiving(site)} onPay={() => setPaying(site)} onDelete={() => setDeleting(site)} />
+                  <SiteCard key={site.id} leadId={lead.id} site={site} onGive={() => setGiving(site)} onPay={() => setPaying(site)} onDelete={() => setDeleting(site)} onChanged={reload} />
                 ))}
               </div>
             )}
