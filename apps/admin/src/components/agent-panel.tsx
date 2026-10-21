@@ -54,6 +54,8 @@ export function describeEvent(event: { kind: string; data: Record<string, unknow
       return `Kin replied from the phone: ${data.text}`;
     case "alert":
       return `Alert to Kin: ${data.text}`;
+    case "label":
+      return `Labelled "${data.label}" in WhatsApp (for the ads)`;
     case "error":
       return `Problem: ${data.error ?? data.alert ?? ""}`;
     default:
@@ -72,6 +74,7 @@ const KIND_BADGE: Record<string, "neutral" | "brand" | "success" | "purple" | "w
   alert: "warning",
   command: "danger",
   kin_reply: "brand",
+  label: "neutral",
   error: "danger",
 };
 

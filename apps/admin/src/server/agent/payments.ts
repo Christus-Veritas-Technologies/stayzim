@@ -2,6 +2,7 @@ import prisma from "@stayzim/db";
 
 import { alertKin } from "./alerts";
 import { logEvent, sendInChat } from "./chat";
+import { labelChat } from "./labels";
 import { serverApi } from "./server-api";
 import { paidMessage, paymentFailedMessage } from "./templates";
 
@@ -54,6 +55,7 @@ export async function checkPayment(watch: Watch): Promise<boolean> {
         : `Paid, thank you! Your website is live: ${status.link.siteUrl}/`,
     });
     await logEvent({ contactId: contact.id, chatId: watch.chatId, account: watch.account, kind: "paid", data: { slug: watch.slug, amountCents: status.payment.amountCents, receipt: status.payment.receiptNumber } });
+    await labelChat(contact.id);
     await alertKin(`PAID: ${contact.lodgeName ?? contact.name} paid $${(status.payment.amountCents / 100).toFixed(2)} (${status.payment.receiptNumber ?? "receipt pending"}), ${status.link.siteUrl}`);
     return true;
   }

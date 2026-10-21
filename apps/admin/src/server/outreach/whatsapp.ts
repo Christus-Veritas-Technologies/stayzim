@@ -558,6 +558,31 @@ export class WhatsAppAccount {
   }
 
   /**
+   * Puts the label `name` on a chat (WhatsApp Business labels) and takes the
+   * others in `names` off it; labels outside `names` (the team's own) stay.
+   * "missing" when this number has no label by that name (or isn't a Business account).
+   */
+  async setChatLabel(chatId: string, name: string, names: string[]): Promise<"set" | "same" | "missing" | "failed"> {
+    const client = this.client;
+    if (!client || !this.isReady) return "failed";
+    try {
+      const labels = await withTimeout(client.getLabels(), 15_000, "to list the labels");
+      const byName = (wanted: string) => labels.find((label) => label.name.trim().toLowerCase() === wanted.toLowerCase());
+      const target = byName(name);
+      if (!target) return "missing";
+      const managed = new Set(names.map((other) => byName(other)?.id).filter((id): id is string => id !== undefined).map(String));
+      const current = (await withTimeout(client.getChatLabels(chatId), 15_000, "to read the chat's labels")).map((label) => String(label.id));
+      const next = [...current.filter((id) => !managed.has(id)), String(target.id)];
+      if (next.length === current.length && next.every((id) => current.includes(id))) return "same";
+      await withTimeout(client.addOrRemoveLabels(next, [chatId]), 15_000, "to label the chat");
+      return "set";
+    } catch (error) {
+      this.logError(`labelling ${chatId} "${name}" failed:`, error);
+      return "failed";
+    }
+  }
+
+  /**
    * Replies in a chat as a person would: marks it read, shows "typing…" for a
    * while that grows with the reply, then sends. Works for LID chats too (no
    * phone number needed). Returns WhatsApp's id for the message.

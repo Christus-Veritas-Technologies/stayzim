@@ -8,6 +8,7 @@ import { logEvent, sendInChat } from "./chat";
 import { chat, decide, type ChatContent, type ChatMessage } from "./openrouter";
 import { gate, qualificationQuestions, qualificationState, toQualification, type Qualification } from "./qualify";
 import { buildInstructions } from "./script";
+import { labelChat } from "./labels";
 import { getAgentMode } from "./settings";
 import { addNewPhotosToSites, givenName, leadSites, readFacts, runTool, TOOLS, type ToolContext } from "./tools";
 import { handoverMessage, localPhone } from "./templates";
@@ -248,6 +249,8 @@ export async function handleChat(account: string, chatId: string) {
     });
   }
   await event("turn", { tools: calls, replied: Boolean(reply && !ctx.silent && !ctx.done), silent: ctx.silent ?? null }, cost);
+  // The chat's label for its stage now (for the ads)
+  await labelChat(contact.id);
 }
 
 /** What they've sent since our last message (the batch a turn would answer), and their photos in it. */

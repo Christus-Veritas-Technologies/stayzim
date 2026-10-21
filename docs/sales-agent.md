@@ -24,6 +24,7 @@ Our first $16 of Facebook ads brought 4 real lodge owners and 1 sale, closed on 
    Prices, links and payments only ever come from fixed templates (`templates.ts`), never the model's own words.
 5. **Paid** (Paynow, checked every 10 s for 5 minutes, then by the follow-up loop): their site, a claim link to make it theirs, and an alert to Kin.
 6. **Follow-ups**: a nudge 20 hours after the options, and a last one the morning the 2-day preview ends, then nothing.
+7. **Labels for the ads** (live mode): the agent puts a WhatsApp Business label on each chat by its stage, so the click-to-WhatsApp ads learn which conversations became customers: **New customer** (details, sites sent), **Pending payment** (chosen, paying), **Paid**. They're the labels every WhatsApp Business account starts with; the agent only moves its own three, and labels the team adds stay. The number has to be a WhatsApp Business account (linked to the Facebook Page running the ads); if a label is missing, the lead's agent log says so once.
 
 The price is said in passing in the opening message (free to preview for 2 days, then from $15 a month), before anything is built: people who only want something free drop out before we build for them.
 7. **Alerts to Kin** (+263 78 985 9332, from wa3): sites sent, a choice, paid, a payment failure, a hand-over, the agent failing to reply.
