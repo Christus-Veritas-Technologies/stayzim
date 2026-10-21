@@ -41,6 +41,8 @@ export type ToolContext = {
   silent?: string;
   /** Set when a tool sent the turn's message itself (a payment prompt or link): nothing more is sent */
   done?: boolean;
+  /** Set by label_lead: the agent's call on whether they're a prospect (for the ads' labels) */
+  label?: "qualified" | "unqualified";
 };
 
 const PLAN_ORDER: Plan[] = ["STARTER", "GROWTH", "PRO"];
@@ -167,6 +169,22 @@ export const TOOLS: ToolDefinition[] = [
       name: "check_in_later",
       description: "Schedule one check-in message when a new lead isn't ready yet (renovating, travelling, 'end of the month'). You still reply this turn, briefly and warmly, with no question.",
       parameters: { type: "object", properties: { days: { type: "integer", description: "In how many days (they said when; a week if not)" } }, required: ["days"] },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "label_lead",
+      description:
+        "Label this chat for our ads, only when you're sure: qualified (they clearly run a place to stay and are seriously engaged) or unqualified (clearly not for us). When unsure, don't call it.",
+      parameters: {
+        type: "object",
+        properties: {
+          label: { type: "string", enum: ["qualified", "unqualified"] },
+          why: { type: "string", description: "A few words, for the log" },
+        },
+        required: ["label", "why"],
+      },
     },
   },
   {
@@ -403,6 +421,14 @@ export async function runTool(name: string, args: Args, ctx: ToolContext): Promi
         data: { nextFollowUpAt: new Date(Date.now() + days * 24 * 60 * 60 * 1000), followUps: contact.agentStage === "OFFER" ? 1 : 0, ...(contact.agentStage === "NEW" ? { agentStage: "DETAILS" } : {}) },
       });
       return `We'll check in with them in ${days} day${days === 1 ? "" : "s"}. Now reply briefly and warmly, with no question.`;
+    }
+
+    case "label_lead": {
+      const label = args.label === "qualified" || args.label === "unqualified" ? args.label : null;
+      if (!label) return "Label must be qualified or unqualified.";
+      ctx.label = label;
+      await ctx.log("tool", { tool: "label_lead", reason: `${label}: ${text(args.why) ?? ""}` });
+      return "Noted. Carry on with your reply (or silence) as usual; never mention labels to them.";
     }
 
     case "stay_silent": {

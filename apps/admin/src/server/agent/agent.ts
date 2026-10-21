@@ -171,6 +171,7 @@ export async function handleChat(account: string, chatId: string) {
     if (decision.action === "ignore") {
       await prisma.contact.update({ where: { id: contact.id }, data: { agentStage: "DISQUALIFIED", disqualifiedReason: decision.reason } });
       await number?.markRead(chatId);
+      await labelChat(contact.id, { notAFit: true, jev: qualification });
       return;
     }
     if (decision.action === "stop") {
@@ -249,8 +250,8 @@ export async function handleChat(account: string, chatId: string) {
     });
   }
   await event("turn", { tools: calls, replied: Boolean(reply && !ctx.silent && !ctx.done), silent: ctx.silent ?? null }, cost);
-  // The chat's label for its stage now (for the ads)
-  await labelChat(contact.id);
+  // The chat's label now (for the ads): how sure we are they're a prospect
+  await labelChat(contact.id, { jev: qualification, ...(ctx.label ? { agent: ctx.label } : {}), notAFit: ctx.silent === "not_a_fit" });
 }
 
 /** What they've sent since our last message (the batch a turn would answer), and their photos in it. */
