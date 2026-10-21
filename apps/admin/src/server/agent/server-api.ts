@@ -38,6 +38,9 @@ export const serverApi = {
   paymentLink: (slug: string, months: number) =>
     call<{ url: string; amountCents: number; months: number; plan: string; state: string }>("POST", `/api/admin/sites/${slug}/payment-link`, { months }),
 
+  /** Brings an ended free preview back online (or pushes a running one out) by this many days */
+  extendPreview: (slug: string, days: number) => call<unknown>("PATCH", `/api/admin/sites/${slug}`, { extendPreviewDays: days }),
+
   claimLink: (leadId: string, slug: string) => call<{ url: string; expiresAt: string }>("POST", `/api/admin/leads/${leadId}/sites/${slug}/claim-link`),
 
   /** The public pay routes behind a payment link (no token) */

@@ -1,7 +1,8 @@
 /**
  * Drives the sales agent's tools the way the model would, against the local
  * API, without WhatsApp or OpenRouter: a lead on wa1 who sent photos, then
- * save_details, make_sites, choose_site, start_ecocash (the Paynow stand-in)
+ * save_details, make_sites, send_options_again and choose_site after the
+ * previews ended (they come back), start_ecocash (the Paynow stand-in)
  * and check_payment. Messages the agent would send are printed instead.
  *
  *   bun scripts/agent-tools-check.ts <photo> [<photo>...]
@@ -46,6 +47,11 @@ await step("make_sites");
 await step("save_details", { lodge_name: "Agent Test Lodge", city: "Masvingo", email: "owner@agent-test.local", rooms: 10, kind: "lodge" });
 await step("make_sites");
 await step("make_sites");
+// Two days on: their previews ended (offline). Resending the options brings them back
+await prisma.lodge.updateMany({ where: { leadId: contact.id }, data: { demoEndsAt: new Date(Date.now() - 60_000) } });
+await step("send_options_again");
+console.log("Previews end:", (await prisma.lodge.findMany({ where: { leadId: contact.id }, select: { slug: true, demoEndsAt: true } })).map((site) => `${site.slug} ${site.demoEndsAt?.toISOString()}`));
+await prisma.lodge.updateMany({ where: { leadId: contact.id }, data: { demoEndsAt: new Date(Date.now() - 60_000) } });
 await step("choose_site", { option: 4 });
 await step("choose_site", { option: 2 });
 await step("start_ecocash", { phone: "12345" });

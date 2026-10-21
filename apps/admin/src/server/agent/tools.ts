@@ -1,5 +1,5 @@
 import prisma from "@stayzim/db";
-import { DEMO_DAYS, foundingOpen, LODGE_KIND_KEYS, monthlyPrice, type Plan } from "@stayzim/sites";
+import { DEMO_DAYS, demoEnded, foundingOpen, LODGE_KIND_KEYS, monthlyPrice, type Plan } from "@stayzim/sites";
 import sharp from "sharp";
 
 import { siteUrl } from "@/lib/site-url";
@@ -47,10 +47,32 @@ const PLAN_ORDER: Plan[] = ["STARTER", "GROWTH", "PRO"];
 
 /** The lead's sites, numbered as in the options message (by plan). */
 export async function leadSites(contactId: string) {
-  const sites = await prisma.lodge.findMany({ where: { leadId: contactId }, select: { id: true, slug: true, customDomain: true, plan: true, founding: true, status: true } });
+  const sites = await prisma.lodge.findMany({
+    where: { leadId: contactId },
+    select: { id: true, slug: true, customDomain: true, plan: true, founding: true, status: true, demoEndsAt: true },
+  });
   return sites
     .sort((a, b) => PLAN_ORDER.indexOf(a.plan) - PLAN_ORDER.indexOf(b.plan))
     .map((site, index) => ({ ...site, option: index + 1, url: siteUrl(site), monthlyPrice: monthlyPrice(site.plan, site.founding) }));
+}
+
+/**
+ * Their free previews that ended (offline now) back online for another
+ * DEMO_DAYS, so the links we send or they open work. Returns the slugs reopened.
+ */
+export async function reopenEndedPreviews(sites: Awaited<ReturnType<typeof leadSites>>, log: ToolContext["log"]) {
+  const now = new Date();
+  const reopened: string[] = [];
+  for (const site of sites.filter((candidate) => demoEnded(candidate, now))) {
+    try {
+      await serverApi.extendPreview(site.slug, DEMO_DAYS);
+      reopened.push(site.slug);
+    } catch (error) {
+      await log("error", { step: "reopen preview", site: site.slug, error: String(error) });
+    }
+  }
+  if (reopened.length) await log("tool", { tool: "reopen_previews", sites: reopened, days: DEMO_DAYS });
+  return reopened;
 }
 
 /** The facts the agent saved (kind of place, rooms), kept with the qualification. */
@@ -91,7 +113,8 @@ export const TOOLS: ToolDefinition[] = [
     type: "function",
     function: {
       name: "send_options_again",
-      description: "Send their sites' options message again (links and prices), when they lost it or ask to see the options again.",
+      description:
+        "Send their sites' options message again (links and prices), when they lost it, ask to see the options again, or say a link doesn't open. Previews that ended come back online for 2 more days first.",
       parameters: { type: "object", properties: {} },
     },
   },
@@ -305,13 +328,15 @@ export async function runTool(name: string, args: Args, ctx: ToolContext): Promi
       const sites = await leadSites(contact.id);
       const site = sites.find((candidate) => candidate.option === Number(args.option));
       if (!site) return `There's no option ${String(args.option)}. Their options: ${sites.map((s) => `${s.option} ($${s.monthlyPrice})`).join(", ")}.`;
+      // The one they chose stays up while they pay, even if its preview ended
+      const reopened = await reopenEndedPreviews([site], ctx.log);
       await prisma.contact.update({ where: { id: contact.id }, data: { chosenSiteId: site.id, agentStage: "CHOSEN", nextFollowUpAt: null } });
       await alertKin(`${contact.lodgeName ?? contact.name} chose option ${site.option}: $${site.monthlyPrice}/month, ${site.url}`);
       const wa = contact.phone.startsWith("2637") ? `0${contact.phone.slice(3)}` : null;
       const next = contact.email
         ? `ask which EcoCash number to send the payment prompt to${wa ? ` (offer ${wa}, their WhatsApp number)` : ""}`
         : `ask for their email ("for the receipt and to hand the site over to you"), then which EcoCash number to send the payment prompt to${wa ? ` (offer ${wa}, their WhatsApp number)` : ""}`;
-      return `Recorded: option ${site.option}, $${site.monthlyPrice} a month${foundingOpen(new Date()) ? " (founding price, theirs for life)" : ""}. Now ${next}.`;
+      return `Recorded: option ${site.option}, $${site.monthlyPrice} a month${foundingOpen(new Date()) ? " (founding price, theirs for life)" : ""}.${reopened.length ? ` Its free preview had ended, so it's back online for ${DEMO_DAYS} more days (the same link works again).` : ""} Now ${next}.`;
     }
 
     case "start_ecocash":
@@ -349,8 +374,9 @@ export async function runTool(name: string, args: Args, ctx: ToolContext): Promi
     case "send_options_again": {
       const sites = await leadSites(contact.id);
       if (!sites.length || !contact.lodgeName) return "Their sites aren't made yet.";
-      await ctx.send(siteOptionsMessage({ lodge: contact.lodgeName, city: contact.city, name: givenName(contact), sites }));
-      return "Sent their options again. Don't repeat them.";
+      const reopened = await reopenEndedPreviews(sites, ctx.log);
+      await ctx.send(siteOptionsMessage({ lodge: contact.lodgeName, city: contact.city, name: givenName(contact), sites, ...(reopened.length ? { previewDays: DEMO_DAYS } : {}) }));
+      return `Sent their options again${reopened.length ? `, with their previews back online for ${DEMO_DAYS} more days (they had ended)` : ""}. Don't repeat them.`;
     }
 
     case "check_payment": {

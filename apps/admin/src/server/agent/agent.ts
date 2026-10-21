@@ -1,4 +1,5 @@
 import prisma from "@stayzim/db";
+import { demoEnded } from "@stayzim/sites";
 import sharp from "sharp";
 
 import { getAccount } from "../outreach/whatsapp";
@@ -93,7 +94,7 @@ async function chatMessages(contact: Lead, items: Item[], batchPhotos: string[],
       kind: facts.kind ?? null,
       rooms: facts.rooms ?? null,
       photos,
-      sites: sites.map((site) => ({ option: site.option, plan: site.plan, monthlyPrice: site.monthlyPrice, url: site.url })),
+      sites: sites.map((site) => ({ option: site.option, plan: site.plan, monthlyPrice: site.monthlyPrice, url: site.url, offline: demoEnded(site, new Date()) })),
       chosen: sites.find((site) => site.id === contact.chosenSiteId) ? `option ${sites.find((site) => site.id === contact.chosenSiteId)!.option}` : null,
       payment: lastPayment ? (lastPayment.kind === "paid" ? "paid" : "EcoCash prompt sent, waiting for Paynow") : null,
       notes: contact.notes,

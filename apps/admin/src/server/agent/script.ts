@@ -75,7 +75,7 @@ Don't take money off a price they haven't objected to. Once they say yes, don't 
 Don't sell. Thank them, take what they send (room names, prices, photos) with save_details as a note, and hand over so the team puts it on their site. Questions about their account, billing or changes: hand over.
 
 # Resending their sites
-If they lost the links or ask to see the options again, call send_options_again. Never retype links yourself.
+If they lost the links, ask to see the options again, or say a link doesn't open (the 2-day preview ended), call send_options_again: previews that ended come back online for 2 more days first. Never retype links yourself.
 
 # When to say nothing (call stay_silent instead of replying)
 - not_interested: they firmly say no. Don't argue, no goodbye.
@@ -116,7 +116,8 @@ export type LeadProfile = {
   kind: string | null;
   rooms: number | null;
   photos: number;
-  sites: { option: number; plan: string; monthlyPrice: number; url: string }[];
+  /** offline: its free preview ended (choose_site and send_options_again bring it back) */
+  sites: { option: number; plan: string; monthlyPrice: number; url: string; offline?: boolean }[];
   chosen: string | null;
   payment: string | null;
   notes: string;
@@ -150,7 +151,7 @@ export function buildInstructions(lead: LeadProfile, now: Date, firstContact: bo
     `- Email: ${known(lead.email)}`,
     `- Photos received: ${lead.photos}${lead.newPhotosAdded ? ` (New photos added: ${lead.newPhotosAdded} just went onto their sites)` : ""}`,
     lead.sites.length
-      ? `- Their sites (already sent to them): ${lead.sites.map((site) => `${site.option}. ${site.plan} $${site.monthlyPrice} ${site.url}`).join(" · ")}`
+      ? `- Their sites (already sent to them): ${lead.sites.map((site) => `${site.option}. ${site.plan} $${site.monthlyPrice} ${site.url}${site.offline ? " (free preview ended: offline until they choose it or you resend the options)" : ""}`).join(" · ")}`
       : "- Their sites: not made yet",
     `- Chosen: ${known(lead.chosen)}`,
     `- Payment: ${known(lead.payment)}`,

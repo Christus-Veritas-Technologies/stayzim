@@ -18,7 +18,8 @@ Our first $16 of Facebook ads brought 4 real lodge owners and 1 sale, closed on 
 4. **The reply (Claude Haiku 5.5, fallback GPT-6 Luna)** with the sales script and tools:
    - `save_details`: their place's name, town, email, name, kind, rooms.
    - `make_sites`: the $15 and $30 sites, plus Pro for 8+ rooms or established places, with their photos, as a 2-day free preview (offline after that unless paid). It sends the approved options message itself.
-   - `choose_site`, `start_ecocash` (a payment link plus the EcoCash prompt) or `send_payment_link`, `check_payment`.
+   - `send_options_again`: the options message again (lost links, or "the link doesn't open"). Previews that ended come back online for 2 more days first.
+   - `choose_site` (a chosen site whose preview ended comes back for 2 days, so it's up while they pay), `start_ecocash` (a payment link plus the EcoCash prompt) or `send_payment_link`, `check_payment`.
    - `hand_over`, `stay_silent` (not interested, "I'll get back to you", conversation over, junk).
    Prices, links and payments only ever come from fixed templates (`templates.ts`), never the model's own words.
 5. **Paid** (Paynow, checked every 10 s for 5 minutes, then by the follow-up loop): their site, a claim link to make it theirs, and an alert to Kin.
