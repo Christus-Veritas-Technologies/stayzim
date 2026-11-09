@@ -23,10 +23,15 @@ Our first $16 of Facebook ads brought 4 real lodge owners and 1 sale, closed on 
    - `save_details`: their place's name, town, email, name, kind, rooms.
    - `make_sites`: the $15 and $30 sites, plus Pro for 8+ rooms or established places, with their photos, as a 2-day free preview (offline after that unless paid). It sends the approved options message itself.
    - `send_options_again`: the options message again (lost links, or "the link doesn't open"). Previews that ended come back online for 2 more days first.
-   - `choose_site` (a chosen site whose preview ended comes back for 2 days, so it's up while they pay), `start_ecocash` (a payment link plus the EcoCash prompt) or `send_payment_link`, `check_payment`.
+   - `choose_site` (a chosen site whose preview ended comes back for 2 days, so it's up while they pay), `start_ecocash` (a payment link plus a prompt on their phone: EcoCash for 077/078, OneMoney for 071) or `send_payment_link`, `check_payment` (asks Paynow there and then, and confirms them if it went through). A number no wallet can prompt, or a prompt Paynow won't send, gets the payment link instead, in the same reply. Paying online switched off or the link out of date: hand over to Kin.
    - `hand_over`, `stay_silent` (not interested, "I'll get back to you", conversation over, junk).
    Prices, links and payments only ever come from fixed templates (`templates.ts`), never the model's own words.
-5. **Paid** (Paynow, checked every 10 s for 5 minutes, then by the follow-up loop): their site, a claim link to make it theirs, and an alert to Kin.
+5. **Payments are watched until they're paid** (`payments.ts`), however they pay: the prompt, or the link with EcoCash, OneMoney, InnBucks or a card (the prompt is a payment on the link, and a second prompt reuses the same link). Through the team's API route (`/api/admin/payment-links/:token`), which asks Paynow about pending payments itself, so nothing waits on Paynow's result post; prompts go through the team's route too, not the pay page's per-visitor limit.
+   - **Paid**: their site, a claim link to make it theirs, the Paid label and an alert to Kin, the moment it shows. Once, however many checks see it.
+   - **Their prompt failed or was cancelled**: "That one didn't go through, and nothing was taken", with the link to pay instead and the offer to send it again. Kin is alerted.
+   - **Still waiting after 2 minutes** (the prompt times out on the phone, often without a word from Paynow): one message offering to send it again, with the link. Not if they've written since.
+   - Checked every 5 s for 2 minutes, then every 15 s for 20 minutes; after that, and after a redeploy, every minute for links from the last 14 days that aren't paid.
+   - Paused chats (Kin took over) still get the paid confirmation; failures and nudges only go to Kin.
 6. **Follow-ups**: a nudge 20 hours after the options, and a last one the morning the 2-day preview ends, then nothing.
 7. **Labels for the ads** (live mode). Each chat gets a WhatsApp Business label saying how sure we are they're a prospect, so the click-to-WhatsApp ads learn who to find. A label only moves up (`labels.ts`, unit-tested):
    - **Unqualified**: clearly not for us (the gate ignored them as junk, or the agent went silent as not a fit: off-topic, job seekers, selling to us, wrong numbers).
@@ -103,3 +108,4 @@ Haiku subagents played the agent from its exact system prompt while we played th
 
 - `bun test src/server/agent`: the gate's decisions on cases from our real chats, and the templates (under 600 characters, the right prices).
 - `bun scripts/agent-tools-check.ts <photos…>`: drives the tools end to end against the local API, through the Paynow stand-in, with no WhatsApp and no models.
+- `bun scripts/agent-payments-check.ts`: every payment case end to end (paid, cancelled, timed out then paid after a "restart", Paynow refusing, a number with no wallet, OneMoney, a link paid by card, "I've paid"), against the local API with `bun scripts/paynow-standin.ts` as Paynow (`PAYNOW_INTEGRATION_ID=12345 PAYNOW_INTEGRATION_KEY=standin-key PAYNOW_API_URL=http://localhost:9977` on the API).

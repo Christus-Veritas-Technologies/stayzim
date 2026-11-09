@@ -1,7 +1,7 @@
 import prisma from "@stayzim/db";
 
 import { logEvent, sendInChat } from "./chat";
-import { checkPayment } from "./payments";
+import { sweepPayments } from "./payments";
 import { getAgentMode } from "./settings";
 import { givenName, leadSites } from "./tools";
 import { detailsNudgeMessage, followUpMessage } from "./templates";
@@ -9,8 +9,8 @@ import { detailsNudgeMessage, followUpMessage } from "./templates";
 /**
  * Every 10 minutes: a gentle nudge to leads who got their sites and went quiet
  * (a no reply is "not right now"): one after a day, a last one with the
- * deadline two days later, then nothing. And payments still waiting are checked
- * again, in case the agent's own watch ended first. Live mode only.
+ * deadline two days later, then nothing. And every minute, payment links that
+ * aren't paid yet (payments.ts). Live mode only.
  */
 
 const EVERY_MS = 10 * 60 * 1000;
@@ -58,24 +58,30 @@ async function tick() {
       await logEvent({ contactId: contact.id, chatId: contact.agentChatId, account: contact.agentAccount, kind: "error", data: { step: "follow_up", error: String(error) } });
     }
   }
-
-  // Payments still waiting (the 5-minute watch may have ended first)
-  const paying = await prisma.contact.findMany({ where: { agentStage: "PAYING", agentChatId: { not: null } }, take: 20 });
-  for (const contact of paying) {
-    const last = await prisma.agentEvent.findFirst({ where: { contactId: contact.id, kind: "payment" }, orderBy: { createdAt: "desc" } });
-    if (!last || !contact.agentChatId || !contact.agentAccount) continue;
-    const data = last.data as { token: string; paymentId: string; slug: string };
-    await checkPayment({ contactId: contact.id, chatId: contact.agentChatId, account: contact.agentAccount, ...data }).catch((error: unknown) =>
-      console.error("[agent] payment re-check failed:", error),
-    );
-  }
 }
 
-/** Starts the loop once per server process. */
+/** Every minute: links sent to pay with that aren't paid (a payment made later, or a watch a redeploy cut short) */
+const PAYMENTS_EVERY_MS = 60 * 1000;
+
+async function paymentsTick() {
+  if ((await getAgentMode()) !== "live") return;
+  await sweepPayments();
+}
+
+/** Starts the loops once per server process. */
 export function startFollowUps() {
   const box = globalThis as unknown as { __stayzimFollowUps?: boolean };
   if (box.__stayzimFollowUps) return;
   box.__stayzimFollowUps = true;
   const timer = setInterval(() => void tick().catch((error: unknown) => console.error("[agent] follow-ups failed:", error)), EVERY_MS);
   timer.unref?.();
+  let sweeping = false;
+  const payments = setInterval(() => {
+    if (sweeping) return;
+    sweeping = true;
+    void paymentsTick()
+      .catch((error: unknown) => console.error("[agent] payment sweep failed:", error))
+      .finally(() => (sweeping = false));
+  }, PAYMENTS_EVERY_MS);
+  payments.unref?.();
 }

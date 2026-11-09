@@ -77,14 +77,38 @@ function optionsMessage(
   ].join("\n\n");
 }
 
-/** After an EcoCash prompt went out */
-export function promptSentMessage(amountCents: number, phone: string) {
-  return `I've sent a prompt for $${(amountCents / 100).toFixed(2)} to ${localPhone(phone)}. Enter your EcoCash PIN on your phone to pay, and I'll confirm here as soon as it's through.`;
+export type Wallet = "ecocash" | "onemoney";
+const WALLET_NAMES: Record<Wallet, string> = { ecocash: "EcoCash", onemoney: "OneMoney" };
+
+/** Which wallet can prompt this number: EcoCash for 077 and 078, OneMoney for 071; null for the rest (they get the link) */
+export function walletFor(phone: string): Wallet | null {
+  const local = localDigits(phone);
+  if (/^07[78]\d{7}$/.test(local)) return "ecocash";
+  if (/^071\d{7}$/.test(local)) return "onemoney";
+  return null;
+}
+
+const money = (amountCents: number) => `$${(amountCents / 100).toFixed(2)}`;
+
+/** After a prompt went out */
+export function promptSentMessage(amountCents: number, phone: string, wallet: Wallet = "ecocash") {
+  return `I've sent a prompt for ${money(amountCents)} to ${localPhone(phone)}. Enter your ${WALLET_NAMES[wallet]} PIN on your phone to pay, and I'll confirm here as soon as it's through.`;
 }
 
 /** A link to pay by card, bank or another wallet */
 export function payLinkMessage(url: string, amountCents: number) {
-  return `Here's your payment link for $${(amountCents / 100).toFixed(2)}. You can pay by card, bank, EcoCash, OneMoney or InnBucks:\n${url}`;
+  return `Here's your payment link for ${money(amountCents)}. You can pay by EcoCash, OneMoney, InnBucks or card:\n${url}`;
+}
+
+/** The prompt couldn't be sent (Paynow refused or didn't answer, or the number can't get one): the link straight away */
+export function linkInsteadMessage(url: string, amountCents: number, why: "failed" | "number") {
+  const reason = why === "number" ? "I can't send a payment prompt to that number" : "The payment prompt didn't go through just now";
+  return `${reason}, so here's a link to pay the ${money(amountCents)} instead, by EcoCash, OneMoney, InnBucks or card:\n${url}\n\nI'll confirm here as soon as it's paid.`;
+}
+
+/** The prompt is still waiting a couple of minutes on (it times out on the phone, often without a word from Paynow) */
+export function promptNudgeMessage(url: string) {
+  return `I haven't seen the payment come through yet. If the prompt didn't show on your phone or timed out, just say and I'll send it again, or you can pay here:\n${url}`;
 }
 
 /** Paid: their site, and the link that makes it theirs */
@@ -95,8 +119,9 @@ export function paidMessage(input: { lodge: string; siteUrl: string; claimUrl: s
   return `Paid, thank you! ${input.lodge}'s website is live${until}:\n${slash(input.siteUrl)}\n\nTo make it yours (and edit it later), open this and add your email:\n${input.claimUrl}\n\nSend me your room names and prices whenever you're ready, and we'll put them in.`;
 }
 
-export function paymentFailedMessage() {
-  return "That one didn't go through, and nothing was taken. Shall I send the prompt again, or a link to pay by card?";
+/** Their prompt failed or was cancelled: try again, or the link right here */
+export function paymentFailedMessage(url: string) {
+  return `That one didn't go through, and nothing was taken. Shall I send the prompt again? Or you can pay here, by EcoCash, OneMoney, InnBucks or card:\n${url}`;
 }
 
 /** Gentle follow-ups after the options, a few days apart (a no reply is "not right now") */
@@ -121,7 +146,14 @@ export function handoverMessage() {
 
 /** "263771234567" → "077 123 4567" */
 export function localPhone(phone: string) {
-  const digits = phone.replace(/\D/g, "");
-  const local = digits.startsWith("263") ? `0${digits.slice(3)}` : digits;
+  const local = localDigits(phone);
   return /^0\d{9}$/.test(local) ? `${local.slice(0, 3)} ${local.slice(3, 6)} ${local.slice(6)}` : local;
+}
+
+/** "+263 77 123 4567", "771234567" → "0771234567" (anything else: its digits) */
+export function localDigits(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.startsWith("263")) return `0${digits.slice(3)}`;
+  if (/^7\d{8}$/.test(digits)) return `0${digits}`;
+  return digits;
 }

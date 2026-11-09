@@ -6,9 +6,9 @@ import { siteUrl } from "@/lib/site-url";
 
 import { alertKin } from "./alerts";
 import type { ToolDefinition } from "./openrouter";
-import { watchPayment } from "./payments";
-import { serverApi } from "./server-api";
-import { handoverMessage, payLinkMessage, promptSentMessage, siteOptionsMessage } from "./templates";
+import { checkPayment, latestPaymentWatch, watchPayment } from "./payments";
+import { ApiError, serverApi } from "./server-api";
+import { handoverMessage, linkInsteadMessage, localDigits, payLinkMessage, promptSentMessage, siteOptionsMessage, walletFor } from "./templates";
 
 /**
  * The agent's tools. Each one does a step of the sales flow and moves the
@@ -77,6 +77,22 @@ export async function reopenEndedPreviews(sites: Awaited<ReturnType<typeof leadS
   return reopened;
 }
 
+/**
+ * The payment link for the site they chose: the one already sent for the same
+ * months while it still works (so one link, one amount, is out there, and a
+ * second prompt lands on the link we're watching), else a new one.
+ */
+export async function payLinkFor(contactId: string, slug: string, months: number) {
+  const last = await prisma.agentEvent.findFirst({ where: { contactId, kind: { in: ["payment", "payment_link"] } }, orderBy: { createdAt: "desc" } });
+  const data = last?.data as { token?: string; slug?: string } | undefined;
+  if (data?.token && data.slug === slug) {
+    const status = await serverApi.linkStatus(data.token).catch(() => null);
+    if (status?.link.state === "open" && status.link.months === months) return { token: data.token, url: status.link.url, amountCents: status.link.amountCents };
+  }
+  const link = await serverApi.paymentLink(slug, months);
+  return { token: link.url.split("/").pop()!, url: link.url, amountCents: link.amountCents };
+}
+
 /** The facts the agent saved (kind of place, rooms), kept with the qualification. */
 export function readFacts(qualification: unknown): AgentFacts {
   return ((qualification as { facts?: AgentFacts } | null)?.facts ?? {}) as AgentFacts;
@@ -132,7 +148,8 @@ export const TOOLS: ToolDefinition[] = [
     type: "function",
     function: {
       name: "start_ecocash",
-      description: "Send an EcoCash prompt for the site they chose to this number (1 month, or 3 or 12 ahead if they asked). It sends the message telling them to enter their PIN.",
+      description:
+        "Send a payment prompt for the site they chose to this number (1 month, or 3 or 12 ahead if they asked): EcoCash for 077/078, OneMoney for 071. It sends the message telling them to enter their PIN, and confirms in the chat on its own when it's paid. A number that can't get a prompt, or a prompt Paynow can't send, gets the payment link instead, automatically. Also for 'send it again'.",
       parameters: {
         type: "object",
         properties: {
@@ -147,13 +164,13 @@ export const TOOLS: ToolDefinition[] = [
     type: "function",
     function: {
       name: "send_payment_link",
-      description: "Send a link to pay by card, bank, OneMoney or InnBucks (when they don't want an EcoCash prompt).",
+      description: "Send a link to pay by EcoCash, OneMoney, InnBucks or card (when they'd rather not get a prompt, or ask for a link). Confirms in the chat on its own when it's paid.",
       parameters: { type: "object", properties: { months: { type: "integer", enum: [1, 3, 12], description: "How many months they pay for (default 1)" } } },
     },
   },
   {
     type: "function",
-    function: { name: "check_payment", description: "How their latest payment is going (when they say they've paid, or ask).", parameters: { type: "object", properties: {} } },
+    function: { name: "check_payment", description: "Ask Paynow now how their payment is going (when they say they've paid, or ask). If it went through, their confirmation is sent right away.", parameters: { type: "object", properties: {} } },
   },
   {
     type: "function",
@@ -359,33 +376,74 @@ export async function runTool(name: string, args: Args, ctx: ToolContext): Promi
 
     case "start_ecocash":
     case "send_payment_link": {
+      if (contact.agentStage === "PAID") return "They've paid already, and their confirmation was sent. Don't ask for a payment.";
       const sites = await leadSites(contact.id);
       const site = sites.find((candidate) => candidate.id === contact.chosenSiteId);
       if (!site) return "They haven't chosen a site yet: ask which one (1, 2 or 3) first.";
       const months = [1, 3, 12].includes(Number(args.months)) ? Number(args.months) : 1;
-      const link = await serverApi.paymentLink(site.slug, months);
-      const token = link.url.split("/").pop()!;
-      if (name === "send_payment_link") {
-        await ctx.send(payLinkMessage(link.url, link.amountCents));
-        ctx.done = true;
-        await prisma.contact.update({ where: { id: contact.id }, data: { agentStage: "PAYING" } });
-        await ctx.log("tool", { tool: "send_payment_link", slug: site.slug, url: link.url });
-        return "Sent the payment link. Paynow confirms on its own. Say nothing more this turn.";
-      }
-      const phone = String(args.phone ?? "").replace(/\D/g, "");
-      const local = phone.startsWith("263") ? `0${phone.slice(3)}` : phone.startsWith("7") ? `0${phone}` : phone;
-      if (!/^07\d{8}$/.test(local)) return "That doesn't look like a Zimbabwe mobile number (07…). Ask them to check it.";
+      let link: Awaited<ReturnType<typeof payLinkFor>>;
       try {
-        const started = await serverApi.startPayment(token, "ecocash", local);
-        await prisma.contact.update({ where: { id: contact.id }, data: { agentStage: "PAYING" } });
-        await ctx.log("payment", { token, paymentId: started.payment.id, slug: site.slug, phone: local, amountCents: started.payment.amountCents });
-        await ctx.send(promptSentMessage(started.payment.amountCents, local));
-        ctx.done = true;
-        watchPayment({ contactId: contact.id, chatId: ctx.chatId, account: ctx.account, token, paymentId: started.payment.id, slug: site.slug });
-        return "Sent the EcoCash prompt and the message telling them to enter their PIN. Say nothing more this turn, and never say it's paid until Paynow confirms.";
+        link = await payLinkFor(contact.id, site.slug, months);
       } catch (error) {
-        await ctx.log("error", { tool: "start_ecocash", error: String(error) });
-        return `The prompt couldn't be sent (${error instanceof Error ? error.message : "Paynow didn't answer"}). Offer a payment link instead (send_payment_link), or hand over.`;
+        await ctx.log("error", { tool: name, step: "payment link", error: String(error) });
+        return `A payment link couldn't be made (${error instanceof Error ? error.message : "the API didn't answer"}). Hand over (hand_over) so Kin takes the payment.`;
+      }
+
+      // The link, as the way to pay (asked for, or instead of a prompt), watched until it's paid
+      const sendLink = async (message: string, why: string) => {
+        await ctx.send(message);
+        ctx.done = true;
+        await prisma.contact.update({ where: { id: contact.id }, data: { agentStage: "PAYING", nextFollowUpAt: null } });
+        await ctx.log("payment_link", { token: link.token, slug: site.slug, months, amountCents: link.amountCents, url: link.url, why });
+        watchPayment({ contactId: contact.id, chatId: ctx.chatId, account: ctx.account, token: link.token, slug: site.slug, paymentId: null, sentAt: Date.now() });
+      };
+      const settled = "I'll confirm in the chat on my own the moment Paynow says it's paid. Say nothing more this turn, and never say it's paid yourself.";
+
+      if (name === "send_payment_link") {
+        await sendLink(payLinkMessage(link.url, link.amountCents), "asked for a link");
+        return `Sent the payment link (EcoCash, OneMoney, InnBucks or card). ${settled}`;
+      }
+
+      const local = localDigits(String(args.phone ?? ""));
+      if (!/^07\d{8}$/.test(local)) return "That doesn't look like a Zimbabwe mobile number (07…). Ask them to check it.";
+      const wallet = walletFor(local);
+      if (!wallet) {
+        await sendLink(linkInsteadMessage(link.url, link.amountCents, "number"), `no prompt for ${local}`);
+        return `${local} can't get an EcoCash or OneMoney prompt, so they were sent the payment link instead. ${settled}`;
+      }
+      try {
+        const started = await serverApi.startPayment(link.token, wallet, local);
+        await prisma.contact.update({ where: { id: contact.id }, data: { agentStage: "PAYING", nextFollowUpAt: null } });
+        await ctx.log("payment", {
+          token: link.token,
+          paymentId: started.payment.id,
+          slug: site.slug,
+          phone: local,
+          channel: wallet,
+          months,
+          amountCents: started.payment.amountCents,
+          url: link.url,
+        });
+        await ctx.send(promptSentMessage(started.payment.amountCents, local, wallet));
+        ctx.done = true;
+        watchPayment({ contactId: contact.id, chatId: ctx.chatId, account: ctx.account, token: link.token, slug: site.slug, paymentId: started.payment.id, sentAt: Date.now() });
+        return `Sent the ${wallet === "ecocash" ? "EcoCash" : "OneMoney"} prompt and the message telling them to enter their PIN. If it fails or times out, they're told with the link to pay instead. ${settled}`;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Paynow didn't answer";
+        await ctx.log("error", { tool: "start_ecocash", error: message });
+        if (error instanceof ApiError && error.status === 409 && /paid already/i.test(message)) {
+          const watch = await latestPaymentWatch(contact.id);
+          if (watch) await checkPayment(watch).catch(() => null);
+          ctx.done = true;
+          return "It's paid already: their confirmation is sent. Say nothing more this turn.";
+        }
+        // Paying online is off, or the link can't be paid (out of date): a link wouldn't work either
+        if (error instanceof ApiError && [409, 410, 503].includes(error.status)) {
+          return `Paying online isn't possible right now (${message}). Hand over (hand_over) so Kin takes the payment another way.`;
+        }
+        // Paynow refused the prompt or didn't answer: the link, right away
+        await sendLink(linkInsteadMessage(link.url, link.amountCents, "failed"), `prompt failed: ${message}`);
+        return `The prompt couldn't be sent (${message}), so they were sent the payment link instead. ${settled}`;
       }
     }
 
@@ -398,11 +456,26 @@ export async function runTool(name: string, args: Args, ctx: ToolContext): Promi
     }
 
     case "check_payment": {
-      const last = await prisma.agentEvent.findFirst({ where: { contactId: contact.id, kind: "payment" }, orderBy: { createdAt: "desc" } });
-      if (!last) return "No payment has been started yet.";
-      const data = last.data as { token: string; paymentId: string };
-      const status = await serverApi.paymentStatus(data.token, data.paymentId);
-      return `Paynow says: ${status.payment.status}.${status.payment.status === "PAID" ? " Their confirmation and next steps were sent already." : ""}`;
+      const watch = await latestPaymentWatch(contact.id);
+      if (!watch) return contact.agentStage === "PAID" ? "They've paid; their confirmation was sent." : "No payment has been started yet.";
+      // Checks with Paynow now, and sends the confirmation (or the failure) itself
+      const step = await checkPayment(watch, { fresh: true });
+      if (step.kind === "paid") {
+        if (contact.agentStage === "PAID") return "Paid: their confirmation, site and claim link were sent already. Answer anything else they asked, briefly.";
+        ctx.done = true;
+        return "Paid: their confirmation, site and claim link were just sent. Say nothing more this turn.";
+      }
+      const status = await serverApi.linkStatus(watch.token);
+      if (status.link.state === "expired") return "Their payment link expired unpaid. If they want to pay, start_ecocash (or send_payment_link) makes a new one.";
+      const prompt = watch.paymentId ? status.payments.find((payment) => payment.id === watch.paymentId) : undefined;
+      if (prompt && (prompt.status === "FAILED" || prompt.status === "CANCELLED")) {
+        return `Their ${prompt.channelName} prompt ${prompt.status === "FAILED" ? "failed" : "was cancelled"}, nothing was taken, and they were told with the link to pay instead. Offer to send the prompt again (start_ecocash).`;
+      }
+      const minutes = Math.max(1, Math.round((Date.now() - watch.sentAt) / 60_000));
+      if (prompt) {
+        return `Not paid yet: Paynow is still waiting for them to approve the ${prompt.channelName} prompt sent ${minutes} minute${minutes === 1 ? "" : "s"} ago. If it didn't show or timed out, offer to send it again (start_ecocash) or the link (${status.link.url}). It's confirmed here on its own once paid.`;
+      }
+      return `Not paid yet on the link sent ${minutes} minute${minutes === 1 ? "" : "s"} ago (${status.link.url}). If they just paid, it can take a minute; the confirmation comes here on its own.`;
     }
 
     case "hand_over": {

@@ -23,9 +23,35 @@ async function call<T>(method: string, path: string, body?: unknown, auth = true
     signal: AbortSignal.timeout(60_000),
   });
   const data = (await response.json().catch(() => ({}))) as T & { error?: string };
-  if (!response.ok) throw new Error(data.error ?? `${method} ${path} said ${response.status}`);
+  if (!response.ok) throw new ApiError(data.error ?? `${method} ${path} said ${response.status}`, response.status);
   return data;
 }
+
+/** The API said no: its message, and the status (503: paying online is off; 502: Paynow refused or didn't answer) */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+  }
+}
+
+export type LinkPayment = {
+  id: string;
+  reference: string;
+  amountCents: number;
+  channel: string;
+  channelName: string;
+  status: "PENDING" | "PAID" | "FAILED" | "CANCELLED";
+  receiptNumber: string | null;
+};
+
+/** A payment link and its latest payments, newest first (GET /api/admin/payment-links/:token) */
+export type LinkStatus = {
+  link: { url: string; state: "open" | "paid" | "expired"; siteUrl: string; paidUntil: string | null; amountCents: number; months: number; lodgeName: string };
+  payments: LinkPayment[];
+};
 
 export type MadeSite = { slug: string; plan: "STARTER" | "GROWTH" | "PRO"; monthlyPrice: number; url: string; name: string };
 
@@ -43,20 +69,10 @@ export const serverApi = {
 
   claimLink: (leadId: string, slug: string) => call<{ url: string; expiresAt: string }>("POST", `/api/admin/leads/${leadId}/sites/${slug}/claim-link`),
 
-  /** The public pay routes behind a payment link (no token) */
-  startPayment: (token: string, channel: "ecocash" | "onemoney" | "innbucks" | "web", phone?: string) =>
-    call<{ payment: { id: string; reference: string; amountCents: number; status: string }; redirectUrl: string | null; instructions: string | null; innbucksCode: string | null }>(
-      "POST",
-      `/api/pay/${token}`,
-      { channel, phone },
-      false,
-    ),
+  /** A prompt on their phone for what the link says (EcoCash or OneMoney), through Paynow: the team's route, not the pay page's per-visitor limit */
+  startPayment: (token: string, channel: "ecocash" | "onemoney", phone: string) =>
+    call<{ payment: LinkPayment; instructions: string | null }>("POST", `/api/admin/payment-links/${token}/payments`, { channel, phone }),
 
-  paymentStatus: (token: string, paymentId: string) =>
-    call<{ payment: { id: string; status: "PENDING" | "PAID" | "FAILED" | "CANCELLED"; amountCents: number; receiptNumber: string | null }; link: { paidUntil: string | null; siteUrl: string } }>(
-      "GET",
-      `/api/pay/${token}/payments/${paymentId}`,
-      undefined,
-      false,
-    ),
+  /** How the link is going: paid, open or expired, and its payments (pending ones checked with Paynow first; fresh: even if just asked) */
+  linkStatus: (token: string, fresh = false) => call<LinkStatus>("GET", `/api/admin/payment-links/${token}${fresh ? "?fresh=1" : ""}`),
 };

@@ -78,12 +78,27 @@ async function leadForChat(account: string, chatId: string) {
 
 type Lead = NonNullable<Awaited<ReturnType<typeof leadForChat>>>;
 
+/** Where their payment is, for "This lead" (the latest payment event) */
+function describePayment(event: { kind: string; data: unknown; createdAt: Date } | null) {
+  if (!event) return null;
+  const data = (event.data ?? {}) as { channel?: string; phone?: string };
+  const minutes = Math.max(1, Math.round((Date.now() - event.createdAt.getTime()) / 60_000));
+  const ago = minutes < 120 ? `${minutes} min ago` : `${Math.round(minutes / 60)} h ago`;
+  if (event.kind === "paid") return "paid (their confirmation, site and claim link were sent)";
+  if (event.kind === "payment_failed") return "their last prompt failed or was cancelled; they were told and sent the payment link";
+  if (event.kind === "payment_link") return `payment link sent ${ago}, not paid yet (it's confirmed here on its own once paid)`;
+  return `${data.channel === "onemoney" ? "OneMoney" : "EcoCash"} prompt sent to ${data.phone ?? "their number"} ${ago}, waiting for them to approve it (confirmed here on its own once paid)`;
+}
+
 /** The system prompt (script, live facts, this lead) and the conversation, with this batch's photos. */
 async function chatMessages(contact: Lead, items: Item[], batchPhotos: string[], newPhotosAdded = 0): Promise<ChatMessage[]> {
   const sites = await leadSites(contact.id);
   const facts = readFacts(contact.qualification);
   const photos = await prisma.inboundMedia.count({ where: { inboundMessage: { contactId: contact.id } } });
-  const lastPayment = await prisma.agentEvent.findFirst({ where: { contactId: contact.id, kind: { in: ["payment", "paid"] } }, orderBy: { createdAt: "desc" } });
+  const lastPayment = await prisma.agentEvent.findFirst({
+    where: { contactId: contact.id, kind: { in: ["payment", "payment_link", "payment_failed", "paid"] } },
+    orderBy: { createdAt: "desc" },
+  });
   const system = buildInstructions(
     {
       stage: contact.agentStage,
@@ -99,7 +114,7 @@ async function chatMessages(contact: Lead, items: Item[], batchPhotos: string[],
       photos,
       sites: sites.map((site) => ({ option: site.option, plan: site.plan, monthlyPrice: site.monthlyPrice, url: site.url, offline: demoEnded(site, new Date()) })),
       chosen: sites.find((site) => site.id === contact.chosenSiteId) ? `option ${sites.find((site) => site.id === contact.chosenSiteId)!.option}` : null,
-      payment: lastPayment ? (lastPayment.kind === "paid" ? "paid" : "EcoCash prompt sent, waiting for Paynow") : null,
+      payment: describePayment(lastPayment),
       notes: contact.notes,
     },
     new Date(),

@@ -41,9 +41,15 @@ export function describeEvent(event: { kind: string; data: Record<string, unknow
     case "tool":
       return `${String(data.tool).replace(/_/g, " ")}${data.sites ? `: ${(data.sites as string[]).join(", ")}` : data.reason ? `: ${data.reason}` : ""}`;
     case "payment":
-      return `EcoCash prompt for $${((data.amountCents ?? 0) / 100).toFixed(2)} to ${data.phone}`;
+      return `${data.channel === "onemoney" ? "OneMoney" : "EcoCash"} prompt for $${((data.amountCents ?? 0) / 100).toFixed(2)} to ${data.phone}`;
+    case "payment_link":
+      return `Payment link for $${((data.amountCents ?? 0) / 100).toFixed(2)} sent${data.why && data.why !== "asked for a link" ? ` (${data.why})` : ""}`;
+    case "payment_failed":
+      return `${data.channel ?? "The"} prompt ${String(data.status ?? "failed").toLowerCase()}: told them, with the link`;
+    case "payment_nudge":
+      return "Prompt still waiting after 2 minutes: offered to send it again, with the link";
     case "paid":
-      return `Paid $${((data.amountCents ?? 0) / 100).toFixed(2)} (${data.receipt ?? "receipt pending"})`;
+      return `Paid $${((data.amountCents ?? 0) / 100).toFixed(2)}${data.channel ? ` by ${data.channel}` : ""} (${data.receipt ?? "receipt pending"})`;
     case "follow_up":
       return `Follow-up ${data.n} sent`;
     case "turn":
@@ -72,6 +78,9 @@ const KIND_BADGE: Record<string, "neutral" | "brand" | "success" | "purple" | "w
   reply: "brand",
   tool: "neutral",
   payment: "warning",
+  payment_link: "warning",
+  payment_failed: "danger",
+  payment_nudge: "neutral",
   paid: "success",
   follow_up: "neutral",
   turn: "neutral",
