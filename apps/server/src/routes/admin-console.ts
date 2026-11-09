@@ -10,6 +10,7 @@ import { deleteLodge, requireAdmin, withTeamSession } from "../lib/admin";
 import { recordManualPayment } from "../lib/billing";
 import { createPaymentLink, latestPaymentLink } from "../lib/payment-links";
 import { leadPhone } from "./admin-leads";
+import { linkStatus, payInput, startLinkPayment } from "./pay";
 import { requireAuth, type AuthVariables } from "../lib/session";
 import { siteUrlFor } from "../lib/sites";
 import { uploadUrl } from "../lib/uploads";
@@ -417,6 +418,12 @@ export const adminConsole = new Hono<{ Variables: AuthVariables }>()
     const link = await createPaymentLink(lodgeId, c.req.valid("json").months, c.get("user")?.id ?? null);
     return c.json(link, 201);
   })
+
+  /** How a payment link is going (paid, open, expired) and its latest payments, checked with Paynow: the sales agent watches these. */
+  .get("/payment-links/:token", async (c) => c.json(await linkStatus(c.req.param("token"), { fresh: c.req.query("fresh") === "1" })))
+
+  /** Starts a payment on a link (an EcoCash or OneMoney prompt) for the sales agent: same checks as the pay page, without its per-visitor limit. */
+  .post("/payment-links/:token/payments", validJson(payInput), async (c) => c.json(await startLinkPayment(c.req.param("token"), c.req.valid("json")), 201))
 
   /** Deletes a site that never paid, with its photos and its account (unless it's the team's). */
   .delete("/sites/:slug", async (c) => {
