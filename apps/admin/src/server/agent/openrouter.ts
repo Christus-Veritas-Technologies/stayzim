@@ -32,11 +32,13 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 // Chat completions (with tools and images)
 // ---------------------------------------------------------------------------
 
-export type ChatContent = string | ({ type: "text"; text: string } | { type: "image_url"; image_url: { url: string } })[];
+/** cache_control on a text part: Anthropic models keep everything up to it cached (OpenRouter ignores it for others) */
+export type ChatContent = string | ({ type: "text"; text: string; cache_control?: { type: "ephemeral" } } | { type: "image_url"; image_url: { url: string } })[];
 
 export type ChatMessage =
   | { role: "system" | "user"; content: ChatContent }
-  | { role: "assistant"; content: string | null; tool_calls?: ToolCall[] }
+  // reasoning_details: the model's thinking, handed back as it came during a tool loop (Claude expects it with its tool calls)
+  | { role: "assistant"; content: string | null; tool_calls?: ToolCall[]; reasoning_details?: unknown }
   | { role: "tool"; tool_call_id: string; content: string };
 
 export type ToolCall = { id: string; type: "function"; function: { name: string; arguments: string } };
@@ -48,25 +50,39 @@ export type ToolDefinition = {
 
 type ChatResponse = {
   model?: string;
-  choices: { message: { content: string | null; tool_calls?: ToolCall[] }; finish_reason?: string }[];
-  usage?: { prompt_tokens?: number; completion_tokens?: number; cost?: number };
+  choices: { message: { content: string | null; tool_calls?: ToolCall[]; reasoning_details?: unknown }; finish_reason?: string }[];
+  usage?: { prompt_tokens?: number; completion_tokens?: number; cost?: number; prompt_tokens_details?: { cached_tokens?: number } };
 };
 
-/** One model call. The fallback takes over when the main model errors (OpenRouter's `models`). */
-export async function chat(input: { messages: ChatMessage[]; tools?: ToolDefinition[]; maxTokens?: number; temperature?: number }) {
+/**
+ * One model call. The fallback takes over when the main model errors (OpenRouter's `models`).
+ * - No temperature: Claude Haiku 5.5 refuses any but its default (a 400), which
+ *   would quietly hand every reply to the fallback model.
+ * - Low reasoning effort: it thinks before answering by default; a WhatsApp
+ *   reply needs little, and replies stay quick and cheap.
+ * - max_tokens covers the thinking too, so it's well above a reply's length (the
+ *   script keeps replies short); a cut-off answer is reported (finishReason "length").
+ */
+export async function chat(input: { messages: ChatMessage[]; tools?: ToolDefinition[]; maxTokens?: number }) {
   const models = [...new Set([env.AGENT_MODEL, env.AGENT_FALLBACK_MODEL])];
   const response = await post<ChatResponse>("/v1/chat/completions", {
     model: models[0],
     models,
     messages: input.messages,
     ...(input.tools?.length ? { tools: input.tools, tool_choice: "auto", parallel_tool_calls: false } : {}),
-    max_tokens: input.maxTokens ?? 700,
-    temperature: input.temperature ?? 0.5,
+    max_tokens: input.maxTokens ?? 3000,
+    reasoning: { effort: "low" },
     usage: { include: true },
   });
   const choice = response.choices?.[0];
   if (!choice) throw new Error("OpenRouter returned no answer");
-  return { message: choice.message, model: response.model ?? models[0]!, cost: response.usage?.cost ?? 0 };
+  return {
+    message: choice.message,
+    finishReason: choice.finish_reason ?? null,
+    model: response.model ?? models[0]!,
+    cost: response.usage?.cost ?? 0,
+    cachedTokens: response.usage?.prompt_tokens_details?.cached_tokens ?? 0,
+  };
 }
 
 // ---------------------------------------------------------------------------

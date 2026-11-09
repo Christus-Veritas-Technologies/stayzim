@@ -7,10 +7,11 @@ import { alertKin } from "./alerts";
 import { logEvent, sendInChat } from "./chat";
 import { chat, decide, type ChatContent, type ChatMessage } from "./openrouter";
 import { gate, qualificationQuestions, qualificationState, toQualification, type Qualification } from "./qualify";
-import { buildInstructions } from "./script";
+import { liveContext, SCRIPT } from "./script";
 import { labelChat } from "./labels";
 import { overDailyBudget, tooManyTurns } from "./limits";
-import { answered, superseded } from "./queue";
+import { lastTurnFrom, unanswered, whatsappText, withBatchLast, type Item } from "./batch";
+import { answered, queueAgentTurn, superseded } from "./queue";
 import { getAgentMode } from "./settings";
 import { addNewPhotosToSites, givenName, leadSites, readFacts, runTool, TOOLS, type ToolContext } from "./tools";
 import { handoverMessage, localPhone } from "./templates";
@@ -30,7 +31,34 @@ const HISTORY = 30;
 const PHOTOS_FOR_CHAT = 6;
 const PHOTOS_FOR_JEV = 3;
 
-type Item = { at: Date; from: "them" | "us"; text: string; mediaId?: string };
+/** The agent's last turn on a chat (which of their messages it saw), for unanswered() */
+async function lastTurn(contactId: string) {
+  return lastTurnFrom(await prisma.agentEvent.findFirst({ where: { contactId, kind: { in: ["turn", "superseded"] } }, orderBy: { createdAt: "desc" }, select: { kind: true, data: true, createdAt: true } }));
+}
+
+/** "Couldn't reply" alerts to Kin: one per lead an hour (OpenRouter down shouldn't flood the phone) */
+const ALERT_EVERY_MS = 60 * 60 * 1000;
+/** A turn that failed (the model didn't answer) is tried again this many times, a minute apart */
+const RETRIES = 2;
+const RETRY_MS = 60_000;
+const failures = globalThis as unknown as { __stayzimAgentFailures?: Map<string, { tries: number; alertedAt: number }> };
+const failed = (failures.__stayzimAgentFailures ??= new Map());
+
+/** The model didn't answer: try again in a minute (twice), and tell Kin (once an hour per lead) */
+async function onNoReply(contact: { id: string; lodgeName: string | null; name: string; phone: string }, account: string, chatId: string, why: string) {
+  const key = `${account}|${chatId}`;
+  const state = failed.get(key) ?? { tries: 0, alertedAt: 0 };
+  state.tries += 1;
+  failed.set(key, state);
+  if (state.tries <= RETRIES) {
+    setTimeout(() => queueAgentTurn(account, chatId), RETRY_MS).unref?.();
+    return;
+  }
+  state.tries = 0;
+  if (Date.now() - state.alertedAt < ALERT_EVERY_MS) return;
+  state.alertedAt = Date.now();
+  await alertKin(`The agent couldn't reply to ${contact.lodgeName ?? contact.name} (+${contact.phone}), after trying 3 times: ${why.slice(0, 120)}. Their next message tries again; reply yourself if it can't wait.`);
+}
 
 /** The conversation with this lead, oldest first: their messages and everything we sent. */
 async function conversation(contact: { id: string; phone: string }): Promise<Item[]> {
@@ -52,7 +80,8 @@ async function conversation(contact: { id: string; phone: string }): Promise<Ite
     ...inbound.map((m) => ({
       at: m.createdAt,
       from: "them" as const,
-      text: m.body || (m.type === "image" ? "[a photo]" : m.type === "ptt" || m.type === "audio" ? "[a voice note]" : `[a ${m.type} message]`),
+      // A photo sent as a document is kept as a photo too
+      text: m.body || (m.type === "image" || m.media ? "[a photo]" : m.type === "ptt" || m.type === "audio" ? "[a voice note]" : `[a ${m.type} message]`),
       mediaId: m.media?.id,
     })),
     ...outbound.map((m) => ({ at: m.createdAt, from: "us" as const, text: m.body })),
@@ -99,7 +128,7 @@ async function chatMessages(contact: Lead, items: Item[], batchPhotos: string[],
     where: { contactId: contact.id, kind: { in: ["payment", "payment_link", "payment_failed", "paid"] } },
     orderBy: { createdAt: "desc" },
   });
-  const system = buildInstructions(
+  const live = liveContext(
     {
       stage: contact.agentStage,
       whatsappNumber: localPhone(contact.phone),
@@ -121,8 +150,17 @@ async function chatMessages(contact: Lead, items: Item[], batchPhotos: string[],
     !items.some((item) => item.from === "us"),
   );
 
+  // The script first and marked for caching (the same bytes every turn and every tool round), then what changes
+  const messages: ChatMessage[] = [
+    {
+      role: "system",
+      content: [
+        { type: "text", text: SCRIPT, cache_control: { type: "ephemeral" } },
+        { type: "text", text: live },
+      ],
+    },
+  ];
   // Earlier messages as text; this batch's photos as images on the last message
-  const messages: ChatMessage[] = [{ role: "system", content: system }];
   for (const item of items) {
     const role = item.from === "us" ? "assistant" : "user";
     const last = messages.at(-1);
@@ -164,11 +202,12 @@ export async function handleChat(account: string, chatId: string) {
     return;
   }
 
-  // What they sent since our last message
-  const items = await conversation(contact);
-  const lastOurs = [...items].reverse().find((item) => item.from === "us");
-  const batch = items.filter((item) => item.from === "them" && (!lastOurs || item.at > lastOurs.at));
+  // What they sent that nobody answered yet (see batch.ts), last in the conversation
+  const all = await conversation(contact);
+  const batch = unanswered(all, await lastTurn(contact.id));
   if (batch.length === 0) return;
+  const items = withBatchLast(all, batch);
+  const batchFrom = batch[0]!.at.toISOString();
   // They answered: no follow-up needed
   if (contact.nextFollowUpAt) await prisma.contact.update({ where: { id: contact.id }, data: { nextFollowUpAt: null } });
 
@@ -215,7 +254,7 @@ export async function handleChat(account: string, chatId: string) {
 
   // More came in while Jev was deciding: the next turn answers everything at once
   if (superseded(account, chatId)) {
-    await event("superseded", { step: "before reply" });
+    await event("superseded", { step: "before reply", from: batchFrom });
     return;
   }
 
@@ -235,16 +274,26 @@ export async function handleChat(account: string, chatId: string) {
   let cost = 0;
   const calls: string[] = [];
   let reply: string | null = null;
+  let finishReason: string | null = null;
+  let model: string | null = null;
   try {
     for (let round = 0; round < MAX_ROUNDS; round += 1) {
       const answer = await chat({ messages, tools: TOOLS });
       cost += answer.cost;
+      finishReason = answer.finishReason;
+      model = answer.model;
       const toolCalls = answer.message.tool_calls ?? [];
       if (toolCalls.length === 0) {
-        reply = answer.message.content?.trim() || null;
+        reply = whatsappText(answer.message.content ?? "") || null;
         break;
       }
-      messages.push({ role: "assistant", content: answer.message.content, tool_calls: toolCalls });
+      // Its thinking goes back with its tool calls, as it came
+      messages.push({
+        role: "assistant",
+        content: answer.message.content,
+        tool_calls: toolCalls,
+        ...(answer.message.reasoning_details ? { reasoning_details: answer.message.reasoning_details } : {}),
+      });
       for (const call of toolCalls) {
         calls.push(call.function.name);
         let args: Record<string, unknown> = {};
@@ -263,13 +312,22 @@ export async function handleChat(account: string, chatId: string) {
     }
   } catch (error) {
     await event("error", { step: "reply", error: String(error) }, cost);
-    await alertKin(`The agent couldn't reply to ${contact.lodgeName ?? contact.name} (+${contact.phone}): ${error instanceof Error ? error.message.slice(0, 120) : "an error"}`);
+    if (!ctx.done) await onNoReply(contact, account, chatId, error instanceof Error ? error.message : "an error");
     return;
   }
 
+  // The model ended without a word, a tool or silence (cut off, or out of rounds): nothing was said to them
+  if (!reply && !ctx.silent && !ctx.done) {
+    const why = finishReason === "length" ? "its answer was cut off" : calls.length >= MAX_ROUNDS ? `still calling tools after ${MAX_ROUNDS} rounds` : "it answered nothing";
+    await event("error", { step: "reply", error: why, model, tools: calls }, cost);
+    await onNoReply(contact, account, chatId, why);
+    return;
+  }
+  failed.delete(`${account}|${chatId}`);
+
   // More came in while it was thinking: this reply is out of date, the next turn answers everything (tools' messages already went)
   if (reply && !ctx.silent && !ctx.done && superseded(account, chatId)) {
-    await event("superseded", { step: "reply", dropped: reply, tools: calls }, cost);
+    await event("superseded", { step: "reply", dropped: reply, tools: calls, from: batchFrom }, cost);
     return;
   }
   answered(account, chatId);
@@ -283,17 +341,16 @@ export async function handleChat(account: string, chatId: string) {
       data: { nextFollowUpAt: new Date(Date.now() + 24 * 60 * 60 * 1000) },
     });
   }
-  await event("turn", { tools: calls, replied: Boolean(reply && !ctx.silent && !ctx.done), silent: ctx.silent ?? null }, cost);
+  await event(
+    "turn",
+    // upTo: the newest message of theirs this turn saw (anything after it that came in meanwhile is answered next)
+    { tools: calls, replied: Boolean(reply && !ctx.silent && !ctx.done), silent: ctx.silent ?? null, model, upTo: batch.at(-1)!.at.toISOString() },
+    cost,
+  );
   // The chat's label now (for the ads): how sure we are they're a prospect
   await labelChat(contact.id, { jev: qualification, ...(ctx.label ? { agent: ctx.label } : {}), notAFit: ctx.silent === "not_a_fit" });
 }
 
-/** What they've sent since our last message (the batch a turn would answer), and their photos in it. */
-function pendingBatch(items: Item[]) {
-  const lastOurs = [...items].reverse().find((item) => item.from === "us");
-  const batch = items.filter((item) => item.from === "them" && (!lastOurs || item.at > lastOurs.at));
-  return { batch, photos: batch.flatMap((item) => (item.mediaId ? [item.mediaId] : [])) };
-}
 
 /**
  * The gate on a lead's conversation as it stands (replaying real chats before
@@ -318,14 +375,15 @@ export async function assessLead(contactId: string) {
  */
 export async function previewReply(contactId: string) {
   const contact = await prisma.contact.findUniqueOrThrow({ where: { id: contactId } });
-  const items = await conversation(contact);
-  const { photos } = pendingBatch(items);
-  if (!items.length || items.at(-1)?.from !== "them") return { lead: contact.lodgeName ?? contact.name, skipped: "nothing from them to answer" };
-  const messages = await chatMessages(contact, items, photos);
+  const all = await conversation(contact);
+  const batch = unanswered(all, await lastTurn(contact.id));
+  if (!batch.length) return { lead: contact.lodgeName ?? contact.name, skipped: "nothing from them to answer" };
+  const photos = batch.flatMap((item) => (item.mediaId ? [item.mediaId] : []));
+  const messages = await chatMessages(contact, withBatchLast(all, batch), photos);
   const answer = await chat({ messages, tools: TOOLS });
   return {
     lead: contact.lodgeName ?? contact.name,
-    wouldSay: answer.message.content?.trim() || null,
+    wouldSay: whatsappText(answer.message.content ?? "") || null,
     wouldCall: (answer.message.tool_calls ?? []).map((call) => ({ tool: call.function.name, args: call.function.arguments })),
     model: answer.model,
     cost: answer.cost,

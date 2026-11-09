@@ -132,8 +132,16 @@ export type LeadProfile = {
 
 const known = (value: string | number | null) => (value === null || value === "" ? "unknown" : String(value));
 
+/** The script itself: the same bytes every turn, so the model can keep it cached (agent.ts marks it) */
+export const SCRIPT = BASE;
+
 /** The full instructions for one turn: the script, then the live facts and this lead. */
 export function buildInstructions(lead: LeadProfile, now: Date, firstContact: boolean) {
+  return `${SCRIPT}\n\n${liveContext(lead, now, firstContact)}`;
+}
+
+/** What changes turn to turn, after the script: the live facts (prices, today) and this lead. */
+export function liveContext(lead: LeadProfile, now: Date, firstContact: boolean) {
   const founding = foundingOpen(now);
   const price = (plan: "STARTER" | "GROWTH" | "PRO") => (founding ? FOUNDING_PRICES[plan] : PLAN_PRICES[plan]);
   const harare = new Intl.DateTimeFormat("en-GB", { dateStyle: "full", timeStyle: "short", timeZone: "Africa/Harare" }).format(now);
@@ -164,5 +172,5 @@ export function buildInstructions(lead: LeadProfile, now: Date, firstContact: bo
     `- Payment: ${known(lead.payment)}`,
     `- Notes: ${lead.notes || "none"}`,
   ];
-  return `${BASE}\n\n# Live facts\n${facts.join("\n")}\n\n# This lead\n${profile.join("\n")}`;
+  return `# Live facts\n${facts.join("\n")}\n\n# This lead\n${profile.join("\n")}`;
 }

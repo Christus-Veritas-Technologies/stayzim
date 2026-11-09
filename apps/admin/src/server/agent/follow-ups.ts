@@ -18,8 +18,15 @@ const EVERY_MS = 10 * 60 * 1000;
 const SECOND_AFTER_MS = 24 * 60 * 60 * 1000;
 const MAX_FOLLOW_UPS = 2;
 
+/** Nudges go out in the day in Zimbabwe (8:00 to 20:00); one due at night waits for the morning */
+export function daytimeInHarare(now = new Date()) {
+  const hour = Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hourCycle: "h23", timeZone: "Africa/Harare" }).format(now));
+  return hour >= 8 && hour < 20;
+}
+
 async function tick() {
   if ((await getAgentMode()) !== "live") return;
+  if (!daytimeInHarare()) return;
 
   const due = await prisma.contact.findMany({
     where: { nextFollowUpAt: { lte: new Date() }, agentStage: { in: ["OFFER", "DETAILS"] }, agentPaused: false, status: { not: "DO_NOT_CONTACT" }, agentChatId: { not: null } },

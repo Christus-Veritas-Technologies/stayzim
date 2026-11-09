@@ -387,7 +387,8 @@ export class WhatsAppAccount {
         whatsappMessageId: message.id._serialized,
         receivedAt: new Date(message.timestamp * 1000),
         senderName: message.notifyName ?? message._data?.notifyName ?? undefined,
-        loadImage: message.type === "image" ? () => this.downloadImage(message.id._serialized) : undefined,
+        // A photo, or a photo sent as a document (to keep its quality)
+        loadImage: message.type === "image" || message.type === "document" ? () => this.downloadImage(message.id._serialized) : undefined,
       });
       if (isNew) this.log(`reply recorded (${via}) from ${resolved ? `+${resolved}` : chatId}`);
       return isNew;
@@ -607,15 +608,19 @@ export class WhatsAppAccount {
     throw new Error("WhatsApp didn't confirm the message was sent, and it isn't in the chat");
   }
 
-  /** A photo someone sent, as bytes; null when it isn't one or can't be downloaded. */
+  /** A photo someone sent (also as a document), as bytes; null when it isn't one or can't be downloaded. */
   async downloadImage(messageId: string): Promise<{ mimeType: string; data: Buffer } | null> {
     const client = this.client;
     if (!client) return null;
     try {
       const message = await withTimeout(client.getMessageById(messageId), 15_000, "to find the message");
-      if (!message?.hasMedia || message.type !== "image") return null;
+      if (!message?.hasMedia || (message.type !== "image" && message.type !== "document")) return null;
+      // A document that isn't a photo (a PDF, a price list) isn't downloaded
+      const mimeType = (message as { _data?: { mimetype?: string } })._data?.mimetype;
+      if (message.type === "document" && mimeType && !mimeType.startsWith("image/")) return null;
       const media = await withTimeout(message.downloadMedia(), 60_000, "to download the photo");
-      return media?.data ? { mimeType: media.mimetype, data: Buffer.from(media.data, "base64") } : null;
+      if (!media?.data || !media.mimetype?.startsWith("image/")) return null;
+      return { mimeType: media.mimetype, data: Buffer.from(media.data, "base64") };
     } catch (error) {
       this.logError(`downloading photo ${messageId} failed:`, error);
       return null;

@@ -14,6 +14,10 @@ Our first $16 of Facebook ads brought 4 real lodge owners and 1 sale, closed on 
    - a burst never holds the answer more than 30 s from its first message;
    - one turn per chat at a time. If they write again while it's deciding or thinking, its reply is dropped (out of date) and the next turn answers everything together; not more than twice in a row, so someone typing non-stop still hears back. Messages a tool already sent (their sites, a payment prompt) stay sent;
    - a number that's restarting is waited for (up to 10 minutes), and after a redeploy, chats whose messages (last 15 minutes) never got a turn get one.
+   - a message that came in while a tool was sending (their sites, a payment prompt) still gets its own answer next turn (`batch.ts`); the messages being answered are always the last thing the model reads;
+   - the model failing (OpenRouter down, an empty or cut-off answer) is tried again a minute later, twice, then Kin is told (once an hour per lead);
+   - replies are put in WhatsApp's formatting (*bold*, _italics_, no headings, plain links); photos sent as documents count as photos;
+   - follow-up nudges go out between 8:00 and 20:00 in Zimbabwe; one due at night waits for the morning.
 3. **Qualification (Jev, `typesafe/jev-1.14`)**, every turn. Jev answers typed questions about the conversation and their photos: a place to stay? what do they want? how established? do they need a person? `gate()` in `qualify.ts` decides:
    - **ignore**: clear junk (spam, job seekers, wrong numbers, photos of something else, "not a place to stay" twice). Blue ticks, no reply, stage "Not a fit".
    - **stop**: they asked us to stop. Do not contact.
@@ -80,6 +84,7 @@ Anything else you type on wa1's phone in a lead's chat becomes part of the conve
 Every call's cost is logged (`agent_event.cost_usd`):
 - Jev costs about $0.04 per million input tokens, with output free: fractions of a cent per message.
 - Haiku 5.5 costs $0.10 in and $0.50 out per million tokens: about 1¢ for a whole conversation, photos included.
+- How it calls the model (`openrouter.ts`): no temperature (Haiku 5.5 refuses anything but its default, which would hand every reply to the fallback), low reasoning effort (it thinks before answering; a WhatsApp reply needs little), and the script marked for caching (the same bytes every turn; the live facts and the lead come after it). Each turn in the agent log names the model that answered, so a run on the fallback shows.
 
 Two brakes (`limits.ts`), so nothing can run the bill up (another bot answering ours, a flood of messages):
 - **A chat answered 15 times in an hour** is read but not answered for the rest of that hour, and Kin is told once.
@@ -108,4 +113,5 @@ Haiku subagents played the agent from its exact system prompt while we played th
 
 - `bun test src/server/agent`: the gate's decisions on cases from our real chats, and the templates (under 600 characters, the right prices).
 - `bun scripts/agent-tools-check.ts <photos…>`: drives the tools end to end against the local API, through the Paynow stand-in, with no WhatsApp and no models.
+- `bun scripts/agent-turn-check.ts`: one real turn with OpenRouter and WhatsApp stood in: what the model is sent, the reply's formatting, a message sent while a tool was sending, and a failed model call tried again.
 - `bun scripts/agent-payments-check.ts`: every payment case end to end (paid, cancelled, timed out then paid after a "restart", Paynow refusing, a number with no wallet, OneMoney, a link paid by card, "I've paid"), against the local API with `bun scripts/paynow-standin.ts` as Paynow (`PAYNOW_INTEGRATION_ID=12345 PAYNOW_INTEGRATION_KEY=standin-key PAYNOW_API_URL=http://localhost:9977` on the API).

@@ -53,7 +53,7 @@ export function describeEvent(event: { kind: string; data: Record<string, unknow
     case "follow_up":
       return `Follow-up ${data.n} sent`;
     case "turn":
-      return data.silent ? `Stayed silent (${data.silent})` : data.replied ? `Replied${data.tools?.length ? ` after ${(data.tools as string[]).join(", ")}` : ""}` : "No reply";
+      return `${data.silent ? `Stayed silent (${data.silent})` : data.replied ? `Replied${data.tools?.length ? ` after ${(data.tools as string[]).join(", ")}` : ""}` : "No reply"}${data.model ? ` · ${String(data.model).split("/").pop()}` : ""}`;
     case "command":
       return `Kin typed /${data.command}${data.command === "silence" ? ": the agent is quiet here" : data.command === "ban" ? ": never answered again" : ": the agent carries on"}`;
     case "kin_reply":
