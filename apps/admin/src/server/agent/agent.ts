@@ -9,6 +9,8 @@ import { chat, decide, type ChatContent, type ChatMessage } from "./openrouter";
 import { gate, qualificationQuestions, qualificationState, toQualification, type Qualification } from "./qualify";
 import { buildInstructions } from "./script";
 import { labelChat } from "./labels";
+import { overDailyBudget, tooManyTurns } from "./limits";
+import { answered, superseded } from "./queue";
 import { getAgentMode } from "./settings";
 import { addNewPhotosToSites, givenName, leadSites, readFacts, runTool, TOOLS, type ToolContext } from "./tools";
 import { handoverMessage, localPhone } from "./templates";
@@ -141,6 +143,11 @@ export async function handleChat(account: string, chatId: string) {
     return;
   }
   if (contact.agentPaused || contact.agentStage === "HANDOVER") return;
+  // The brakes: today's budget, and a chat answered too often this hour
+  if ((await overDailyBudget()) || (await tooManyTurns(contact, chatId, account))) {
+    if (mode === "live") await number?.markRead(chatId);
+    return;
+  }
 
   // What they sent since our last message
   const items = await conversation(contact);
@@ -191,6 +198,12 @@ export async function handleChat(account: string, chatId: string) {
     if (mode === "shadow") return;
   }
 
+  // More came in while Jev was deciding: the next turn answers everything at once
+  if (superseded(account, chatId)) {
+    await event("superseded", { step: "before reply" });
+    return;
+  }
+
   // --- The conversation (Claude Haiku 5.5 with tools) ------------------------
   // Photos sent after their sites were made go onto the sites before the reply
   const newPhotosAdded = await addNewPhotosToSites(contact.id, (kind, data, costUsd) => event(kind, data, costUsd)).catch(() => 0);
@@ -239,6 +252,12 @@ export async function handleChat(account: string, chatId: string) {
     return;
   }
 
+  // More came in while it was thinking: this reply is out of date, the next turn answers everything (tools' messages already went)
+  if (reply && !ctx.silent && !ctx.done && superseded(account, chatId)) {
+    await event("superseded", { step: "reply", dropped: reply, tools: calls }, cost);
+    return;
+  }
+  answered(account, chatId);
   if (reply && !ctx.silent && !ctx.done) await sendInChat({ contactId: contact.id, chatId, account, text: reply });
   else if (ctx.silent) await number?.markRead(chatId);
   if (contact.agentStage === "NEW") await prisma.contact.updateMany({ where: { id: contact.id, agentStage: "NEW" }, data: { agentStage: "DETAILS" } });

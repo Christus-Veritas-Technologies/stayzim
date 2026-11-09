@@ -304,7 +304,7 @@ onInboundMessage(async (event) => {
     );
   }
   // The sales agent answers new messages on its number (batched, in the background)
-  if (agentNumber && recent) queueAgentTurn(event.account, event.chatId);
+  if (agentNumber && recent) queueAgentTurn(event.account, event.chatId, event.type);
   return true;
 });
 

@@ -54,6 +54,10 @@ export function describeEvent(event: { kind: string; data: Record<string, unknow
       return `Kin replied from the phone: ${data.text}`;
     case "alert":
       return `Alert to Kin: ${data.text}`;
+    case "superseded":
+      return data.step === "reply" ? "Reply dropped: more messages came in, answered together next" : "Waited: more messages came in";
+    case "limit":
+      return data.reason === "daily budget" ? `Stopped for today: budget used ($${Number(data.spent ?? 0).toFixed(2)})` : `Paused for the hour: ${data.turns} answers in an hour`;
     case "label":
       return `Labelled "${data.label}" in WhatsApp (for the ads)`;
     case "error":
@@ -75,6 +79,8 @@ const KIND_BADGE: Record<string, "neutral" | "brand" | "success" | "purple" | "w
   command: "danger",
   kin_reply: "brand",
   label: "neutral",
+  superseded: "neutral",
+  limit: "warning",
   error: "danger",
 };
 

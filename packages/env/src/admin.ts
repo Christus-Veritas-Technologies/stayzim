@@ -51,6 +51,8 @@ export const env = createEnv({
     AGENT_MODEL: z.string().min(1).default("anthropic/claude-haiku-5.5"),
     AGENT_FALLBACK_MODEL: z.string().min(1).default("openai/gpt-6-luna"),
     JEV_MODEL: z.string().min(1).default("typesafe/jev-1.14"),
+    // The most the agent's models may cost in a day (Harare time), in US dollars; then it stops until midnight
+    AGENT_DAILY_BUDGET_USD: z.coerce.number().positive().default(5),
   },
   client: {
     // The API (apps/server), e.g. https://api.stayzim.co.zw
@@ -76,6 +78,7 @@ export const env = createEnv({
     AGENT_MODEL: process.env.AGENT_MODEL,
     AGENT_FALLBACK_MODEL: process.env.AGENT_FALLBACK_MODEL,
     JEV_MODEL: process.env.JEV_MODEL,
+    AGENT_DAILY_BUDGET_USD: process.env.AGENT_DAILY_BUDGET_USD,
     NEXT_PUBLIC_SERVER_URL: process.env.NEXT_PUBLIC_SERVER_URL,
     NEXT_PUBLIC_WEB_URL: process.env.NEXT_PUBLIC_WEB_URL,
     NEXT_PUBLIC_SITES_DOMAIN: process.env.NEXT_PUBLIC_SITES_DOMAIN,

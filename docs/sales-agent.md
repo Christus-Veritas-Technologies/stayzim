@@ -9,7 +9,11 @@ Our first $16 of Facebook ads brought 4 real lodge owners and 1 sale, closed on 
 ## How it works
 
 1. **Messages come in** on the agent's number (`AGENT_ACCOUNTS`, wa1), by the "new message" event or the 2-minute read of its chats. Someone new becomes a lead (source "Messaged us (ad)"). Photos are downloaded and kept (`inbound_media`). Only messages from the last 15 minutes count: the 14-day read when a number connects is recorded, never answered.
-2. **A turn runs 10 seconds after their last message** (people send bursts), one per chat at a time.
+2. **A burst of messages gets one answer** (`queue.ts`), not one per message:
+   - a turn runs 5 s after their last message, and each new message within those 5 s starts them again; after a photo, video, voice note or document it's 10 s (an album arrives one photo at a time);
+   - a burst never holds the answer more than 30 s from its first message;
+   - one turn per chat at a time. If they write again while it's deciding or thinking, its reply is dropped (out of date) and the next turn answers everything together; not more than twice in a row, so someone typing non-stop still hears back. Messages a tool already sent (their sites, a payment prompt) stay sent;
+   - a number that's restarting is waited for (up to 10 minutes), and after a redeploy, chats whose messages (last 15 minutes) never got a turn get one.
 3. **Qualification (Jev, `typesafe/jev-1.14`)**, every turn. Jev answers typed questions about the conversation and their photos: a place to stay? what do they want? how established? do they need a person? `gate()` in `qualify.ts` decides:
    - **ignore**: clear junk (spam, job seekers, wrong numbers, photos of something else, "not a place to stay" twice). Blue ticks, no reply, stage "Not a fit".
    - **stop**: they asked us to stop. Do not contact.
@@ -71,6 +75,10 @@ Anything else you type on wa1's phone in a lead's chat becomes part of the conve
 Every call's cost is logged (`agent_event.cost_usd`):
 - Jev costs about $0.04 per million input tokens, with output free: fractions of a cent per message.
 - Haiku 5.5 costs $0.10 in and $0.50 out per million tokens: about 1¢ for a whole conversation, photos included.
+
+Two brakes (`limits.ts`), so nothing can run the bill up (another bot answering ours, a flood of messages):
+- **A chat answered 15 times in an hour** is read but not answered for the rest of that hour, and Kin is told once.
+- **A daily budget**, `AGENT_DAILY_BUDGET_USD` (default $5, Harare day): once today's model calls reach it, the agent stops until midnight and Kin is told once. Messages that came in meanwhile wait for the team.
 
 ## The WhatsApp risk
 

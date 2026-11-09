@@ -137,6 +137,7 @@ services:
       AGENT_MODEL: ${AGENT_MODEL:-anthropic/claude-haiku-5.5}
       AGENT_FALLBACK_MODEL: ${AGENT_FALLBACK_MODEL:-openai/gpt-6-luna}
       JEV_MODEL: ${JEV_MODEL:-typesafe/jev-1.14}
+      AGENT_DAILY_BUDGET_USD: ${AGENT_DAILY_BUDGET_USD:-5}
       # Once, after the old outreach app: copies its leads, messages and WhatsApp
       # logins from its database (stayzim-outreach) while the main one has none
       OUTREACH_IMPORT_DATABASE_URL: postgresql://stayzim:${POSTGRES_PASSWORD}@db:5432/stayzim-outreach
