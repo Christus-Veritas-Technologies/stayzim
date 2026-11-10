@@ -70,6 +70,28 @@ function errorText(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
 
+/** One line of a number's log, as the WhatsApp page shows it */
+export type LogLine = { at: string; error: boolean; text: string };
+
+/** Lines kept per number: enough for a few hours of a quiet number */
+const LOG_LINES = 200;
+
+/** A log line's text: errors as their message (and the first lines of their stack), the rest as they print */
+function logText(args: unknown[]) {
+  return args
+    .map((arg) => {
+      if (arg instanceof Error) return [arg.message, ...(arg.stack?.split("\n").slice(1, 4).map((line) => line.trim()) ?? [])].join(" | ");
+      if (typeof arg === "string") return arg;
+      try {
+        return JSON.stringify(arg);
+      } catch {
+        return String(arg);
+      }
+    })
+    .join(" ")
+    .slice(0, 1500);
+}
+
 /** One store, one table, one row per account. */
 const store = new PostgresSessionStore(env.WHATSAPP_SESSION_PATH);
 
@@ -101,6 +123,10 @@ export type WhatsAppStatus = {
   lastSyncFound?: number;
   /** Why the last read of the chats failed, when it did */
   lastSyncError?: string;
+  /** The last message someone sent that WhatsApp handed us (as it came in, or in a read of the chats) */
+  lastInboundAt?: string;
+  /** Why the last message someone sent couldn't be saved, when it couldn't (cleared by the next one saved) */
+  lastInboundError?: string;
   /** Failed: when it's started again by itself */
   retryAt?: string;
   startedAt: string;
@@ -222,6 +248,8 @@ export class WhatsAppAccount {
    * there, without touching the new browser or the status.
    */
   private generation = 0;
+  /** The latest log lines, newest last, for the WhatsApp page (the server's own log needs Coolify) */
+  private readonly lines: LogLine[] = [];
 
   constructor(readonly id: string) {
     this.status = {
@@ -267,10 +295,51 @@ export class WhatsAppAccount {
 
   private log(...args: unknown[]) {
     console.log(`[whatsapp:${this.id}] ${new Date().toISOString()}`, ...args);
+    this.keep(false, args);
   }
 
   private logError(...args: unknown[]) {
     console.error(`[whatsapp:${this.id}] ${new Date().toISOString()}`, ...args);
+    this.keep(true, args);
+  }
+
+  private keep(error: boolean, args: unknown[]) {
+    this.lines.push({ at: new Date().toISOString(), error, text: logText(args) });
+    if (this.lines.length > LOG_LINES) this.lines.splice(0, this.lines.length - LOG_LINES);
+  }
+
+  /** This number's latest log lines, newest first */
+  getLog(): LogLine[] {
+    return [...this.lines].reverse();
+  }
+
+  /**
+   * The latest messages WhatsApp Web itself holds (any chat, ours too), newest
+   * first: whether a message reached this number at all, apart from whether we
+   * saved it. Bodies cut short.
+   */
+  async peek(limit = 20) {
+    const page = this.page;
+    if (!page || !this.isReady) return null;
+    return withTimeout(
+      page.evaluate(({ limit }: { limit: number }) => {
+        const require = (globalThis as unknown as { require: (name: string) => any }).require;
+        const { Msg } = require("WAWebCollections");
+        return Msg.getModelsArray()
+          .filter((msg: any) => msg.id)
+          .sort((a: any, b: any) => (b.t ?? 0) - (a.t ?? 0))
+          .slice(0, limit)
+          .map((msg: any) => ({
+            chat: String(msg.id.remote?._serialized ?? msg.id.remote ?? msg.from?._serialized ?? ""),
+            fromMe: Boolean(msg.id.fromMe),
+            type: String(msg.type ?? ""),
+            at: new Date(Number(msg.t) * 1000).toISOString(),
+            body: String(msg.body ?? msg.caption ?? "").slice(0, 60),
+          }));
+      }, { limit }),
+      30_000,
+      "to list its latest messages",
+    ).catch((error: unknown) => ({ error: errorText(error) }));
   }
 
   async start(executablePath: string | undefined, attempt = 1): Promise<void> {
@@ -430,10 +499,17 @@ export class WhatsAppAccount {
    */
   private async recordInbound(message: WhatsAppMessage, via: "event" | "sync", phone?: string): Promise<boolean> {
     const chatId = message.from;
-    if (message.fromMe || message.isStatus || !DIRECT_CHAT.test(chatId) || !MESSAGE_TYPES.includes(message.type)) return false;
+    if (message.fromMe || message.isStatus) return false;
+    if (via === "event") this.log(`message event: ${message.type} in ${chatId}`);
+    if (!DIRECT_CHAT.test(chatId) || !MESSAGE_TYPES.includes(message.type)) {
+      if (via === "event") this.log(`not a direct chat message we save (${chatId}, ${message.type}): skipped`);
+      return false;
+    }
+    if (!this.status.lastInboundAt || Date.parse(this.status.lastInboundAt) < message.timestamp * 1000) this.status.lastInboundAt = new Date(message.timestamp * 1000).toISOString();
     const handler = handlerBox.__stayzimInbound;
     if (!handler) {
       this.logError("a reply came in, but nothing is set to record it");
+      this.status.lastInboundError = "nothing is set to save it (the outreach engine isn't loaded)";
       return false;
     }
     try {
@@ -451,9 +527,11 @@ export class WhatsAppAccount {
         loadImage: message.type === "image" || message.type === "document" ? () => this.downloadImage(message.id._serialized) : undefined,
       });
       if (isNew) this.log(`reply recorded (${via}) from ${resolved ? `+${resolved}` : chatId}`);
+      this.status.lastInboundError = undefined;
       return isNew;
     } catch (error) {
       this.logError("failed to record inbound message:", error);
+      this.status.lastInboundError = errorText(error).slice(0, 300);
       return false;
     }
   }

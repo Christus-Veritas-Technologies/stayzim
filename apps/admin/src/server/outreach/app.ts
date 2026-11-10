@@ -56,6 +56,12 @@ export const outreachApp = new Hono()
     else account.restartNow();
     return c.json({ ok: true });
   })
+  // A number's latest log lines, and the latest messages its WhatsApp Web holds (did a message reach it at all?)
+  .get("/whatsapp/:account/log", async (c) => {
+    const account = getAccount(c.req.param("account"));
+    if (!account) throw new HTTPException(404, { message: "No such number" });
+    return c.json({ log: account.getLog(), messages: await account.peek() });
+  })
   // Quit a number: its browser closed, logged out, its saved login deleted; it stays off until Link again
   .post("/whatsapp/:account/logout", async (c) => {
     const account = getAccount(c.req.param("account"));

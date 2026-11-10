@@ -3,9 +3,10 @@
 import { Badge } from "@stayzim/ui/components/badge";
 import { Button } from "@stayzim/ui/components/button";
 import { Card } from "@stayzim/ui/components/card";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@stayzim/ui/components/collapsible";
 import { Progress } from "@stayzim/ui/components/progress";
 import { Tabs, TabsList, TabsTab } from "@stayzim/ui/components/tabs";
-import { LogOut, QrCode, RotateCcw, Smartphone } from "lucide-react";
+import { ChevronDown, LogOut, QrCode, RotateCcw, Smartphone } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -31,10 +32,64 @@ type NumberStatus = {
   lastSyncedAt?: string;
   lastSyncFound?: number;
   lastSyncError?: string;
+  lastInboundAt?: string;
+  lastInboundError?: string;
   retryAt?: string;
   startedAt: string;
   usage?: { sent: number; limit: number; remaining: number; resetsAt?: string };
 };
+
+type NumberLog = {
+  log: { at: string; error: boolean; text: string }[];
+  /** The latest messages its WhatsApp Web holds, or why they couldn't be read; null when it isn't connected */
+  messages: { chat: string; fromMe: boolean; type: string; at: string; body: string }[] | { error: string } | null;
+};
+
+/** A number's own log and the latest messages its WhatsApp Web holds, loaded when opened */
+function NumberLogPanel({ account }: { account: string }) {
+  const { data, error, loading, reload } = useApi<NumberLog>(`/whatsapp/${account}/log`, { outreach: true });
+  if (loading) return <p className="text-[12px] text-muted">Loading…</p>;
+  if (error || !data) return <LoadError message={error ?? "Try again."} onRetry={reload} />;
+  const messages = data.messages;
+  return (
+    <div className="flex flex-col gap-3 pt-2">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[12px] font-semibold text-muted">Latest messages on WhatsApp</span>
+        <Button size="sm" variant="ghost" onClick={reload}>
+          <RotateCcw />
+          Refresh
+        </Button>
+      </div>
+      {messages === null ? <p className="text-[12px] text-muted">Shown when it's connected.</p> : null}
+      {messages && "error" in messages ? <p className="text-[12px] text-warning">{messages.error}</p> : null}
+      {Array.isArray(messages) ? (
+        messages.length === 0 ? (
+          <p className="text-[12px] text-muted">None loaded yet.</p>
+        ) : (
+          <ul className="flex flex-col gap-1 text-[12px]">
+            {messages.map((message, index) => (
+              <li key={index} className="flex flex-col rounded-lg bg-surface-2 px-2.5 py-1.5">
+                <span className="text-muted-2">
+                  {message.fromMe ? "Sent to" : "From"} {message.chat} · {message.type} · {formatShortWhen(message.at)}
+                </span>
+                <span className="line-clamp-2 text-ink">{message.body || "(no text)"}</span>
+              </li>
+            ))}
+          </ul>
+        )
+      ) : null}
+      <span className="text-[12px] font-semibold text-muted">Log</span>
+      {data.log.length === 0 ? <p className="text-[12px] text-muted">Nothing since the last deploy.</p> : null}
+      <ul className="flex max-h-80 flex-col gap-1 overflow-y-auto font-mono text-[11.5px]">
+        {data.log.map((line, index) => (
+          <li key={index} className={line.error ? "text-danger" : "text-muted"}>
+            <span className="text-muted-2">{formatShortWhen(line.at)}</span> {line.text}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 type LogItem = { id: string; phone: string | null; account: string; body: string; status?: string; error?: string | null; createdAt: string; contactId: string | null };
 
@@ -120,8 +175,10 @@ function NumberCard({ status, onChanged }: { status: NumberStatus; onChanged: ()
               : "Chats not read for replies yet: the first read, half a minute after connecting, looks back 14 days"}
           </p>
           {status.lastSyncError ? <p className="text-[12px] text-warning">Reading the chats: {status.lastSyncError}</p> : null}
+          {status.lastInboundAt ? <p className="text-[12px] text-muted-2">Last message from someone {formatShortWhen(status.lastInboundAt)}</p> : null}
         </>
       ) : null}
+      {status.lastInboundError ? <p className="text-[12px] text-danger">A message couldn't be saved: {status.lastInboundError}</p> : null}
       {status.state !== "disabled" ? (
         <div className="flex flex-wrap gap-2">
           {canRestart ? (
@@ -144,6 +201,15 @@ function NumberCard({ status, onChanged }: { status: NumberStatus; onChanged: ()
           ) : null}
         </div>
       ) : null}
+      <Collapsible>
+        <CollapsibleTrigger className="group flex items-center gap-1 text-[12px] font-semibold text-muted hover:text-ink">
+          <ChevronDown className="size-3.5 transition-transform group-data-[panel-open]:rotate-180 motion-reduce:transition-none" />
+          Log and latest messages
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <NumberLogPanel account={status.account} />
+        </CollapsibleContent>
+      </Collapsible>
       <p className="text-[12px] text-muted-2">{status.state === "stopped" ? "Logged out: press Link again to scan a new QR code" : status.lastSavedAt ? `Login saved ${formatShortWhen(status.lastSavedAt)}: a redeploy won't need a new scan` : "Login not saved yet: it saves about a minute after connecting"}</p>
     </Card>
   );
