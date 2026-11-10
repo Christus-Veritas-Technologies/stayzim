@@ -453,9 +453,12 @@ export class WhatsAppAccount {
     let found = 0;
     const problems: string[] = [];
     try {
-      // 1. Every message WhatsApp Web has loaded, in one quick call (no chat list, no fetching)
+      // 1. Inside WhatsApp Web: the recent chats and every unread one, their earlier messages loaded, in one call
+      let loadedAll = false;
       try {
-        for (const message of await this.loadedMessages(since, isAgentAccount(this.id))) {
+        const loaded = await this.loadedMessages(since, isAgentAccount(this.id));
+        loadedAll = loaded.loadedEarlier;
+        for (const message of loaded.messages) {
           if (message.fromMe) await this.recordOwn(message);
           else if (await this.recordInbound(message, "sync")) found += 1;
         }
@@ -463,8 +466,9 @@ export class WhatsAppAccount {
         problems.push(`loaded messages: ${errorText(error)}`);
         this.logError("reading the loaded messages failed:", error);
       }
-      // 2. Chats with unread messages, read one by one (older messages WhatsApp Web hasn't loaded)
-      try {
+      // 2. Only when that couldn't load earlier messages (another WhatsApp Web version): the unread chats one by one.
+      // whatsapp-web.js's chat list breaks on some WhatsApp Web versions (it threw "r"), so it's the fallback, not the rule
+      if (!loadedAll) try {
         const chats = await withTimeout(client.getChats(), 120_000, "to list the chats");
         for (const chat of chats) {
           const chatId = chat.id._serialized;
@@ -500,10 +504,14 @@ export class WhatsAppAccount {
     return (this.client as unknown as { pupPage?: { evaluate: <T, A>(fn: (arg: A) => T, arg: A) => Promise<T> } } | undefined)?.pupPage;
   }
 
-  /** Messages other people sent (and, with `own`, ours too), already loaded in WhatsApp Web, since `since` (seconds). */
-  private async loadedMessages(since: number, own = false): Promise<WhatsAppMessage[]> {
+  /**
+   * Messages other people sent (and, with `own`, ours too) since `since` (seconds), read inside WhatsApp Web:
+   * the 80 most recent direct chats and every unread one get their earlier messages loaded first.
+   * loadedEarlier: false when this WhatsApp Web can't load earlier messages (only what it had is returned).
+   */
+  private async loadedMessages(since: number, own = false): Promise<{ messages: WhatsAppMessage[]; loadedEarlier: boolean }> {
     const page = this.page;
-    if (!page) return [];
+    if (!page) return { messages: [], loadedEarlier: false };
     return withTimeout(
       page.evaluate(async ({ after, own, types }: { after: number; own: boolean; types: string[] }) => {
         // Runs inside WhatsApp Web
@@ -517,10 +525,10 @@ export class WhatsAppAccount {
           // Another WhatsApp Web version: only what's loaded already
         }
         if (loader?.loadEarlierMsgs) {
-          const chats = Chat.getModelsArray()
-            .filter((chat: any) => !chat.isGroup && /@(c\.us|lid)$/.test(String(chat.id?._serialized ?? "")) && (chat.t ?? 0) >= after)
-            .sort((a: any, b: any) => (b.t ?? 0) - (a.t ?? 0))
-            .slice(0, 80);
+          const direct = Chat.getModelsArray().filter((chat: any) => !chat.isGroup && /@(c\.us|lid)$/.test(String(chat.id?._serialized ?? "")) && (chat.t ?? 0) >= after);
+          const recent = [...direct].sort((a: any, b: any) => (b.t ?? 0) - (a.t ?? 0)).slice(0, 80);
+          const unread = direct.filter((chat: any) => (chat.unreadCount ?? 0) > 0 && !recent.includes(chat));
+          const chats = [...recent, ...unread];
           for (const chat of chats) {
             const oldest = chat.msgs?.getModelsArray?.()[0];
             if (oldest && oldest.t < after) continue;
@@ -531,7 +539,7 @@ export class WhatsAppAccount {
             }
           }
         }
-        return Msg.getModelsArray()
+        const messages = Msg.getModelsArray()
           .filter((msg: any) => msg.id && (own || !msg.id.fromMe) && msg.t >= after && types.includes(String(msg.type ?? "chat")))
           .map((msg: any) => ({
             from: String(msg.id.remote?._serialized ?? msg.from?._serialized ?? ""),
@@ -543,6 +551,7 @@ export class WhatsAppAccount {
             id: { _serialized: String(msg.id._serialized) },
             notifyName: msg.notifyName ? String(msg.notifyName) : undefined,
           }));
+        return { messages, loadedEarlier: Boolean(loader?.loadEarlierMsgs) };
       }, { after: since, own, types: MESSAGE_TYPES }),
       90_000,
       "to list the messages",

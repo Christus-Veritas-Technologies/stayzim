@@ -153,5 +153,28 @@ async function newChat() {
   check("the failure count resets", !(globalThis as { __stayzimAgentFailures?: Map<string, unknown> }).__stayzimAgentFailures?.has(`wa1|${chat.chatId}`));
 }
 
+// 4. Its own messages coming back (WhatsApp's "message sent" event): never answered, never taken for Kin's
+{
+  const { handleOwnMessage } = await import("../src/server/agent/commands");
+  const chat = await newChat();
+  await chat.write("Hi, Hardy House in Masvingo");
+  script = [reply("Thanks. Send me a few photos?")];
+  await handleChat("wa1", chat.chatId);
+  const ours = await prisma.outreachMessage.findFirstOrThrow({ where: { contactId: chat.contact.id }, orderBy: { createdAt: "desc" } });
+  const own = (whatsappMessageId: string, body: string) =>
+    handleOwnMessage({ account: "wa1", chatId: chat.chatId, phone: chat.contact.phone, body, whatsappMessageId, sentAt: new Date(), deleteForEveryone: async () => true });
+  await own(ours.whatsappMessageId!, ours.body);
+  const count = () => prisma.outreachMessage.count({ where: { contactId: chat.contact.id } });
+  check("its own reply coming back isn't recorded twice or taken for Kin's", (await count()) === 1 && !(await prisma.agentEvent.findFirst({ where: { contactId: chat.contact.id, kind: "kin_reply" } })));
+  chatBodies.length = 0;
+  await handleChat("wa1", chat.chatId);
+  check("and it doesn't answer it", chatBodies.length === 0);
+  // Kin types in the chat: part of the conversation, not something to answer
+  await own(`kin-${Math.random()}`, "Hi, Kin here. I'll call you shortly.");
+  check("Kin's message is recorded as ours", (await count()) === 2 && Boolean(await prisma.agentEvent.findFirst({ where: { contactId: chat.contact.id, kind: "kin_reply" } })));
+  await handleChat("wa1", chat.chatId);
+  check("and the agent doesn't answer on top of it", chatBodies.length === 0);
+}
+
 console.log(`\n${results.filter((result) => result.ok).length}/${results.length} passed`);
 process.exit(results.every((result) => result.ok) ? 0 : 1);
