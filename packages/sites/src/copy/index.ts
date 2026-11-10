@@ -8,6 +8,7 @@
  */
 import { HERO_LIMITS } from "../index";
 import type { LodgeKind, Setting } from "../content/facts";
+import { isNightly } from "../content/rates";
 import { canFill, fill, picker, type CopyVars } from "./fill";
 import { CANCELLATION, EXPERIENCES, FAQS, HOUSE_RULES, LINES, type Pool, type Slot } from "./lines";
 import { KIND_WORDS, NEUTRAL_KIND, NEUTRAL_WORDS, SETTING_WORDS } from "./words";
@@ -150,7 +151,8 @@ export type CopyLodge = {
   roomsHint: number | null;
   priceHint: number | null;
   copySeed: number;
-  rooms: { visible: boolean; price: number }[];
+  /** priceLabel: a rate that isn't a night (rates.ts), never a "from $X a night" */
+  rooms: { visible: boolean; price: number; priceLabel?: string | null }[];
 };
 
 /**
@@ -160,6 +162,7 @@ export type CopyLodge = {
  */
 export function copyForLodge(lodge: CopyLodge, fallback?: { headline: string; subline: string }) {
   const rooms = lodge.rooms.filter((room) => room.visible);
+  const nightly = rooms.filter(isNightly);
   return siteCopy(
     {
       slug: lodge.slug,
@@ -169,8 +172,10 @@ export function copyForLodge(lodge: CopyLodge, fallback?: { headline: string; su
       country: lodge.country,
       kind: lodge.kind,
       setting: lodge.setting,
-      roomCount: rooms.length || lodge.roomsHint,
-      priceFrom: rooms.length > 0 ? Math.min(...rooms.map((room) => room.price)) : lodge.priceHint,
+      // Rates (a short rest, an overnight) aren't rooms to count
+      roomCount: rooms.length > 0 ? nightly.length || null : lodge.roomsHint,
+      // Rooms priced by something other than a night (a short rest, a day rest) never make "from $X a night"
+      priceFrom: rooms.length > 0 ? (nightly.length > 0 ? Math.min(...nightly.map((room) => room.price)) : null) : lodge.priceHint,
       seed: lodge.copySeed,
     },
     fallback,

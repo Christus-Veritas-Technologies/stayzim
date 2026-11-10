@@ -128,6 +128,7 @@ export function sampleRooms(input: { slug: string; kind: LodgeKind | null; setti
       description: `A comfortable ${kind.room} with ${shape.beds}, made for ${shape.who}. Wake up to ${words.mornings}, and come back to a quiet room at the end of the day.`,
       beds: shape.beds,
       size: shape.size,
+      priceLabel: null,
       sample: true,
     };
   });
@@ -220,7 +221,8 @@ export function applySamples(site: LiveSite, input: SampleInput): LiveSite {
     guestInfo: !site.checkInFrom && !site.checkOutBy && site.houseRules.length === 0 && site.faq.length === 0 && !site.cancellationPolicy,
     reviews: input.pro && (!site.reviews || site.reviews.quotes.length === 0),
     journal: input.pro && site.journal.length === 0,
-    map: site.latitude === null && site.longitude === null && !site.mapsUrl,
+    // An address is enough for a real map (MapView finds it on Google Maps)
+    map: site.latitude === null && site.longitude === null && !site.mapsUrl && !site.address?.trim(),
   };
   const facts = { slug: site.slug, kind: site.kind, setting: site.setting, roomsHint: input.roomsHint, priceHint: input.priceHint };
   const gallery = samples.gallery ? [...site.gallery, ...sampleGallery(facts)].slice(0, 8) : site.gallery;

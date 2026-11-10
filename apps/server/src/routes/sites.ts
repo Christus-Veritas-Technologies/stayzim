@@ -63,8 +63,9 @@ const eventSchema = z.object({
 });
 
 /** Guests can send booking requests: the plan has the calendar, and there's a WhatsApp number and a room to book. */
-function requestMode(lodge: { plan: Plan; whatsapp: string | null; rooms: { visible: boolean }[] }) {
-  return bookingsEnabled(lodge.plan) && Boolean(lodge.whatsapp) && lodge.rooms.some((room) => room.visible);
+/** Requests need a room priced by the night (a short rest or a day rest is booked on WhatsApp) */
+function requestMode(lodge: { plan: Plan; whatsapp: string | null; rooms: { visible: boolean; priceLabel?: string | null }[] }) {
+  return bookingsEnabled(lodge.plan) && Boolean(lodge.whatsapp) && lodge.rooms.some((room) => room.visible && !room.priceLabel);
 }
 
 /** A lodge whose site is up and takes requests, or null (404, the same as an unknown site). */
@@ -101,7 +102,8 @@ async function bookableLodge(slug: string) {
       checkInFrom: true,
       checkOutBy: true,
       owner: { select: { name: true, email: true } },
-      rooms: { where: { visible: true }, orderBy: { position: "asc" }, select: { id: true, name: true, units: true, price: true, sleeps: true, visible: true } },
+      // Only rooms priced by the night take requests
+      rooms: { where: { visible: true, priceLabel: null }, orderBy: { position: "asc" }, select: { id: true, name: true, units: true, price: true, sleeps: true, visible: true } },
     },
   });
   if (!lodge || lodge.status === "SUSPENDED" || demoEnded(lodge, new Date()) || !requestMode(lodge)) return null;
@@ -148,7 +150,8 @@ export const sites = new Hono<{ Variables: AuthVariables }>()
         updatedAt: true,
         heroPhotoId: true,
         photos: { where: { roomId: null }, orderBy: { position: "asc" }, take: 12 },
-        rooms: { where: { visible: true }, select: { price: true } },
+        // Priced by the night: the directory says "From $X a night"
+        rooms: { where: { visible: true, priceLabel: null }, select: { price: true } },
       },
     });
     c.header("Cache-Control", "public, max-age=300");
@@ -198,12 +201,14 @@ export const sites = new Hono<{ Variables: AuthVariables }>()
       hero: { headline: full.heroHeadline?.trim() || copy.hero.headline, subline: full.heroSubline?.trim() || copy.hero.subline },
       description: full.description.trim() || welcomeDescription(copy),
       town: full.town,
+      address: full.address,
       region: full.region,
       country: full.country,
       kind: full.kind,
       setting: full.setting,
       copy,
       whatsapp: full.whatsapp,
+      whatsapp2: full.whatsapp2,
       phone: full.phone,
       email: full.email,
       mapsUrl: full.mapsUrl,
@@ -226,6 +231,7 @@ export const sites = new Hono<{ Variables: AuthVariables }>()
           description: room.description,
           beds: room.beds,
           size: room.size,
+          priceLabel: room.priceLabel,
           sample: false,
         })),
       gallery: full.gallery.map(({ url, srcSet, width, height, caption }) => ({ url, srcSet, width, height, caption })),

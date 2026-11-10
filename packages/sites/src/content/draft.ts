@@ -64,7 +64,7 @@ export function applyDraft(site: LiveSite, draft: SiteDraft, base: DraftBase): L
           roomsHint: pick("roomsHint", base.roomsHint),
           priceHint: pick("priceHint", base.priceHint),
           copySeed: draft.copySeed ?? base.copySeed,
-          rooms: site.rooms.filter((room) => !room.sample).map((room) => ({ visible: true, price: room.price })),
+          rooms: site.rooms.filter((room) => !room.sample).map((room) => ({ visible: true, price: room.price, priceLabel: room.priceLabel })),
         },
         template ? heroText(template, { name, place: town, heroHeadline: null, heroSubline: null }) : undefined,
       )

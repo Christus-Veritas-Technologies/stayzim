@@ -33,6 +33,8 @@ model Lodge {
   description  String  @default("")
   /// e.g. "Nyanga"
   town         String?
+  /// The street address guests come to, e.g. "1 Faurea Crescent, Msasa Park, Harare". Shown on the site.
+  address      String?
   /// e.g. "Manicaland"
   region       String?
   country      String  @default("Zimbabwe")
@@ -51,6 +53,8 @@ model Lodge {
 
   /// Digits only with country code, e.g. 263771234567. Every Book on WhatsApp button opens this chat.
   whatsapp String?
+  /// A second WhatsApp number, digits only, shown beside the first in the contact section (the Book buttons use the first)
+  whatsapp2 String? @map("whatsapp_2")
   /// Digits only with country code, for guests who prefer to call
   phone    String?
   email    String?
@@ -149,8 +153,11 @@ model Room {
   lodgeId     String    @map("lodge_id")
   lodge       Lodge     @relation(fields: [lodgeId], references: [id], onDelete: Cascade)
   name        String
-  /// USD per night, whole dollars
+  /// USD, whole dollars: a night, or what `priceLabel` says
   price       Int
+  /// What the price is for when it isn't a night: "3 hours", "9am to 4pm", "6pm to 9am" (a short rest,
+  /// a day rest, an overnight). Null: a night. Such a rate is never booked by the night.
+  priceLabel  String?   @map("price_label")
   sleeps      Int       @default(2)
   /// Keys from the amenity list in @stayzim/sites, e.g. ["wifi", "braai"]
   amenities   String[]  @default([])

@@ -56,6 +56,8 @@ export function sampleSite(input: SampleSiteInput): LiveSite {
     copy,
     // A placeholder number: Book buttons need one to show, and example rooms never open it
     whatsapp: "263770000000",
+    whatsapp2: null,
+    address: null,
     phone: null,
     email: null,
     mapsUrl: null,

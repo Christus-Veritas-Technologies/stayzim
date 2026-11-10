@@ -46,6 +46,8 @@ export type SiteRoom = {
   beds: string | null;
   /** Square metres */
   size: number | null;
+  /** What the price is for when it isn't a night ("3 hours", "9am to 4pm"); null: a night (rates.ts) */
+  priceLabel: string | null;
   /** An example room on a demo site (never bookable; replaced by the owner's first room) */
   sample: boolean;
 };
@@ -64,6 +66,8 @@ export type LiveSite = {
   /** The owner's description, or a generated welcome until they write one */
   description: string;
   town: string | null;
+  /** The street address guests come to */
+  address: string | null;
   region: string | null;
   country: string;
   kind: LodgeKind | null;
@@ -71,6 +75,8 @@ export type LiveSite = {
   /** Generated text for every section (../copy), written from the lodge's facts */
   copy: SiteCopy;
   whatsapp: string | null;
+  /** A second WhatsApp number for the contact section (Book buttons use `whatsapp`) */
+  whatsapp2: string | null;
   phone: string | null;
   email: string | null;
   mapsUrl: string | null;
@@ -177,6 +183,8 @@ export type DashboardRoom = {
   description: string | null;
   beds: string | null;
   size: number | null;
+  /** What the price is for when it isn't a night; null: a night */
+  priceLabel: string | null;
   /** How many of this room the lodge has, 1 or more */
   units: number;
   /** false: hidden from the site */
@@ -196,6 +204,7 @@ export type DashboardLodge = {
   name: string;
   description: string;
   town: string | null;
+  address: string | null;
   region: string | null;
   country: string;
   /** What /create asked about the place (facts.ts): the copy is written from these */
@@ -207,6 +216,7 @@ export type DashboardLodge = {
   /** The generated text the site shows wherever the owner hasn't written their own */
   copy: SiteCopy;
   whatsapp: string | null;
+  whatsapp2: string | null;
   phone: string | null;
   email: string | null;
   mapsUrl: string | null;

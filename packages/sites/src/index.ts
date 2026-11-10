@@ -212,6 +212,7 @@ export * from "./content/guest-info";
 export * from "./content/journal";
 export * from "./content/facts";
 export * from "./content/pages";
+export * from "./content/rates";
 export { applyDraft, type DraftBase, type SiteDraft } from "./content/draft";
 export type * from "./content/types";
 export { copyForLodge, copyVars, siteCopy, welcomeDescription, type CopyFacts, type CopyLodge, type SiteCopy } from "./copy";

@@ -8,6 +8,8 @@ export const LODGE_LIMITS = {
   name: 80,
   description: 300,
   town: 60,
+  /** The street address on the site */
+  address: 120,
   region: 60,
   mapsUrl: 500,
 } as const;
@@ -19,6 +21,8 @@ export const ROOM_LIMITS = {
   unitsMax: 50,
   description: 400,
   beds: 60,
+  /** What a price is for when it isn't a night: "3 hours", "9am to 4pm" */
+  priceLabel: 30,
   sizeMin: 5,
   sizeMax: 1000,
 } as const;

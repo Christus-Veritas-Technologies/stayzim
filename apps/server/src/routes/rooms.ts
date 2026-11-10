@@ -55,6 +55,7 @@ export const rooms = new Hono<{ Variables: LodgeVariables }>()
           description: source.description,
           beds: source.beds,
           size: source.size,
+          priceLabel: source.priceLabel,
           units: source.units,
           visible: false,
           position: source.position + 1,

@@ -23,6 +23,8 @@ const site: LiveSite = {
   setting: "lake",
   copy,
   whatsapp: "263771234567",
+  whatsapp2: null,
+  address: null,
   phone: null,
   email: null,
   mapsUrl: null,
@@ -68,7 +70,7 @@ describe("example content", () => {
   });
 
   test("the owner's first room replaces the example rooms", () => {
-    const room = { id: "r1", name: "River Suite", price: 120, sleeps: 2, amenities: [], photos: [], description: null, beds: null, size: null, sample: false };
+    const room = { id: "r1", name: "River Suite", price: 120, sleeps: 2, amenities: [], photos: [], description: null, beds: null, size: null, priceLabel: null, sample: false };
     const shown = applySamples({ ...site, rooms: [room] }, input);
     expect(shown.samples.rooms).toBe(false);
     expect(shown.rooms).toEqual([room]);

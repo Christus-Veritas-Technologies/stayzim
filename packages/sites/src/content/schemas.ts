@@ -104,8 +104,10 @@ export const lodgePatch = z
     name: z.string().trim().min(LODGE_LIMITS.nameMin, "Add your lodge name").max(LODGE_LIMITS.name, `Keep the name under ${LODGE_LIMITS.name} characters`),
     description: z.string().trim().max(LODGE_LIMITS.description, `Keep the description under ${LODGE_LIMITS.description} characters`),
     town: optionalText(LODGE_LIMITS.town, "Town"),
+    address: optionalText(LODGE_LIMITS.address, "The address"),
     region: optionalText(LODGE_LIMITS.region, "Province"),
     whatsapp: phoneNumber("WhatsApp"),
+    whatsapp2: phoneNumber("second WhatsApp"),
     phone: phoneNumber("phone"),
     email,
     mapsUrl: optionalText(LODGE_LIMITS.mapsUrl, "The map link"),
@@ -138,6 +140,8 @@ const roomFields = z.object({
   visible: z.boolean(),
   description: optionalText(ROOM_LIMITS.description, "The description"),
   beds: optionalText(ROOM_LIMITS.beds, "The beds"),
+  /** What the price is for when it isn't a night ("3 hours", "9am to 4pm"); null: a night */
+  priceLabel: optionalText(ROOM_LIMITS.priceLabel, "What the price is for"),
   size: z
     .number()
     .int("Use whole square metres")
@@ -153,6 +157,7 @@ export const roomInput = roomFields.extend({
   visible: roomFields.shape.visible.default(true),
   description: roomFields.shape.description.default(null),
   beds: roomFields.shape.beds.default(null),
+  priceLabel: roomFields.shape.priceLabel.default(null),
   size: roomFields.shape.size.default(null),
 });
 
@@ -248,6 +253,7 @@ const siteRoom = z.object({
   description: z.string().nullable().default(null),
   beds: z.string().nullable().default(null),
   size: z.number().nullable().default(null),
+  priceLabel: z.string().nullable().default(null),
   sample: z.boolean().default(false),
 });
 
@@ -321,12 +327,14 @@ const liveSite = z.object({
   hero: z.object({ headline: z.string(), subline: z.string() }),
   description: z.string().default(""),
   town: z.string().nullable().default(null),
+  address: z.string().nullable().default(null),
   region: z.string().nullable().default(null),
   country: z.string().default(DEFAULT_COUNTRY),
   kind: z.enum(LODGE_KIND_KEYS).nullable().catch(null).default(null),
   setting: z.enum(SETTING_KEYS).nullable().catch(null).default(null),
   copy: siteCopySchema.default(() => copyShape.parse({})),
   whatsapp: z.string().nullable().default(null),
+  whatsapp2: z.string().nullable().default(null),
   phone: z.string().nullable().default(null),
   email: z.string().nullable().default(null),
   mapsUrl: z.string().nullable().default(null),
