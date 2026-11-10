@@ -80,7 +80,9 @@ export type ConnectionState =
   | "authenticated"
   | "ready"
   | "disconnected"
-  | "failed";
+  | "failed"
+  /** Logged out from the WhatsApp page: its login is forgotten, and it stays off until Link again */
+  | "stopped";
 
 export type WhatsAppStatus = {
   account: string;
@@ -214,6 +216,12 @@ export class WhatsAppAccount {
   private progressAt = Date.now();
   /** Starts that failed in a row, for the wait before the next */
   private failures = 0;
+  /**
+   * Bumped by every restart and log out: a start or restart from before
+   * (hung, then cancelled from the WhatsApp page) sees it changed and stops
+   * there, without touching the new browser or the status.
+   */
+  private generation = 0;
 
   constructor(readonly id: string) {
     this.status = {
@@ -267,11 +275,14 @@ export class WhatsAppAccount {
 
   async start(executablePath: string | undefined, attempt = 1): Promise<void> {
     const status = this.status;
+    const generation = this.generation;
     this.executablePath = executablePath;
     this.progressAt = Date.now();
     status.retryAt = undefined;
 
     const lastSavedAt = await store.lastSavedAt(this.sessionName).catch(() => null);
+    // Cancelled while it looked (restarted or logged out from the WhatsApp page)
+    if (this.generation !== generation) return;
     status.lastSavedAt = lastSavedAt?.toISOString();
     this.log(lastSavedAt ? `restoring session saved ${status.lastSavedAt}` : "no saved session — expect a QR code");
 
@@ -397,7 +408,9 @@ export class WhatsAppAccount {
       status.lastError = error instanceof Error ? error.message : String(error);
       this.logError(`initialize failed (attempt ${attempt} of ${START_ATTEMPTS}):`, error);
       await client.destroy().catch(() => {});
-      this.client = undefined;
+      // Cancelled meanwhile: the new browser and its status are left alone
+      if (this.generation !== generation) return;
+      if (this.client === client) this.client = undefined;
       // WhatsApp Web often reloads itself while it starts ("Execution context was
       // destroyed"); a fresh browser a little later usually gets through
       if (attempt < START_ATTEMPTS) {
@@ -710,28 +723,44 @@ export class WhatsAppAccount {
     return this.restarting;
   }
 
-  /** From the WhatsApp page: started again now (from the saved login), its failures forgotten. */
+  /** From the WhatsApp page: started again now from the saved login, even mid-start (a hung start is cancelled). */
   restartNow() {
     this.failures = 0;
-    void this.restart("from the WhatsApp page");
+    void this.restart("from the WhatsApp page", true);
   }
 
   /**
-   * From the WhatsApp page: the saved login is forgotten and it starts with a QR
-   * to scan, for a login that won't restore.
+   * From the WhatsApp page: quits this number. Its browser is closed (even
+   * mid-start), it's logged out of WhatsApp when it's connected (so the phone's
+   * Linked devices drops it), and its saved login is deleted. It stays off,
+   * never restarted by itself, until Link again.
    */
-  async relink() {
+  async logOut() {
+    this.generation += 1;
+    this.restarting = false;
     this.failures = 0;
+    this.log("logging out from the WhatsApp page");
+    const client = this.client;
+    if (client && this.isReady) await withTimeout(client.logout(), CHECK_TIMEOUT_MS, "to log out").catch((error) => this.logError("logout failed (deleting the login anyway):", error));
     await this.stop();
     await store.delete({ session: this.sessionName }).catch((error) => this.logError("could not delete stored session:", error));
-    this.status.lastSavedAt = undefined;
-    void this.restart("to link again with a QR code");
+    Object.assign(this.status, { state: "stopped", lastError: undefined, retryAt: undefined, lastSavedAt: undefined, qrDataUrl: undefined, number: undefined, pushName: undefined, lastCheckedAt: undefined, lastSyncError: undefined });
   }
 
-  /** Closes this number's browser and starts it again from the saved session. One at a time. */
-  async restart(why: string): Promise<void> {
-    if (this.restarting || !env.WHATSAPP_ENABLED) return;
+  /** From the WhatsApp page: logged out (as above), then started with a QR code to scan. */
+  async relink() {
+    await this.logOut();
+    void this.restart("to link again with a QR code", true);
+  }
+
+  /**
+   * Closes this number's browser and starts it again from the saved session.
+   * One at a time, unless `force` (the WhatsApp page): that cancels one in progress.
+   */
+  async restart(why: string, force = false): Promise<void> {
+    if (!env.WHATSAPP_ENABLED || (this.restarting && !force)) return;
     this.restarting = true;
+    const generation = ++this.generation;
     this.log(`restarting ${why}`);
     try {
       await this.stop();
@@ -740,6 +769,8 @@ export class WhatsAppAccount {
       // A start that hangs doesn't hold the number forever
       await withTimeout(this.start(this.executablePath ?? resolveBrowser()), STUCK_AFTER_MS, "to start");
     } catch (error) {
+      // Cancelled meanwhile (restarted or logged out again): nothing more to do here
+      if (this.generation !== generation) return;
       if (this.status.state === "ready" || this.status.state === "qr") {
         // It got through while it was being waited on (connected, or a QR to scan): it stays
         this.log(`start was slow (${errorText(error)}) but got through: ${this.status.state}`);
@@ -749,7 +780,7 @@ export class WhatsAppAccount {
         this.failed(errorText(error));
       }
     } finally {
-      this.restarting = false;
+      if (this.generation === generation) this.restarting = false;
     }
   }
 

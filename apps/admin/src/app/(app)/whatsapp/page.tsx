@@ -5,7 +5,7 @@ import { Button } from "@stayzim/ui/components/button";
 import { Card } from "@stayzim/ui/components/card";
 import { Progress } from "@stayzim/ui/components/progress";
 import { Tabs, TabsList, TabsTab } from "@stayzim/ui/components/tabs";
-import { QrCode, RotateCcw, Smartphone } from "lucide-react";
+import { LogOut, QrCode, RotateCcw, Smartphone } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -17,7 +17,7 @@ import { outreachApi } from "@/lib/api";
 import { formatPhone } from "@/lib/labels";
 import { useApi } from "@/lib/use-api";
 
-type ConnectionState = "disabled" | "starting" | "qr" | "authenticated" | "ready" | "disconnected" | "failed";
+type ConnectionState = "disabled" | "starting" | "qr" | "authenticated" | "ready" | "disconnected" | "failed" | "stopped";
 
 type NumberStatus = {
   account: string;
@@ -46,13 +46,15 @@ const STATES: Record<ConnectionState, { label: string; badge: "neutral" | "brand
   ready: { label: "Connected", badge: "success" },
   disconnected: { label: "Disconnected", badge: "warning" },
   failed: { label: "Failed", badge: "danger" },
+  stopped: { label: "Logged out", badge: "neutral" },
 };
 
 function NumberCard({ status, onChanged }: { status: NumberStatus; onChanged: () => void }) {
   const state = STATES[status.state];
   const usage = status.usage;
   const [busy, setBusy] = useState(false);
-  const canRestart = status.state === "failed" || status.state === "disconnected" || status.state === "starting" || status.state === "authenticated";
+  // Restart and Link again also cancel a start that's hung
+  const canRestart = ["failed", "disconnected", "starting", "authenticated", "qr"].includes(status.state);
 
   async function restart(relink: boolean) {
     if (relink && !window.confirm(`Forget ${status.account}'s saved login and show a new QR code to scan?`)) return;
@@ -61,6 +63,16 @@ function NumberCard({ status, onChanged }: { status: NumberStatus; onChanged: ()
     setBusy(false);
     if (result.error !== undefined) return toast.error(result.error);
     toast.success(relink ? "Starting with a new QR code: it shows here in a moment" : "Starting again from its saved login");
+    onChanged();
+  }
+
+  async function logOut() {
+    if (!window.confirm(`Log ${status.account} out and delete its saved login? It stays off until you press Link again and scan a new QR code.`)) return;
+    setBusy(true);
+    const result = await outreachApi(`/whatsapp/${status.account}/logout`, { method: "POST" });
+    setBusy(false);
+    if (result.error !== undefined) return toast.error(result.error);
+    toast.success(`${status.account} is logged out and its login deleted`);
     onChanged();
   }
 
@@ -110,19 +122,29 @@ function NumberCard({ status, onChanged }: { status: NumberStatus; onChanged: ()
           {status.lastSyncError ? <p className="text-[12px] text-warning">Reading the chats: {status.lastSyncError}</p> : null}
         </>
       ) : null}
-      {canRestart ? (
+      {status.state !== "disabled" ? (
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant="outline" disabled={busy} onClick={() => restart(false)}>
-            <RotateCcw />
-            Restart
-          </Button>
-          <Button size="sm" variant="ghost" disabled={busy} onClick={() => restart(true)}>
-            <QrCode />
-            Link again
-          </Button>
+          {canRestart ? (
+            <Button size="sm" variant="outline" disabled={busy} onClick={() => restart(false)}>
+              <RotateCcw />
+              Restart
+            </Button>
+          ) : null}
+          {canRestart || status.state === "stopped" ? (
+            <Button size="sm" variant={status.state === "stopped" ? "outline" : "ghost"} disabled={busy} onClick={() => restart(true)}>
+              <QrCode />
+              Link again
+            </Button>
+          ) : null}
+          {status.state !== "stopped" ? (
+            <Button size="sm" variant="ghost" disabled={busy} onClick={logOut} className="text-danger hover:text-danger">
+              <LogOut />
+              Log out
+            </Button>
+          ) : null}
         </div>
       ) : null}
-      <p className="text-[12px] text-muted-2">{status.lastSavedAt ? `Login saved ${formatShortWhen(status.lastSavedAt)}: a redeploy won't need a new scan` : "Login not saved yet: it saves about a minute after connecting"}</p>
+      <p className="text-[12px] text-muted-2">{status.state === "stopped" ? "Logged out: press Link again to scan a new QR code" : status.lastSavedAt ? `Login saved ${formatShortWhen(status.lastSavedAt)}: a redeploy won't need a new scan` : "Login not saved yet: it saves about a minute after connecting"}</p>
     </Card>
   );
 }
@@ -164,7 +186,7 @@ function Log({ kind }: { kind: "messages" | "replies" }) {
 export default function WhatsAppPage() {
   const { data, error, loading, reload } = useApi<NumberStatus[]>("/whatsapp/status", { outreach: true });
   const [tab, setTab] = useState<"messages" | "replies">("replies");
-  const waiting = data?.some((status) => status.state !== "ready" && status.state !== "disabled" && (status.state !== "failed" || Boolean(status.retryAt)));
+  const waiting = data?.some((status) => status.state !== "ready" && status.state !== "disabled" && status.state !== "stopped" && (status.state !== "failed" || Boolean(status.retryAt)));
 
   // Every 5 seconds while a number is starting or waiting for its QR scan
   useEffect(() => {

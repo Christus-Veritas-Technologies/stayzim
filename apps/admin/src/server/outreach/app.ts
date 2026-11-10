@@ -47,14 +47,20 @@ export const outreachApp = new Hono()
     const usage = await getAllAccountUsage();
     return c.json(getStatuses().map((status) => ({ ...status, hasQr: Boolean(status.qrDataUrl), usage: usage.find((u) => u.account === status.account) })));
   })
-  // Start a number again now (from its saved login), or forget the login and show a QR to scan
+  // Start a number again now (from its saved login), or forget the login and show a QR to scan; either cancels a start in progress
   .post("/whatsapp/:account/restart", async (c) => {
     const account = getAccount(c.req.param("account"));
     if (!account) throw new HTTPException(404, { message: "No such number" });
-    if (account.isRestarting) throw new HTTPException(409, { message: "It's already starting: give it a few minutes" });
     const body = (await c.req.json().catch(() => ({}))) as { relink?: boolean };
     if (body.relink) await account.relink();
     else account.restartNow();
+    return c.json({ ok: true });
+  })
+  // Quit a number: its browser closed, logged out, its saved login deleted; it stays off until Link again
+  .post("/whatsapp/:account/logout", async (c) => {
+    const account = getAccount(c.req.param("account"));
+    if (!account) throw new HTTPException(404, { message: "No such number" });
+    await account.logOut();
     return c.json({ ok: true });
   })
   .route("/contacts", contacts)
