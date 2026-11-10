@@ -28,6 +28,7 @@ import {
   sleepsRange,
   SocialLinks,
   StayDetails,
+  unitWord,
   WhatsAppFab,
 } from "@/components/site/parts";
 import { QuoteRotator } from "@/components/site/quote-rotator";
@@ -73,7 +74,7 @@ export function CanopyTemplate({ site }: { site: LiveSite }) {
   ].filter((link) => link !== null);
   const glance = [
     place ? { label: "Location", value: place } : null,
-    stats ? { label: "Rooms", value: String(stats.count) } : null,
+    stats ? { label: stats.unit === "room" ? "Rooms" : "Options", value: String(stats.count) } : null,
     stats ? { label: "Sleeps", value: `${sleepsRange(stats).replace("–", " to ")} per room` } : null,
     stats ? { label: "From", value: `${formatPrice(stats.from)}${stats.perNight ? " per night" : ""}` } : null,
     site.checkInFrom ? { label: "Check-in", value: `From ${site.checkInFrom}` } : null,
@@ -134,7 +135,7 @@ export function CanopyTemplate({ site }: { site: LiveSite }) {
             {stats ? (
               <dl className="mt-4 grid grid-cols-3 gap-4 border-t border-black/10 pt-8">
                 {[
-                  { value: String(stats.count), label: stats.count === 1 ? "Room" : "Rooms" },
+                  { value: String(stats.count), label: unitWord(stats, true) },
                   { value: sleepsRange(stats), label: "Guests per room" },
                   { value: formatPrice(stats.from), label: stats.perNight ? "From, per night" : "From" },
                 ].map((stat) => (
@@ -233,7 +234,7 @@ export function CanopyTemplate({ site }: { site: LiveSite }) {
               }
             >
               {site.rooms.map((room) => {
-                const roomBook = bookingUrl(site, room.name);
+                const roomBook = bookingUrl(site, room);
                 return (
                   <article key={room.id} className="flex h-full flex-col gap-3">
                     <RoomPhotos photos={room.photos} name={room.name} theme={site.themeColor} sample={room.sample} className="aspect-[4/5]" sizes="(min-width: 1024px) 280px, (min-width: 640px) 50vw, 82vw" />

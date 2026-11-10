@@ -167,7 +167,7 @@ export const LINES = {
   /** A line under the rooms heading. */
   roomsIntro: {
     any: [
-      "Prices are per room, per night. Pick the one that suits you and book direct.",
+      "Prices are per room, {perNight}. Pick the one that suits you and book direct.",
       "{roomCount}, each one clean, comfortable and ready for you.",
       "From {priceFrom} a night. Tap a room to see what's inside and book.",
       "Every room is booked direct with us: no booking fees.",
@@ -175,12 +175,12 @@ export const LINES = {
       "Simple, comfortable {rooms}. See the prices and book in a minute.",
     ],
     setting: {
-      mountains: ["Warm {rooms} for cool mountain nights. Prices are per night."],
-      lake: ["Comfortable {rooms} close to the water. Prices are per night."],
-      bush: ["Comfortable {rooms} with the bush all around. Prices are per night."],
-      river: ["Quiet {rooms} near the river. Prices are per night."],
-      city: ["Quiet {rooms} in the heart of {town}. Prices are per night."],
-      farm: ["Comfortable {rooms} with country views. Prices are per night."],
+      mountains: ["Warm {rooms} for cool mountain nights. Prices are {perNight}."],
+      lake: ["Comfortable {rooms} close to the water. Prices are {perNight}."],
+      bush: ["Comfortable {rooms} with the bush all around. Prices are {perNight}."],
+      river: ["Quiet {rooms} near the river. Prices are {perNight}."],
+      city: ["Quiet {rooms} in the heart of {town}. Prices are {perNight}."],
+      farm: ["Comfortable {rooms} with country views. Prices are {perNight}."],
     },
   },
 

@@ -137,6 +137,12 @@ export function sleepsRange(stats: NonNullable<ReturnType<typeof roomStats>>) {
   return stats.fewest === stats.most ? `${stats.most}` : `${stats.fewest}–${stats.most}`;
 }
 
+/** "room"/"rooms", or "option"/"options" for a lodge whose prices are all rates (a short rest, a day rest) */
+export function unitWord(stats: NonNullable<ReturnType<typeof roomStats>>, capital = false) {
+  const word = `${stats.unit}${stats.count === 1 ? "" : "s"}`;
+  return capital ? word.charAt(0).toUpperCase() + word.slice(1) : word;
+}
+
 type Tone = "light" | "dark";
 
 const MUTED: Record<Tone, string> = { light: "text-[#5D6964]", dark: "text-white/70" };

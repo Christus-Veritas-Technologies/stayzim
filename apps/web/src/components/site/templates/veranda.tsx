@@ -20,6 +20,7 @@ import {
   siteBasics,
   SocialLinks,
   StayDetails,
+  unitWord,
   WhatsAppFab,
 } from "@/components/site/parts";
 import { RoomFilters } from "@/components/site/room-filters";
@@ -108,7 +109,7 @@ export function VerandaTemplate({ site }: { site: LiveSite }) {
                   {stats ? (
                     <span className="flex flex-col py-1">
                       <span className="text-[13px] text-[var(--muted)]">
-                        {stats.count} {stats.count === 1 ? "room" : "rooms"}
+                        {stats.count} {unitWord(stats)}
                       </span>
                       <span className="text-[16px] font-bold whitespace-nowrap sm:text-[18px]">From {formatPrice(stats.from)}{stats.perNight ? " a night" : ""}</span>
                     </span>
@@ -143,7 +144,7 @@ export function VerandaTemplate({ site }: { site: LiveSite }) {
               {stats ? (
                 <ul className="mt-2 flex flex-wrap justify-center gap-2 text-[14.5px] font-semibold">
                   <li className={cn("rounded-full px-4 py-2.5", TINT)}>
-                    {stats.count} {stats.count === 1 ? "room" : "rooms"}
+                    {stats.count} {unitWord(stats)}
                   </li>
                   <li className={cn("rounded-full px-4 py-2.5", TINT)}>Sleeps up to {stats.most}</li>
                   {amenities.slice(0, 2).map((entry) => (
@@ -169,7 +170,7 @@ export function VerandaTemplate({ site }: { site: LiveSite }) {
               <RoomFilters rooms={filterRooms(site.rooms)} control="rounded-full">
                 <ul className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
                   {site.rooms.map((room) => {
-                    const roomBook = bookingUrl(site, room.name);
+                    const roomBook = bookingUrl(site, room);
                     const facts = [...roomFacts(room), ...room.amenities.slice(0, 4).map((key) => AMENITIES[key]?.label)].filter(Boolean);
                     return (
                       <li key={room.id} data-room-id={room.id} className="flex flex-col gap-3">

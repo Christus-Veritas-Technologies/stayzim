@@ -96,11 +96,16 @@ export function roomStats(rooms: (Pick<SiteRoom, "price" | "sleeps"> & { priceLa
   // "From $X a night" from the rooms priced by the night; a lodge of short rests and day rests says "From $X"
   const nightly = rooms.filter(isNightly);
   return {
-    count: rooms.length,
+    /** Rooms priced by the night; a lodge of rates only counts its rates ("4 options") */
+    count: nightly.length || rooms.length,
+    /** What `count` counts: "room", or "option" for a lodge of rates only */
+    unit: nightly.length > 0 ? ("room" as const) : ("option" as const),
     fewest: Math.min(...sleeps),
     most: Math.max(...sleeps),
     from: Math.min(...(nightly.length > 0 ? nightly : rooms).map((room) => room.price)),
     perNight: nightly.length > 0,
+    /** Every price is a night's: "Prices are per room, per night" holds */
+    allNightly: nightly.length === rooms.length,
   };
 }
 

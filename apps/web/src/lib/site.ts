@@ -61,9 +61,11 @@ export function withTemplate(site: LiveSite, template: Template): LiveSite {
 }
 
 /** wa.me link to the lodge, with the room (or a general stay) typed in. */
-export function bookingUrl(site: LiveSite, roomName?: string) {
+export function bookingUrl(site: LiveSite, room?: string | { name: string; priceLabel?: string | null }) {
   if (!site.whatsapp) return null;
-  const rate = roomName ? site.rooms.find((room) => room.name === roomName)?.priceLabel?.trim() : undefined;
+  const roomName = typeof room === "string" ? room : room?.name;
+  // A rate (a short rest, an overnight with set hours) asks for the day and time, not dates
+  const rate = typeof room === "object" ? room.priceLabel?.trim() : undefined;
   const text = roomName
     ? rate
       ? `Hi ${site.name}, I'd like to book the ${roomName} (${rate}). The day and time: `

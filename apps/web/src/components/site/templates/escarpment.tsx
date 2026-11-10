@@ -60,7 +60,7 @@ export function EscarpmentTemplate({ site }: { site: LiveSite }) {
   const spreads = site.rooms.slice(0, 2);
   const others = site.rooms.slice(2);
   const tiles = [
-    { href: pageOr(site, "rooms", "#rooms"), label: "Stay", line: stats ? `${countWords(stats.count, "room")}, one long view.` : "Rooms with a view.", photo: site.rooms[0]?.photos[0] ?? site.gallery[0] },
+    { href: pageOr(site, "rooms", "#rooms"), label: "Stay", line: stats ? `${countWords(stats.count, stats.unit)}, one long view.` : "Rooms with a view.", photo: site.rooms[0]?.photos[0] ?? site.gallery[0] },
     site.gallery.length > 0 ? { href: pageOr(site, "gallery", "#gallery"), label: "See", line: "The house, room by room.", photo: site.gallery[0] ?? site.gallery[1] } : null,
     site.journal.length > 0
       ? { href: journalUrl(site), label: "Read", line: `Notes from ${site.town ?? "the mountains"}.`, photo: site.journal[0]?.cover ?? site.gallery[2] }
@@ -185,7 +185,7 @@ export function EscarpmentTemplate({ site }: { site: LiveSite }) {
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-end">
             <div className="flex flex-col gap-4">
               <Eyebrow className="text-[#6B6458]">Stay</Eyebrow>
-              <Heading>{stats ? countWords(stats.count, "room") : "Rooms"}</Heading>
+              <Heading>{stats ? countWords(stats.count, stats.unit) : "Rooms"}</Heading>
             </div>
             {intro.body || site.description ? (
               <p className="text-[17px] leading-7 text-[#6B6458]">{intro.body ?? site.description}</p>
@@ -193,7 +193,7 @@ export function EscarpmentTemplate({ site }: { site: LiveSite }) {
           </div>
           {site.rooms.length === 0 ? <p className="text-[#6B6458]">{roomsEmpty(site)}</p> : null}
           {spreads.map((room, position) => {
-            const roomBook = bookingUrl(site, room.name);
+            const roomBook = bookingUrl(site, room);
             return (
               <Reveal key={room.id} className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:gap-16">
                 <RoomPhotos
@@ -234,7 +234,7 @@ export function EscarpmentTemplate({ site }: { site: LiveSite }) {
           {others.length > 0 ? (
             <ul className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
               {others.map((room, position) => {
-                const roomBook = bookingUrl(site, room.name);
+                const roomBook = bookingUrl(site, room);
                 return (
                   <li key={room.id}>
                     <Reveal delay={position * 0.06} className="flex items-center gap-4 rounded-[14px] bg-[#FAF6EE] p-3.5">

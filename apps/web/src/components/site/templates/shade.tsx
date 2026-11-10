@@ -24,6 +24,7 @@ import {
   sleepsRange,
   SocialLinks,
   StayDetails,
+  unitWord,
   WhatsAppFab,
 } from "@/components/site/parts";
 import { RoomFilters } from "@/components/site/room-filters";
@@ -166,7 +167,7 @@ export function ShadeTemplate({ site }: { site: LiveSite }) {
               <h2 className={cn(SERIF, "mt-3 text-[44px] leading-[48px] sm:text-[56px] sm:leading-[60px]")}>Rooms</h2>
               {stats ? (
                 <p className="mt-5 text-[16px] text-white/80">
-                  {stats.count} {stats.count === 1 ? "room" : "rooms"}, sleeping {sleepsRange(stats)}. Prices are per room, per night.
+                  {stats.count} {unitWord(stats)}, sleeping {sleepsRange(stats)}.{stats.allNightly ? " Prices are per room, per night." : ""}
                 </p>
               ) : null}
               {site.rooms.length === 0 ? (
@@ -175,7 +176,7 @@ export function ShadeTemplate({ site }: { site: LiveSite }) {
                 <RoomFilters rooms={filterRooms(site.rooms)} control="rounded-lg">
                   <ul className="mt-6 flex flex-col divide-y divide-white/15 border-t border-white/15">
                     {site.rooms.map((room) => {
-                      const roomBook = bookingUrl(site, room.name);
+                      const roomBook = bookingUrl(site, room);
                       const facts = [`Sleeps ${room.sleeps}`, room.beds, amenityLine(room.amenities, 3)].filter(Boolean).join(" · ");
                       return (
                         <li key={room.id} data-room-id={room.id} className="flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between sm:gap-6">

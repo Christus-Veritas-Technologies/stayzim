@@ -187,7 +187,7 @@ export function RondavelTemplate({ site }: { site: LiveSite }) {
               <RoomFilters rooms={filterRooms(site.rooms)} control="rounded-none">
                 <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   {site.rooms.map((room) => {
-                    const roomBook = bookingUrl(site, room.name);
+                    const roomBook = bookingUrl(site, room);
                     return (
                       <li key={room.id} data-room-id={room.id} className="flex flex-col">
                         <div className="relative text-white">

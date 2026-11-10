@@ -52,6 +52,12 @@ describe("bookingUrl", () => {
     expect(url.searchParams.get("text")).toBe("Hi Mist Valley Lodge, I'd like to book the River Suite. My dates are: ");
   });
 
+  test("a rate asks for the day and time, with its own hours (two rates can share a name)", () => {
+    const text = (priceLabel: string) => new URL(bookingUrl(site, { name: "Overnight", priceLabel })!).searchParams.get("text");
+    expect(text("6pm to 9am")).toBe("Hi Mist Valley Lodge, I'd like to book the Overnight (6pm to 9am). The day and time: ");
+    expect(text("8pm to 9am")).toBe("Hi Mist Valley Lodge, I'd like to book the Overnight (8pm to 9am). The day and time: ");
+  });
+
   test("is null without a WhatsApp number, so templates hide the button", () => {
     expect(bookingUrl({ ...site, whatsapp: null })).toBeNull();
   });

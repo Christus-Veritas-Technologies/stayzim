@@ -71,7 +71,7 @@ describe("amenitySummary", () => {
 describe("roomStats", () => {
   test("is null without rooms", () => {
     expect(roomStats([])).toBeNull();
-    expect(roomStats([{ price: 120, sleeps: 2 }, { price: 95, sleeps: 4 }])).toEqual({ count: 2, fewest: 2, most: 4, from: 95, perNight: true });
+    expect(roomStats([{ price: 120, sleeps: 2 }, { price: 95, sleeps: 4 }])).toEqual({ count: 2, unit: "room", fewest: 2, most: 4, from: 95, perNight: true, allNightly: true });
   });
 
   test("a night's price comes from rooms priced by the night; a lodge of short rests says just From", () => {
@@ -79,8 +79,8 @@ describe("roomStats", () => {
       { price: 15, sleeps: 2, priceLabel: "3 hours" },
       { price: 20, sleeps: 2, priceLabel: "9am to 4pm" },
     ];
-    expect(roomStats([...rates, { price: 40, sleeps: 2, priceLabel: null }])).toMatchObject({ from: 40, perNight: true });
-    expect(roomStats(rates)).toMatchObject({ from: 15, perNight: false });
+    expect(roomStats([...rates, { price: 40, sleeps: 2, priceLabel: null }])).toMatchObject({ count: 1, unit: "room", from: 40, perNight: true, allNightly: false });
+    expect(roomStats(rates)).toMatchObject({ count: 2, unit: "option", from: 15, perNight: false });
   });
 });
 

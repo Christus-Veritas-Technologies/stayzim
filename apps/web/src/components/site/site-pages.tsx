@@ -35,7 +35,7 @@ import { hasPage, pageUrl, roomUrl } from "@/lib/site-pages";
 function RoomCard({ site, room }: { site: LiveSite; room: SiteRoom }) {
   const look = pageLook(site.template);
   const { online } = siteBasics(site);
-  const book = bookingUrl(site, room.name);
+  const book = bookingUrl(site, room);
   const href = roomUrl(site, room.id);
   const facts = roomFacts(room);
   const amenities = amenityLine(room.amenities, 3);
@@ -175,7 +175,7 @@ function CompareRooms({ site }: { site: LiveSite }) {
 export function RoomPage({ site, room }: { site: LiveSite; room: SiteRoom }) {
   const look = pageLook(site.template);
   const { online } = siteBasics(site);
-  const book = bookingUrl(site, room.name);
+  const book = bookingUrl(site, room);
   const facts = roomFacts(room);
   const others = site.rooms.filter((other) => other.id !== room.id).slice(0, 3);
   return (

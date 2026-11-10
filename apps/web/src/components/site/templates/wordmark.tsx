@@ -173,7 +173,7 @@ export function WordmarkTemplate({ site }: { site: LiveSite }) {
               activeButtonClassName="border border-[#231C16] bg-transparent text-[#231C16]"
             >
               {site.rooms.map((room) => {
-                const roomBook = bookingUrl(site, room.name);
+                const roomBook = bookingUrl(site, room);
                 return (
                   <article key={room.id} className="flex h-full flex-col gap-4 rounded-[26px] bg-white p-2 pb-5">
                     <div className="relative">

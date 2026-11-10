@@ -192,7 +192,7 @@ export function ShorelineTemplate({ site }: { site: LiveSite }) {
                 }
               >
                 {site.rooms.map((room) => {
-                  const roomBook = bookingUrl(site, room.name);
+                  const roomBook = bookingUrl(site, room);
                   const facts = roomFacts(room).slice(1);
                   return (
                     <article key={room.id} className="flex h-full flex-col gap-4 rounded-[28px] bg-white p-2.5 pb-5 shadow-[0_18px_40px_-28px_rgba(16,32,42,0.4)]">

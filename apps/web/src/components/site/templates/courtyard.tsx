@@ -29,6 +29,7 @@ import {
   sleepsRange,
   SocialLinks,
   StayDetails,
+  unitWord,
   WhatsAppFab,
 } from "@/components/site/parts";
 import { QuoteRotator } from "@/components/site/quote-rotator";
@@ -144,7 +145,7 @@ export function CourtyardTemplate({ site }: { site: LiveSite }) {
               {stats ? (
                 <dl className="grid grid-cols-3 border-t border-white/10">
                   {[
-                    { value: String(stats.count).padStart(2, "0"), label: stats.count === 1 ? "Room" : "Rooms" },
+                    { value: String(stats.count).padStart(2, "0"), label: unitWord(stats, true) },
                     { value: sleepsRange(stats), label: "Guests per room" },
                     { value: formatPrice(stats.from), label: stats.perNight ? "From, per night" : "From" },
                   ].map((stat, position) => (
@@ -170,7 +171,7 @@ export function CourtyardTemplate({ site }: { site: LiveSite }) {
           ) : (
             <div className="border-t border-white/10">
               {site.rooms.map((room, position) => {
-                const roomBook = bookingUrl(site, room.name);
+                const roomBook = bookingUrl(site, room);
                 return (
                   <details key={room.id} name="courtyard-rooms" open={position === 0} className="group border-b border-white/10">
                     <summary className="grid cursor-pointer list-none grid-cols-[36px_minmax(0,1fr)_auto] items-center gap-3 py-6 sm:grid-cols-[80px_minmax(0,1fr)_120px_140px_48px] sm:gap-4 [&::-webkit-details-marker]:hidden">

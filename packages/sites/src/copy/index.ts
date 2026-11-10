@@ -26,6 +26,8 @@ export type CopyFacts = {
   roomCount: number | null;
   /** The cheapest room, or the owner's guess */
   priceFrom: number | null;
+  /** Some prices aren't for a night (a short rest, a day rest): no "prices are per night" */
+  rates?: boolean;
   /** Bumped by "Try other wording" */
   seed: number;
 };
@@ -80,6 +82,8 @@ export function copyVars(facts: CopyFacts): CopyVars {
     room: kind.room,
     roomCount: facts.roomCount ? count(facts.roomCount, kind.room, kind.rooms) : null,
     priceFrom: facts.priceFrom ? `$${facts.priceFrom}` : null,
+    // Lines saying prices are per night need every price to be one
+    perNight: facts.rates ? null : "per night",
   };
 }
 
@@ -176,6 +180,7 @@ export function copyForLodge(lodge: CopyLodge, fallback?: { headline: string; su
       roomCount: rooms.length > 0 ? nightly.length || null : lodge.roomsHint,
       // Rooms priced by something other than a night (a short rest, a day rest) never make "from $X a night"
       priceFrom: rooms.length > 0 ? (nightly.length > 0 ? Math.min(...nightly.map((room) => room.price)) : null) : lodge.priceHint,
+      rates: rooms.length > nightly.length,
       seed: lodge.copySeed,
     },
     fallback,

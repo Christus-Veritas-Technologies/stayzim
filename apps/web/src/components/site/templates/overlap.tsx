@@ -25,6 +25,7 @@ import {
   siteBasics,
   SocialLinks,
   StayDetails,
+  unitWord,
   WhatsAppFab,
 } from "@/components/site/parts";
 import { gloock } from "@/components/site/template-fonts";
@@ -202,7 +203,7 @@ export function OverlapTemplate({ site }: { site: LiveSite }) {
                 className="text-white"
               >
                 {site.rooms.map((room) => {
-                  const roomBook = bookingUrl(site, room.name);
+                  const roomBook = bookingUrl(site, room);
                   return (
                     <article key={room.id} className="relative flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-[22px] sm:aspect-[7/5]">
                       <Photo photo={room.photos[0]} alt={room.name} sizes="(min-width: 1024px) 540px, 88vw" className="absolute inset-0 size-full" />
@@ -319,7 +320,7 @@ export function OverlapTemplate({ site }: { site: LiveSite }) {
           <div className="mt-12 flex flex-col gap-3 border-t border-white/15 pt-6 text-[13.5px] sm:flex-row sm:justify-between">
             <span>
               © {new Date().getFullYear()} {site.name}
-              {stats ? ` · ${stats.count} ${stats.count === 1 ? "room" : "rooms"}` : ""}
+              {stats ? ` · ${stats.count} ${unitWord(stats)}` : ""}
             </span>
             <MadeWith strong="text-white" />
           </div>
