@@ -4,10 +4,14 @@ import { env } from "@stayzim/env/server";
 import { addDays, demoEnded, isPlan, monthlyPrice, normalizeDomain, PAY_MONTHS, PLAN_PRICES, type Plan } from "@stayzim/sites";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
+import { lodgePatch } from "@stayzim/sites/schemas";
 import { z } from "zod";
 
 import { deleteLodge, requireAdmin, withTeamSession } from "../lib/admin";
 import { recordManualPayment } from "../lib/billing";
+import { lodgeJson } from "../lib/lodge";
+import { editLodge, roomsInput, setRooms } from "../lib/lodge-edit";
+import { coordinatesFromMapsUrl } from "../lib/maps";
 import { createPaymentLink, latestPaymentLink } from "../lib/payment-links";
 import { leadPhone } from "./admin-leads";
 import { linkStatus, payInput, startLinkPayment } from "./pay";
@@ -389,6 +393,34 @@ export const adminConsole = new Hono<{ Variables: AuthVariables }>()
     }
     await prisma.lodge.update({ where: { id: lodgeId }, data });
     return c.json(await siteDetail(lodgeId));
+  })
+
+  /** Everything on the site as its owner's dashboard has it (details, contact, location, rooms, guest info) */
+  .get("/sites/:slug/content", async (c) => c.json(await lodgeJson(await siteBySlug(c.req.param("slug")))))
+
+  /**
+   * The site's content, edited for its owner (the team, and the sales agent when
+   * the owner asks in the chat): what the dashboard's PATCH /api/lodge takes, only
+   * what changes. A Google Maps link without coordinates gets its pin read.
+   */
+  .patch("/sites/:slug/content", validJson(lodgePatch), async (c) => {
+    const lodgeId = await siteBySlug(c.req.param("slug"));
+    const data = c.req.valid("json");
+    if (data.mapsUrl && data.latitude === undefined && data.longitude === undefined) {
+      const found = await coordinatesFromMapsUrl(data.mapsUrl);
+      if (!found) throw new HTTPException(422, { message: "No pin found in that Google Maps link: ask for the link from Share in Google Maps" });
+      data.latitude = found.latitude;
+      data.longitude = found.longitude;
+    }
+    await editLodge(lodgeId, data);
+    return c.json(await lodgeJson(lodgeId));
+  })
+
+  /** Every room, in order (rooms with an id keep their photos; rooms left out are deleted, or hidden when booked) */
+  .put("/sites/:slug/rooms", validJson(roomsInput), async (c) => {
+    const lodgeId = await siteBySlug(c.req.param("slug"));
+    await setRooms(lodgeId, c.req.valid("json").rooms);
+    return c.json(await lodgeJson(lodgeId));
   })
 
   /** A payment made outside the app (what mark-paid does): the site goes live on that plan, and the receipt is emailed. */

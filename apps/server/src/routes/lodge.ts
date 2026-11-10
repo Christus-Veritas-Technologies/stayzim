@@ -2,7 +2,7 @@ import prisma from "@stayzim/db";
 import { env } from "@stayzim/env/server";
 import { REPLY_TO } from "@stayzim/mail";
 import { domainClaimedEmail, domainClaimTeamEmail } from "@stayzim/mail/templates";
-import { canClaimDomain, DOMAIN_READY_HOURS, domainStillFree, findTemplate, formatHarareDateTime, freeDomainName, PLANS_LABEL, templateAllowed } from "@stayzim/sites";
+import { canClaimDomain, DOMAIN_READY_HOURS, domainStillFree, formatHarareDateTime, freeDomainName, PLANS_LABEL } from "@stayzim/sites";
 import { lodgePatch } from "@stayzim/sites/schemas";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
@@ -11,6 +11,7 @@ import { z } from "zod";
 
 import { sendQuietly } from "../lib/billing";
 import { lodgeJson, requireLodge, type LodgeVariables } from "../lib/lodge";
+import { editLodge } from "../lib/lodge-edit";
 import { coordinatesFromMapsUrl } from "../lib/maps";
 import { requireAuth, withSession } from "../lib/session";
 import { MAX_UPLOAD_BYTES, removeUploads, saveImage } from "../lib/uploads";
@@ -31,23 +32,7 @@ export const lodge = new Hono<{ Variables: LodgeVariables }>()
 
   /** Lodge info: details, location and look. Send only what changed. */
   .patch("/", validJson(lodgePatch), async (c) => {
-    const data = c.req.valid("json");
-    if (data.heroPhotoId) {
-      const photo = await prisma.photo.findFirst({
-        where: { id: data.heroPhotoId, lodgeId: c.var.lodgeId, roomId: null },
-        select: { id: true },
-      });
-      if (!photo) throw new HTTPException(400, { message: "Pick a photo from your gallery" });
-    }
-    if (data.template) {
-      const template = findTemplate(data.template);
-      if (!template) throw new HTTPException(400, { message: "Pick one of the designs" });
-      const { plan } = await prisma.lodge.findUniqueOrThrow({ where: { id: c.var.lodgeId }, select: { plan: true } });
-      if (!templateAllowed(template, plan)) {
-        throw new HTTPException(403, { message: `${template.name} comes with the ${PLANS_LABEL[template.plan]} plan` });
-      }
-    }
-    await prisma.lodge.update({ where: { id: c.var.lodgeId }, data });
+    await editLodge(c.var.lodgeId, c.req.valid("json"));
     return c.json(await lodgeJson(c.var.lodgeId));
   })
 
