@@ -1,4 +1,4 @@
-import type { LiveSite, SiteRoom } from "@stayzim/sites";
+import { isNightly, type LiveSite, type SiteRoom } from "@stayzim/sites";
 
 /**
  * Wording every template shares, so a room or a stay reads the same in Classic
@@ -90,14 +90,17 @@ export function amenitySummary(rooms: Pick<SiteRoom, "amenities">[]) {
 }
 
 /** Room numbers for the intro: how many, the most a room sleeps, and the lowest price. */
-export function roomStats(rooms: Pick<SiteRoom, "price" | "sleeps">[]) {
+export function roomStats(rooms: (Pick<SiteRoom, "price" | "sleeps"> & { priceLabel?: string | null })[]) {
   if (rooms.length === 0) return null;
   const sleeps = rooms.map((room) => room.sleeps);
+  // "From $X a night" from the rooms priced by the night; a lodge of short rests and day rests says "From $X"
+  const nightly = rooms.filter(isNightly);
   return {
     count: rooms.length,
     fewest: Math.min(...sleeps),
     most: Math.max(...sleeps),
-    from: Math.min(...rooms.map((room) => room.price)),
+    from: Math.min(...(nightly.length > 0 ? nightly : rooms).map((room) => room.price)),
+    perNight: nightly.length > 0,
   };
 }
 

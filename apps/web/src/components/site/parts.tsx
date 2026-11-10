@@ -31,7 +31,9 @@ export function siteBasics(site: LiveSite) {
     stats: roomStats(site.rooms),
     amenities: amenitySummary(site.rooms),
     located,
-    mapsLink: located ? `https://www.google.com/maps?q=${site.latitude},${site.longitude}` : site.mapsUrl,
+    mapsLink: located
+      ? `https://www.google.com/maps?q=${site.latitude},${site.longitude}`
+      : (site.mapsUrl ?? (site.address?.trim() ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(site.address.trim())}` : null)),
     stayInfo: hasStayInfo(site),
   };
 }
@@ -288,6 +290,18 @@ export function MapView({ site, className, pin, dark = false }: { site: LiveSite
       />
     );
   }
+  // No pin, but a street address: Google finds it
+  if (site.address?.trim()) {
+    return (
+      <iframe
+        title={`Map of ${site.name}`}
+        src={`https://maps.google.com/maps?q=${encodeURIComponent(site.address.trim())}&z=15&output=embed`}
+        loading="lazy"
+        referrerPolicy="no-referrer-when-downgrade"
+        className={cn("size-full min-h-[280px] border-0", className)}
+      />
+    );
+  }
   return (
     <div className={cn("relative min-h-[280px] overflow-hidden", dark ? "bg-[#2A2C2E]" : "bg-[#E8EEE6]", className)} aria-hidden="true">
       <div
@@ -316,6 +330,12 @@ export function FindUsLinks({ site, className, link }: { site: LiveSite; classNa
   return (
     <ul className={cn("flex flex-col gap-2.5 text-[15px]", className)}>
       {site.copy.location.intro ? <li className={cn("max-w-[440px] leading-6 opacity-80", link)}>{site.copy.location.intro}</li> : null}
+      {site.address?.trim() ? (
+        <li className={cn("inline-flex items-start gap-2 font-medium", link)}>
+          <MapPin className="mt-1 size-4 shrink-0 text-[var(--theme)]" aria-hidden="true" />
+          <address className="not-italic">{site.address}</address>
+        </li>
+      ) : null}
       {mapsLink ? (
         <li>
           <a href={mapsLink} target="_blank" rel="noreferrer" className={cn("inline-flex items-center gap-2 font-medium hover:underline", link)}>
@@ -329,6 +349,14 @@ export function FindUsLinks({ site, className, link }: { site: LiveSite; classNa
         <li className={cn("inline-flex items-center gap-2 font-medium", link)}>
           <WhatsAppIcon size={16} color="currentColor" />
           {formatPhone(site.whatsapp)}
+        </li>
+      ) : null}
+      {site.whatsapp2 && site.whatsapp2 !== site.whatsapp ? (
+        <li>
+          <a href={`https://wa.me/${site.whatsapp2}`} target="_blank" rel="noreferrer" className={cn("inline-flex items-center gap-2 font-medium hover:underline", link)}>
+            <WhatsAppIcon size={16} color="currentColor" />
+            {formatPhone(site.whatsapp2)}
+          </a>
         </li>
       ) : null}
       {site.phone && site.phone !== site.whatsapp ? (

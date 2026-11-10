@@ -176,6 +176,14 @@ export function formatPhone(digits: string | null) {
   return `+${digits}`;
 }
 
+/** The lodge's WhatsApp number, and its second one when it has one: "+263 77 478 8803 / +263 71 284 7109" */
+export function whatsappLine(site: { whatsapp: string | null; whatsapp2?: string | null }) {
+  return [site.whatsapp, site.whatsapp2 && site.whatsapp2 !== site.whatsapp ? site.whatsapp2 : null]
+    .filter((digits): digits is string => Boolean(digits))
+    .map(formatPhone)
+    .join(" / ");
+}
+
 export function formatPrice(dollars: number) {
   return `$${dollars.toLocaleString("en-ZW")}`;
 }

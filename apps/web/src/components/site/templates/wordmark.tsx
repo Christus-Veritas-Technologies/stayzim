@@ -1,3 +1,4 @@
+import { pricePer } from "@stayzim/sites";
 import { cn } from "@stayzim/ui/lib/utils";
 import { Users } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
@@ -26,7 +27,7 @@ import {
 } from "@/components/site/parts";
 import { bricolageGrotesque } from "@/components/site/template-fonts";
 import { BookLink } from "@/components/site/tracking";
-import { AMENITIES, formatPhone, formatPrice } from "@/lib/lodge";
+import { AMENITIES, formatPrice, whatsappLine } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
 import { highlightWords, roomsEmpty } from "@/lib/site-content";
 import { hasPage, pageOr, pageUrl } from "@/lib/site-pages";
@@ -157,7 +158,7 @@ export function WordmarkTemplate({ site }: { site: LiveSite }) {
           <div className="mb-10 flex flex-col items-center gap-5 text-center">
             <span className="size-7 rounded-full bg-[var(--theme)]" aria-hidden="true" />
             <Heading>Rooms at {site.name}</Heading>
-            {stats ? <p className="text-[16px] text-[#6E6459]">Prices per room, per night, from {formatPrice(stats.from)}.</p> : null}
+            {stats ? <p className="text-[16px] text-[#6E6459]">{stats.perNight ? "Prices per room, per night, from " : "Prices from "}{formatPrice(stats.from)}.</p> : null}
           </div>
           {site.rooms.length === 0 ? (
             <p className="text-center text-[#6E6459]">{roomsEmpty(site)}</p>
@@ -179,7 +180,7 @@ export function WordmarkTemplate({ site }: { site: LiveSite }) {
                       <RoomPhotos photos={room.photos} name={room.name} theme={site.themeColor} sample={room.sample} sampleAt="left" className="aspect-[5/4] rounded-[20px]" />
                       <span className="pointer-events-none absolute top-3 right-3 rounded-full bg-white px-3 py-1.5 text-[17px] font-bold shadow-sm">
                         {formatPrice(room.price)}
-                        <span className="text-[12px] font-normal text-[#6E6459]"> /night</span>
+                        <span className="text-[12px] font-normal text-[#6E6459]"> {pricePer(room)}</span>
                       </span>
                     </div>
                     <div className="flex flex-1 flex-col gap-3 px-3">
@@ -323,7 +324,7 @@ export function WordmarkTemplate({ site }: { site: LiveSite }) {
             <span>
               © {new Date().getFullYear()} {site.name}
               {place ? ` · ${place}` : ""}
-              {site.whatsapp ? ` · ${formatPhone(site.whatsapp)}` : ""}
+              {site.whatsapp ? ` · ${whatsappLine(site)}` : ""}
             </span>
             <MadeWith strong="text-white" />
           </div>

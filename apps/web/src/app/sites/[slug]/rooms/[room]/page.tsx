@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { site, room } = found;
   return sitePageMetadata(site, {
     title: room.name,
-    description: room.description?.slice(0, 160) || `${room.name} at ${site.name}: sleeps ${room.sleeps}, from ${formatPrice(room.price)} a night.`,
+    description: room.description?.slice(0, 160) || `${room.name} at ${site.name}: sleeps ${room.sleeps}, ${room.priceLabel ? `${formatPrice(room.price)} for ${room.priceLabel}` : `from ${formatPrice(room.price)} a night`}.`,
     url: roomUrl(site, room.id) ?? "",
   });
 }

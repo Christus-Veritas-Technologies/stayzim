@@ -1,4 +1,4 @@
-import { formatPostDate } from "@stayzim/sites";
+import { formatPostDate, pricePer } from "@stayzim/sites";
 import { cn } from "@stayzim/ui/lib/utils";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
@@ -32,7 +32,7 @@ import {
 import { QuoteRotator } from "@/components/site/quote-rotator";
 import { cormorantGaramond } from "@/components/site/template-fonts";
 import { BookLink } from "@/components/site/tracking";
-import { AMENITIES, formatPhone, formatPrice } from "@/lib/lodge";
+import { AMENITIES, formatPrice, whatsappLine } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
 import { countWords, roomsEmpty, scoreWord, splitIntro } from "@/lib/site-content";
 import { hasPage, pageOr, pageUrl } from "@/lib/site-pages";
@@ -208,7 +208,7 @@ export function EscarpmentTemplate({ site }: { site: LiveSite }) {
                   <Eyebrow className="text-[#6B6458]">Room {String(position + 1).padStart(2, "0")}</Eyebrow>
                   <h3 className={cn(SERIF, "text-[42px] leading-[46px] sm:text-[52px] sm:leading-[56px]")}>{room.name}</h3>
                   <p className="text-[16px] text-[#6B6458]">
-                    Sleeps {room.sleeps} · <strong className="font-semibold text-[var(--theme)]">{formatPrice(room.price)}</strong> a night
+                    Sleeps {room.sleeps} · <strong className="font-semibold text-[var(--theme)]">{formatPrice(room.price)}</strong> {pricePer(room, "words")}
                     {room.amenities.includes("breakfast") ? ", breakfast included" : ""}
                   </p>
                   {room.amenities.length > 0 ? (
@@ -246,7 +246,7 @@ export function EscarpmentTemplate({ site }: { site: LiveSite }) {
                         <Eyebrow className="text-[11px] text-[#6B6458]">Room {String(position + 3).padStart(2, "0")}</Eyebrow>
                         <h3 className={cn(SERIF, "truncate text-[26px] leading-8")}>{room.name}</h3>
                         <p className="text-[14px] text-[#6B6458]">
-                          Sleeps {room.sleeps} · {formatPrice(room.price)} a night
+                          Sleeps {room.sleeps} · {formatPrice(room.price)} {pricePer(room, "words")}
                         </p>
                       </div>
                       {roomBook ? (
@@ -401,7 +401,7 @@ export function EscarpmentTemplate({ site }: { site: LiveSite }) {
             </nav>
             <div className="flex flex-col gap-2.5 text-[15px]">
               <span className="font-semibold text-white">Contact</span>
-              {site.whatsapp ? <span>WhatsApp {formatPhone(site.whatsapp)}</span> : null}
+              {site.whatsapp ? <span>WhatsApp {whatsappLine(site)}</span> : null}
               {site.email ? (
                 <a href={`mailto:${site.email}`} className="hover:text-white">
                   {site.email}

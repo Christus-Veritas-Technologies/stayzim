@@ -19,6 +19,8 @@ const site: LiveSite = {
   setting: null,
   copy: siteCopy({ slug: "mistvalley", name: "Mist Valley Lodge", town: "Nyanga", region: "Manicaland", country: "Zimbabwe", kind: null, setting: null, roomCount: null, priceFrom: null, seed: 0 }),
   whatsapp: "263771234567",
+  whatsapp2: null,
+  address: null,
   phone: null,
   email: null,
   mapsUrl: null,

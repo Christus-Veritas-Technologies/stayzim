@@ -3,6 +3,7 @@ import { ImageResponse } from "next/og";
 import { lodgePlace } from "@/lib/lodge";
 import { mediumPhoto, OG_HEADERS, OG_SIZE, ogFonts, ogPhoto } from "@/lib/og";
 import { getSite } from "@/lib/site";
+import { roomStats } from "@/lib/site-content";
 
 /**
  * A lodge's share card (/og/{slug}): its hero photo with the name, the place and
@@ -15,8 +16,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
 
   const [photo, fonts] = await Promise.all([ogPhoto(mediumPhoto(site.heroUrl, site.heroSrcSet)), ogFonts()]);
   const place = lodgePlace(site);
-  const prices = site.rooms.map((room) => room.price).filter((price) => price > 0);
-  const from = prices.length > 0 ? Math.min(...prices) : null;
+  const stats = roomStats(site.rooms.filter((room) => room.price > 0));
+  const from = stats?.from ?? null;
   const book = site.booking.mode === "request" ? "Book direct, online or on WhatsApp" : "Book direct on WhatsApp";
 
   return new ImageResponse(
@@ -43,7 +44,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 28, fontSize: 28 }}>
             {from ? (
-              <div style={{ display: "flex", padding: "10px 22px", borderRadius: 999, background: "#FFFFFF", color: "#0C181F", fontWeight: 600 }}>From ${from} a night</div>
+              <div style={{ display: "flex", padding: "10px 22px", borderRadius: 999, background: "#FFFFFF", color: "#0C181F", fontWeight: 600 }}>{`From $${from}${stats?.perNight ? " a night" : ""}`}</div>
             ) : null}
             <div style={{ display: "flex", padding: "10px 22px", borderRadius: 999, background: "rgba(255,255,255,0.16)", border: "2px solid rgba(255,255,255,0.4)", fontWeight: 600 }}>{book}</div>
           </div>

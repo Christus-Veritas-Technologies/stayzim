@@ -63,8 +63,11 @@ export function withTemplate(site: LiveSite, template: Template): LiveSite {
 /** wa.me link to the lodge, with the room (or a general stay) typed in. */
 export function bookingUrl(site: LiveSite, roomName?: string) {
   if (!site.whatsapp) return null;
+  const rate = roomName ? site.rooms.find((room) => room.name === roomName)?.priceLabel?.trim() : undefined;
   const text = roomName
-    ? `Hi ${site.name}, I'd like to book the ${roomName}. My dates are: `
+    ? rate
+      ? `Hi ${site.name}, I'd like to book the ${roomName} (${rate}). The day and time: `
+      : `Hi ${site.name}, I'd like to book the ${roomName}. My dates are: `
     : `Hi ${site.name}, I'd like to book a stay. My dates are: `;
   return `https://wa.me/${site.whatsapp}?text=${encodeURIComponent(text)}`;
 }

@@ -1,3 +1,4 @@
+import { pricePer } from "@stayzim/sites";
 import { cn } from "@stayzim/ui/lib/utils";
 import { ArrowRight } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
@@ -198,7 +199,7 @@ export function ShorelineTemplate({ site }: { site: LiveSite }) {
                       <div className="relative">
                         <RoomPhotos photos={room.photos} name={room.name} theme={site.themeColor} sample={room.sample} className="aspect-[4/3] rounded-[22px]" />
                         <span className="pointer-events-none absolute top-3 left-3 rounded-full bg-white px-3 py-1.5 text-[15px] shadow-sm">
-                          <strong className="font-bold text-[var(--theme)]">{formatPrice(room.price)}</strong> <span className="text-[#5F6B72]">/ night</span>
+                          <strong className="font-bold text-[var(--theme)]">{formatPrice(room.price)}</strong> <span className="text-[#5F6B72]">{pricePer(room)}</span>
                         </span>
                       </div>
                       <div className="flex flex-1 flex-col gap-3 px-2.5">

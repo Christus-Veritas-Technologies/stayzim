@@ -1,3 +1,4 @@
+import { isNightly, pricePer } from "@stayzim/sites";
 import { cn } from "@stayzim/ui/lib/utils";
 import { ArrowRight } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
@@ -28,7 +29,7 @@ import {
 } from "@/components/site/parts";
 import { gloock } from "@/components/site/template-fonts";
 import { BookLink } from "@/components/site/tracking";
-import { AMENITIES, formatPhone, formatPrice } from "@/lib/lodge";
+import { AMENITIES, formatPrice, whatsappLine } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
 import { roomsEmpty } from "@/lib/site-content";
 import { hasPage, pageOr, pageUrl } from "@/lib/site-pages";
@@ -206,7 +207,7 @@ export function OverlapTemplate({ site }: { site: LiveSite }) {
                     <article key={room.id} className="relative flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-[22px] sm:aspect-[7/5]">
                       <Photo photo={room.photos[0]} alt={room.name} sizes="(min-width: 1024px) 540px, 88vw" className="absolute inset-0 size-full" />
                       <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_35%,rgba(20,14,8,0.85))]" />
-                      <span className="absolute top-4 left-4 rounded-full bg-[#22190F] px-3 py-1.5 text-[13.5px] font-semibold">From {formatPrice(room.price)} / night</span>
+                      <span className="absolute top-4 left-4 rounded-full bg-[#22190F] px-3 py-1.5 text-[13.5px] font-semibold">{isNightly(room) ? "From " : ""}{formatPrice(room.price)} {pricePer(room)}</span>
                       {room.sample ? <SampleBadge className="absolute top-4 right-4" /> : null}
                       <div className="relative flex items-end justify-between gap-4 p-5 sm:p-6">
                         <div className="flex min-w-0 flex-col gap-1">
@@ -302,7 +303,7 @@ export function OverlapTemplate({ site }: { site: LiveSite }) {
             </nav>
             <div className="flex flex-col gap-2.5 text-[15px]">
               <span className="font-semibold text-white">Contact</span>
-              {site.whatsapp ? <span>WhatsApp {formatPhone(site.whatsapp)}</span> : null}
+              {site.whatsapp ? <span>WhatsApp {whatsappLine(site)}</span> : null}
               {site.email ? (
                 <a href={`mailto:${site.email}`} className="hover:text-white">
                   {site.email}

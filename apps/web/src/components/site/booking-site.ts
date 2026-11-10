@@ -1,4 +1,4 @@
-import { isSampleRoomId } from "@stayzim/sites";
+import { isNightly, isSampleRoomId } from "@stayzim/sites";
 
 import type { BookingSite } from "@/components/site/tracking";
 import type { LiveSite } from "@/lib/site";
@@ -13,8 +13,8 @@ export function bookingSite(site: LiveSite, preview = false): BookingSite | null
         themeColor: site.themeColor,
         checkInFrom: site.checkInFrom,
         checkOutBy: site.checkOutBy,
-        // Example rooms never reach the sheet
-        rooms: site.rooms.filter((room) => !isSampleRoomId(room.id)).map(({ id, name, price, sleeps }) => ({ id, name, price, sleeps })),
+        // Example rooms never reach the sheet, nor rates that aren't a night (a short rest is booked on WhatsApp)
+        rooms: site.rooms.filter((room) => !isSampleRoomId(room.id) && isNightly(room)).map(({ id, name, price, sleeps }) => ({ id, name, price, sleeps })),
         preview,
       }
     : null;

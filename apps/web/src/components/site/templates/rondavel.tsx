@@ -1,3 +1,4 @@
+import { pricePer } from "@stayzim/sites";
 import { cn } from "@stayzim/ui/lib/utils";
 import type { CSSProperties, ReactNode } from "react";
 
@@ -196,7 +197,7 @@ export function RondavelTemplate({ site }: { site: LiveSite }) {
                             Sleeps {room.sleeps}
                           </span>
                           <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col gap-1.5 p-6">
-                            <span className="text-[12.5px] font-semibold tracking-[0.2em] uppercase">{formatPrice(room.price)} / night</span>
+                            <span className="text-[12.5px] font-semibold tracking-[0.2em] uppercase">{formatPrice(room.price)} {pricePer(room)}</span>
                             <h3 className="text-[26px] leading-8 font-semibold">{room.name}</h3>
                             {room.amenities.length > 0 ? <span className="text-[14px] text-white/85">{amenityLine(room.amenities, 3)}</span> : null}
                           </div>

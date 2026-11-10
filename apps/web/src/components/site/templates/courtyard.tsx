@@ -1,4 +1,4 @@
-import { formatPostDate, isSamplePhoto } from "@stayzim/sites";
+import { formatPostDate, isSamplePhoto, pricePer } from "@stayzim/sites";
 import { cn } from "@stayzim/ui/lib/utils";
 import { ArrowRight, Plus } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
@@ -146,7 +146,7 @@ export function CourtyardTemplate({ site }: { site: LiveSite }) {
                   {[
                     { value: String(stats.count).padStart(2, "0"), label: stats.count === 1 ? "Room" : "Rooms" },
                     { value: sleepsRange(stats), label: "Guests per room" },
-                    { value: formatPrice(stats.from), label: "From, per night" },
+                    { value: formatPrice(stats.from), label: stats.perNight ? "From, per night" : "From" },
                   ].map((stat, position) => (
                     <div key={stat.label} className={cn("flex flex-col-reverse gap-3 pt-6", position > 0 && "border-l border-white/10 pl-4 sm:pl-7")}>
                       <dt className="text-[10.5px] tracking-[0.22em] text-[var(--tan)] uppercase sm:text-[12px]">{stat.label}</dt>
@@ -177,7 +177,7 @@ export function CourtyardTemplate({ site }: { site: LiveSite }) {
                       <span className="text-[13px] text-[var(--tan)]">{String(position + 1).padStart(2, "0")}</span>
                       <span className={cn(DISPLAY, "text-[21px] leading-7 tracking-[0.08em] sm:text-[28px] sm:leading-9")}>{room.name}</span>
                       <span className="hidden text-[15px] text-[#CFC7BA] sm:block">Sleeps {room.sleeps}</span>
-                      <span className="hidden text-[15px] sm:block">{formatPrice(room.price)} / night</span>
+                      <span className="hidden text-[15px] sm:block">{formatPrice(room.price)} {pricePer(room)}</span>
                       <span className="flex size-11 items-center justify-center rounded-full border border-white/20 transition-colors group-open:bg-[#EDE6DA] group-open:text-[#1C1B19]">
                         <Plus className="size-4 transition-transform duration-300 group-open:rotate-45 motion-reduce:transition-none" aria-hidden="true" />
                       </span>
@@ -186,7 +186,7 @@ export function CourtyardTemplate({ site }: { site: LiveSite }) {
                       <RoomPhotos photos={room.photos} name={room.name} theme={site.themeColor} sample={room.sample} className="aspect-[4/3] rounded-[16px]" sizes="(min-width: 1024px) 540px, 100vw" />
                       <div className="flex flex-col gap-6">
                         <p className="text-[15px] text-[#CFC7BA] sm:hidden">
-                          Sleeps {room.sleeps} · {formatPrice(room.price)} / night
+                          Sleeps {room.sleeps} · {formatPrice(room.price)} {pricePer(room)}
                         </p>
                         {room.description ? <ClampedText text={room.description} className="text-[16px] leading-7 text-[#DCD4C7]" /> : null}
                         {room.amenities.length > 0 ? (

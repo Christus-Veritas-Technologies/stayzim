@@ -1,3 +1,4 @@
+import { pricePer } from "@stayzim/sites";
 import { cn } from "@stayzim/ui/lib/utils";
 import type { CSSProperties, ReactNode } from "react";
 
@@ -184,7 +185,7 @@ export function ShadeTemplate({ site }: { site: LiveSite }) {
                             {room.description ? <ClampedText text={room.description} className="mt-1 text-[14px] leading-6 text-white/75" /> : null}
                           </div>
                           <div className="flex shrink-0 items-center gap-4">
-                            <span className="text-[16px] font-semibold whitespace-nowrap">{formatPrice(room.price)} / night</span>
+                            <span className="text-[16px] font-semibold whitespace-nowrap">{formatPrice(room.price)} {pricePer(room)}</span>
                             {roomBook ? (
                               <BookLink roomId={room.id} href={roomBook} className={cn("inline-flex h-11 items-center gap-2 rounded-lg px-4 text-[15px] font-semibold", online ? "bg-white text-[var(--theme)]" : tone)}>
                                 <BookLabel online={online} size={16} short />

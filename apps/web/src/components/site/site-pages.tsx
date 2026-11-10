@@ -1,4 +1,4 @@
-import type { SiteRoom } from "@stayzim/sites";
+import { isNightly, pricePer, type SiteRoom } from "@stayzim/sites";
 import { cn } from "@stayzim/ui/lib/utils";
 import { ArrowLeft, ArrowRight, Check, Minus } from "lucide-react";
 
@@ -47,7 +47,7 @@ function RoomCard({ site, room }: { site: LiveSite; room: SiteRoom }) {
           <h3 className={cn(look.display, "text-[24px] leading-8")}>{href ? <a href={href} className="hover:text-[var(--theme)]">{room.name}</a> : room.name}</h3>
           <span className="shrink-0 text-[15px]">
             <strong className="font-semibold text-[var(--theme)]">{formatPrice(room.price)}</strong>
-            <span className={look.muted}> / night</span>
+            <span className={look.muted}> {pricePer(room)}</span>
           </span>
         </div>
         {facts.length > 0 ? <p className={cn("text-[14.5px]", look.muted)}>{facts.join(" · ")}</p> : null}
@@ -122,7 +122,15 @@ function CompareRooms({ site }: { site: LiveSite }) {
           </thead>
           <tbody>
             {[
-              { label: "A night", value: (room: SiteRoom) => <strong className="font-semibold text-[var(--theme)]">{formatPrice(room.price)}</strong> },
+              {
+                label: site.rooms.every(isNightly) ? "A night" : "Price",
+                value: (room: SiteRoom) => (
+                  <>
+                    <strong className="font-semibold text-[var(--theme)]">{formatPrice(room.price)}</strong>
+                    {isNightly(room) ? null : <span className={look.muted}> {pricePer(room)}</span>}
+                  </>
+                ),
+              },
               { label: "Sleeps", value: (room: SiteRoom) => room.sleeps },
               site.rooms.some((room) => room.beds) ? { label: "Beds", value: (room: SiteRoom) => room.beds ?? "–" } : null,
               site.rooms.some((room) => room.size !== null) ? { label: "Size", value: (room: SiteRoom) => (room.size === null ? "–" : `${room.size} m²`) } : null,
@@ -190,7 +198,7 @@ export function RoomPage({ site, room }: { site: LiveSite; room: SiteRoom }) {
             <h1 className={cn(look.display, "text-[36px] leading-[42px] text-balance sm:text-[44px] sm:leading-[50px]")}>{room.name}</h1>
             <p className="text-[17px]">
               <strong className="text-[26px] font-semibold text-[var(--theme)]">{formatPrice(room.price)}</strong>
-              <span className={look.muted}> a night</span>
+              <span className={look.muted}> {pricePer(room, "words")}</span>
             </p>
             <ul className="flex flex-col gap-2 text-[15px]">
               {facts.map((fact) => (

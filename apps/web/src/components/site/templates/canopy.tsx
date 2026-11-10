@@ -1,4 +1,4 @@
-import { formatPostDate } from "@stayzim/sites";
+import { formatPostDate, pricePer } from "@stayzim/sites";
 import { cn } from "@stayzim/ui/lib/utils";
 import { ArrowUpRight } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
@@ -33,7 +33,7 @@ import {
 import { QuoteRotator } from "@/components/site/quote-rotator";
 import { instrumentSerif } from "@/components/site/template-fonts";
 import { BookLink } from "@/components/site/tracking";
-import { AMENITIES, formatPhone, formatPrice } from "@/lib/lodge";
+import { AMENITIES, formatPrice, whatsappLine } from "@/lib/lodge";
 import { bookingUrl, type LiveSite } from "@/lib/site";
 import { roomsEmpty, scoreWord, splitIntro } from "@/lib/site-content";
 import { hasPage, pageOr, pageUrl } from "@/lib/site-pages";
@@ -75,10 +75,10 @@ export function CanopyTemplate({ site }: { site: LiveSite }) {
     place ? { label: "Location", value: place } : null,
     stats ? { label: "Rooms", value: String(stats.count) } : null,
     stats ? { label: "Sleeps", value: `${sleepsRange(stats).replace("–", " to ")} per room` } : null,
-    stats ? { label: "From", value: `${formatPrice(stats.from)} per night` } : null,
+    stats ? { label: "From", value: `${formatPrice(stats.from)}${stats.perNight ? " per night" : ""}` } : null,
     site.checkInFrom ? { label: "Check-in", value: `From ${site.checkInFrom}` } : null,
     site.reviews?.score ? { label: site.reviews.source, value: `${site.reviews.score.toFixed(1)} · ${scoreWord(site.reviews.score)}` } : null,
-    site.whatsapp ? { label: "WhatsApp", value: formatPhone(site.whatsapp) } : null,
+    site.whatsapp ? { label: "WhatsApp", value: whatsappLine(site) } : null,
   ].filter((row) => row !== null);
 
   return (
@@ -136,7 +136,7 @@ export function CanopyTemplate({ site }: { site: LiveSite }) {
                 {[
                   { value: String(stats.count), label: stats.count === 1 ? "Room" : "Rooms" },
                   { value: sleepsRange(stats), label: "Guests per room" },
-                  { value: formatPrice(stats.from), label: "From, per night" },
+                  { value: formatPrice(stats.from), label: stats.perNight ? "From, per night" : "From" },
                 ].map((stat) => (
                   <div key={stat.label} className="flex flex-col-reverse gap-2">
                     <dt className="text-[11px] tracking-[0.18em] text-[#6D6457] uppercase sm:text-[12px]">{stat.label}</dt>
@@ -242,7 +242,7 @@ export function CanopyTemplate({ site }: { site: LiveSite }) {
                     {room.description ? <ClampedText text={room.description} className="text-[14px] leading-6 text-[#6D6457]" /> : null}
                     <div className="mt-auto flex items-center justify-between gap-3 border-t border-black/10 pt-4">
                       <span className="text-[15px]">
-                        <strong className="font-semibold text-[var(--theme)]">{formatPrice(room.price)}</strong> / night
+                        <strong className="font-semibold text-[var(--theme)]">{formatPrice(room.price)}</strong> {pricePer(room)}
                       </span>
                       {roomBook ? (
                         <BookLink roomId={room.id} href={roomBook} className={cn("inline-flex h-10 items-center gap-2 rounded-full px-4 text-[14px] font-semibold", tone)}>
@@ -373,7 +373,7 @@ export function CanopyTemplate({ site }: { site: LiveSite }) {
             </nav>
             <div className="flex flex-col gap-2.5 text-[15px]">
               <span className="text-[#EFE9DF]">Contact</span>
-              {site.whatsapp ? <span>WhatsApp {formatPhone(site.whatsapp)}</span> : null}
+              {site.whatsapp ? <span>WhatsApp {whatsappLine(site)}</span> : null}
               {site.email ? (
                 <a href={`mailto:${site.email}`} className="hover:text-white">
                   {site.email}

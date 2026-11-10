@@ -236,21 +236,23 @@ export function BookLink({
   const context = useContext(BookingContext);
   const booking = channel === "whatsapp" ? { site: null, open: context.open } : context;
   const example = roomId !== undefined && isSampleRoomId(roomId);
+  // A rate that isn't a night (a short rest) isn't on the sheet: its Book opens the chat
+  const sheet = booking.site && (roomId === undefined || booking.site.rooms.some((room) => room.id === roomId)) ? booking : { ...booking, site: null };
   return (
     <a
       href={href}
       target="_blank"
       rel="noreferrer"
-      onPointerDown={booking.site && !example ? () => void loadSheet() : undefined}
+      onPointerDown={sheet.site && !example ? () => void loadSheet() : undefined}
       onClick={(event) => {
         if (example) {
           event.preventDefault();
           context.example();
           return;
         }
-        if (booking.site) {
+        if (sheet.site) {
           event.preventDefault();
-          booking.open(roomId);
+          sheet.open(roomId);
           return;
         }
         if (enabled && slug) track(slug, "BOOKING_CHAT", roomId);

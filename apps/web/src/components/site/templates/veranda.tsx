@@ -1,3 +1,4 @@
+import { pricePer } from "@stayzim/sites";
 import { cn } from "@stayzim/ui/lib/utils";
 import type { CSSProperties, ReactNode } from "react";
 
@@ -109,7 +110,7 @@ export function VerandaTemplate({ site }: { site: LiveSite }) {
                       <span className="text-[13px] text-[var(--muted)]">
                         {stats.count} {stats.count === 1 ? "room" : "rooms"}
                       </span>
-                      <span className="text-[16px] font-bold whitespace-nowrap sm:text-[18px]">From {formatPrice(stats.from)} a night</span>
+                      <span className="text-[16px] font-bold whitespace-nowrap sm:text-[18px]">From {formatPrice(stats.from)}{stats.perNight ? " a night" : ""}</span>
                     </span>
                   ) : (
                     <span />
@@ -175,7 +176,7 @@ export function VerandaTemplate({ site }: { site: LiveSite }) {
                         <div className="relative">
                           <RoomPhotos photos={room.photos} name={room.name} theme={site.themeColor} sample={room.sample} className="aspect-[4/3] rounded-[22px]" />
                           <span className="pointer-events-none absolute top-3 left-3 rounded-full bg-white px-3 py-1.5 text-[15px] font-bold text-[var(--theme)] shadow-sm">
-                            {formatPrice(room.price)} / night
+                            {formatPrice(room.price)} {pricePer(room)}
                           </span>
                         </div>
                         <div className="flex flex-col gap-1 px-1">
