@@ -1,7 +1,8 @@
 "use client";
 
-import { COUNTRIES, DEFAULT_COUNTRY, LODGE_KINDS, SETTINGS, type LodgeKind, type Setting, type SiteDraft } from "@stayzim/sites";
+import { COUNTRIES, DEFAULT_COUNTRY, LODGE_KINDS, LODGE_LIMITS, SETTINGS, type LodgeKind, type Setting, type SiteDraft } from "@stayzim/sites";
 import { Avatar } from "@stayzim/ui/components/avatar";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@stayzim/ui/components/collapsible";
 import { Button, buttonVariants } from "@stayzim/ui/components/button";
 import { Field, FormMessage } from "@stayzim/ui/components/field";
 import { Input, InputGroup, InputGroupAddon, InputGroupInput } from "@stayzim/ui/components/input";
@@ -12,8 +13,10 @@ import { cn } from "@stayzim/ui/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Check,
+  ChevronDown,
   Crosshair,
   FileText,
+  Home,
   ImageIcon,
   Info,
   Link2,
@@ -63,11 +66,13 @@ type Draft = {
   name: string;
   description: string;
   town: string;
+  address: string;
   region: string;
   country: string;
   kind: string;
   setting: string;
   whatsapp: string;
+  whatsapp2: string;
   phone: string;
   email: string;
   mapsUrl: string;
@@ -82,11 +87,13 @@ function draftFrom(lodge: Lodge): Draft {
     name: lodge.name,
     description: lodge.description,
     town: lodge.town ?? "",
+    address: lodge.address ?? "",
     region: lodge.region ?? "",
     country: lodge.country,
     kind: lodge.kind ?? "",
     setting: lodge.setting ?? "",
     whatsapp: phoneToInput(lodge.whatsapp),
+    whatsapp2: phoneToInput(lodge.whatsapp2),
     phone: phoneToInput(lodge.phone),
     email: lodge.email ?? "",
     mapsUrl: lodge.mapsUrl ?? "",
@@ -110,12 +117,14 @@ function parseCoordinate(text: string, limit: number) {
 function changesFrom(draft: Draft, lodge: Lodge) {
   const errors: FieldErrors = {};
   const whatsapp = phoneFromInput(draft.whatsapp);
+  const whatsapp2 = phoneFromInput(draft.whatsapp2);
   const phone = phoneFromInput(draft.phone);
   const latitude = parseCoordinate(draft.latitude, 90);
   const longitude = parseCoordinate(draft.longitude, 180);
   if (!draft.name.trim()) errors.name = "Add your lodge name";
   if (draft.description.length > DESCRIPTION_MAX) errors.description = `Keep it under ${DESCRIPTION_MAX} characters`;
   if (whatsapp.error) errors.whatsapp = whatsapp.error;
+  if (whatsapp2.error) errors.whatsapp2 = whatsapp2.error;
   if (phone.error) errors.phone = phone.error;
   if (draft.email.trim() && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(draft.email.trim())) errors.email = "Check the email address";
   if (latitude.error) errors.latitude = latitude.error;
@@ -125,11 +134,13 @@ function changesFrom(draft: Draft, lodge: Lodge) {
     name: draft.name.trim(),
     description: draft.description.trim(),
     town: draft.town.trim() || null,
+    address: draft.address.trim() || null,
     region: draft.region.trim() || null,
     country: draft.country.trim() || DEFAULT_COUNTRY,
     kind: (draft.kind || null) as LodgeKind | null,
     setting: (draft.setting || null) as Setting | null,
     whatsapp: whatsapp.error ? lodge.whatsapp : whatsapp.digits,
+    whatsapp2: whatsapp2.error ? lodge.whatsapp2 : whatsapp2.digits,
     phone: phone.error ? lodge.phone : phone.digits,
     email: draft.email.trim() || null,
     mapsUrl: draft.mapsUrl.trim() || null,
@@ -157,7 +168,11 @@ export default function LodgeInfoPage() {
   const [tab, setTab] = useState("details");
   const online = useOnline();
   const { changes } = useMemo(() => changesFrom(draft, lodge), [draft, lodge]);
-  const dirty = Object.keys(changes).length > 0 || draft.whatsapp !== phoneToInput(lodge.whatsapp) || draft.phone !== phoneToInput(lodge.phone);
+  const dirty =
+    Object.keys(changes).length > 0 ||
+    draft.whatsapp !== phoneToInput(lodge.whatsapp) ||
+    draft.whatsapp2 !== phoneToInput(lodge.whatsapp2) ||
+    draft.phone !== phoneToInput(lodge.phone);
 
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) => {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -169,7 +184,7 @@ export default function LodgeInfoPage() {
     setErrors(result.errors);
     if (Object.keys(result.errors).length > 0) {
       const first = Object.keys(result.errors)[0] as keyof Draft;
-      setTab(["mapsUrl", "latitude", "longitude"].includes(first) ? "location" : "details");
+      setTab(["mapsUrl", "latitude", "longitude", "address"].includes(first) ? "location" : "details");
       return;
     }
     setSaving(true);
@@ -346,7 +361,7 @@ export default function LodgeInfoPage() {
                     .filter(Boolean)
                     .join(" · ") || "Where Book on WhatsApp sends guests"
                 }
-                state={sectionState(["whatsapp", "phone", "email"].some((key) => key in changes), Boolean(lodge.whatsapp))}
+                state={sectionState(["whatsapp", "whatsapp2", "phone", "email"].some((key) => key in changes), Boolean(lodge.whatsapp))}
                 defaultOpen={!lodge.whatsapp}
               >
                 <Field
@@ -368,6 +383,7 @@ export default function LodgeInfoPage() {
                     />
                   </InputGroup>
                 </Field>
+                <SecondWhatsApp value={draft.whatsapp2} error={errors.whatsapp2} onChange={(value) => set("whatsapp2", value)} startOpen={Boolean(lodge.whatsapp2)} />
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label="Phone (optional)" error={errors.phone} hint="For guests who'd rather call.">
                     <InputGroup>
@@ -529,6 +545,32 @@ export default function LodgeInfoPage() {
   );
 }
 
+/** A second WhatsApp number: rarely needed, so tucked away until it's set or asked for. */
+function SecondWhatsApp({ value, error, onChange, startOpen }: { value: string; error?: string; onChange: (value: string) => void; startOpen: boolean }) {
+  const [open, setOpen] = useState(startOpen);
+  return (
+    <Collapsible open={open || Boolean(error)} onOpenChange={setOpen} className="rounded-xl border border-line">
+      <CollapsibleTrigger className="flex w-full items-center gap-2 rounded-xl px-3.5 py-2.5 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/30">
+        <span className="flex-1 text-[13px] font-semibold text-ink-2">Another WhatsApp number</span>
+        <ChevronDown className={cn("size-4 text-muted-2 transition-transform duration-200 motion-reduce:transition-none", (open || error) && "rotate-180")} />
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="px-3.5 pb-3.5">
+          <Field label="Second WhatsApp (optional)" error={error} hint="Shown beside the first in your contact details. Book buttons still open the first.">
+            <InputGroup>
+              <InputGroupAddon>
+                <WhatsAppIcon size={15} color="#1F7A4D" />
+                {dialPrefix(value)}
+              </InputGroupAddon>
+              <InputGroupInput value={value} onChange={(event) => onChange(event.target.value)} inputMode="tel" autoComplete="off" placeholder="71 123 4567" />
+            </InputGroup>
+          </Field>
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
 function LocationSections({
   draft,
   set,
@@ -601,6 +643,21 @@ function LocationSections({
           longitude={located ? longitude : null}
           place={lodgePlace({ town: draft.town, region: draft.region })}
         />
+      </FormSection>
+
+      <FormSection
+        icon={Home}
+        title="Street address"
+        summary={draft.address.trim() || "Optional: the street and number, shown on your site"}
+        state={sectionState("address" in changes, Boolean(lodge.address))}
+      >
+        <Field
+          label="Street address (optional)"
+          hint="Shown with your map, like 1 Faurea Crescent, Msasa Park, Harare."
+          help="Without a map pin, your site finds this address on Google Maps for guests."
+        >
+          <Input value={draft.address} onChange={(event) => set("address", event.target.value)} placeholder="1 Faurea Crescent, Msasa Park, Harare" maxLength={LODGE_LIMITS.address} />
+        </Field>
       </FormSection>
 
       <FormSection

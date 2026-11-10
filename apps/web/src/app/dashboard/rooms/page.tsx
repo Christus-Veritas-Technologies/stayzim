@@ -9,7 +9,7 @@ import {
   AlertDialogIcon,
   AlertDialogTitle,
 } from "@stayzim/ui/components/alert-dialog";
-import { sampleRoomCount } from "@stayzim/sites";
+import { pricePer, sampleRoomCount } from "@stayzim/sites";
 import { Badge } from "@stayzim/ui/components/badge";
 import { Button } from "@stayzim/ui/components/button";
 import { Card } from "@stayzim/ui/components/card";
@@ -172,7 +172,7 @@ function RoomRow({
           </span>
         </button>
         <span className="px-3 text-[13.5px]">
-          <strong className="font-semibold">{formatPrice(room.price)}</strong> <span className="text-muted-2">/ night</span>
+          <strong className="font-semibold">{formatPrice(room.price)}</strong> <span className="text-muted-2">{pricePer(room)}</span>
         </span>
         <span className="px-3">
           <AmenityIcons room={room} />
@@ -203,7 +203,7 @@ function RoomRow({
           <span className="flex min-w-0 flex-col gap-0.5">
             <span className="truncate text-[14px] font-semibold">{room.name}</span>
             <span className="text-xs text-muted">
-              {formatPrice(room.price)} / night · Sleeps {room.sleeps}
+              {formatPrice(room.price)} {pricePer(room)} · Sleeps {room.sleeps}
               {room.units > 1 ? ` · × ${room.units}` : ""}
               {room.upcomingBookings > 0 ? ` · ${room.upcomingBookings} upcoming` : ""}
             </span>

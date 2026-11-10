@@ -1,5 +1,6 @@
 "use client";
 
+import { pricePer } from "@stayzim/sites";
 import { Badge } from "@stayzim/ui/components/badge";
 import { buttonVariants } from "@stayzim/ui/components/button";
 import { Card, CardAction, CardHeader, CardTitle } from "@stayzim/ui/components/card";
@@ -72,12 +73,12 @@ export function RoomsSummaryCard() {
                   <span className="flex min-w-0 flex-col">
                     <span className="truncate text-[13.5px] font-semibold">{room.name}</span>
                     <span className="text-xs text-muted md:hidden">
-                      {formatPrice(room.price)} / night · Sleeps {room.sleeps}
+                      {formatPrice(room.price)} {pricePer(room)} · Sleeps {room.sleeps}
                     </span>
                   </span>
                 </span>
                 <span className="hidden px-3.5 text-[13.5px] md:block">
-                  <strong className="font-semibold">{formatPrice(room.price)}</strong> <span className="text-muted-2">/ night</span>
+                  <strong className="font-semibold">{formatPrice(room.price)}</strong> <span className="text-muted-2">{pricePer(room)}</span>
                 </span>
                 <span className="hidden px-3.5 text-[13.5px] md:block">{room.sleeps}</span>
                 <span className="hidden px-3.5 text-[13.5px] text-muted md:block">{room.photos.length} of 5</span>
@@ -151,7 +152,7 @@ export function ActivityCard() {
       icon: BedDouble,
       tone: "bg-surface-2 text-slate",
       title: `${room.name} updated`,
-      detail: `${formatPrice(room.price)} / night · ${room.photos.length} ${room.photos.length === 1 ? "photo" : "photos"}`,
+      detail: `${formatPrice(room.price)} ${pricePer(room)} · ${room.photos.length} ${room.photos.length === 1 ? "photo" : "photos"}`,
       at: room.updatedAt,
     })),
     ...(lodge.gallery.length > 0

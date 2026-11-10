@@ -37,9 +37,11 @@ type RoomDraft = {
   description: string;
   beds: string;
   size: string;
+  /** Empty: a night; else what the price is for ("3 hours", "9am to 4pm") */
+  priceLabel: string;
 };
 
-const EMPTY: RoomDraft = { name: "", price: "", sleeps: 2, units: 1, visible: true, amenities: [], description: "", beds: "", size: "" };
+const EMPTY: RoomDraft = { name: "", price: "", sleeps: 2, units: 1, visible: true, amenities: [], description: "", beds: "", size: "", priceLabel: "" };
 
 function draftFrom(room: Room | null): RoomDraft {
   return room
@@ -53,6 +55,7 @@ function draftFrom(room: Room | null): RoomDraft {
         description: room.description ?? "",
         beds: room.beds ?? "",
         size: room.size === null ? "" : String(room.size),
+        priceLabel: room.priceLabel ?? "",
       }
     : EMPTY;
 }
@@ -67,7 +70,8 @@ function sameDraft(a: RoomDraft, b: RoomDraft) {
     a.amenities.join() === b.amenities.join() &&
     a.description === b.description &&
     a.beds === b.beds &&
-    a.size === b.size
+    a.size === b.size &&
+    a.priceLabel === b.priceLabel
   );
 }
 
@@ -91,7 +95,7 @@ export function RoomSheet({
   const [draft, setDraft] = useState<RoomDraft>(() => draftFrom(editing));
   const [pending, setPending] = useState<File[]>([]);
   const [errors, setErrors] = useState<{ name?: string; price?: string; size?: string }>({});
-  const [detailsOpen, setDetailsOpen] = useState(() => Boolean(editing && (editing.description || editing.beds || editing.size)));
+  const [detailsOpen, setDetailsOpen] = useState(() => Boolean(editing && (editing.description || editing.beds || editing.size || editing.priceLabel)));
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const online = useOnline();
@@ -127,7 +131,7 @@ export function RoomSheet({
     const nextErrors = {
       name: draft.name.trim() ? undefined : "Add the room name",
       price:
-        Number.isInteger(price) && price > 0 && price <= ROOM_LIMITS.priceMax ? undefined : "Add the price per night, in whole dollars",
+        Number.isInteger(price) && price > 0 && price <= ROOM_LIMITS.priceMax ? undefined : `Add the price${draft.priceLabel.trim() ? "" : " per night"}, in whole dollars`,
       size: size === null || (size >= ROOM_LIMITS.sizeMin && size <= ROOM_LIMITS.sizeMax) ? undefined : "Check the size in square metres",
     };
     setErrors(nextErrors);
@@ -144,6 +148,7 @@ export function RoomSheet({
       description: draft.description.trim() || null,
       beds: draft.beds.trim() || null,
       size,
+      priceLabel: draft.priceLabel.trim() || null,
     };
     setSaving(true);
     setFormError(null);
@@ -237,7 +242,7 @@ export function RoomSheet({
               </Field>
 
               <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)] gap-3">
-                <Field label="Price per night" error={errors.price} hint={errors.price ? undefined : "USD, whole dollars"}>
+                <Field label={draft.priceLabel.trim() ? "Price" : "Price per night"} error={errors.price} hint={errors.price ? undefined : "USD, whole dollars"}>
                   <InputGroup>
                     <InputGroupAddon>$</InputGroupAddon>
                     <InputGroupInput
@@ -246,7 +251,7 @@ export function RoomSheet({
                       inputMode="numeric"
                       placeholder="95"
                     />
-                    <InputGroupAddon align="end">/ night</InputGroupAddon>
+                    <InputGroupAddon align="end" className="max-w-[45%] truncate">{draft.priceLabel.trim() || "/ night"}</InputGroupAddon>
                   </InputGroup>
                 </Field>
                 <Field label="Sleeps" help="The most guests this room takes, children included. Guests filter rooms by it.">
@@ -318,6 +323,18 @@ export function RoomSheet({
                         </InputGroup>
                       </Field>
                     </div>
+                    <Field
+                      label="Not priced by the night?"
+                      hint="Leave empty for a night. For a short rest or a day rest, say what the price is for."
+                      help="Your site shows the price with these words, like “$15 · 3 hours”, and guests book it on WhatsApp instead of picking nights."
+                    >
+                      <Input
+                        value={draft.priceLabel}
+                        onChange={(event) => setDraft({ ...draft, priceLabel: event.target.value })}
+                        maxLength={ROOM_LIMITS.priceLabel}
+                        placeholder="3 hours, or 9am to 4pm"
+                      />
+                    </Field>
                   </div>
                 </CollapsibleContent>
               </Collapsible>
