@@ -54,28 +54,88 @@ function photosFrom(key: string, groups: SamplePhotoGroup[], count: number) {
     .map((entry) => samplePhoto(entry.photo));
 }
 
-const ROOM_NAMES: Record<Setting | "any", readonly string[]> = {
-  any: ["Garden Room", "Family Room", "Deluxe Double", "Twin Room", "Classic Double", "Courtyard Suite"],
-  mountains: ["Forest Cottage", "Mist Suite", "Hillside Room", "Fireside Chalet", "Pine Room", "Highland Family Room"],
-  lake: ["Lake View Room", "Shoreline Suite", "Waterside Chalet", "Sunset Room", "Harbour Twin", "Lakeside Family Room"],
-  bush: ["Bush Chalet", "Acacia Room", "Safari Suite", "Baobab Family Room", "Mopane Twin", "Starbed Room"],
-  river: ["River Room", "Riverside Suite", "Kingfisher Room", "Waterberry Chalet", "Fig Tree Twin", "River Family Room"],
-  city: ["Classic Double", "Executive Room", "City Suite", "Twin Room", "Studio Room", "Family Room"],
-  farm: ["Farmhouse Room", "Barn Suite", "Orchard Room", "Granary Cottage", "Meadow Twin", "Farmhouse Family Room"],
+/** What an example room is: the shape its beds, size and price come from, and the names that fit it. */
+type RoomShapeKey = "double" | "twin" | "family" | "special";
+
+type RoomNames = Record<RoomShapeKey, readonly string[]>;
+
+/**
+ * Names for each shape, so a name never contradicts its beds: a twin name
+ * only goes with 2 singles, a double with the queen bed, a family name with
+ * the room that sleeps 4, and a suite with the king room.
+ */
+const ROOM_NAMES: Record<Setting | "any", RoomNames> = {
+  any: {
+    double: ["Deluxe Double", "Classic Double", "Garden Room"],
+    twin: ["Twin Room", "Garden Twin"],
+    family: ["Family Room", "Family Suite"],
+    special: ["Courtyard Suite", "Garden Suite"],
+  },
+  mountains: {
+    double: ["Hillside Room", "Pine Room", "Forest Cottage"],
+    twin: ["Pine Twin", "Hillside Twin"],
+    family: ["Highland Family Room", "Family Cottage"],
+    special: ["Mist Suite", "Fireside Chalet"],
+  },
+  lake: {
+    double: ["Lake View Room", "Sunset Room", "Lake View Double"],
+    twin: ["Harbour Twin", "Lake View Twin"],
+    family: ["Lakeside Family Room", "Family Chalet"],
+    special: ["Shoreline Suite", "Waterside Chalet"],
+  },
+  bush: {
+    double: ["Acacia Room", "Bush Chalet", "Starbed Room"],
+    twin: ["Mopane Twin", "Acacia Twin"],
+    family: ["Baobab Family Room", "Family Chalet"],
+    special: ["Safari Suite", "Starbed Suite"],
+  },
+  river: {
+    double: ["River Room", "Kingfisher Room", "Waterberry Chalet"],
+    twin: ["Fig Tree Twin", "Kingfisher Twin"],
+    family: ["River Family Room", "Family Chalet"],
+    special: ["Riverside Suite", "Waterberry Suite"],
+  },
+  city: {
+    double: ["Classic Double", "Studio Room", "Executive Room"],
+    twin: ["Twin Room", "Executive Twin"],
+    family: ["Family Room", "Family Suite"],
+    special: ["City Suite", "Executive Suite"],
+  },
+  farm: {
+    double: ["Farmhouse Room", "Orchard Room", "Granary Cottage"],
+    twin: ["Meadow Twin", "Orchard Twin"],
+    family: ["Farmhouse Family Room", "Family Cottage"],
+    special: ["Barn Suite", "Granary Suite"],
+  },
 };
 
-const KIND_ROOM_NAMES: Partial<Record<LodgeKind, readonly string[]>> = {
-  camp: ["Safari Tent", "Luxury Tent", "Family Tent", "Honeymoon Tent", "Riverside Tent", "Chalet"],
-  "self-catering": ["Studio Cottage", "One-bedroom Cottage", "Two-bedroom Cottage", "Family House", "Garden Flat", "Loft"],
-  "holiday-home": ["Main Bedroom", "Garden Bedroom", "Twin Bedroom", "Family Room", "Loft Room", "Guest Suite"],
+const KIND_ROOM_NAMES: Partial<Record<LodgeKind, RoomNames>> = {
+  camp: {
+    double: ["Safari Tent", "Riverside Tent", "Chalet"],
+    twin: ["Twin Tent", "Twin Safari Tent"],
+    family: ["Family Tent", "Family Chalet"],
+    special: ["Honeymoon Tent", "Luxury Tent"],
+  },
+  "self-catering": {
+    double: ["Studio Cottage", "Garden Flat", "One-bedroom Cottage"],
+    twin: ["Twin Cottage", "Twin Garden Flat"],
+    family: ["Two-bedroom Cottage", "Family House"],
+    special: ["Loft Suite", "Garden Suite"],
+  },
+  "holiday-home": {
+    double: ["Garden Bedroom", "Loft Room", "Double Bedroom"],
+    twin: ["Twin Bedroom", "Garden Twin"],
+    family: ["Family Room", "Family Bedroom"],
+    special: ["Main Bedroom", "Guest Suite"],
+  },
 };
 
 /** Room shapes: who it's for and what's in it. Prices scale from the lodge's typical price. */
-const ROOM_SHAPES: readonly { sleeps: number; beds: string; size: number; scale: number; who: string }[] = [
-  { sleeps: 2, beds: "1 queen bed", size: 24, scale: 1, who: "couples" },
-  { sleeps: 2, beds: "2 single beds", size: 22, scale: 0.9, who: "friends travelling together" },
-  { sleeps: 4, beds: "1 queen + 2 singles", size: 40, scale: 1.5, who: "families" },
-  { sleeps: 2, beds: "1 king bed", size: 34, scale: 1.3, who: "a special stay" },
+const ROOM_SHAPES: readonly { key: RoomShapeKey; sleeps: number; beds: string; size: number; scale: number; who: string }[] = [
+  { key: "double", sleeps: 2, beds: "1 queen bed", size: 24, scale: 1, who: "couples" },
+  { key: "twin", sleeps: 2, beds: "2 single beds", size: 22, scale: 0.9, who: "friends travelling together" },
+  { key: "family", sleeps: 4, beds: "1 queen + 2 singles", size: 40, scale: 1.5, who: "families" },
+  { key: "special", sleeps: 2, beds: "1 king bed", size: 34, scale: 1.3, who: "a special stay" },
 ];
 
 const SETTING_AMENITIES: Record<Setting | "any", readonly AmenityKey[]> = {
@@ -113,11 +173,12 @@ export function sampleRooms(input: { slug: string; kind: LodgeKind | null; setti
   const kind = input.kind ? KIND_WORDS[input.kind] : NEUTRAL_KIND;
   const base = input.priceHint ?? 60;
   const amenities = SETTING_AMENITIES[input.setting ?? "any"];
-  const start = hash(`${input.slug}:rooms`) % names.length;
+  const start = hash(`${input.slug}:rooms`);
   const photos = photosFrom(`${input.slug}:room-photos`, ["rooms"], count * 2);
 
   return ROOM_SHAPES.slice(0, count).map((shape, index) => {
-    const name = names[(start + index) % names.length]!;
+    const pool = names[shape.key];
+    const name = pool[(start + index) % pool.length]!;
     return {
       id: `${SAMPLE_ROOM_PREFIX}${index + 1}`,
       name,

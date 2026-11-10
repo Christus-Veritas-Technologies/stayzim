@@ -69,6 +69,33 @@ describe("example content", () => {
     expect(Math.max(...prices)).toBeLessThanOrEqual(140);
   });
 
+  test("no example room's name contradicts its beds", () => {
+    const kinds = [null, "lodge", "camp", "self-catering", "holiday-home"] as const;
+    const settings = [null, "mountains", "lake", "bush", "river", "city", "farm"] as const;
+    const slugs = Array.from({ length: 40 }, (_, i) => `lodge-${i}`).concat("timmy-smart-lodge");
+    for (const kind of kinds) {
+      for (const setting of settings) {
+        for (const slug of slugs) {
+          for (const room of sampleRooms({ slug, kind, setting, roomsHint: 4, priceHint: 60 })) {
+            const label = `${room.name}: ${room.beds} (${slug}, ${kind}, ${setting})`;
+            if (/twin/i.test(room.name)) expect(room.beds, label).toBe("2 single beds");
+            if (/double/i.test(room.name)) expect(room.beds, label).toBe("1 queen bed");
+            if (/family/i.test(room.name)) expect(room.sleeps, label).toBe(4);
+            if (/honeymoon/i.test(room.name) || (/suite/i.test(room.name) && !/family/i.test(room.name))) expect(room.beds, label).not.toContain("single");
+            expect(room.description, label).toContain(room.beds!);
+          }
+        }
+      }
+    }
+  });
+
+  test("example room names are stable per lodge and vary across lodges", () => {
+    const rooms = (slug: string) => sampleRooms({ slug, kind: "lodge", setting: null, roomsHint: 4, priceHint: 60 }).map((room) => room.name);
+    expect(rooms("timmy-smart-lodge")).toEqual(rooms("timmy-smart-lodge"));
+    const seen = new Set(Array.from({ length: 20 }, (_, i) => rooms(`lodge-${i}`).join("|")));
+    expect(seen.size).toBeGreaterThan(1);
+  });
+
   test("the owner's first room replaces the example rooms", () => {
     const room = { id: "r1", name: "River Suite", price: 120, sleeps: 2, amenities: [], photos: [], description: null, beds: null, size: null, priceLabel: null, sample: false };
     const shown = applySamples({ ...site, rooms: [room] }, input);
