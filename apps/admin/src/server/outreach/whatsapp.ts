@@ -186,6 +186,33 @@ export function onOwnMessage(handler: (event: OwnMessageEvent) => Promise<void>)
   ownBox.__stayzimOwn = handler;
 }
 
+/**
+ * A message's id as text ("false_263…@c.us_3EB0…", or "…@lid_…"). The
+ * WhatsApp Web of late no longer fills in the key's _serialized, so it's built
+ * from the key's parts (the same text) when missing. undefined when it can't
+ * be: never the text "undefined", which once made every message after the
+ * first look already saved.
+ */
+export function messageId(key: unknown, chatId?: string): string | undefined {
+  if (typeof key === "string") return key && key !== "undefined" ? key : undefined;
+  if (!key || typeof key !== "object") return undefined;
+  const parts = key as { _serialized?: unknown; id?: unknown; fromMe?: unknown; remote?: unknown; participant?: unknown };
+  if (typeof parts._serialized === "string" && parts._serialized && parts._serialized !== "undefined") return parts._serialized;
+  const remote = widText(parts.remote) ?? chatId;
+  if (typeof parts.id !== "string" || !parts.id || !remote) return undefined;
+  const participant = widText(parts.participant);
+  return `${parts.fromMe ? "true" : "false"}_${remote}_${parts.id}${participant ? `_${participant}` : ""}`;
+}
+
+/** A chat or user id as text ("263…@c.us"), from its _serialized or its user and server */
+function widText(wid: unknown): string | undefined {
+  if (typeof wid === "string") return wid || undefined;
+  if (!wid || typeof wid !== "object") return undefined;
+  const parts = wid as { _serialized?: unknown; user?: unknown; server?: unknown };
+  if (typeof parts._serialized === "string" && parts._serialized) return parts._serialized;
+  return typeof parts.user === "string" && typeof parts.server === "string" ? `${parts.user}@${parts.server}` : undefined;
+}
+
 type WhatsAppMessage = {
   from: string;
   fromMe: boolean;
@@ -193,7 +220,8 @@ type WhatsAppMessage = {
   body?: string;
   type: string;
   timestamp: number;
-  id: { _serialized: string };
+  /** WhatsApp's key for it: read it with messageId(), as _serialized is often missing */
+  id: unknown;
   /** The sender's profile name (whatsapp-web.js keeps it in _data; our own list sets it directly) */
   notifyName?: string;
   _data?: { notifyName?: string };
@@ -506,6 +534,12 @@ export class WhatsAppAccount {
       return false;
     }
     if (!this.status.lastInboundAt || Date.parse(this.status.lastInboundAt) < message.timestamp * 1000) this.status.lastInboundAt = new Date(message.timestamp * 1000).toISOString();
+    const id = messageId(message.id, chatId);
+    if (!id) {
+      this.logError(`a message in ${chatId} has no id WhatsApp can name, so it can't be saved:`, message.id);
+      this.status.lastInboundError = "a message came without an id";
+      return false;
+    }
     const handler = handlerBox.__stayzimInbound;
     if (!handler) {
       this.logError("a reply came in, but nothing is set to record it");
@@ -520,11 +554,11 @@ export class WhatsAppAccount {
         phone: resolved,
         body: message.body ?? "",
         type: message.type,
-        whatsappMessageId: message.id._serialized,
+        whatsappMessageId: id,
         receivedAt: new Date(message.timestamp * 1000),
         senderName: message.notifyName ?? message._data?.notifyName ?? undefined,
         // A photo, or a photo sent as a document (to keep its quality)
-        loadImage: message.type === "image" || message.type === "document" ? () => this.downloadImage(message.id._serialized) : undefined,
+        loadImage: message.type === "image" || message.type === "document" ? () => this.downloadImage(id) : undefined,
       });
       if (isNew) this.log(`reply recorded (${via}) from ${resolved ? `+${resolved}` : chatId}`);
       this.status.lastInboundError = undefined;
@@ -550,15 +584,17 @@ export class WhatsAppAccount {
     if (age > 15 * 60 * 1000) return;
     // Just sent: give the app a moment to record its own send first
     if (age < 8000) await new Promise((resolve) => setTimeout(resolve, 8000 - age));
+    const id = messageId(message.id, chatId);
+    if (!id) return this.logError(`a message sent from the phone in ${chatId} has no id WhatsApp can name:`, message.id);
     try {
       await handler({
         account: this.id,
         chatId,
         phone: await this.resolvePhone(chatId),
         body: message.body ?? "",
-        whatsappMessageId: message.id._serialized,
+        whatsappMessageId: id,
         sentAt: new Date(message.timestamp * 1000),
-        deleteForEveryone: () => this.deleteForEveryone(message.id._serialized),
+        deleteForEveryone: () => this.deleteForEveryone(id),
       });
     } catch (error) {
       this.logError("failed to handle a message sent from the phone:", error);
@@ -677,16 +713,20 @@ export class WhatsAppAccount {
             }
           }
         }
+        // A key's text, built from its parts when _serialized is missing (as messageId() does)
+        const wid = (value: any): string => (typeof value === "string" ? value : value?._serialized || (value?.user && value?.server ? `${value.user}@${value.server}` : ""));
+        const keyText = (key: any): string =>
+          key?._serialized && key._serialized !== "undefined" ? String(key._serialized) : key?.id && wid(key.remote) ? `${key.fromMe ? "true" : "false"}_${wid(key.remote)}_${key.id}${wid(key.participant) ? `_${wid(key.participant)}` : ""}` : "";
         const messages = Msg.getModelsArray()
           .filter((msg: any) => msg.id && (own || !msg.id.fromMe) && msg.t >= after && types.includes(String(msg.type ?? "chat")))
           .map((msg: any) => ({
-            from: String(msg.id.remote?._serialized ?? msg.from?._serialized ?? ""),
+            from: wid(msg.id.remote) || wid(msg.from),
             fromMe: Boolean(msg.id.fromMe),
             isStatus: Boolean(msg.isStatusV3) || String(msg.id.remote?._serialized ?? "") === "status@broadcast",
             body: String(msg.body ?? msg.caption ?? ""),
             type: String(msg.type ?? "chat"),
             timestamp: Number(msg.t),
-            id: { _serialized: String(msg.id._serialized) },
+            id: keyText(msg.id),
             notifyName: msg.notifyName ? String(msg.notifyName) : undefined,
           }));
         return { messages, loadedEarlier: Boolean(loader?.loadEarlierMsgs) };
@@ -746,10 +786,11 @@ export class WhatsAppAccount {
     await chat?.clearState().catch(() => {});
     const sent = await withTimeout(client.sendMessage(chatId, text, { sendSeen: false }), SEND_TIMEOUT_MS, "to send").catch(async (error: unknown) => {
       const found = await this.findJustSent(text);
-      if (found) return { id: { _serialized: found } };
+      if (found) return { id: found };
       throw error;
     });
-    if (sent) return sent.id._serialized;
+    const sentId = sent ? messageId(sent.id) : undefined;
+    if (sentId) return sentId;
     const found = await this.findJustSent(text);
     if (found) return found;
     throw new Error("WhatsApp didn't confirm the message was sent, and it isn't in the chat");
@@ -910,7 +951,10 @@ export class WhatsAppAccount {
         const sent = require("WAWebCollections")
           .Msg.getModelsArray()
           .filter((msg: any) => msg.id?.fromMe && msg.body === text && msg.t >= since);
-        return sent.length > 0 ? String(sent[sent.length - 1].id._serialized) : null;
+        const wid = (value: any): string => (typeof value === "string" ? value : value?._serialized || (value?.user && value?.server ? `${value.user}@${value.server}` : ""));
+        const key = sent.length > 0 ? sent[sent.length - 1].id : null;
+        if (!key) return null;
+        return key._serialized && key._serialized !== "undefined" ? String(key._serialized) : `${key.fromMe ? "true" : "false"}_${wid(key.remote)}_${key.id}`;
       }, body);
     } catch (error) {
       this.logError("looking for the sent message failed:", error);
@@ -935,10 +979,11 @@ export class WhatsAppAccount {
     const sent = await withTimeout(client.sendMessage(numberId._serialized, message, { sendSeen: false }), SEND_TIMEOUT_MS, "to send").catch(async (error: unknown) => {
       // A slow or failed answer doesn't mean nothing went: look before calling it failed
       const found = await this.findJustSent(message);
-      if (found) return { id: { _serialized: found } };
+      if (found) return { id: found };
       throw error;
     });
-    if (sent) return { sent: true as const, account: this.id, id: sent.id._serialized };
+    const sentId = sent ? messageId(sent.id) : undefined;
+    if (sentId) return { sent: true as const, account: this.id, id: sentId };
 
     // No message back doesn't mean nothing went: check WhatsApp's own list before calling it failed
     const found = await this.findJustSent(message);
