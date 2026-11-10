@@ -17,7 +17,7 @@ import { EASE_OUT } from "@/components/motion";
 import { api } from "@/lib/api";
 import { formatCents, PAY_CHANNELS, type PayChannel } from "@/lib/billing";
 import { formatLongDate } from "@/lib/format";
-import { phoneToInput } from "@/lib/lodge";
+import { phoneToInput, walletFor } from "@/lib/lodge";
 import { stayzimChatUrl } from "@/lib/whatsapp";
 
 /** GET /api/pay/:token (apps/server/src/routes/pay.ts) */
@@ -119,6 +119,8 @@ export default function PayPage() {
       if (result.error !== undefined) return setLoadError(result.error);
       setLink(result.data);
       setPhone((current) => current || (result.data.phone?.startsWith("263") ? phoneToInput(result.data.phone) : ""));
+      // A OneMoney number (071) starts on OneMoney
+      if (walletFor(result.data.phone) === "onemoney") setChannel((current) => (current === "ecocash" ? "onemoney" : current));
     });
   }, [token]);
 

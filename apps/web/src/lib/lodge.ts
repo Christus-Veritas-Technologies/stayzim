@@ -209,6 +209,11 @@ export function phoneToInput(digits: string | null) {
   return digits.startsWith("263") ? digits.slice(3) : `+${digits}`;
 }
 
+/** The wallet that prompts this number: OneMoney for 071, EcoCash for the rest (digits with country code) */
+export function walletFor(digits: string | null | undefined): "ecocash" | "onemoney" {
+  return digits?.startsWith("26371") ? "onemoney" : "ecocash";
+}
+
 /** The "+263" shown before a number box, dropped once the number has its own country code. */
 export function dialPrefix(text: string) {
   return text.trim().startsWith("+") ? null : "+263";

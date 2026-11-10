@@ -20,7 +20,7 @@ import { api } from "@/lib/api";
 import { formatCents, PAY_CHANNELS, type PayChannel, type Payment, type StartedPayment } from "@/lib/billing";
 import { formatLongDate } from "@/lib/format";
 import { metaEvent } from "@/lib/meta-pixel";
-import { phoneToInput, PLANS, type Lodge, type PlanKey } from "@/lib/lodge";
+import { phoneToInput, PLANS, type Lodge, type PlanKey, walletFor } from "@/lib/lodge";
 import { useOnline } from "@/lib/online";
 
 const MONTHS = [1, 3, 12] as const;
@@ -68,7 +68,7 @@ export function PayCard({
   const { lodge, setLodge } = useLodge();
   const online = useOnline();
   const [months, setMonths] = useState<(typeof MONTHS)[number]>(1);
-  const [channel, setChannel] = useState<PayChannel>("ecocash");
+  const [channel, setChannel] = useState<PayChannel>(() => walletFor(lodge.whatsapp));
   const [phone, setPhone] = useState(() => (lodge.whatsapp?.startsWith("263") ? phoneToInput(lodge.whatsapp) : ""));
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
