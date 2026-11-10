@@ -8,6 +8,7 @@ import { alertKin } from "./alerts";
 import type { ToolDefinition } from "./openrouter";
 import { checkPayment, latestPaymentWatch, watchPayment } from "./payments";
 import { ApiError, serverApi } from "./server-api";
+import { editSites, viewSites } from "./site-edit";
 import { handoverMessage, linkInsteadMessage, localDigits, payLinkMessage, promptSentMessage, siteOptionsMessage, walletFor } from "./templates";
 
 /**
@@ -171,6 +172,62 @@ export const TOOLS: ToolDefinition[] = [
   {
     type: "function",
     function: { name: "check_payment", description: "Ask Paynow now how their payment is going (when they say they've paid, or ask). If it went through, their confirmation is sent right away.", parameters: { type: "object", properties: {} } },
+  },
+  {
+    type: "function",
+    function: {
+      name: "view_site",
+      description: "See what their site says now: name, town, street address, WhatsApp and phone numbers, email, description, check-in times, house rules, and every room with its id and price. Call it before edit_site.",
+      parameters: { type: "object", properties: { option: { type: "integer", enum: [1, 2, 3], description: "Only this one of their sites (default: the one they chose, else all)" } } },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "edit_site",
+      description:
+        "Change their site when they ask: their real rooms and prices, the street address, town, name, WhatsApp or phone numbers, email, description, map link, check-in and check-out times, house rules. Pass only what they asked to change, in their words; \"\" removes a field. It saves on the site they chose (or all their options before they choose), checks it, and returns exactly what the site now says.",
+      parameters: {
+        type: "object",
+        properties: {
+          option: { type: "integer", enum: [1, 2, 3], description: "Only this one of their sites, if they named one" },
+          name: { type: "string", description: "Their place's name" },
+          town: { type: "string", description: "Town or area, e.g. \"Msasa Park, Harare\"" },
+          address: { type: "string", description: "Street address, e.g. \"1 Faurea Crescent, Msasa Park, Harare\"" },
+          whatsapp: { type: "string", description: "The WhatsApp number every Book button opens, e.g. 0774788803" },
+          second_whatsapp: { type: "string", description: "Another WhatsApp number, shown beside the first" },
+          phone: { type: "string", description: "A number for calls" },
+          email: { type: "string" },
+          description: { type: "string", description: "The short intro, up to 300 characters, only if they wrote or asked for it" },
+          maps_link: { type: "string", description: "A Google Maps link they sent (its pin is read)" },
+          check_in_from: { type: "string", description: "24-hour time on the half hour, e.g. \"14:00\"" },
+          check_out_by: { type: "string", description: "24-hour time on the half hour, e.g. \"10:00\"" },
+          house_rules: { type: "array", items: { type: "string" }, description: "Every rule, as it should be (replaces the list)" },
+          cancellation_policy: { type: "string" },
+          headline: { type: "string", description: "The big line at the top, only if they asked" },
+          subline: { type: "string", description: "The line under it, only if they asked" },
+          rooms: {
+            type: "array",
+            description:
+              "EVERY room as it should be after the change, in order: it replaces the list (and the example rooms). Keep the id (from view_site) of each room that stays; leave id out for a new one.",
+            items: {
+              type: "object",
+              properties: {
+                id: { type: "string" },
+                name: { type: "string", description: "As they call it: \"Short rest\", \"Deluxe Double\"" },
+                price: { type: "integer", description: "Whole US dollars" },
+                price_label: { type: "string", description: "Only when the price isn't for a night: what it's for, e.g. \"3 hours\", \"9am to 4pm\", \"6pm to 9am\". Leave out for a night." },
+                sleeps: { type: "integer", description: "Most guests (default 2)" },
+                beds: { type: "string", description: "e.g. \"1 queen bed\"" },
+                description: { type: "string" },
+                units: { type: "integer", description: "How many of this room they have (default 1)" },
+              },
+              required: ["name", "price"],
+            },
+          },
+        },
+      },
+    },
   },
   {
     type: "function",
@@ -356,7 +413,7 @@ export async function runTool(name: string, args: Args, ctx: ToolContext): Promi
       });
       await ctx.log("tool", { tool: "make_sites", sites: made.sites.map((site) => site.slug) });
       await alertKin(`New sites sent to ${contact.lodgeName} (${contact.city}), +${contact.phone}: ${made.sites.map((site) => `$${site.monthlyPrice} ${site.url}`).join(" · ")}`);
-      return `Built ${made.sites.length} sites and sent them the options message with the links, prices and the question "which one do you like". Say nothing more this turn unless they asked something else; then answer it briefly, with no question.`;
+      return `Built ${made.sites.length} sites and sent them the options message with the links, prices and the question "which one do you like". If they already told you their rooms and prices, address or other numbers (see Notes), put them on now with edit_site, without telling them. Then say nothing more this turn unless they asked something else; then answer it briefly, with no question.`;
     }
 
     case "choose_site": {
@@ -477,6 +534,12 @@ export async function runTool(name: string, args: Args, ctx: ToolContext): Promi
       }
       return `Not paid yet on the link sent ${minutes} minute${minutes === 1 ? "" : "s"} ago (${status.link.url}). If they just paid, it can take a minute; the confirmation comes here on its own.`;
     }
+
+    case "view_site":
+      return viewSites(contact.id, typeof args.option === "number" ? args.option : undefined);
+
+    case "edit_site":
+      return editSites(contact.id, args, ctx.log);
 
     case "hand_over": {
       await prisma.contact.update({ where: { id: contact.id }, data: { agentStage: "HANDOVER", agentPaused: true, nextFollowUpAt: null } });
