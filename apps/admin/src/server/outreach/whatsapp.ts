@@ -41,8 +41,15 @@ const SYNC_OVERLAP_MS = 10 * 60 * 1000;
 /** The newest messages read from each chat. */
 const SYNC_MESSAGES_PER_CHAT = 30;
 
-/** A number still starting or loading its chats after this long is restarted (it never got to "ready"). */
+/**
+ * A number still starting or loading its chats with no sign of progress (a
+ * loading-screen step, a state change) for this long is restarted: it never got
+ * to "ready". A big account loading its chats for longer is left to finish.
+ */
 const STUCK_AFTER_MS = 8 * 60 * 1000;
+
+/** A number that failed to start is started again by itself after these waits; the last repeats. */
+const RETRY_AFTER_MS = [2, 5, 10, 15].map((minutes) => minutes * 60 * 1000);
 
 /** After a disconnect (other than unlinking from the phone), when to start the browser again. */
 const RECONNECT_DELAY_MS = 15_000;
@@ -92,6 +99,8 @@ export type WhatsAppStatus = {
   lastSyncFound?: number;
   /** Why the last read of the chats failed, when it did */
   lastSyncError?: string;
+  /** Failed: when it's started again by itself */
+  retryAt?: string;
   startedAt: string;
 };
 
@@ -201,6 +210,10 @@ export class WhatsAppAccount {
   private syncing = false;
   /** Seconds since 1970 of the last read of the chats; 0 until the first (which looks back BACKFILL_DAYS) */
   private syncedUntil = 0;
+  /** The last sign that starting is moving (a start, a QR, a loading-screen step, a state change) */
+  private progressAt = Date.now();
+  /** Starts that failed in a row, for the wait before the next */
+  private failures = 0;
 
   constructor(readonly id: string) {
     this.status = {
@@ -223,10 +236,25 @@ export class WhatsAppAccount {
     return this.status.state === "ready";
   }
 
-  /** Still starting or loading its chats long after it began: it never got to "ready". */
+  /** Still starting or loading its chats with no progress for a long time: it never got to "ready". */
   get isStuck() {
     if (this.restarting || (this.status.state !== "starting" && this.status.state !== "authenticated")) return false;
-    return Date.now() - Date.parse(this.status.startedAt) > STUCK_AFTER_MS;
+    return Date.now() - this.progressAt > STUCK_AFTER_MS;
+  }
+
+  /** Failed, and its wait before trying again is over. */
+  get isDueRetry() {
+    return !this.restarting && this.status.state === "failed" && Boolean(this.status.retryAt) && Date.now() >= Date.parse(this.status.retryAt!);
+  }
+
+  /** Failed to start: marked so, and started again by itself later (after a longer wait each time). */
+  private failed(error: string) {
+    this.status.state = "failed";
+    this.status.lastError = error;
+    const wait = RETRY_AFTER_MS[Math.min(this.failures, RETRY_AFTER_MS.length - 1)]!;
+    this.failures += 1;
+    this.status.retryAt = new Date(Date.now() + wait).toISOString();
+    this.logError(`failed (${error}); trying again at ${this.status.retryAt}`);
   }
 
   private log(...args: unknown[]) {
@@ -240,6 +268,8 @@ export class WhatsAppAccount {
   async start(executablePath: string | undefined, attempt = 1): Promise<void> {
     const status = this.status;
     this.executablePath = executablePath;
+    this.progressAt = Date.now();
+    status.retryAt = undefined;
 
     const lastSavedAt = await store.lastSavedAt(this.sessionName).catch(() => null);
     status.lastSavedAt = lastSavedAt?.toISOString();
@@ -265,18 +295,26 @@ export class WhatsAppAccount {
       },
     });
     this.client = client;
+    /** Events from a browser that's been replaced (restarted, timed out) change nothing */
+    const current = () => this.client === client;
 
     client.on("loading_screen", (percent, message) => {
+      if (!current()) return;
+      this.progressAt = Date.now();
       this.log(`loading screen ${percent}%${message ? ` — ${message}` : ""}`);
     });
 
     client.on("change_state", (state) => {
+      if (!current()) return;
+      this.progressAt = Date.now();
       this.log(`connection state → ${state}`);
       if (state === "CONNECTED") status.state = "ready";
       if (state === "UNPAIRED" || state === "CONFLICT") status.state = "disconnected";
     });
 
     client.on("qr", async (qr) => {
+      if (!current()) return;
+      this.progressAt = Date.now();
       status.state = "qr";
       status.qrDataUrl = await QRCode.toDataURL(qr);
       // Also print it, so local dev doesn't need a browser to pair
@@ -285,14 +323,20 @@ export class WhatsAppAccount {
     });
 
     client.on("authenticated", () => {
+      if (!current()) return;
+      this.progressAt = Date.now();
       status.state = "authenticated";
       status.qrDataUrl = undefined;
       this.log("authenticated — WhatsApp accepted this session");
     });
 
     client.on("ready", () => {
+      if (!current()) return;
       status.state = "ready";
       status.qrDataUrl = undefined;
+      status.lastError = undefined;
+      status.retryAt = undefined;
+      this.failures = 0;
       status.number = client.info?.wid?.user;
       status.pushName = client.info?.pushname;
       this.log(`ready as ${status.pushName ?? "unknown"} (${status.number ?? "?"})`);
@@ -302,6 +346,7 @@ export class WhatsAppAccount {
 
     // First backup lands ~1 minute after 'ready'; restart before then and the QR is needed again
     client.on("remote_session_saved", () => {
+      if (!current()) return;
       status.lastSavedAt = new Date().toISOString();
       this.log("session backed up to Postgres");
     });
@@ -317,12 +362,14 @@ export class WhatsAppAccount {
     });
 
     client.on("auth_failure", (message) => {
+      if (!current()) return;
       status.state = "failed";
       status.lastError = message;
       this.logError("auth failure:", message);
     });
 
     client.on("disconnected", async (reason) => {
+      if (!current()) return;
       status.state = "disconnected";
       status.lastError = String(reason);
       this.logError("disconnected:", reason);
@@ -358,7 +405,7 @@ export class WhatsAppAccount {
         await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
         return this.start(executablePath, attempt + 1);
       }
-      status.state = "failed";
+      this.failed(status.lastError);
     }
   }
 
@@ -658,6 +705,29 @@ export class WhatsAppAccount {
     this.client = undefined;
   }
 
+  /** Restarting right now (a restart waits up to 8 minutes for the browser) */
+  get isRestarting() {
+    return this.restarting;
+  }
+
+  /** From the WhatsApp page: started again now (from the saved login), its failures forgotten. */
+  restartNow() {
+    this.failures = 0;
+    void this.restart("from the WhatsApp page");
+  }
+
+  /**
+   * From the WhatsApp page: the saved login is forgotten and it starts with a QR
+   * to scan, for a login that won't restore.
+   */
+  async relink() {
+    this.failures = 0;
+    await this.stop();
+    await store.delete({ session: this.sessionName }).catch((error) => this.logError("could not delete stored session:", error));
+    this.status.lastSavedAt = undefined;
+    void this.restart("to link again with a QR code");
+  }
+
   /** Closes this number's browser and starts it again from the saved session. One at a time. */
   async restart(why: string): Promise<void> {
     if (this.restarting || !env.WHATSAPP_ENABLED) return;
@@ -667,12 +737,17 @@ export class WhatsAppAccount {
       await this.stop();
       this.status.state = "starting";
       this.status.startedAt = new Date().toISOString();
-      // A start that hangs doesn't hold the number forever: the next check can restart it again
+      // A start that hangs doesn't hold the number forever
       await withTimeout(this.start(this.executablePath ?? resolveBrowser()), STUCK_AFTER_MS, "to start");
     } catch (error) {
-      this.status.state = "failed";
-      this.status.lastError = errorText(error);
-      this.logError("restart failed:", error);
+      if (this.status.state === "ready" || this.status.state === "qr") {
+        // It got through while it was being waited on (connected, or a QR to scan): it stays
+        this.log(`start was slow (${errorText(error)}) but got through: ${this.status.state}`);
+      } else {
+        // The hung browser is closed (its late events change nothing) and it's started again later
+        await this.stop();
+        this.failed(errorText(error));
+      }
     } finally {
       this.restarting = false;
     }
@@ -783,6 +858,10 @@ function watchAccounts() {
     for (const account of engine.accounts.values()) {
       if (account.isStuck) {
         void account.restart("after being stuck while starting");
+        continue;
+      }
+      if (account.isDueRetry) {
+        void account.restart("to try again after failing to start");
         continue;
       }
       if (!account.isReady) continue;
