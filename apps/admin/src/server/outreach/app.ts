@@ -10,7 +10,7 @@ import { campaigns } from "./routes/campaigns";
 import { contacts } from "./routes/contacts";
 import { messages } from "./routes/messages";
 import { replies } from "./routes/replies";
-import { getStatuses } from "./whatsapp";
+import { getAccount, getStatuses } from "./whatsapp";
 
 /** Where this server asks who's signed in: the API, inside Docker when it can. */
 const SERVER_URL = (env.SERVER_INTERNAL_URL ?? env.NEXT_PUBLIC_SERVER_URL).replace(/\/$/, "");
@@ -46,6 +46,16 @@ export const outreachApp = new Hono()
   .get("/whatsapp/status", async (c) => {
     const usage = await getAllAccountUsage();
     return c.json(getStatuses().map((status) => ({ ...status, hasQr: Boolean(status.qrDataUrl), usage: usage.find((u) => u.account === status.account) })));
+  })
+  // Start a number again now (from its saved login), or forget the login and show a QR to scan
+  .post("/whatsapp/:account/restart", async (c) => {
+    const account = getAccount(c.req.param("account"));
+    if (!account) throw new HTTPException(404, { message: "No such number" });
+    if (account.isRestarting) throw new HTTPException(409, { message: "It's already starting: give it a few minutes" });
+    const body = (await c.req.json().catch(() => ({}))) as { relink?: boolean };
+    if (body.relink) await account.relink();
+    else account.restartNow();
+    return c.json({ ok: true });
   })
   .route("/contacts", contacts)
   .route("/messages", messages)

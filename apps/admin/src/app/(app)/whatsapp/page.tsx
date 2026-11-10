@@ -1,16 +1,19 @@
 "use client";
 
 import { Badge } from "@stayzim/ui/components/badge";
+import { Button } from "@stayzim/ui/components/button";
 import { Card } from "@stayzim/ui/components/card";
 import { Progress } from "@stayzim/ui/components/progress";
 import { Tabs, TabsList, TabsTab } from "@stayzim/ui/components/tabs";
-import { Smartphone } from "lucide-react";
+import { QrCode, RotateCcw, Smartphone } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { AgentControl } from "@/components/agent-control";
 import { LoadError, LoadingCards, Page, PageHeader, PageSection, Panel } from "@/components/page";
 import { formatShortWhen, formatWhen } from "@/lib/format";
+import { outreachApi } from "@/lib/api";
 import { formatPhone } from "@/lib/labels";
 import { useApi } from "@/lib/use-api";
 
@@ -28,6 +31,7 @@ type NumberStatus = {
   lastSyncedAt?: string;
   lastSyncFound?: number;
   lastSyncError?: string;
+  retryAt?: string;
   startedAt: string;
   usage?: { sent: number; limit: number; remaining: number; resetsAt?: string };
 };
@@ -44,9 +48,22 @@ const STATES: Record<ConnectionState, { label: string; badge: "neutral" | "brand
   failed: { label: "Failed", badge: "danger" },
 };
 
-function NumberCard({ status }: { status: NumberStatus }) {
+function NumberCard({ status, onChanged }: { status: NumberStatus; onChanged: () => void }) {
   const state = STATES[status.state];
   const usage = status.usage;
+  const [busy, setBusy] = useState(false);
+  const canRestart = status.state === "failed" || status.state === "disconnected" || status.state === "starting" || status.state === "authenticated";
+
+  async function restart(relink: boolean) {
+    if (relink && !window.confirm(`Forget ${status.account}'s saved login and show a new QR code to scan?`)) return;
+    setBusy(true);
+    const result = await outreachApi(`/whatsapp/${status.account}/restart`, { method: "POST", json: { relink } });
+    setBusy(false);
+    if (result.error !== undefined) return toast.error(result.error);
+    toast.success(relink ? "Starting with a new QR code: it shows here in a moment" : "Starting again from its saved login");
+    onChanged();
+  }
+
   return (
     <Card className="flex flex-col gap-3 p-4">
       <div className="flex items-start justify-between gap-3">
@@ -69,6 +86,7 @@ function NumberCard({ status }: { status: NumberStatus }) {
         </div>
       ) : null}
       {status.lastError && status.state !== "ready" ? <p className="text-[12.5px] text-danger">{status.lastError}</p> : null}
+      {status.state === "failed" && status.retryAt ? <p className="text-[12px] text-muted">Trying again by itself {formatShortWhen(status.retryAt)}</p> : null}
       {usage ? (
         <div className="flex flex-col gap-1.5">
           <div className="flex justify-between text-[12.5px] text-muted">
@@ -91,6 +109,18 @@ function NumberCard({ status }: { status: NumberStatus }) {
           </p>
           {status.lastSyncError ? <p className="text-[12px] text-warning">Reading the chats: {status.lastSyncError}</p> : null}
         </>
+      ) : null}
+      {canRestart ? (
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" disabled={busy} onClick={() => restart(false)}>
+            <RotateCcw />
+            Restart
+          </Button>
+          <Button size="sm" variant="ghost" disabled={busy} onClick={() => restart(true)}>
+            <QrCode />
+            Link again
+          </Button>
+        </div>
       ) : null}
       <p className="text-[12px] text-muted-2">{status.lastSavedAt ? `Login saved ${formatShortWhen(status.lastSavedAt)}: a redeploy won't need a new scan` : "Login not saved yet: it saves about a minute after connecting"}</p>
     </Card>
@@ -134,7 +164,7 @@ function Log({ kind }: { kind: "messages" | "replies" }) {
 export default function WhatsAppPage() {
   const { data, error, loading, reload } = useApi<NumberStatus[]>("/whatsapp/status", { outreach: true });
   const [tab, setTab] = useState<"messages" | "replies">("replies");
-  const waiting = data?.some((status) => status.state !== "ready" && status.state !== "disabled" && status.state !== "failed");
+  const waiting = data?.some((status) => status.state !== "ready" && status.state !== "disabled" && (status.state !== "failed" || Boolean(status.retryAt)));
 
   // Every 5 seconds while a number is starting or waiting for its QR scan
   useEffect(() => {
@@ -154,7 +184,7 @@ export default function WhatsAppPage() {
       {data ? (
         <PageSection className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {data.map((status) => (
-            <NumberCard key={status.account} status={status} />
+            <NumberCard key={status.account} status={status} onChanged={reload} />
           ))}
         </PageSection>
       ) : null}
